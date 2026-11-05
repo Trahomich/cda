@@ -150,8 +150,7 @@ function kindLabel(kind: string): string {
           aria-label="Контур поля"
         >
           <polygon
-            :points="card.field.contour.coordinates[0]
-              .map(([lon, lat]) => `${lon},${lat}`).join(' ')"
+            :points="contourPoints"
             class="card360__polygon"
           />
         </svg>
