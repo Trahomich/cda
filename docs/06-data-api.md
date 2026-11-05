@@ -96,6 +96,7 @@ erDiagram
 | dat_weather_observation | ENT-WEATHER-OBSERVATION (05) | UQ(field_id, observed_at, source_id) — дедупликация | — |
 | dat_forecast | ENT-FORECAST (05) | UQ(field_id, forecast_for) | последняя версия перезаписывает |
 | dat_satellite_scene | ENT-SATELLITE-SCENE (05) | UQ(field_id, index, captured_at, source_id) | cloud_pct > 60 не сохраняется (05 §5) |
+| dat_source_journal | журнал состояний адаптеров (05 §6, REQ-F-034) | IX(source_id, at) | события ok/degraded/error + причина; текущий статус — в ref_source |
 
 ## 3. Справочники ref_ и нормативы
 
