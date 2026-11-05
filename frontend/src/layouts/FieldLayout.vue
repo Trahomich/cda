@@ -36,6 +36,14 @@ function logout() {
       <span class="field__brand">ЦДА · {{ auth.user?.farm_name ?? 'Хозяйство' }}</span>
       <span class="field__role">[роль: {{ auth.roleTitle }}]</span>
       <span class="field__spacer" />
+      <RouterLink
+        v-if="offline.pendingCount > 0 || !offline.online"
+        class="field__offline"
+        :class="{ 'field__offline--down': !offline.online }"
+        :to="{ name: 'field-queue' }"
+      >
+        {{ offline.online ? '⛁' : 'ОФЛАЙН' }} ⛁ {{ offline.pendingCount }}
+      </RouterLink>
       <span
         v-if="alertsBadge > 0"
         class="field__badge"
