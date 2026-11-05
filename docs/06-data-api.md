@@ -61,7 +61,7 @@ erDiagram
 ```mermaid
 erDiagram
   DAT_RECOMMENDATION |o--o{ DAT_TREATMENT_PLAN : "basis_recommendation_id"
-  DAT_USER ||--o{ DAT_ALERT : "адресат"
+  REF_USER ||--o{ DAT_ALERT : "адресат"
   DAT_SOURCE_JOURNAL }o--|| DAT_REF_SOURCE : "адаптер"
 ```
 
