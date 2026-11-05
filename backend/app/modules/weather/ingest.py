@@ -213,13 +213,22 @@ class WeatherIngest:
         """Текущая погода по всем активным полям (05 §4: каждые 30 мин)."""
         report = IngestReportBuilder()
         for field_id, name in self.active_fields(db):
-            self._run_with_retries(
-                field_id,
-                name,
-                lambda fid=field_id: self._adapter.fetch_current(fid),  # noqa: B023
-                report,
-            )
-        # записи сохраняет ingest_history_for ниже (единый путь upsert)
+            try:
+                observation, error = self._fetch_with_retries(
+                    lambda fid=field_id: self._adapter.fetch_current(fid)
+                )
+            except DataGapError as exc:
+                report.skip(name, str(exc))
+                continue
+            except DataQualityError as exc:
+                report.fail(name, f"качество данных: {exc}")
+                continue
+            if error is not None:
+                report.fail(name, error)
+                continue
+            self.save_observations(db, [observation])
+            db.commit()
+            report.ok()
         report_result = report.build()
         self.log_source(
             db,
@@ -234,16 +243,18 @@ class WeatherIngest:
         report = IngestReportBuilder()
         for field_id, name in self.active_fields(db):
             try:
-                items = self._adapter.fetch_forecast(field_id, self._forecast_days)
-            except SourceUnavailableError as exc:
-                report.fail(name, f"источник недоступен: {exc}")
-                continue
+                items, error = self._fetch_with_retries(
+                    lambda fid=field_id: self._adapter.fetch_forecast(fid, self._forecast_days)
+                )
             except DataGapError as exc:
                 report.skip(name, str(exc))
                 continue
             except DataQualityError as exc:
                 # 05 §6: отбрасываем запись и пишем причину в журнал
                 report.fail(name, f"качество данных: {exc}")
+                continue
+            if error is not None:
+                report.fail(name, error)
                 continue
             self.save_forecast(db, field_id, items)
             db.commit()
