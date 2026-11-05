@@ -103,23 +103,24 @@ class WeatherIngest:
 
         return lookup
 
-    def _run_with_retries(self, field_id: str, name: str, fetch, report: IngestReportBuilder):
-        """Вызвать fetch с экспоненциальными ретраями (только SourceUnavailableError)."""
+    def _fetch_with_retries(self, fetch):
+        """Вызвать fetch с экспоненциальными ретраями (только SourceUnavailableError).
+
+        Возвращает (result, error). error != None — все попытки не прошли.
+        """
         delay = self._retry_base_seconds
         last_error: Exception | None = None
-        for _attempt in range(self._retry_attempts):
+        for attempt in range(self._retry_attempts):
             try:
-                return fetch()
+                return fetch(), None
             except SourceUnavailableError as exc:
                 last_error = exc
-                logger.warning("погода %s (%s): ретрай после %s", name, field_id, exc)
-                if _attempt + 1 < self._retry_attempts and self._retry_base_seconds > 0:
-                    import time
-
+                logger.warning("погода: ретрай %d/%d после %s", attempt + 1,
+                               self._retry_attempts, exc)
+                if attempt + 1 < self._retry_attempts and delay > 0:
                     time.sleep(min(delay, 30.0))  # тесты: retry_base_seconds=0 -> без пауз
                     delay *= 2
-        report.fail(name, f"источник недоступен: {last_error}")
-        return None
+        return None, f"источник недоступен: {last_error}"
 
     @staticmethod
     def log_source(db: Session, source_id: str, status: str, reason: str | None) -> None:
