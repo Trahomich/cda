@@ -30,6 +30,9 @@ class AppError(Exception):
 
     Доменные модули наследуют её: `code` — машиночитаемый код,
     `status` — HTTP-код по CONTRACTS.md §8 (400/404/409/422/500).
+    `extra` — доменные расширения тела problem+json (например,
+    rule_id/severity/rationale для нарушений бизнес-правил,
+    docs/06 §5 примеры ошибок).
     """
 
     status_code: int = status.HTTP_400_BAD_REQUEST
