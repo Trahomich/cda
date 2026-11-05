@@ -336,7 +336,7 @@ function computeViolations(): RotationPlan['violations'] {
           break
         }
       }
-      if (prevSame !== null && !fallowBetween && culture.repeat_years > 0) {
+      if (prevSame !== null && !fallowBetween && culture.repeat_years > 0 && !flagged) {
         const gap = year - prevSame
         if (gap < culture.repeat_years) {
           out.push({
