@@ -3,9 +3,11 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useOfflineStore } from '@/stores/offline'
 
 const auth = useAuthStore()
 const router = useRouter()
+const offline = useOfflineStore()
 
 // Бейдж уведомлений — заглушка (экран E-13 в другой задаче).
 const alertsBadge = ref(0)
