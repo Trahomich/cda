@@ -91,6 +91,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_rules.set_defaults(func=cmd_seed_weather_rules)
 
+    p_demo = sub.add_parser(
+        "seed-demo", help="демо-хозяйство (MVP-13): поля, циклы, операции, техника, алерты"
+    )
+    p_demo.add_argument(
+        "--reset", action="store_true", help="пересоздать демо-данные (удалить и создать заново)"
+    )
+    p_demo.set_defaults(func=cmd_seed_demo)
+
     args = parser.parse_args(argv)
     return args.func(args)
 
