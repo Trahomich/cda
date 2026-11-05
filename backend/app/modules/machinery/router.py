@@ -29,17 +29,17 @@ from app.models.auth import User, UserRole
 from app.models.machinery import Machine, MachineJob, Maintenance
 from app.modules.machinery import service
 from app.modules.machinery.schemas import (
-    MaintenanceCreate,
-    MaintenanceItem,
-    MaintenanceListResponse,
+    MachineCreate,
+    MachineItem,
     MachineJobCreate,
     MachineJobItem,
     MachineJobListResponse,
     MachineJobUpdate,
-    MachineCreate,
-    MachineItem,
     MachineListResponse,
     MachineUpdate,
+    MaintenanceCreate,
+    MaintenanceItem,
+    MaintenanceListResponse,
 )
 
 DbSession = Annotated[Session, Depends(get_db)]

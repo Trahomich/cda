@@ -25,10 +25,10 @@ from app.modules.machinery.schemas import (
     MACHINE_STATUSES,
     MACHINE_TYPES,
     WIDTH_REQUIRED_TYPES,
-    MaintenanceCreate,
     MachineCreate,
     MachineJobCreate,
     MachineUpdate,
+    MaintenanceCreate,
 )
 
 # Автомат статусов (04 §1): у машин retired — терминальный
