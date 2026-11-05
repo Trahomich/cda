@@ -180,10 +180,10 @@ erDiagram
  "rule_id": "RULE-AGRO-08", "entity": "treatment_plan"}
 ```
 
-Пример успешного создания (201 + Location):
+Пример успешного создания (`POST /api/v1/operations` → 201, заголовок
+`Location: /api/v1/operations/f1e2...c901`):
 
 ```json
-POST /api/v1/operations → 201, Location: /api/v1/operations/f1e2...c901
 {"operation_id": "f1e2d3c4-0a9b-4c8d-8e7f-a1b2c3d4e5f6",
  "field_id": "0b2a5b0e-6f3f-4e5c-9b1d-7f4a1c2d3e01",
  "operation_type": "spraying", "date": "2026-06-10",
