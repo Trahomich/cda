@@ -211,13 +211,17 @@ class TestMachineJobs:
 
     def test_field_operation_link(self, client, db_session):
         """Задание связывается с dat_field_operation, если операция существует."""
+        from tests.test_fields import REF_POLYGON
+
         headers = boss_headers(client, db_session)
         mid = create_machine(client, headers)["machine_id"]
         make_user(db_session, login="agro_mj", role=UserRole.AGRONOMIST)
-        owner = db_session.scalar(select(Field))
+        agro = auth_header(client, "agro_mj", "secret123")
+        field_id = client.post(
+            "/api/v1/fields", json={"name": "Под операцию", "contour": REF_POLYGON}, headers=agro
+        ).json()["field_id"]
         operation = FieldOperation(
-            client_id=uuid.uuid4(),
-            field_id=owner.id,
+            field_id=uuid.UUID(field_id),
             operation_type="spraying",
             date=date.today(),
             actual_area_ga=10,
