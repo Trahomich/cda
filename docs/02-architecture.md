@@ -97,6 +97,49 @@ flowchart TB
 `operation.logged`, `observation.ingested` (погода), `scene.ingested` (спутник),
 `telemetry.imported`, `ration.changed`, `veterinary.event.created`.
 
+### Уровень компонентов (C4, уровень 3): монолит ЦДА
+
+```mermaid
+flowchart TB
+  subgraph MONOLITH["Монолит ЦДА"]
+    APIG["api-gateway-модуль\nREST /api/v1,\nавторизация, роли"]
+    subgraph INGEST["ingest-gateway"]
+      SCHED["планировщик опроса\nи ретраи"]
+      ADPT["адаптеры IF-\n(weather, satellite, soil,\ntelemetry, prices)"]
+      NORM["нормализация\nи валидация (trust)"]
+    end
+    subgraph DOMAINS["доменные модули"]
+      MF["mod-fields"]
+      MR["mod-rotation"]
+      MI["mod-inputs"]
+      MM["mod-machinery"]
+      ML["mod-livestock"]
+    end
+    RE["rules-engine\n(правила RULE-*,\nгенерация ENT-ALERT /\nENT-RECOMMENDATION)"]
+    EXPORT["сервис экспорта\nJSON/CSV (REQ-NF-007)"]
+  end
+  WEB2["веб/мобильный клиенты"]
+  PG[("PostgreSQL + PostGIS")]
+  RD[("Redis")]
+  OB[("объектное хранилище")]
+  BUS2[("шина событий")]
+  WEB2 --> APIG
+  APIG --> MF & MR & MI & MM & ML
+  APIG --> EXPORT
+  SCHED --> ADPT --> NORM
+  NORM --> PG
+  NORM -->|"observation.ingested,\nscene.ingested"| BUS2
+  BUS2 --> RE
+  MF & MR & MI & MM & ML --> PG
+  RE --> PG
+  RE --> RD
+  NORM --> OB
+```
+
+Компоненты соответствуют таблице §4 (модули) и слоям приёма данных из
+05-integrations.md (планировщик/адаптеры/нормализация); rules-engine исполняет
+правила RULE-* из 03-domain-agronomy.md и 04-domain-farm.md.
+
 ## 5. Ключевые потоки данных
 
 Поток 1 — плановый (SC-01): агроном правит план севооборота → mod-rotation
