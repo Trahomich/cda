@@ -3,7 +3,7 @@
 // из GET /fields?with_geometry=true (API-01), попап поля — имя, площадь (га),
 // культура сезона. Панель «Список» — таблица полей с фильтрами (вкладки).
 import { onMounted, onUnmounted, ref } from 'vue'
-import type { Map as LeafletMap, LayerGroup } from 'leaflet'
+import type { Map as LeafletMap } from 'leaflet'
 import L from 'leaflet'
 import { getFields } from '@/api'
 import type { Field } from '@/api/types'
