@@ -31,7 +31,9 @@ class Culture(Base):
 
     __tablename__ = "ref_culture"
     __table_args__ = (
-        CheckConstraint("kind IN ('main', 'forage', 'catch')", name="ck_ref_culture_kind"),
+        CheckConstraint(
+            "kind IN ('main', 'forage', 'catch', 'fallow')", name="ck_ref_culture_kind"
+        ),
         UniqueConstraint("name", name="uq_ref_culture_name"),
     )
 
@@ -40,6 +42,7 @@ class Culture(Base):
     kind: Mapped[str] = mapped_column(String(10), nullable=False)
     forage_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     crop_group: Mapped[str] = mapped_column(String(50), nullable=False)
+    repeat_years: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
