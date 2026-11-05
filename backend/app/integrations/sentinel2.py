@@ -63,10 +63,10 @@ class SceneMeta:
     """Метаданные сцены из каталога Copernicus (до вычисления индексов)."""
 
     scene_ref: str  # идентификатор продукта (UUID OData)
+    captured_at: date  # дата съёмки
+    cloud_pct: float  # облачность по метаданным продукта, %
     name: str | None = None
     tile_id: str | None = None
-    captured_at: date | None = None
-    cloud_pct: float | None = None
     assets: dict[str, str] = field(default_factory=dict)  # band -> ссылка/путь
 
 
