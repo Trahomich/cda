@@ -316,6 +316,18 @@ class TestCreateCycle:
             == 201
         )
         resp = post_cycle(client, headers, field["field_id"], mustard.id, year=2026, kind="catch")
+        # повтор того же сидерата в тот же год: RULE-AGRO-02 (возврат) — warn → reason
+        assert resp.status_code == 422
+        assert resp.json()["rule_id"] == "RULE-AGRO-02"
+        resp = post_cycle(
+            client,
+            headers,
+            field["field_id"],
+            mustard.id,
+            year=2026,
+            kind="catch",
+            reason="повторный посев сидерата для фитосанитарии",
+        )
         assert resp.status_code == 201, resp.text
 
     def test_404_field_or_culture(self, client, db_session):
