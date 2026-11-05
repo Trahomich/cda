@@ -127,10 +127,10 @@ erDiagram
 ## 5. REST API /api/v1
 
 Конвенции — CONTRACTS §8: JSON snake_case, пагинация `?limit&offset`, обёртка
-`{"items", "total", "limit", "offset"}`, ошибки RFC 7807. Пример постраничного ответа:
+`{"items", "total", "limit", "offset"}`, ошибки RFC 7807. Пример постраничного ответа
+(`GET /api/v1/fields?limit=2&offset=0` → 200):
 
 ```json
-GET /api/v1/fields?limit=2&offset=0 → 200
 {"items": [{"field_id": "0b2a5b0e-6f3f-4e5c-9b1d-7f4a1c2d3e01", "name": "Степное-7",
   "area_ga": 84.53, "status": "active"}],
  "total": 17, "limit": 2, "offset": 0}
