@@ -41,7 +41,7 @@ from app.models.agronomy import (
 from app.models.auth import User, UserRole
 from app.models.integrations import Forecast, SatelliteScene, WeatherObservation
 from app.models.machinery import Machine, MachineJob, Maintenance
-from app.models.references import Culture, RefAgrochem
+from app.models.references import Agrochem, Culture
 from app.modules.weather.rules import seed_weather_rules
 from app.seed import seed_references
 
@@ -178,7 +178,7 @@ def _delete_demo_data(db: Session) -> None:
         db.execute(delete(WeatherObservation).where(WeatherObservation.field_id.in_(field_ids)))
         db.execute(delete(Forecast).where(Forecast.field_id.in_(field_ids)))
         db.execute(delete(SatelliteScene).where(SatelliteScene.field_id.in_(field_ids)))
-        db.execute(delete(RefAgrochem).where(RefAgrochem.field_id.in_(field_ids)))
+        db.execute(delete(Agrochem).where(RefAgrochem.field_id.in_(field_ids)))
         db.execute(delete(FieldVersion).where(FieldVersion.field_id.in_(field_ids)))
         db.execute(delete(Field).where(Field.id.in_(field_ids)))
     # машины и задания демо — по госномерам
