@@ -16,7 +16,7 @@ const fieldCount = ref(0)
 const tab = ref<'map' | 'list'>('map')
 
 let map: LeafletMap | null = null
-let contoursLayer: LayerGroup | null = null
+let contoursLayer: L.FeatureGroup | null = null
 
 const STATUS_LABELS: Record<Field['status'], string> = {
   active: 'действует',
