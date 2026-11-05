@@ -368,7 +368,8 @@ def list_maintenance(
     machine_id: uuid.UUID | None = None,
     limit: int = 20,
     offset: int = 0,
-) -> tuple[list[tuple[Maintenance, Machine]], int]:    stmt = select(Maintenance, Machine).join(Machine, Maintenance.machine_id == Machine.id)
+) -> tuple[list[tuple[Maintenance, Machine]], int]:
+    stmt = select(Maintenance, Machine).join(Machine, Maintenance.machine_id == Machine.id)
     stmt = stmt.order_by(Maintenance.due_at_hours, Maintenance.created_at)
     count_stmt = select(func.count()).select_from(Maintenance)
     if machine_id is not None:
