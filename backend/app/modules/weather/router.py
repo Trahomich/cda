@@ -25,8 +25,8 @@ from app.models.integrations import Forecast, WeatherObservation
 from app.models.references import Source, WeatherRule
 from app.modules.weather import ingest as ingest_module
 from app.modules.weather.rules import (
-    DayMetrics,
     OPERATION_TYPES,
+    DayMetrics,
     evaluate_window,
 )
 from app.modules.weather.schemas import (
@@ -66,9 +66,7 @@ def _source_meta(db: Session, forecasts: list[Forecast]) -> SourceMeta:
         newest = max(f.issued_at for f in forecasts)
         if newest.tzinfo is None:
             newest = newest.replace(tzinfo=UTC)
-        stale = datetime.now(tz=UTC) - newest > timedelta(
-            hours=ingest_module.STALE_FORECAST_HOURS
-        )
+        stale = datetime.now(tz=UTC) - newest > timedelta(hours=ingest_module.STALE_FORECAST_HOURS)
     return SourceMeta(
         source_id=WEATHER_SOURCE_ID,
         status=source.last_status if source else None,
@@ -176,7 +174,9 @@ def weather_window(
             WeatherObservation.observed_at == date.today() - timedelta(days=1),
         )
     )
-    precip_by_day: dict[date, float | None] = {f.forecast_for: f.precipitation_mm for f in forecasts}
+    precip_by_day: dict[date, float | None] = {
+        f.forecast_for: f.precipitation_mm for f in forecasts
+    }
     if yesterday_fact is not None and yesterday_fact.precipitation_mm is not None:
         precip_by_day[yesterday_fact.observed_at] = float(yesterday_fact.precipitation_mm)
 

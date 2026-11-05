@@ -14,7 +14,7 @@
 
 import logging
 from collections.abc import Callable
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -53,7 +53,7 @@ CentroidLookup = Callable[[str], tuple[float, float] | None]
 
 
 def _iso_now() -> datetime:
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)
 
 
 class OpenMeteoAdapter:
@@ -112,9 +112,7 @@ class OpenMeteoAdapter:
             )
         if response.status_code == 400:
             # 400 у Open-Meteo — как правило, параметры; это недоступность сервиса
-            raise SourceUnavailableError(
-                f"{self.source_id}: HTTP 400 ({response.text[:200]})"
-            )
+            raise SourceUnavailableError(f"{self.source_id}: HTTP 400 ({response.text[:200]})")
         if response.status_code != 200:
             raise DataGapError(
                 f"{self.source_id}: нет данных (HTTP {response.status_code} от {base_url})"
@@ -205,9 +203,7 @@ class OpenMeteoAdapter:
         self._validate(day, metrics)
         return self._to_observation(field_id, day, metrics)
 
-    def fetch_history(
-        self, field_id: str, date_from: date, date_to: date
-    ) -> list[Observation]:
+    def fetch_history(self, field_id: str, date_from: date, date_to: date) -> list[Observation]:
         """Архив фактов за период (archive-api, 05 §2)."""
         if date_from > date_to:
             raise ValueError("date_from позже date_to")

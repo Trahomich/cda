@@ -116,8 +116,9 @@ class WeatherIngest:
                 return fetch(), None
             except SourceUnavailableError as exc:
                 last_error = exc
-                logger.warning("погода: ретрай %d/%d после %s", attempt + 1,
-                               self._retry_attempts, exc)
+                logger.warning(
+                    "погода: ретрай %d/%d после %s", attempt + 1, self._retry_attempts, exc
+                )
                 if attempt + 1 < self._retry_attempts and delay > 0:
                     time.sleep(min(delay, 30.0))  # тесты: retry_base_seconds=0 -> без пауз
                     delay *= 2

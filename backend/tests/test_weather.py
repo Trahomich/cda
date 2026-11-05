@@ -22,7 +22,6 @@ from app.integrations import (
     SourceUnavailableError,
 )
 from app.integrations.open_meteo import OpenMeteoAdapter
-from app.models.agronomy import Field
 from app.models.auth import UserRole
 from app.models.integrations import Forecast, WeatherObservation
 from app.models.references import Source
@@ -71,9 +70,7 @@ def make_field(db: Session, name="Степное-1", status="active") -> uuid.UU
 
 
 def make_weather_source(db: Session, *, last_status=None) -> None:
-    db.add(
-        Source(source_id=OpenMeteoAdapter.source_id, kind="weather", last_status=last_status)
-    )
+    db.add(Source(source_id=OpenMeteoAdapter.source_id, kind="weather", last_status=last_status))
     db.commit()
 
 
@@ -192,9 +189,7 @@ class TestOpenMeteoAdapter:
             adapter.fetch_forecast(str(field_id), days=7)
 
     def test_no_centroid_is_data_gap(self, db_session):
-        adapter = OpenMeteoAdapter(
-            http=mock_client({}), centroid_lookup=lambda _: None
-        )
+        adapter = OpenMeteoAdapter(http=mock_client({}), centroid_lookup=lambda _: None)
         with pytest.raises(DataGapError):
             adapter.fetch_forecast(str(uuid.uuid4()), days=7)
 
@@ -206,7 +201,7 @@ class TestIngest:
     def test_forecast_writes_and_rewrites(self, db_session):
         make_field(db_session)
         make_weather_source(db_session)
-        field_id = str(db_session.scalar(text("SELECT id FROM dat_field")))
+        str(db_session.scalar(text("SELECT id FROM dat_field")))
         ingest = make_ingest(
             db_session,
             {"/forecast": load_fixture("openmeteo_forecast.json", day_offsets=list(range(7)))},
@@ -533,7 +528,5 @@ class TestWeatherApi:
 
     def test_rbac_401_without_token(self, client, db_session):
         field_id = make_field(db_session)
-        resp = client.get(
-            f"{API}/weather/forecast", params={"field_id": field_id, "days": 3}
-        )
+        resp = client.get(f"{API}/weather/forecast", params={"field_id": field_id, "days": 3})
         assert resp.status_code == 401
