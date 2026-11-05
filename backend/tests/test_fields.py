@@ -45,15 +45,6 @@ REF_AREA_GA = 123.09
 REF_TOLERANCE = 0.02
 
 
-@pytest.fixture
-def agro_headers_factory(client, db_session):
-    def _make(login: str = "agro_f", role: UserRole = UserRole.AGRONOMIST) -> dict:
-        make_user(db_session, login=login, role=role)
-        return auth_header(client, login, "secret123")
-
-    return _make
-
-
 def agro_headers(client, db_session) -> dict:
     make_user(db_session, login="agro_f", role=UserRole.AGRONOMIST)
     return auth_header(client, "agro_f", "secret123")
