@@ -5,8 +5,8 @@
 минимальный возврат культуры (RULE-AGRO-02) — параметр справочника
 (default 3; рапс 4, картофель 5), «правила как данные» (03 §6.4).
 
-Revision ID: 0008_rotation_rules
-Revises: 0007_cleanup_user_login_idx
+Revision ID: 0009_rotation_rules
+Revises: 0008_maintenance
 """
 
 import sqlalchemy as sa
