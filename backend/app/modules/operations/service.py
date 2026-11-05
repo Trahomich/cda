@@ -60,7 +60,7 @@ def yield_of(db: Session, operation: FieldOperation) -> YieldRecord | None:
     return db.scalars(
         select(YieldRecord)
         .where(YieldRecord.cycle_id == operation.cycle_id, YieldRecord.date == operation.date)
-        .order_by(YieldRecord.created_at if hasattr(YieldRecord, "created_at") else YieldRecord.id)
+        .order_by(YieldRecord.id)
         .limit(1)
     ).first()
 
