@@ -227,7 +227,10 @@ def create_machine_job(
     summary="API-20: смена статуса (draft → confirmed/rejected, прочее — 409)",
 )
 def update_machine_job(
-    job_id: uuid.UUID, body: MachineJobUpdate, user: Annotated[User, Depends(group_checker("machinery"))], db: DbSession
+    job_id: uuid.UUID,
+    body: MachineJobUpdate,
+    user: Annotated[User, Depends(group_checker("machinery"))],
+    db: DbSession,
 ) -> MachineJobItem:
     job = service.update_job(
         db,
