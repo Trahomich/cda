@@ -116,7 +116,8 @@ pre-commit install && pre-commit run --all-files
 - `GET /api/v1/fields` (фильтры `status`, `q`, `with_geometry=true`, пагинация);
   в элементах — агрегат `current_cycle {year, culture_name, kind} | null`;
 - `POST /fields` (201 + Location), `GET /fields/{id}` (карточка «Поле 360°»:
-  версии контура, последние операции; `ndvi`/`weather` — null до MVP-6/MVP-10),
+  версии контура, последние операции; `ndvi`/`weather` — null: агрегаты читаются
+  клиентом из API-06/API-07, заполнение в карточке — v1),
   `PATCH /fields/{id}` (смена контура создаёт версию; смена статуса — по автомату
   `active → archived|merged` с обязательным `reason`, пишется в `dat_audit`);- `GET/POST /fields/{id}/versions` — история версий контура (REQ-F-002);
 - `POST /fields/import` — GeoJSON-файл (FeatureCollection), отчёт ImportReport
