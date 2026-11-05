@@ -40,6 +40,18 @@ const router = createRouter({
           component: () => import('@/views/FieldsMapView.vue'),
           meta: { title: 'Карта полей' },
         },
+        {
+          path: 'operations',
+          name: 'field-operations',
+          component: () => import('@/views/OperationEntryView.vue'),
+          meta: { title: 'Журнал работ' },
+        },
+        {
+          path: 'queue',
+          name: 'field-queue',
+          component: () => import('@/views/OfflineQueueView.vue'),
+          meta: { title: 'Офлайн-очередь' },
+        },
       ],
     },
     { path: '/:pathMatch(.*)*', redirect: { name: 'fields-map' } },
