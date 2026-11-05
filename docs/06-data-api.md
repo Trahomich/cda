@@ -174,6 +174,8 @@ erDiagram
 | API-33 | POST /ai/chat | диалог ИИ-ассистента по данным хозяйства (ответ + refs) | REQ-F-035 |
 | API-34 | POST /ai/explain | объяснение рекомендации по rationale/data_refs | REQ-F-037 |
 | API-35 | POST /ai/summary | сводка журнала/алертов за период | REQ-F-038 |
+| API-46 | POST /auth/login | аутентификация: {login, password} → {token, user {name, role, farm_name}}; ошибки 401 code=bad_credentials | 01 §2 |
+| API-47 | GET /auth/me | текущий пользователь по JWT → {id, name, role} | 01 §2 |
 
 Пост-MVP (описаны в своих документах, здесь — только индекс): API-36..39 —
 агроскаутинг (docs/11-agroscouting.md §5), API-40..45 — экономика
