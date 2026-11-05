@@ -12,7 +12,7 @@ API-06 и RBAC группы satellite. Наружу тесты не ходят; 
 
 import json
 import uuid
-from datetime import date, timedelta
+from datetime import date
 
 import httpx
 import numpy as np
@@ -43,7 +43,6 @@ from sqlalchemy import select
 from sqlalchemy import text as db_text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from shapely.geometry import mapping, shape
 from tests.test_auth import auth_header, make_user
 
 API = "/api/v1"

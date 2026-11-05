@@ -10,7 +10,7 @@ CONTRACTS §8. Сцены с cloud_pct > 60 % в БД не попадают (05 
 """
 
 import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query

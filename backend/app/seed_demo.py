@@ -23,6 +23,7 @@ import math
 from dataclasses import dataclass
 from dataclasses import field as dc_field
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
@@ -87,7 +88,7 @@ DEMO_CULTURES = (
     "Многолетние травы",
 )
 
-DEMO_MACHINES = (
+DEMO_MACHINES: tuple[dict[str, Any], ...] = (
     {
         "machine_type": "tractor",
         "model": "Кировец К-744Р",
@@ -317,8 +318,8 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
 
     # --- парк техники и задания -------------------------------------------
     machines: list[Machine] = []
-    for spec in DEMO_MACHINES:
-        machine = Machine(**spec, status="active")
+    for m_spec in DEMO_MACHINES:
+        machine = Machine(**m_spec, status="active")
         db.add(machine)
         machines.append(machine)
         report.machines += 1
