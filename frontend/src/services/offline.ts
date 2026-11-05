@@ -113,8 +113,6 @@ export async function cacheFieldsForTrip(): Promise<number> {
 }
 
 /** Поля для выбора в форме E-08: кэш (офлайн) или API (онлайн). */
-export async function getCachedFields(): Promise<Array<Field_ & { cached_at: string }>> {
+export async function getCachedFields(): Promise<Array<Field & { cached_at: string }>> {
   return db.fields.toArray()
 }
-
-type Field_ = import('@/api/types').Field
