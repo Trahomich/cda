@@ -129,9 +129,7 @@ class TestCreate:
         assert resp.json()["code"] == "not_found"
 
     def test_unknown_type_and_source_400(self, client, db_session, agro_headers, demo):
-        resp = client.post(
-            API, json=op_body(demo, operation_type="watering"), headers=agro_headers
-        )
+        resp = client.post(API, json=op_body(demo, operation_type="watering"), headers=agro_headers)
         assert resp.status_code == 400
         assert resp.json()["code"] == "unknown_operation_type"
         resp = client.post(API, json=op_body(demo, source="sms"), headers=agro_headers)
@@ -148,18 +146,14 @@ class TestIdempotency:
         assert second.status_code == 200
         assert second.json()["operation_id"] == first.json()["operation_id"]
         # дубля нет: в журнале одна операция
-        journal = client.get(
-            API, params={"field_id": str(demo["field"].id)}, headers=agro_headers
-        )
+        journal = client.get(API, params={"field_id": str(demo["field"].id)}, headers=agro_headers)
         assert journal.json()["total"] == 1
 
     def test_without_client_id_creates_two(self, client, db_session, agro_headers, demo):
         payload = op_body(demo, client_id=None)
         assert client.post(API, json=payload, headers=agro_headers).status_code == 201
         assert client.post(API, json=payload, headers=agro_headers).status_code == 201
-        journal = client.get(
-            API, params={"field_id": str(demo["field"].id)}, headers=agro_headers
-        )
+        journal = client.get(API, params={"field_id": str(demo["field"].id)}, headers=agro_headers)
         assert journal.json()["total"] == 2
 
 
@@ -196,9 +190,7 @@ class TestYield:
         assert resp.status_code == 409
         assert resp.json()["code"] == "duplicate_yield_record"
 
-    def test_yield_requires_harvesting_and_cycle(
-        self, client, db_session, agro_headers, demo
-    ):
+    def test_yield_requires_harvesting_and_cycle(self, client, db_session, agro_headers, demo):
         resp = client.post(
             API,
             json=op_body(demo, yield_record={"yield_c_ha": 40.0}),
@@ -255,9 +247,7 @@ class TestJournal:
         assert body["items"][0]["operation_type"] == "spraying"
 
     def test_filter_field_id(self, client, db_session, agro_headers, demo, filled):
-        resp = client.get(
-            API, params={"field_id": str(demo["field"].id)}, headers=agro_headers
-        )
+        resp = client.get(API, params={"field_id": str(demo["field"].id)}, headers=agro_headers)
         assert resp.json()["total"] == 3
         resp = client.get(API, params={"field_id": str(uuid.uuid4())}, headers=agro_headers)
         assert resp.json()["total"] == 0

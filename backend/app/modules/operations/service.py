@@ -69,10 +69,7 @@ def _deviation_rationale(actual: float, planned: float) -> str:
     """Текст обоснования отклонения (RULE-AGRO-11, 03 §3.4)."""
     percent = (actual - planned) / planned * 100
     sign = "+" if percent >= 0 else ""
-    return (
-        f"Факт {actual:g} против плана {planned:g} "
-        f"({sign}{percent:.0f} % > 10 %, RULE-AGRO-11)"
-    )
+    return f"Факт {actual:g} против плана {planned:g} ({sign}{percent:.0f} % > 10 %, RULE-AGRO-11)"
 
 
 def _find_plan(db: Session, data: OperationCreate) -> TreatmentPlan | None:
@@ -94,9 +91,7 @@ def _find_plan(db: Session, data: OperationCreate) -> TreatmentPlan | None:
     return db.scalars(stmt).first()
 
 
-def create_operation(
-    db: Session, *, data: OperationCreate
-) -> tuple[FieldOperation, bool]:
+def create_operation(db: Session, *, data: OperationCreate) -> tuple[FieldOperation, bool]:
     """API-17: POST /operations — запись факта операции.
 
     Идемпотентность офлайн-очереди: при повторном client_id возвращается
@@ -127,23 +122,31 @@ def create_operation(
     # FK проверяем до вставки (иначе IntegrityError → 500)
     if db.get(Field, data.field_id) is None:
         raise AppError(
-            f"Поле {data.field_id} не найдено", code="not_found",
-            title="Ресурс не найден", status_code=404,
+            f"Поле {data.field_id} не найдено",
+            code="not_found",
+            title="Ресурс не найден",
+            status_code=404,
         )
     if data.cycle_id is not None and db.get(CropCycle, data.cycle_id) is None:
         raise AppError(
-            f"Цикл {data.cycle_id} не найден", code="not_found",
-            title="Ресурс не найден", status_code=404,
+            f"Цикл {data.cycle_id} не найден",
+            code="not_found",
+            title="Ресурс не найден",
+            status_code=404,
         )
     if data.input_id is not None and db.get(AgroInput, data.input_id) is None:
         raise AppError(
-            f"Препарат {data.input_id} не найден", code="not_found",
-            title="Ресурс не найден", status_code=404,
+            f"Препарат {data.input_id} не найден",
+            code="not_found",
+            title="Ресурс не найден",
+            status_code=404,
         )
     if data.machine_job_id is not None and db.get(MachineJob, data.machine_job_id) is None:
         raise AppError(
-            f"Работа техники {data.machine_job_id} не найдена", code="not_found",
-            title="Ресурс не найден", status_code=404,
+            f"Работа техники {data.machine_job_id} не найдена",
+            code="not_found",
+            title="Ресурс не найден",
+            status_code=404,
         )
 
     # Урожайность — только для операции уборки и только в цикле (03 §1.7)

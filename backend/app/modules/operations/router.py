@@ -81,18 +81,14 @@ def create_operation(
     operation, created = service.create_operation(db, data=body)
     if created:
         response.status_code = 201
-        response.headers["Location"] = (
-            f"{get_settings().api_v1_prefix}/operations/{operation.id}"
-        )
+        response.headers["Location"] = f"{get_settings().api_v1_prefix}/operations/{operation.id}"
     else:
         # Идемпотентный повтор (тот же client_id): 200, без дубля
         response.status_code = 200
     return _item(db, operation)
 
 
-@router.get(
-    "/{operation_id}", response_model=OperationItem, summary="API-18: операция по id"
-)
+@router.get("/{operation_id}", response_model=OperationItem, summary="API-18: операция по id")
 def get_operation(operation_id: uuid.UUID, db: DbSession) -> OperationItem:
     return _item(db, service.get_operation(db, operation_id))
 
