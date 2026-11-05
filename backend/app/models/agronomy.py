@@ -345,8 +345,16 @@ class FieldOperation(Base):
     actual_dose: Mapped[float | None] = mapped_column(Numeric(8, 2), nullable=True)
     actual_area_ga: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     performer: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    # Идемпотентность офлайн-очереди PWA (API-17): uuid от клиента.
+    client_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    # Ссылка на работу техники (docs/04; обратная связь field_operation_id).
+    machine_job_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("dat_machine_job.id", name="fk_dat_field_operation_job"), nullable=True
+    )
     source: Mapped[str] = mapped_column(String(20), nullable=False)
     deviation_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
+    # Обоснование отклонения (RULE-AGRO-11): факт vs план.
+    deviation_rationale: Mapped[str | None] = mapped_column(String(500), nullable=True)
     status: Mapped[str] = mapped_column(String(15), nullable=False, server_default="draft")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
