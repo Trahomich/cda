@@ -372,9 +372,7 @@ class TestRbac:
     def test_operator_reads_fleet_but_cannot_write(self, client, db_session):
         headers = oper_headers(client, db_session)
         assert client.get(API, headers=headers).status_code == 200
-        resp = client.post(
-            API, json={"machine_type": "truck", "model": "X"}, headers=headers
-        )
+        resp = client.post(API, json={"machine_type": "truck", "model": "X"}, headers=headers)
         assert resp.status_code == 403
         assert resp.json()["code"] == "insufficient_role"
 

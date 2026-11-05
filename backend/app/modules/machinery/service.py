@@ -77,8 +77,7 @@ def get_machine(db: Session, machine_id: uuid.UUID) -> Machine:
 def _check_machine_type(machine_type: str) -> None:
     if machine_type not in MACHINE_TYPES:
         raise AppError(
-            f"Неизвестный тип техники «{machine_type}» "
-            f"(допустимо: {', '.join(MACHINE_TYPES)})",
+            f"Неизвестный тип техники «{machine_type}» (допустимо: {', '.join(MACHINE_TYPES)})",
             code="unknown_machine_type",
         )
 
@@ -106,12 +105,14 @@ def list_machines(
     stmt = select(Machine).order_by(Machine.created_at, Machine.id)
     count_stmt = select(func.count()).select_from(Machine)
     if machine_type:
-        stmt, count_stmt = stmt.where(Machine.machine_type == machine_type), count_stmt.where(
-            Machine.machine_type == machine_type
+        stmt, count_stmt = (
+            stmt.where(Machine.machine_type == machine_type),
+            count_stmt.where(Machine.machine_type == machine_type),
         )
     if status:
-        stmt, count_stmt = stmt.where(Machine.status == status), count_stmt.where(
-            Machine.status == status
+        stmt, count_stmt = (
+            stmt.where(Machine.status == status),
+            count_stmt.where(Machine.status == status),
         )
     return list(db.scalars(stmt.limit(limit).offset(offset))), db.scalar(count_stmt) or 0
 
@@ -150,9 +151,7 @@ def create_machine(db: Session, *, user: User, data: MachineCreate) -> Machine:
     return machine
 
 
-def update_machine(
-    db: Session, machine: Machine, *, user: User, data: MachineUpdate
-) -> Machine:
+def update_machine(db: Session, machine: Machine, *, user: User, data: MachineUpdate) -> Machine:
     """PATCH /machines/{id}: смена статуса — по автомату (retired терминален)."""
     changes = data.model_dump(exclude_unset=True)
     if "machine_type" in changes and changes["machine_type"] is not None:
@@ -214,9 +213,10 @@ def create_job(db: Session, *, user: User, data: MachineJobCreate) -> MachineJob
             code="unknown_job_source",
         )
     # FK на операцию проверяем до вставки (иначе IntegrityError → 500)
-    if data.field_operation_id is not None and db.get(
-        FieldOperation, data.field_operation_id
-    ) is None:
+    if (
+        data.field_operation_id is not None
+        and db.get(FieldOperation, data.field_operation_id) is None
+    ):
         raise AppError(
             f"Операция {data.field_operation_id} не найдена",
             code="not_found",
@@ -267,8 +267,7 @@ def list_jobs(
     if status:
         if status not in JOB_STATUSES:
             raise AppError(
-                f"Неизвестный статус задания «{status}» "
-                f"(допустимо: {', '.join(JOB_STATUSES)})",
+                f"Неизвестный статус задания «{status}» (допустимо: {', '.join(JOB_STATUSES)})",
                 code="unknown_job_status",
             )
         stmt = stmt.where(MachineJob.status == status)
@@ -289,8 +288,7 @@ def list_all_jobs(
     if status:
         if status not in JOB_STATUSES:
             raise AppError(
-                f"Неизвестный статус задания «{status}» "
-                f"(допустимо: {', '.join(JOB_STATUSES)})",
+                f"Неизвестный статус задания «{status}» (допустимо: {', '.join(JOB_STATUSES)})",
                 code="unknown_job_status",
             )
         stmt = stmt.where(MachineJob.status == status)

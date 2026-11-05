@@ -137,9 +137,7 @@ def create_machine(
     return _machine_item(machine)
 
 
-@machines_router.get(
-    "/{machine_id}", response_model=MachineItem, summary="API-19: карточка машины"
-)
+@machines_router.get("/{machine_id}", response_model=MachineItem, summary="API-19: карточка машины")
 def get_machine(machine_id: uuid.UUID, db: DbSession) -> MachineItem:
     return _machine_item(service.get_machine(db, machine_id))
 
@@ -258,9 +256,7 @@ def confirm_machine_job(
     return _job_item(db, job)
 
 
-@maintenance_router.get(
-    "", response_model=MaintenanceListResponse, summary="API-21: ТО и ремонты"
-)
+@maintenance_router.get("", response_model=MaintenanceListResponse, summary="API-21: ТО и ремонты")
 def list_maintenance_items(
     db: DbSession,
     _: MachineryRead,  # noqa: ARG001
