@@ -245,8 +245,10 @@ async def import_fields(
             continue
         try:
             service.create_field(
-                db, user=user, name=name, contour=geometry, reason=f"импорт GeoJSON: {file.filename}"
+                db, user=user, name=name, contour=geometry,
+                reason=f"импорт GeoJSON: {file.filename}",
             )
+            created += 1
         except AppError as exc:
             if exc.code == "duplicate_name":
                 skipped += 1
