@@ -66,6 +66,8 @@
 | `API-NN` | эндпоинты | `06-data-api.md` |
 | `ADR-NN` | архитектурные решения | `02-architecture.md` |
 | `RISK-NN` | риски | `08-roadmap.md` |
+| `RULE-AGRO-NN` | бизнес-правила агрономии | `03-domain-agronomy.md` |
+| `RULE-TECH-NN`, `RULE-LIVE-NN` | бизнес-правила техники / животноводства | `04-domain-farm.md` |
 
 Правила:
 - Каждый ID определяется ровно в одном документе; ссылки вида `[REQ-F-012]`
