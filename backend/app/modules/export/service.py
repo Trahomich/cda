@@ -47,10 +47,10 @@ CSV_DELIMITER = ";"
 CHUNK_SIZE = 500  # строк за выборку при потоковой отдаче
 
 
-def entity_select(model: type) -> tuple[list[str], Select]:
+def entity_select(model: Any) -> tuple[list[str], Select]:
     """Select всех колонок таблицы (в порядке схемы); геометрия → GeoJSON-строка."""
     keys: list[str] = []
-    columns = []
+    columns: list[Any] = []
     for col in inspect(model).columns:
         keys.append(col.key)
         if isinstance(col.type, (Geography, Geometry)):
