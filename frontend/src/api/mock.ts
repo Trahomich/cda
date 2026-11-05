@@ -144,10 +144,7 @@ export class MockTransport implements Transport {
       if (status && status !== 'all') items = items.filter((f) => f.status === status)
 
       const page: Page<Field> = {
-        items: items.slice(offset, offset + limit).map(({ current_cycle, ...f }) => {
-          void current_cycle
-          return { ...f, current_cycle } as Field
-        }),
+        items: items.slice(offset, offset + limit),
         total: items.length,
         limit,
         offset,
