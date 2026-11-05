@@ -127,6 +127,11 @@ router.beforeEach((to) => {
   if (!to.meta.public && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
+  // Ограничение по ролям (meta.roles, матрица прав 07-ux §5).
+  const roles = to.meta.roles as string[] | undefined
+  if (roles && auth.user && !roles.includes(auth.user.role)) {
+    return { name: 'fields-map' }
+  }
 })
 
 router.afterEach((to) => {
