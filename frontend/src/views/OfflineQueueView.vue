@@ -63,7 +63,9 @@ async function saveEdit() {
 <template>
   <section class="queue">
     <div class="queue__head">
-      <h1 class="queue__title">Офлайн-очередь</h1>
+      <h1 class="queue__title">
+        Офлайн-очередь
+      </h1>
       <button
         type="button"
         class="queue__sync"
@@ -76,12 +78,22 @@ async function saveEdit() {
     <p class="queue__state">
       {{ offline.online ? 'Сеть есть' : 'Офлайн — записи ждут появления сети' }} ·
       в очереди: {{ offline.queue.length }}
-      <template v-if="rejectedCount > 0"> · отклонено сервером: {{ rejectedCount }}</template>
+      <template v-if="rejectedCount > 0">
+        · отклонено сервером: {{ rejectedCount }}
+      </template>
     </p>
 
-    <p v-if="offline.queue.length === 0" class="queue__empty">Очередь пуста — всё синхронизировано.</p>
+    <p
+      v-if="offline.queue.length === 0"
+      class="queue__empty"
+    >
+      Очередь пуста — всё синхронизировано.
+    </p>
 
-    <ul v-else class="queue__list">
+    <ul
+      v-else
+      class="queue__list"
+    >
       <li
         v-for="record in offline.queue"
         :key="record.client_id"
@@ -95,20 +107,39 @@ async function saveEdit() {
           · {{ record.payload.actual_area_ga }} га
           <span class="queue__badge">{{ STATUS_LABELS[record.status] }}</span>
         </div>
-        <p v-if="record.status === 'error'" class="queue__error" role="alert">
+        <p
+          v-if="record.status === 'error'"
+          class="queue__error"
+          role="alert"
+        >
           {{ record.error_detail }} (попыток: {{ record.retry_count }}) — исправьте или удалите запись.
         </p>
-        <p class="queue__meta">Создано: {{ fmtDate(record.created_at) }} · client_id: {{ record.client_id.slice(0, 8) }}…</p>
+        <p class="queue__meta">
+          Создано: {{ fmtDate(record.created_at) }} · client_id: {{ record.client_id.slice(0, 8) }}…
+        </p>
         <div class="queue__actions">
-          <button v-if="record.status === 'error'" type="button" class="queue__btn" @click="startEdit(record)">
+          <button
+            v-if="record.status === 'error'"
+            type="button"
+            class="queue__btn"
+            @click="startEdit(record)"
+          >
             Править
           </button>
-          <button type="button" class="queue__btn queue__btn--danger" @click="remove(record)">
+          <button
+            type="button"
+            class="queue__btn queue__btn--danger"
+            @click="remove(record)"
+          >
             Удалить
           </button>
         </div>
 
-        <form v-if="editing?.client_id === record.client_id" class="queue__edit" @submit.prevent="saveEdit">
+        <form
+          v-if="editing?.client_id === record.client_id"
+          class="queue__edit"
+          @submit.prevent="saveEdit"
+        >
           <label :for="`area-${record.client_id}`">Факт. площадь, га</label>
           <input
             :id="`area-${record.client_id}`"
@@ -117,8 +148,10 @@ async function saveEdit() {
             step="0.01"
             min="0.01"
             required
-          />
-          <button type="submit">Сохранить и в очередь</button>
+          >
+          <button type="submit">
+            Сохранить и в очередь
+          </button>
         </form>
       </li>
     </ul>

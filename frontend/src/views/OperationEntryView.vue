@@ -120,7 +120,9 @@ function goQueue() {
 <template>
   <section class="op-entry">
     <div class="op-entry__head">
-      <h1 class="op-entry__title">Журнал работ — ввод операции</h1>
+      <h1 class="op-entry__title">
+        Журнал работ — ввод операции
+      </h1>
       <button
         type="button"
         class="op-entry__queue-btn"
@@ -128,34 +130,84 @@ function goQueue() {
         @click="goQueue"
       >
         {{ offline.online ? 'ОНЛАЙН' : 'ОФЛАЙН' }}
-        <template v-if="offline.pendingCount > 0"> ⛁ {{ offline.pendingCount }}</template>
+        <template v-if="offline.pendingCount > 0">
+          ⛁ {{ offline.pendingCount }}
+        </template>
       </button>
     </div>
 
-    <form class="op-entry__form" @submit.prevent="submit">
-      <label class="op-entry__label" for="field">Поле</label>
-      <select id="field" v-model="form.field_id" class="op-entry__control" required>
-        <option value="" disabled>Выберите поле</option>
-        <option v-for="f in fields" :key="f.field_id" :value="f.field_id">
+    <form
+      class="op-entry__form"
+      @submit.prevent="submit"
+    >
+      <label
+        class="op-entry__label"
+        for="field"
+      >Поле</label>
+      <select
+        id="field"
+        v-model="form.field_id"
+        class="op-entry__control"
+        required
+      >
+        <option
+          value=""
+          disabled
+        >
+          Выберите поле
+        </option>
+        <option
+          v-for="f in fields"
+          :key="f.field_id"
+          :value="f.field_id"
+        >
           {{ f.name }} · {{ f.area_ga }} га
         </option>
       </select>
-      <p v-if="selectedField?.current_cycle" class="op-entry__hint">
+      <p
+        v-if="selectedField?.current_cycle"
+        class="op-entry__hint"
+      >
         Культура сезона: {{ selectedField.current_cycle.culture_name }} ({{ selectedField.current_cycle.year }})
       </p>
-      <p class="op-entry__hint">{{ cacheInfo }}</p>
+      <p class="op-entry__hint">
+        {{ cacheInfo }}
+      </p>
 
-      <label class="op-entry__label" for="type">Тип операции</label>
-      <select id="type" v-model="form.operation_type" class="op-entry__control">
-        <option v-for="t in OPERATION_TYPES" :key="t.value" :value="t.value">
+      <label
+        class="op-entry__label"
+        for="type"
+      >Тип операции</label>
+      <select
+        id="type"
+        v-model="form.operation_type"
+        class="op-entry__control"
+      >
+        <option
+          v-for="t in OPERATION_TYPES"
+          :key="t.value"
+          :value="t.value"
+        >
           {{ t.label }}
         </option>
       </select>
 
-      <label class="op-entry__label" for="date">Дата</label>
-      <input id="date" v-model="form.date" class="op-entry__control" type="date" required />
+      <label
+        class="op-entry__label"
+        for="date"
+      >Дата</label>
+      <input
+        id="date"
+        v-model="form.date"
+        class="op-entry__control"
+        type="date"
+        required
+      >
 
-      <label class="op-entry__label" for="area">Факт. площадь, га</label>
+      <label
+        class="op-entry__label"
+        for="area"
+      >Факт. площадь, га</label>
       <input
         id="area"
         v-model="form.actual_area_ga"
@@ -166,9 +218,12 @@ function goQueue() {
         :max="selectedField ? selectedField.area_ga * 1.05 : undefined"
         placeholder="182"
         required
-      />
+      >
 
-      <label class="op-entry__label" for="dose">Доза факт. (л/га или кг/га)</label>
+      <label
+        class="op-entry__label"
+        for="dose"
+      >Доза факт. (л/га или кг/га)</label>
       <input
         id="dose"
         v-model="form.actual_dose"
@@ -177,24 +232,46 @@ function goQueue() {
         step="0.01"
         min="0"
         placeholder="0.6"
-      />
+      >
 
-      <button type="submit" class="op-entry__submit" :disabled="submitting">
+      <button
+        type="submit"
+        class="op-entry__submit"
+        :disabled="submitting"
+      >
         {{ offline.online ? '✓ ЗАПИСАТЬ' : '✓ ЗАПИСАТЬ — уйдёт при появлении сети' }}
       </button>
     </form>
 
     <div class="op-entry__journal">
-      <h2 class="op-entry__subtitle">Последние операции (журнал)</h2>
-      <p v-if="!offline.online" class="op-entry__hint">Журнал доступен при наличии сети.</p>
-      <ul v-else-if="journal.length" class="op-entry__journal-list">
-        <li v-for="op in journal" :key="op.operation_id">
+      <h2 class="op-entry__subtitle">
+        Последние операции (журнал)
+      </h2>
+      <p
+        v-if="!offline.online"
+        class="op-entry__hint"
+      >
+        Журнал доступен при наличии сети.
+      </p>
+      <ul
+        v-else-if="journal.length"
+        class="op-entry__journal-list"
+      >
+        <li
+          v-for="op in journal"
+          :key="op.operation_id"
+        >
           {{ op.date }} · {{ fields.find((f) => f.field_id === op.field_id)?.name ?? op.field_id }} ·
           {{ OPERATION_TYPES.find((t) => t.value === op.operation_type)?.label ?? op.operation_type }} ·
           {{ op.actual_area_ga }} га
         </li>
       </ul>
-      <p v-else class="op-entry__hint">Записей пока нет.</p>
+      <p
+        v-else
+        class="op-entry__hint"
+      >
+        Записей пока нет.
+      </p>
     </div>
   </section>
 </template>
