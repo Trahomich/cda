@@ -139,7 +139,7 @@ erDiagram
 
 | API | Метод и путь | Назначение | REQ/SC |
 |---|---|---|---|
-| API-01 | GET /fields | список полей (фильтры status, q по имени) | REQ-F-003 |
+| API-01 | GET /fields | список полей (фильтры status, q по имени); элементы содержат агрегат current_cycle {year, culture_name, kind} \| null; параметр with_geometry=true добавляет contour (по умолчанию опущен — экономия трафика; карта запрашивает с ним) | REQ-F-003 |
 | API-02 | POST /fields | создать поле с контуром | REQ-F-001 |
 | API-03 | PATCH /fields/{id} | правка (смена контура создаёт версию) | REQ-F-002 |
 | API-04 | POST /fields/import | импорт GeoJSON/KML, отчёт ImportReport | REQ-F-001 |
