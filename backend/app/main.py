@@ -14,8 +14,6 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
-        # Домашние / внешние клиенты получают ошибки строго в RFC 7807.
-        exception_handlers=None,
     )
     register_exception_handlers(app)
     app.include_router(api_router)
