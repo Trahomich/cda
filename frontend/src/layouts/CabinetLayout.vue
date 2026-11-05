@@ -36,22 +36,12 @@ function logout() {
       <span class="cabinet__role">[роль: {{ auth.roleTitle }}]</span>
       <span class="cabinet__spacer" />
       <RouterLink
+        v-for="item in visibleNav()"
+        :key="item.label"
         class="cabinet__nav"
-        :to="{ name: 'fields-map' }"
+        :to="item.to"
       >
-        Поля
-      </RouterLink>
-      <RouterLink
-        class="cabinet__nav"
-        :to="{ name: 'rotation-plan' }"
-      >
-        Севооборот
-      </RouterLink>
-      <RouterLink
-        class="cabinet__nav"
-        :to="{ name: 'treatment-plans' }"
-      >
-        Планы СЗР
+        {{ item.label }}
       </RouterLink>
       <RouterLink
         class="cabinet__nav"
