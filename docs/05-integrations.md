@@ -29,7 +29,7 @@ docs/research/02-data-sources.md (источники И1–И20, рекомен�
 ```python
 source_id = "weather.open-meteo"          # MVP; "weather.openweather" — резерв
 
-capabilities() -> {"history": true, "current": true, "forecast_days": 16,
+capabilities() -> {"history": True, "current": True, "forecast_days": 16,
                    "metrics": ["temperature_c", "precipitation_mm", "wind_ms",
                                "humidity_pct", "pressure_hpa"]}
 
