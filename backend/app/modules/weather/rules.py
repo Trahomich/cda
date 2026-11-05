@@ -16,6 +16,7 @@
 """
 
 from dataclasses import dataclass
+from datetime import date
 
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert as pg_insert
