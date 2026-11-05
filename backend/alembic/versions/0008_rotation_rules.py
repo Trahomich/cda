@@ -9,6 +9,7 @@ Revision ID: 0008_rotation_rules
 Revises: 0007_cleanup_user_login_idx
 """
 
+import sqlalchemy as sa
 from alembic import op
 
 revision = "0008_rotation_rules"
@@ -25,24 +26,22 @@ def upgrade() -> None:
         "ref_culture",
         "kind IN ('main', 'forage', 'catch', 'fallow')",
     )
-    # 2) минимальный возврат культуры, лет (RULE-AGRO-02)
+    # 2) минимальный возврат культуры, лет (RULE-AGRO-02); default 3
     op.add_column(
         "ref_culture",
-        sa_column_comment := None,  # placeholder, заменяется ниже
-    ) if False else None
-    op.execute("ALTER TABLE ref_culture ADD COLUMN repeat_years int NOT NULL DEFAULT 3")
+        sa.Column("repeat_years", sa.Integer(), nullable=False, server_default="3"),
+    )
     # 3) данные: возвраты дольше среднего (03 §3.1 RULE-AGRO-02)
     op.execute("UPDATE ref_culture SET repeat_years = 4 WHERE name = 'Рапс'")
     op.execute("UPDATE ref_culture SET repeat_years = 5 WHERE name = 'Картофель'")
 
 
 def downgrade() -> None:
-    op.execute("ALTER TABLE ref_culture DROP COLUMN IF EXISTS repeat_years")
+    op.drop_column("ref_culture", "repeat_years")
     op.drop_constraint("ck_ref_culture_kind", "ref_culture", type_="check")
+    op.execute("DELETE FROM ref_culture WHERE kind = 'fallow'")
     op.create_check_constraint(
         "ck_ref_culture_kind",
         "ref_culture",
         "kind IN ('main', 'forage', 'catch')",
     )
-    # записи kind='fallow' удаляем, чтобы CHECK восстановился
-    op.execute("DELETE FROM ref_culture WHERE kind = 'fallow'")
