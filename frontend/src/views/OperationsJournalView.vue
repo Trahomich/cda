@@ -36,6 +36,12 @@ const OP_LABELS: Record<OperationType, string> = {
   other: 'прочее',
 }
 
+const SOURCE_LABELS: Record<FieldOperation['source'], string> = {
+  manual: 'вручную',
+  telemetry_import: 'телематика',
+  plan_execution: 'по плану',
+}
+
 const OP_OPTIONS: Array<{ value: OperationType | 'all'; label: string }> = [
   { value: 'all', label: 'Все типы' },
   ...Object.entries(OP_LABELS).map(([value, label]) => ({ value: value as OperationType, label })),
