@@ -14,8 +14,20 @@ test('офлайн-ввод 3 операций и синхронизация (10
   await expect(page).toHaveURL(/fields\/map|\/f\//)
 
   // Полевой режим → ввод операции. Кэш полей заполняется при онлайне.
+  // Ждём именно появления опций (>1): not.toHaveCount(1) проходит и при 0,
+  // когда экран ещё догружается ленивыми импортами.
   await page.goto('/f/operations')
-  await expect(page.locator('#field option')).not.toHaveCount(1, { timeout: 15_000 })
+  await expect
+    .poll(async () => page.locator('#field option').count(), { timeout: 15_000 })
+    .toBeGreaterThan(1)
+
+  // Предзагружаем экран очереди (E-17): его ленивый чанк должен быть в кэше
+  // модулей ДО офлайна, иначе SPA-переход офлайн упадёт на fetch чанка
+  // (в production то же обеспечивает SW precache).
+  await page.getByRole('button', { name: 'Ещё…', exact: true }).click()
+  await expect(page.locator('.queue__empty')).toBeVisible({ timeout: 15_000 })
+  await page.getByRole('button', { name: 'Работы', exact: true }).click()
+  await expect(page.locator('#field')).toBeVisible({ timeout: 15_000 })
 
   // Самолётный режим (CDP Network.emulateNetworkConditions через context API).
   await page.context().setOffline(true)
