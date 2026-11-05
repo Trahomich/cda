@@ -64,6 +64,7 @@ def _item(db: Session, operation: FieldOperation) -> OperationItem:
         deviation_flag=operation.deviation_flag,
         deviation_rationale=operation.deviation_rationale,
         status=operation.status,
+        yield_record=yield_item,
     )
 
 
