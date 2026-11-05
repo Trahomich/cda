@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
 // Офлайн-сценарий docs/10-mobile-pwa.md §3.4 (приёмка MVP §6.2):
 // самолётный режим → ввод 3 операций → выход из режима → синхронизация →
