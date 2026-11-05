@@ -39,6 +39,28 @@ const lastSatelliteDate = computed(() => {
   return clear.length ? clear[clear.length - 1].date : ''
 })
 
+/** Контур в координатах SVG viewBox 200×120 (нормализация lon/lat в рамку). */
+const contourPoints = computed(() => {
+  const ring = card.value?.field.contour.coordinates[0]
+  if (!ring || ring.length < 3) return ''
+  const lons = ring.map((p) => p[0])
+  const lats = ring.map((p) => p[1])
+  const minLon = Math.min(...lons)
+  const maxLon = Math.max(...lons)
+  const minLat = Math.min(...lats)
+  const maxLat = Math.max(...lats)
+  const sx = 180 / (maxLon - minLon || 1)
+  const sy = 100 / (maxLat - minLat || 1)
+  const s = Math.min(sx, sy)
+  return ring
+    .map(([lon, lat]) => {
+      const x = 10 + (lon - minLon) * s
+      const y = 110 - (lat - minLat) * s
+      return `${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
+})
+
 async function load() {
   loading.value = true
   failed.value = false
