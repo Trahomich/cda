@@ -76,12 +76,14 @@ class SatelliteIngest:
         *,
         indices: tuple[str, ...] = ("ndvi",),
         lookback_days: int = 14,
+        max_cloud_pct: int = 20,
         retry_attempts: int = 5,
         retry_base_seconds: float = 3600.0,
     ) -> None:
         self._adapter = adapter
         self._indices = indices
         self._lookback_days = lookback_days
+        self._max_cloud_pct = max_cloud_pct
         self._retry_attempts = max(1, retry_attempts)
         self._retry_base_seconds = retry_base_seconds
 
