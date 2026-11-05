@@ -22,7 +22,19 @@ function logout() {
         class="cabinet__nav"
         :to="{ name: 'fields-map' }"
       >
-        Карта полей
+        Поля
+      </RouterLink>
+      <RouterLink
+        class="cabinet__nav"
+        :to="{ name: 'rotation-plan' }"
+      >
+        Севооборот
+      </RouterLink>
+      <RouterLink
+        class="cabinet__nav"
+        :to="{ name: 'treatment-plans' }"
+      >
+        Планы СЗР
       </RouterLink>
       <RouterLink
         class="cabinet__nav"
