@@ -108,6 +108,11 @@
 | ENT-HERD / ENT-ANIMAL-GROUP | стадо / группа животных | 04 |
 | ENT-ANIMAL | животное (идентификация, продуктивность) | 04 |
 | ENT-RATION | рацион кормления | 04 |
+| ENT-MAINTENANCE | ТО и ремонты техники | 04 |
+| ENT-GROUP-MOVE | перемещение животных между группами | 04 |
+| ENT-PRODUCTION-RECORD | запись продуктивности животного | 04 |
+| ENT-VET-EVENT | ветеринарное событие | 04 |
+| ENT-MANURE-YIELD | выход навоза за период | 04 |
 | ENT-WEATHER-OBSERVATION | факт погоды | 05 |
 | ENT-FORECAST | прогноз погоды | 05 |
 | ENT-SATELLITE-SCENE | спутниковый снимок/индекс | 05 |
