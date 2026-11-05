@@ -60,6 +60,24 @@ class IngestReport:
         return "error"
 
 
+def centroid_lookup_factory(db: Session):
+    """Центроиды полей по запросу: field_id -> (lon, lat) или None (нет активного поля)."""
+
+    def lookup(field_id: str) -> tuple[float, float] | None:
+        row = db.execute(
+            text(
+                "SELECT ST_X(c), ST_Y(c) FROM dat_field, "
+                "ST_Centroid(contour) AS c WHERE id = CAST(:fid AS uuid) AND status = 'active'"
+            ),
+            {"fid": field_id},
+        ).fetchone()
+        if row is None:
+            return None
+        return float(row[0]), float(row[1])
+
+    return lookup
+
+
 class WeatherIngest:
     """Прогон приёма погодных данных по всем активным полям."""
 
@@ -85,24 +103,6 @@ class WeatherIngest:
             select(Field.id, Field.name).where(Field.status == "active").order_by(Field.name)
         ).fetchall()
         return [(str(row[0]), row[1]) for row in rows]
-
-    @staticmethod
-    def centroid_lookup_factory(db: Session):
-        """Центроиды всех активных полей одним запросом: field_id -> (lon, lat)."""
-
-        def lookup(field_id: str) -> tuple[float, float] | None:
-            row = db.execute(
-                text(
-                    "SELECT ST_X(c), ST_Y(c) FROM dat_field, "
-                    "ST_Centroid(contour) AS c WHERE id = CAST(:fid AS uuid) AND status = 'active'"
-                ),
-                {"fid": field_id},
-            ).fetchone()
-            if row is None:
-                return None
-            return float(row[0]), float(row[1])
-
-        return lookup
 
     def _fetch_with_retries(self, fetch):
         """Вызвать fetch с экспоненциальными ретраями (только SourceUnavailableError).
