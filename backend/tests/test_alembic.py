@@ -51,7 +51,7 @@ def test_alembic_upgrade_head(pg_admin):
     _create_database(pg_admin, _MIGRATIONS_DB)
     try:
         engine_url = url.set(database=_MIGRATIONS_DB)
-        engine = __import__("sqlalchemy").create_engine(engine_url)
+        engine = create_engine(engine_url)
         with engine.connect() as conn:
             conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
             conn.commit()
