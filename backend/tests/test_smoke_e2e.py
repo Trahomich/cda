@@ -34,10 +34,15 @@ SMOKE_ADMIN_PASSWORD = os.getenv("SMOKE_ADMIN_PASSWORD", "smoke-password-1")
 
 @pytest.fixture(scope="module")
 def api_client() -> httpx.Client:
+    """Клиент API; при недоступном окружении — явный skip с причиной."""
+    client = httpx.Client(base_url=SMOKE_BASE_URL, timeout=10.0)
     try:
-        return httpx.Client(base_url=SMOKE_BASE_URL, timeout=10.0)
-    except Exception as exc:  # pragma: no cover
-        pytest.skip(f"API недоступен на {SMOKE_BASE_URL}: {exc}")
+        probe = client.get("/healthz")
+        probe.raise_for_status()
+    except httpx.HTTPError as exc:
+        client.close()
+        pytest.skip(f"API недоступен на {SMOKE_BASE_URL} (сначала `make up`): {exc}")
+    return client
 
 
 @pytest.fixture(scope="module")
