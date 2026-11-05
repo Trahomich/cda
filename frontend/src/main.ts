@@ -5,6 +5,7 @@ import router from './router'
 import { apiClient } from './api/client'
 import { useAuthStore } from './stores/auth'
 import { useToastStore } from './stores/toast'
+import { useOfflineStore } from './stores/offline'
 import { registerSW } from 'virtual:pwa-register'
 import './assets/main.css'
 import 'leaflet/dist/leaflet.css'
@@ -22,6 +23,10 @@ apiClient.setErrorHandler((error) => {
 // Восстановление сессии до первого перехода роутера.
 const auth = useAuthStore()
 auth.restoreSession()
+
+// Офлайн-режим: слушатели сети + автосинхронизация очереди при 'online'.
+const offline = useOfflineStore()
+offline.init()
 
 app.use(router)
 app.mount('#app')
