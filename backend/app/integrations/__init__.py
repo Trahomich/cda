@@ -65,11 +65,37 @@ class ForecastItem:
     source_id: str = ""
 
 
+@dataclass(frozen=True, slots=True)
+class Scene:
+    """Нормализованный снимок: индекс × поле × дата (ENT-SATELLITE-SCENE, 05 §3).
+
+    Статистика индекса — по полезной площади поля (пиксели внутри контура).
+    cloud_method — как посчитана облачность (упрощение 05 §2: по метаданным
+    сцены, а не по маске облачных пикселей; пометка обязательна).
+    """
+
+    field_id: str  # UUID строкой — чтобы не тянуть зависимость от БД
+    index: str  # ndvi | ndre | ndmi | savi
+    captured_at: date
+    resolution_m: int
+    index_avg: float
+    index_min: float
+    index_max: float
+    cloud_pct: float
+    source_id: str
+    trust: float = 1.0  # 1 − cloud_pct/100 при одиночной сцене (05 §5)
+    composite_days: int = 1
+    anomaly_zones_ref: str | None = None
+    scene_ref: str = ""  # идентификатор продукта в каталоге (диагностика)
+    cloud_method: str = "scene_metadata"
+
+
 __all__ = [
     "DataGapError",
     "DataQualityError",
     "ForecastItem",
     "Observation",
+    "Scene",
     "SourceCapabilities",
     "SourceUnavailableError",
 ]
