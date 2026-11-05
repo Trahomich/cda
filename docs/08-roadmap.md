@@ -26,7 +26,8 @@ M-требований (животноводство) осознанно отн�
   mod-satellite, mod-machinery (парк и задания), ingest-gateway (IF-WEATHER, IF-SATELLITE,
   импорт файлов полей/агрохимии IF-SOIL в объёме загрузки), API-модуль, PWA-клиент.
 - DAT/API (06): API-01..18, 27..29, 32 (+30 частично, импорт агрохимии — v1 с REQ-F-031);
-  DAT ядра §2, ref_culture, ref_predecessor_matrix, ref_agrochem, ref_source, ref_weather_rule.
+  DAT ядра §2, включая dat_source_journal — журнал состояний адаптеров (05 §6, REQ-F-034,
+  экран E-14); ref_culture, ref_predecessor_matrix, ref_agrochem, ref_source, ref_weather_rule.
 - Экраны (07): E-01..E-11, E-13, E-14, E-15 (агрономические справочники), E-16, E-17, E-18.
 - PWA: офлайн-очередь E-17, полевой журнал E-08 (ADR-03; docs/10-mobile-pwa.md).
 - Критерий готовности (проверяемый): сквозные сценарии SC-01, SC-03, SC-04 пройдены на пилотном
