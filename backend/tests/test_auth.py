@@ -44,8 +44,11 @@ class TestLogin:
         )
         assert resp.status_code == 200
         body = resp.json()
-        assert body["token_type"] == "bearer"
-        assert body["access_token"].count(".") == 2  # compact JWS: header.payload.signature
+        # API-46: {token, user {name, role, farm_name}}
+        assert body["token"].count(".") == 2  # compact JWS: header.payload.signature
+        assert body["user"]["name"] == "Тест agro1"
+        assert body["user"]["role"] == "agronomist"
+        assert body["user"]["farm_name"]  # наименование хозяйства из настроек
         # аудит успешного входа
         rec = db_session.scalar(
             select(AuditRecord).where(AuditRecord.action == "login")
