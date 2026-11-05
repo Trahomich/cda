@@ -183,9 +183,10 @@ export class MockTransport implements Transport {
           )
         }
       }
-      // Идемпотентность офлайн-очереди: тот же client_id → та же операция (201).
+      // Идемпотентность офлайн-очереди: тот же client_id → 200 уже созданной
+      // операции, дубль не создаётся (06 §5, API-17).
       const existing = OPERATIONS.find((o) => o.client_id === op.client_id)
-      if (existing) return ok(existing, 201)
+      if (existing) return ok(existing, 200)
 
       const field = FIELDS.find((f) => f.field_id === op.field_id)
       if (!field) {
