@@ -9,6 +9,33 @@ from app.core.db import Base
 # Импортировать модели здесь по мере появления модулей, чтобы autogenerate
 # видел метаданные:
 from app.models.auth import AuditRecord, User  # noqa: F401
+from app.models.agronomy import (  # noqa: F401
+    AgroInput,
+    Alert,
+    CropCycle,
+    Field,
+    FieldOperation,
+    FieldVersion,
+    Recommendation,
+    RotationPlan,
+    TreatmentPlan,
+    YieldRecord,
+)
+from app.models.integrations import (  # noqa: F401
+    Forecast,
+    SatelliteScene,
+    SourceJournalEntry,
+    WeatherObservation,
+)
+from app.models.machinery import Machine, MachineJob  # noqa: F401
+from app.models.references import (  # noqa: F401
+    Agrochem,
+    Culture,
+    PredecessorRule,
+    Price,
+    Source,
+    WeatherRule,
+)
 from sqlalchemy import pool
 
 config = context.config
