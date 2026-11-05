@@ -15,7 +15,7 @@ backend/
 │   ├── core/            # config, db, errors (RFC 7807), security (argon2/JWT), rbac
 │   ├── models/          # ORM-модели (auth: dat_user, dat_audit)
 │   └── modules/         # доменные модули: auth, fields, rotation, inputs, weather, satellite, machinery
-├── alembic/             # миграции (0001_init каркас; 0002_auth — dat_user, dat_audit)
+├── alembic/             # миграции: 0001 init, 0002 auth, 0003–0006 схема ядра (MVP-2)
 ├── docker-compose.yml   # api + db (postgis/postgis:18-3.5) + redis, healthchecks
 ├── docker/db-init/      # CREATE EXTENSION postgis при первом старте БД
 ├── tests/               # pytest (smoke: /healthz, RFC 7807)
