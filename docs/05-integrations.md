@@ -182,7 +182,7 @@ fetch_prices(item: enum(crop, input), item_id: string,
 {
   "scene_id": "d2e3f4a5-0000-4000-8000-abcdefabcdef",
   "field_id": "550e8400-e29b-41d4-a716-446655440000",
-  "index": "ndvi", "captured_at": "2026-06-04",
+  "index": "ndvi", "captured_at": "2026-06-04", "resolution_m": 10,
   "index_avg": 0.612, "index_min": 0.31, "index_max": 0.78,
   "anomaly_zones_ref": "zones/2026/06/04/field-550e.json",
   "cloud_pct": 4.0, "composite_days": 1,
