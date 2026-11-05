@@ -42,13 +42,12 @@ from app.modules.fields.schemas import (
     VersionListResponse,
 )
 
-DbSession = Depends(get_db)
+DbSession = Annotated[Session, Depends(get_db)]
 # чтение — матрица 07-ux §5 (E-02/E-03); изменение — только агроном и админ
-ReadAccess = Depends(group_checker("fields"))
-WriteAccess = Depends(role_checker(UserRole.AGRONOMIST, UserRole.ADMIN))
+WriteAccess = Annotated[User, Depends(role_checker(UserRole.AGRONOMIST, UserRole.ADMIN))]
 
 router = APIRouter(
-    prefix="/fields", tags=["fields"], dependencies=[ReadAccess], include_in_schema=True
+    prefix="/fields", tags=["fields"], dependencies=[Depends(group_checker("fields"))]
 )
 
 
