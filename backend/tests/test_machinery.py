@@ -325,7 +325,7 @@ class TestMaintenance:
                 "kind": "service",
                 "due_at_hours": 1250,
                 "done_at": str(date.today()),
-                "done_at_hours": 1230,
+                "done_at_hours": 1150,
                 "downtime_h": 4.5,
             },
             headers=headers,
@@ -335,6 +335,7 @@ class TestMaintenance:
         body = resp.json()
         assert body["machine_model"] == "John Deere 6120M"
         assert body["downtime_h"] == 4.5
+        assert body["due_at_hours"] == 1250.0
         resp = client.get(MAINT, headers=headers)
         assert resp.json()["total"] == 1
         resp = client.get(MAINT, params={"machine_id": mid}, headers=headers)
