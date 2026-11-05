@@ -43,8 +43,8 @@ API_GROUP_ROLES: dict[str, frozenset[UserRole]] = {
     # E-15: А, Р, З (корма), Д
     "references": frozenset({UserRole.AGRONOMIST, UserRole.MANAGER,
                              UserRole.LIVESTOCK_SPECIALIST, UserRole.ADMIN}),
-    # E-16: только Д
-    "users": frozenset({UserRole.ADMIN}),
+    # E-16: Р (чтение), Д (чтение/правка)
+    "users": frozenset({UserRole.MANAGER, UserRole.ADMIN}),
     # «Экспорт данных» (последняя строка матрицы): Р, Д
     "export": frozenset({UserRole.MANAGER, UserRole.ADMIN}),
 }
