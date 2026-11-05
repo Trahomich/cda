@@ -326,7 +326,7 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
             fio="Демо Агроном",
             login="demo_agronomist",
             password_hash=hash_password("demo123"),
-            role="agronomist",
+            role=UserRole.AGRONOMIST,
             is_active=True,
         ))
         db.commit()
