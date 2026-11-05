@@ -20,29 +20,33 @@ API_GROUP_ROLES: dict[str, frozenset[UserRole]] = {
     # E-01: Ч для всех ролей
     "dashboard": frozenset(UserRole),
     # E-02, E-03: А, Р, Д (+ М — журнал поля, фильтруется в модуле)
-    "fields": frozenset({UserRole.AGRONOMIST, UserRole.MANAGER, UserRole.MACHINE_OPERATOR,
-                         UserRole.ADMIN}),
+    "fields": frozenset(
+        {UserRole.AGRONOMIST, UserRole.MANAGER, UserRole.MACHINE_OPERATOR, UserRole.ADMIN}
+    ),
     # E-04: А, Р, Д
     "rotation": frozenset({UserRole.AGRONOMIST, UserRole.MANAGER, UserRole.ADMIN}),
     # E-05: А, Р, Д
     "inputs": frozenset({UserRole.AGRONOMIST, UserRole.MANAGER, UserRole.ADMIN}),
     # E-07, E-08, E-17: А, Р, М, Д
-    "operations": frozenset({UserRole.AGRONOMIST, UserRole.MANAGER,
-                             UserRole.MACHINE_OPERATOR, UserRole.ADMIN}),
+    "operations": frozenset(
+        {UserRole.AGRONOMIST, UserRole.MANAGER, UserRole.MACHINE_OPERATOR, UserRole.ADMIN}
+    ),
     # E-06: А, Р, М, Д; E-10: все 5 ролей
     "weather": frozenset(UserRole),
     # E-09: А, Р, Д
     "satellite": frozenset({UserRole.AGRONOMIST, UserRole.MANAGER, UserRole.ADMIN}),
     # E-11: А, Р, М, Д
-    "machinery": frozenset({UserRole.AGRONOMIST, UserRole.MANAGER,
-                            UserRole.MACHINE_OPERATOR, UserRole.ADMIN}),
+    "machinery": frozenset(
+        {UserRole.AGRONOMIST, UserRole.MANAGER, UserRole.MACHINE_OPERATOR, UserRole.ADMIN}
+    ),
     # E-13: все 5 ролей (М и З — только свои)
     "alerts": frozenset(UserRole),
     # E-14: Р (чтение), Д (чтение/управление)
     "sources": frozenset({UserRole.MANAGER, UserRole.ADMIN}),
     # E-15: А, Р, З (корма), Д
-    "references": frozenset({UserRole.AGRONOMIST, UserRole.MANAGER,
-                             UserRole.LIVESTOCK_SPECIALIST, UserRole.ADMIN}),
+    "references": frozenset(
+        {UserRole.AGRONOMIST, UserRole.MANAGER, UserRole.LIVESTOCK_SPECIALIST, UserRole.ADMIN}
+    ),
     # E-16: Р (чтение), Д (чтение/правка)
     "users": frozenset({UserRole.MANAGER, UserRole.ADMIN}),
     # «Экспорт данных» (последняя строка матрицы): Р, Д

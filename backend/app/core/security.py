@@ -28,6 +28,7 @@ def verify_password(password: str, password_hash: str) -> bool:
     except Exception:  # повреждённый/чужой формат хеша — не отдаём деталей наружу
         return False
 
+
 def create_access_token(*, user_id: uuid.UUID, role: UserRole) -> str:
     """JWT HS256: sub = id пользователя, role, iat/exp, jti (для отзыва в будущем)."""
     settings = get_settings()

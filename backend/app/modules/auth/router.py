@@ -83,9 +83,7 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)) -
     _audit_login(db, user_id=user.id, login=body.login, success=True)
     return LoginResponse(
         token=create_access_token(user_id=user.id, role=user.role),
-        user=UserBrief(
-            name=user.fio, role=user.role, farm_name=get_settings().farm_name
-        ),
+        user=UserBrief(name=user.fio, role=user.role, farm_name=get_settings().farm_name),
     )
 
 
