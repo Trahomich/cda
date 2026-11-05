@@ -86,14 +86,14 @@ def create_operation(
     else:
         # Идемпотентный повтор (тот же client_id): 200, без дубля
         response.status_code = 200
-    return _item(operation)
+    return _item(db, operation)
 
 
 @router.get(
     "/{operation_id}", response_model=OperationItem, summary="API-18: операция по id"
 )
 def get_operation(operation_id: uuid.UUID, db: DbSession) -> OperationItem:
-    return _item(service.get_operation(db, operation_id))
+    return _item(db, service.get_operation(db, operation_id))
 
 
 @router.get(
@@ -121,5 +121,5 @@ def list_operations(
         offset=offset,
     )
     return OperationListResponse(
-        items=[_item(o) for o in operations], total=total, limit=limit, offset=offset
+        items=[_item(db, o) for o in operations], total=total, limit=limit, offset=offset
     )
