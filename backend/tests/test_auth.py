@@ -7,16 +7,13 @@
 import uuid
 
 import pytest
+from app.cli import main as cli_main
+from app.core.rbac import API_GROUP_ROLES, role_checker
+from app.core.security import hash_password
+from app.models.auth import AuditRecord, User, UserRole
 from fastapi import APIRouter, Depends
 from fastapi.testclient import TestClient
 from sqlalchemy import select
-
-from app.cli import main as cli_main
-from app.core.db import get_db
-from app.core.rbac import API_GROUP_ROLES, role_checker
-from app.core.security import hash_password
-from app.main import create_app
-from app.models.auth import AuditRecord, User, UserRole
 
 
 def make_user(db, *, login: str, role: UserRole, password: str = "secret123",

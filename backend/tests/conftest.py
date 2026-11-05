@@ -1,15 +1,14 @@
 """Общие фикстуры тестов."""
 
+# импорт моделей, чтобы create_all создал их таблицы
+import app.models.auth  # noqa: F401
 import pytest
+from app.core.db import Base, get_db
+from app.main import create_app
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-
-from app.core.db import Base, get_db
-from app.main import create_app
-# импорт моделей, чтобы create_all создал их таблицы
-import app.models.auth  # noqa: F401
 
 
 @pytest.fixture
