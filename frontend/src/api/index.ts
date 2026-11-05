@@ -1,6 +1,6 @@
 // Доменные вызовы API (только эндпоинты из docs/06-data-api.md §5).
 import { apiClient } from './client'
-import type { AuthMe, AuthResponse, Field, FieldStatus } from './types'
+import type { AuthMe, AuthResponse, Field, FieldOperation, FieldStatus, OperationRequest } from './types'
 
 /** API-01: GET /fields — список полей (фильтры status, q по имени).
  *  with_geometry=true — элементы с contour (для карты); по умолчанию опущен. */
