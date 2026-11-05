@@ -50,14 +50,17 @@ router = APIRouter(
 )
 
 
+def _cycle_item(cycle: dict | None) -> CurrentCycle | None:
+    return CurrentCycle(**cycle) if cycle else None
+
+
 def _item(db: Session, field, *, cycles: dict, with_geometry: bool = False) -> FieldItem:
-    cycle = cycles.get(field.id)
     return FieldItem(
         field_id=field.id,
         name=field.name,
         area_ga=float(field.area_ga),
         status=field.status,
-        current_cycle=cycle,
+        current_cycle=_cycle_item(cycles.get(field.id)),
         contour=service.contour_geojson(db, field) if with_geometry else None,
     )
 
