@@ -1,7 +1,9 @@
 """CLI ЦДА: python -m app.cli <команда>.
 
-MVP-4: create-admin — создание первого администратора (idempotent: существующий
-логин не перезаписывается, код возврата 1).
+Команды:
+  create-admin     — создание первого администратора (MVP-4, идемпотентно);
+  seed-references  — сиды справочников ref_culture / ref_source (MVP-2,
+                     идемпотентно: ON CONFLICT DO NOTHING).
 """
 
 import argparse
@@ -12,6 +14,7 @@ from sqlalchemy import select
 from app.core.db import SessionLocal
 from app.core.security import hash_password
 from app.models.auth import User, UserRole
+from app.seed import seed_references
 
 
 def cmd_create_admin(args: argparse.Namespace) -> int:
