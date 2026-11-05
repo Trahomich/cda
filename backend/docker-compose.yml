@@ -4,6 +4,7 @@ services:
     environment:
       POSTGRES_HOST: db
       REDIS_HOST: redis
+      WEATHER_POLL_ENABLED: "true"
     ports:
       - "8000:8000"
     depends_on:
