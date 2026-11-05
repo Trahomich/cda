@@ -287,9 +287,9 @@ def list_plans(
     offset: int = 0,
 ) -> tuple[list[RotationPlan], int]:
     """API-08: список планов севооборота (фильтры field_id, status)."""
-    query = select(RotationPlan)
+    filters = []
     if field_id is not None:
-        query = query.where(RotationPlan.field_id == field_id)
+        filters.append(RotationPlan.field_id == field_id)
     if status is not None:
         if status not in PLAN_STATUSES:
             raise AppError(
@@ -299,13 +299,199 @@ def list_plans(
                 title="Некорректный запрос",
                 status_code=400,
             )
-        query = query.where(RotationPlan.status == status)
-    total = len(db.execute(select(RotationPlan.id).where(query.whereclause)).scalars().all()) \
-        if query.whereclause is not None else 0
-    # total через подзапрос текущих фильтров
-    total = db.scalar(
-        select(RotationPlan.id)
-        .where(query.whereclause)
-        .order_by(None)  # placeholder, пересчитано ниже
-    ) if False else total
-    return [], 0
+        filters.append(RotationPlan.status == status)
+    total = db.scalar(select(func.count()).select_from(RotationPlan).where(*filters))
+    plans = db.scalars(
+        select(RotationPlan)
+        .where(*filters)
+        .order_by(RotationPlan.created_at.desc(), RotationPlan.id.desc())
+        .limit(limit)
+        .offset(offset)
+    ).all()
+    return list(plans), int(total or 0)
+
+
+def plan_cycles(db: Session, plan: RotationPlan) -> list[CropCycle]:
+    """items плана: циклы поля в диапазоне лет [year_from, year_to], по годам."""
+    return list(
+        db.scalars(
+            select(CropCycle)
+            .where(
+                CropCycle.field_id == plan.field_id,
+                CropCycle.year >= plan.year_from,
+                CropCycle.year <= plan.year_to,
+                CropCycle.kind == "main",  # по одному циклу на год (03 §1.2)
+            )
+            .order_by(CropCycle.year)
+        ).all()
+    )
+
+
+def _validate_plan_items(
+    db: Session, field_id: uuid.UUID, items: list[PlanItemDraft]
+) -> list[Violation]:
+    """Dry-run черновика items[]: цепочка проверяется по RULE-AGRO-01..04.
+
+    Проверяется вся последовательность (включая уже существующие циклы поля
+    как историю), записи не создаются; нарушения возвращаются списком.
+    """
+    violations: list[Violation] = []
+    existing = {
+        c.year: c
+        for c in db.scalars(
+            select(CropCycle)
+            .where(CropCycle.field_id == field_id, CropCycle.kind == "main")
+            .order_by(CropCycle.year)
+        ).all()
+    }
+    # цепочка: существующие main-циклы, затем черновик по годам
+    drafts = sorted(items, key=lambda i: i.year)
+    chain: list[tuple[int, Culture, PlanItemDraft | None]] = [
+        (c.year, db.get_one(Culture, c.culture_id), None) for c in existing.values()
+    ]
+    main_years: set[int] = set(existing)
+    for draft in drafts:
+        culture = db.get(Culture, draft.culture_id)
+        if culture is None:
+            raise AppError(
+                f"Культура {draft.culture_id} не найдена в справочнике",
+                code="not_found",
+                title="Ресурс не найден",
+                status_code=404,
+            )
+        chain.append((draft.year, culture, draft))
+    for pos, (year, culture, draft) in enumerate(chain):
+        if draft is not None and year in main_years:
+            v = rules.check_main_cycle_unique(year=year, existing_main_year=year)
+            if v:
+                violations.append(v)
+        if draft is None:
+            continue
+        main_years.add(year)
+        if v := rules.check_kind_culture(kind=draft.kind, culture_kind=culture.kind,
+                                         culture_name=culture.name):
+            violations.append(v)
+        if v := rules.check_out_of_rotation(
+            out_of_rotation=draft.out_of_rotation, reason=draft.reason
+        ):
+            violations.append(v)
+        # предшественник — предыдущий цикл цепочки (RULE-AGRO-01/03)
+        if pos > 0:
+            prev_year, prev_culture, _ = chain[pos - 1]
+            verdict, comment = _matrix_verdict(db, culture.id, prev_culture.id)
+            if v := rules.check_predecessor(
+                verdict,
+                culture_name=culture.name,
+                predecessor_name=prev_culture.name,
+                year=year,
+                comment=comment,
+            ):
+                violations.append(v)
+        # RULE-AGRO-02: возврат той же культуры в цепочке
+        same_years = [y for y, c, _ in chain[:pos] if c.id == culture.id]
+        if same_years:
+            last_year = max(same_years)
+            if v := rules.check_repeat_years(
+                year=year,
+                last_year=last_year,
+                repeat_years=culture.repeat_years,
+                culture_name=culture.name,
+            ):
+                violations.append(v)
+    return violations
+
+
+def create_plan(
+    db: Session,
+    *,
+    user: User,
+    field_id: uuid.UUID,
+    year_from: int,
+    year_to: int,
+    items: list[PlanItemDraft],
+) -> tuple[RotationPlan, list[Violation]]:
+    """API-09: создать план севооборота; ответ содержит список нарушений.
+
+    Активный (не archived) план на пересекающийся диапазон лет на поле один —
+    409 overlapping_plan. items[] — черновик: dry-run без записи циклов.
+    """
+    get_field(db, field_id)
+    if year_to < year_from:
+        raise AppError(
+            "year_to должен быть не меньше year_from (docs/03 §1.2)",
+            code="invalid_plan_range",
+            title="Некорректный запрос",
+            status_code=400,
+        )
+    length = year_to - year_from + 1
+    if not PLAN_MIN_YEARS <= length <= PLAN_MAX_YEARS:
+        raise AppError(
+            f"Горизонт плана должен быть {PLAN_MIN_YEARS}–{PLAN_MAX_YEARS} лет "
+            f"(получено {length}: {year_from}–{year_to})",
+            code="invalid_plan_range",
+            title="Нарушено бизнес-правило",
+            status_code=422,
+        )
+    overlapping = db.scalars(
+        select(RotationPlan).where(
+            RotationPlan.field_id == field_id,
+            RotationPlan.status != "archived",
+            RotationPlan.year_from <= year_to,
+            RotationPlan.year_to >= year_from,
+        )
+    ).first()
+    if overlapping is not None:
+        raise AppError(
+            f"На поле уже есть активный план {overlapping.year_from}–{overlapping.year_to} гг. "
+            f"(статус {overlapping.status}); сначала переведите его в archived",
+            code="overlapping_plan",
+            title="Конфликт состояния",
+            status_code=409,
+        )
+    violations = _validate_plan_items(db, field_id, items) if items else []
+    plan = RotationPlan(field_id=field_id, year_from=year_from, year_to=year_to)
+    db.add(plan)
+    _audit(
+        db,
+        user=user,
+        entity="rotation_plan",
+        entity_id=plan.id,
+        action="create",
+        changed={"field_id": str(field_id), "year_from": year_from,
+                 "year_to": year_to, "dry_run_items": len(items)},
+    )
+    db.commit()
+    db.refresh(plan)
+    return plan, violations
+
+
+def approve_plan(db: Session, *, user: User, plan: RotationPlan) -> RotationPlan:
+    """API-10: согласование руководителем (draft → approved).
+
+    Повторное согласование или архив — 409 invalid_state (аудит status_change).
+    """
+    if plan.status != "draft":
+        raise AppError(
+            f"Согласовать можно только план в статусе draft (текущий: {plan.status})",
+            code="invalid_state",
+            title="Конфликт состояния",
+            status_code=409,
+        )
+    previous = plan.status
+    from datetime import datetime, timezone
+
+    plan.status = "approved"
+    plan.approved_by = user.fio
+    plan.approved_at = datetime.now(timezone.utc)
+    _audit(
+        db,
+        user=user,
+        entity="rotation_plan",
+        entity_id=plan.id,
+        action="status_change",
+        changed={"status_from": previous, "status_to": "approved"},
+    )
+    db.commit()
+    db.refresh(plan)
+    return plan
+
