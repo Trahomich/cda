@@ -1,6 +1,7 @@
 // Доменные вызовы API (только эндпоинты из docs/06-data-api.md §5).
 import { apiClient } from './client'
 import type {
+  AdapterStatus,
   AgroInput,
   AuthMe,
   AuthResponse,
@@ -11,12 +12,18 @@ import type {
   FieldOperation,
   FieldStatus,
   FieldWeather,
+  Machine,
+  MachineJob,
+  MachineJobStatus,
   NdviPoint,
   OperationRequest,
   RotationPlan,
   TreatmentPlan,
   TreatmentPlanRequest,
   TreatmentPlanStatus,
+  WeatherForecast,
+  WeatherWindows,
+  WindowOperationType,
 } from './types'
 
 /** API-01: GET /fields — список полей (фильтры status, q по имени).
