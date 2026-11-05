@@ -201,7 +201,7 @@ const HISTORY: Record<number, Array<{ year: number; cid: string; yield_c_ha?: nu
  *  №7 2028 (RULE-AGRO-01) — как в wireframe E-04 (07-ux §3.3). */
 const MATRIX: Record<number, string[]> = {
   1: ['a2', 'a8', 'a1', 'a4', 'a3'],
-  2: ['a1', 'a4', 'a2', 'a1', 'a2'],
+  2: ['a1', 'a4', 'a2', 'a1', 'a3'],
   3: ['a2', 'a8', 'a1', 'a4', 'a1'],
   4: ['a8', 'a1', 'a2', 'a8', 'a1'],
   5: ['a4', 'a1', 'a2', 'a8', 'a1'],
