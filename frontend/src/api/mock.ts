@@ -283,7 +283,9 @@ function prevMain(n: number, year: number): { year: number; culture: MockCulture
   return null
 }
 
-/** Пересчёт нарушений плана (RULE-AGRO-01 warn / RULE-AGRO-02 warn). */
+/** Пересчёт нарушений плана (RULE-AGRO-01 warn / RULE-AGRO-02 warn).
+ *  На одну клетку — одно нарушение: RULE-AGRO-01 приоритетнее (подряд тот
+ *  же признак). Демо-план даёт 3 нарушения: №3/2031 и №7/2027–2028. */
 function computeViolations(): RotationPlan['violations'] {
   const out: RotationPlan['violations'] = []
   for (const f of FIELDS) {
@@ -294,10 +296,11 @@ function computeViolations(): RotationPlan['violations'] {
       if (!rec) continue
       const culture = cultureBySuffix(rec.cid)
       if (culture.kind !== 'main') continue
+      let flagged = false
 
-      // RULE-AGRO-01: совместимость с предшественником.
+      // RULE-AGRO-01: непосредственный предшественник (предыдущий год).
       const prev = prevMain(n, year)
-      if (prev) {
+      if (prev && prev.year === year - 1 && culture.kind === 'main') {
         const verdict = compat(prev.culture, culture)
         if (verdict === 'warn') {
           out.push({
@@ -306,13 +309,14 @@ function computeViolations(): RotationPlan['violations'] {
             severity: 'warning',
             field_id: f.field_id,
             year,
-            message: `«${f.name} · ${year} ${culture.name} после ${prev.culture.name} ${prev.year}»: зерновые по зерновым не рекомендованы`,
+            message: `«${f.name} · ${year} ${culture.name} после ${prev.culture.name} ${prev.year}»: одна и та же культура два года подряд`,
             rationale:
               `Правило севооборота RULE-AGRO-01: ${culture.name.toLowerCase()} после ` +
-              `${prev.culture.name.toLowerCase()} истощает почву и повышает риск болезней ` +
-              '(вынос одних элементов, общие вредители). Лучший предшественник — пар или бобовые.',
+              `${prev.culture.name.toLowerCase()} повышает риск специализированных болезней ` +
+              'и односторонне истощает почву. Лучший предшественник — пар или другая культура.',
             suggestion_culture_id: cultureBySuffix('a4').culture_id,
           })
+          flagged = true
         }
       }
 
