@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.core.db import Base, get_db
 from app.main import create_app
@@ -13,8 +14,15 @@ import app.models.auth  # noqa: F401
 
 @pytest.fixture
 def db_engine():
-    """In-memory SQLite: схема создаётся/удаляется на каждый тест."""
-    engine = create_engine("sqlite://", connect_args={"check_same_thread": False})
+    """In-memory SQLite: одна схема на все потоки (StaticPool) на каждый тест.
+
+    Без StaticPool эндпоинты (sync, в threadpool) получали бы отдельную пустую БД.
+    """
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(engine)
     yield engine
     engine.dispose()
