@@ -113,7 +113,7 @@ class TestRasterIndices:
         """Статистика — только по пикселям внутри контура (левая половина)."""
         nir, red, nir_values = self._grids()
         values = compute_index_array("ndvi", nir, red)
-        polygon = {"type": "Polygon", "coordinates": [[[0, 4], [2, 4], [2, 0], [0, 0], [0, 4]]]}
+        polygon = {"type": "Polygon", "coordinates": [[[0, 4], [3, 4], [3, 0], [0, 0], [0, 4]]]}
         contour = mapping(shape(polygon))
         mask = contour_mask(contour, self.TRANSFORM, (4, 4))
         # all_touched: полигон [0..2] задевает колонки 0..2
