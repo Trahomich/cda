@@ -77,7 +77,7 @@ def test_seed_creates_demo_farm(db_session):
     )
 
     # планы севооборота: один approved, один draft
-    plan_statuses = {p.status for p in db_session.scalars(select(RotationPlan.status))}
+    plan_statuses = set(db_session.scalars(select(RotationPlan.status)))
     assert plan_statuses == {"approved", "draft"}
 
     # операции за прошлый месяц: одна с deviation_flag и обоснованием
