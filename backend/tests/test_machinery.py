@@ -120,9 +120,8 @@ class TestMachinesCrud:
         assert resp.status_code == 201
 
     def test_unknown_type_400(self, client, db_session):
-        resp = client.post(
-            API, json={"machine_type": "bulldozer", "model": "X"}, headers=boss_headers(client, db_session)
-        )
+        headers = boss_headers(client, db_session)
+        resp = client.post(API, json={"machine_type": "bulldozer", "model": "X"}, headers=headers)
         assert resp.status_code == 400
         assert resp.json()["code"] == "unknown_machine_type"
 
