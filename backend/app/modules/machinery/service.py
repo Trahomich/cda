@@ -355,6 +355,7 @@ def create_maintenance(db: Session, *, user: User, data: MaintenanceCreate) -> M
         db,
         user=user,
         entity_id=item.id,
+        entity="maintenance",
         action="maintenance_create",
         changed={"machine": machine.model, "kind": item.kind, "due_at_hours": item.due_at_hours},
     )
