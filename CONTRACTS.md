@@ -66,7 +66,7 @@
 | `ENT-<ИМЯ>` | доменные сущности | `03-domain-agronomy.md`, `04-domain-farm.md` |
 | `IF-<ИМЯ>` | интерфейсы источников данных | `05-integrations.md` |
 | `DAT-<ИМЯ>` | таблицы/коллекции | `06-data-api.md` |
-| `API-NN` | эндпоинты | `06-data-api.md` |
+| `API-NN` | эндпоинты | `06-data-api.md` (API-01..35); пост-MVP: API-36..39 — `11-agroscouting.md`, API-40..45 — `12-economics.md`; из §5 06-data-api.md даётся обратная ссылка (единая точка входа — 06) |
 | `ADR-NN` | архитектурные решения | `02-architecture.md` |
 | `RISK-NN` | риски | `08-roadmap.md` |
 | `RULE-AGRO-NN` | бизнес-правила агрономии | `03-domain-agronomy.md` |
