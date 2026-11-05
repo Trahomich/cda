@@ -25,6 +25,27 @@ backend/
 └── pyproject.toml       # зависимости, настройки ruff/mypy/pytest
 ```
 
+## Единые команды проверок (Makefile)
+
+```bash
+make up          # docker compose up -d --build (api + PostgreSQL/PostGIS + Redis)
+make migrate     # alembic upgrade head в контейнере api
+make seed        # демо-хозяйство — цель-заглушка до задачи #31 (MVP-13)
+make test        # pytest (юнит/интеграционные)
+make lint        # ruff check + ruff format --check + mypy app
+make fmt         # автоправка ruff (фиксы + формат)
+make check       # lint + test — полный прогон для CI и ревью
+make down        # остановить окружение (данные в томах сохраняются)
+```
+
+Дымовой e2e-тест (tests/test_smoke_e2e.py) гоняется против поднятого
+docker-compose окружения: `make up && SMOKE=1 make test`. Сценарий:
+`/healthz` → 200; вход тестового администратора (создаётся фикстурой в БД)
+→ JWT; `GET /auth/me` → 200. Без `SMOKE=1` тест пропускается; при
+недоступном окружении — skip с явной причиной. Адреса переопределяются
+переменными `SMOKE_BASE_URL`, `SMOKE_DATABASE_URL`, `SMOKE_ADMIN_LOGIN`,
+`SMOKE_ADMIN_PASSWORD`.
+
 ## Запуск (docker compose)
 
 ```bash
