@@ -68,15 +68,11 @@ def smoke_admin() -> dict[str, str]:
                         is_active=True,
                     )
                 )
+        engine.dispose()
     except OperationalError as exc:
         pytest.skip(
             f"PostgreSQL недоступна на {SMOKE_DATABASE_URL} (сначала `make up`): {exc}"
         )
-    finally:
-        try:
-            engine.dispose()
-        except Exception:
-            pass
     return {"login": SMOKE_ADMIN_LOGIN, "password": SMOKE_ADMIN_PASSWORD}
 
 
