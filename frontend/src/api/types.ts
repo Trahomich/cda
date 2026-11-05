@@ -55,7 +55,7 @@ export interface Field {
 /** Роли пользователей (docs/01-requirements.md §2, docs/07-ux.md §5). */
 export type UserRole = 'agronom' | 'manager' | 'operator' | 'livestock' | 'admin'
 
-/** Ответ POST /api/v1/auth (эндпоинт появится в backend; формат — допущение). */
+/** Ответ POST /auth/login (API-46, docs/06 §5). */
 export interface AuthResponse {
   token: string
   user: {
@@ -63,4 +63,11 @@ export interface AuthResponse {
     role: UserRole
     farm_name: string
   }
+}
+
+/** Ответ GET /auth/me (API-47). */
+export interface AuthMe {
+  id: string
+  name: string
+  role: UserRole
 }
