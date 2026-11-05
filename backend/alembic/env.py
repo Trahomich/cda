@@ -9,7 +9,7 @@ from sqlalchemy import pool
 
 # Импортировать модели здесь по мере появления модулей, чтобы autogenerate
 # видел метаданные:
-# import app.modules.fields.models  # noqa: F401
+from app.models.auth import AuditRecord, User  # noqa: F401
 
 config = context.config
 
