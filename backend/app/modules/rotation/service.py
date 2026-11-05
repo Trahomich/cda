@@ -10,7 +10,7 @@
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -466,7 +466,7 @@ def approve_plan(db: Session, *, user: User, plan: RotationPlan) -> RotationPlan
     previous = plan.status
     plan.status = "approved"
     plan.approved_by = user.fio
-    plan.approved_at = datetime.now(timezone.utc)
+    plan.approved_at = datetime.now(UTC)
     _audit(
         db,
         user=user,
