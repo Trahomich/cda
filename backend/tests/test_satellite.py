@@ -38,10 +38,12 @@ from app.modules.satellite.ingest import (
 from app.modules.satellite.router import SATELLITE_SOURCE_ID
 from app.modules.satellite.scheduler import create_satellite_scheduler
 from rasterio.transform import Affine
+from shapely.geometry import mapping, shape
 from sqlalchemy import select
+from sqlalchemy import text as db_text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from shapely.geometry import mapping, shape
+from shapely.geometry import mapping, shape  # noqa: F811 — один импорт ниже убран
 from tests.test_auth import auth_header, make_user
 
 API = "/api/v1"
