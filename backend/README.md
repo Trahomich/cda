@@ -109,6 +109,32 @@ pre-commit install && pre-commit run --all-files
   профиль: `GET /api/v1/auth/me` (API-47) → `{id, name, role}`.
   Пароли — argon2id, токены — JWT HS256 (`JWT_SECRET`, TTL `JWT_TTL_MINUTES`).
 
+## Севооборот (MVP-8, API-08..11)
+
+`app/modules/rotation/` (`rules.py` — чистые проверки, `service.py`, `router.py`)
+— планы и циклы культур по docs/03 §1.2–1.3, §3.1 (RULE-AGRO-01..04):
+
+- `GET /rotation-plans` (фильтры `field_id`, `status`, пагинация); `items` —
+  main-циклы поля в диапазоне лет плана;
+- `POST /rotation-plans` (201 + Location) — горизонт 2–10 лет (422
+  `invalid_plan_range`), один активный план на пересекающийся диапазон
+  (409 `overlapping_plan`); необязательный черновик `items[]` валидируется
+  как dry-run — нарушения возвращаются списком `violations`, циклы не создаются;
+- `POST /rotation-plans/{id}/approve` (manager/admin) — `draft → approved`
+  (`approved_by`/`approved_at`, аудит `status_change`); повтор — 409 `invalid_state`;
+- `POST /crop-cycles` (201 + Location) — проверки RULE-AGRO-01..04;
+  `predecessor_cycle_id` заполняет система (последний цикл поля с `year <`
+  нового, любого kind); warn-нарушения требуют `reason` агронома и возвращаются
+  в `warnings` ответа.
+
+Правила как данные: матрица совместимости — `ref_predecessor_matrix`
+(verdict `ok|warn|ban`, отсутствующая пара — ok), минимальный возврат —
+`ref_culture.repeat_years` (default 3; рапс 4, картофель 5 — миграция 0009,
+сид `python -m app.cli seed-references` добавляет «Пар» kind=fallow).
+Нарушения — 422 `rule_violation` (RFC 7807 + extra `rule_id`, `severity`,
+`rationale`, `entity` по примеру docs/06 §5). Права: группа `rotation`
+(агроном/руководитель/админ) на чтение; создание — agronomist/admin.
+
 ## Модуль полей (MVP-5, API-01..05)
 
 `app/modules/fields/` — контуры, версии и статусы полей по docs/03 §1.1 и 06 §5:
