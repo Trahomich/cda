@@ -172,8 +172,11 @@ def create_operation(db: Session, *, data: OperationCreate) -> tuple[FieldOperat
     if data.actual_dose is not None:
         plan = _find_plan(db, data)
         if plan is not None and float(plan.dose) > 0:
-            delta = abs(data.actual_dose - float(plan.dose)) / float(plan.dose)
-            if delta > DEVIATION_THRESHOLD:
+            # Decimal: |факт − план| / план строго > 10 % без ошибок float
+            delta = abs(Decimal(str(data.actual_dose)) - Decimal(str(plan.dose))) / Decimal(
+                str(plan.dose)
+            )
+            if delta > Decimal("0.10"):
                 deviation_flag = True
                 rationale = _deviation_rationale(data.actual_dose, float(plan.dose))
 
