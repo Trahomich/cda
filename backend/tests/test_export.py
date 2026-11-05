@@ -5,6 +5,9 @@ GeoJSON-геометрия, пустой результат, 400 на неизв
 (export — manager/admin). Тестовый контур — PostgreSQL+PostGIS (паттерн #20).
 """
 
+import csv
+import io
+import json
 from datetime import date
 
 import pytest
