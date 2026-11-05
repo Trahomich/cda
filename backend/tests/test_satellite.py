@@ -205,6 +205,10 @@ def _catalog_body(captured_at: str, cloud_pct: float) -> dict:
     }
 
 
+def _no_raster(scene_ref: str, band: str):
+    raise AssertionError("raster_loader не должен вызываться")
+
+
 class TestSentinel2Adapter:
     @staticmethod
     def _client(handler) -> httpx.Client:
@@ -220,7 +224,7 @@ class TestSentinel2Adapter:
             http=self._client(handler),
             client_id="id",
             client_secret="secret",
-            raster_loader=raster_loader or (lambda ref, band: (_raise(),))[0],
+            raster_loader=raster_loader or _no_raster,
         )
 
     def test_no_keys_is_unavailable(self):
