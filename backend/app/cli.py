@@ -68,6 +68,11 @@ def main(argv: list[str] | None = None) -> int:
     p_seed = sub.add_parser("seed-references", help="наполнить справочники культур и источников")
     p_seed.set_defaults(func=cmd_seed_references)
 
+    p_rules = sub.add_parser(
+        "seed-weather-rules", help="параметры погодных окон RULE-AGRO-09 (ref_weather_rule)"
+    )
+    p_rules.set_defaults(func=cmd_seed_weather_rules)
+
     args = parser.parse_args(argv)
     return args.func(args)
 
