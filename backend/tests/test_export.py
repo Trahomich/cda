@@ -119,11 +119,12 @@ class TestFormats:
         assert "export_fields_" in resp.headers["content-disposition"]
         text = resp.text
         assert text.startswith("﻿")  # BOM — Excel открывает UTF-8
-        header_line = text.splitlines()[0].lstrip("﻿")
-        columns = header_line.split(";")
+        rows = list(csv.reader(io.StringIO(text.lstrip("﻿")), delimiter=";"))
+        columns = rows[0]
         assert "name" in columns and "area_ga" in columns and "contour" in columns
-        data_line = text.splitlines()[1]
-        assert '"type": "Polygon"' in data_line or '"type":"Polygon"' in data_line
+        geo = json.loads(rows[1][columns.index("contour")])
+        assert geo["type"] == "Polygon"  # геометрия — GeoJSON-строка
+        assert rows[1][columns.index("area_ga")] == "123.09"
 
     def test_json_dates_iso_and_decimal(self, client, db_session, manager_headers, demo_data):
         resp = client.get(API, params={"entity": "operations"}, headers=manager_headers)
