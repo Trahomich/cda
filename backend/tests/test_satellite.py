@@ -43,7 +43,7 @@ from sqlalchemy import select
 from sqlalchemy import text as db_text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from shapely.geometry import mapping, shape  # noqa: F811 — один импорт ниже убран
+from shapely.geometry import mapping, shape
 from tests.test_auth import auth_header, make_user
 
 API = "/api/v1"
