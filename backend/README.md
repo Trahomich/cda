@@ -130,6 +130,39 @@ pre-commit install && pre-commit run --all-files
 Права: чтение — группа RBAC `fields` (агроном/руководитель/механизатор/админ),
 изменение — agronomist/admin (403 `insufficient_role`).
 
+## Модуль спутника (MVP-10, API-06)
+
+`app/integrations/sentinel2.py` + `app/integrations/raster.py` +
+`app/modules/satellite/` — конвейер Sentinel-2 NDVI по docs/05 §2 (IF-SATELLITE):
+
+- адаптер `Sentinel2Adapter` (source_id `satellite.sentinel2-l2a`): каталог
+  Copernicus Data Space (OData + OAuth2 client_credentials, ключи
+  `COPERNICUS_CLIENT_ID/_SECRET`), поиск сцен L2A по пересечению с контуром
+  поля с фильтром облачности в OData-запросе; статистика индекса
+  (ndvi/ndre/ndmi/savi) — по пикселям внутри контура (rasterio+shapely,
+  min/mean/max, валидация [-1;1] → `DataQualityError`); каналы читаются из
+  локального кэша `SATELLITE_RASTER_CACHE_DIR` (доставка JP2-продуктов — вне
+  MVP). Облачность — упрощённо по метаданным сцены (пометка метода
+  `cloud_method=scene_metadata`);
+- `FakeSentinel2Adapter` — детерминированная заглушка для тестов/демо (сеть
+  не нужна): «съёмки» каждые 3 сут, облачность с хвостами >60 %;
+- ingest `SatelliteIngest`: активные поля → сцены по окну
+  `SATELLITE_LOOKBACK_DAYS` → upsert `dat_satellite_scene` по
+  UQ(field_id, index, captured_at, source_id) (повторный прогон без дублей),
+  cloud_pct > 60 не сохраняется (плюс CHECK в БД); новые сцены публикуют
+  событие `scene.ingested` во внутреннюю шину `app.core.events` (ADR-01);
+  журнал `dat_source_journal` + `ref_source.last_status/last_success_at`;
+- API: `GET /api/v1/fields/{id}/ndvi?index=&date_from=&date_to=` (API-06:
+  таймлайн индексов с cloud_pct, пагинация, meta источника со stale-меткой
+  «нет сцены 14 сут»). Права — группа RBAC `satellite`
+  (агроном/руководитель/админ, E-09);
+- фоновый опрос каталога — раз в 6 ч (05 §4), APScheduler за флагом
+  `SATELLITE_ENABLED` (по умолчанию false — внешние вызовы отключены;
+  для включения нужен аккаунт Copernicus и ключи в `.env`).
+
+Композит «лучшая сцена за 14 суток» (05 §2) не реализован — все сцены
+сохраняются с `composite_days=1`; отмечено как развитие.
+
 ## Экспорт данных хозяйства (MVP-14, API-32)
 
 `app/modules/export/` — `GET /api/v1/export?entity=&format=` (REQ-NF-007):
