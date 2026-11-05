@@ -4,8 +4,6 @@
 и содержат поля: type, title, status, detail, instance + код приложения `code`.
 """
 
-from typing import Any
-
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -38,8 +36,14 @@ class AppError(Exception):
     title: str = "Некорректный запрос"
     code: str = "bad_request"
 
-    def __init__(self, detail: str, *, code: str | None = None,
-                 title: str | None = None, status_code: int | None = None) -> None:
+    def __init__(
+        self,
+        detail: str,
+        *,
+        code: str | None = None,
+        title: str | None = None,
+        status_code: int | None = None,
+    ) -> None:
         super().__init__(detail)
         self.detail = detail
         if code is not None:
@@ -51,7 +55,11 @@ class AppError(Exception):
 
 
 def problem_response(
-    request: Request, *, status_code: int, title: str, detail: str | None,
+    request: Request,
+    *,
+    status_code: int,
+    title: str,
+    detail: str | None,
     code: str | None = None,
 ) -> JSONResponse:
     body = Problem(
@@ -61,7 +69,9 @@ def problem_response(
         instance=str(request.url.path),
         code=code,
     ).model_dump(exclude_none=True)
-    return JSONResponse(status_code=status_code, content=body, media_type="application/problem+json")
+    return JSONResponse(
+        status_code=status_code, content=body, media_type="application/problem+json"
+    )
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -70,11 +80,17 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
         return problem_response(
-            request, status_code=exc.status_code, title=exc.title, detail=exc.detail, code=exc.code,
+            request,
+            status_code=exc.status_code,
+            title=exc.title,
+            detail=exc.detail,
+            code=exc.code,
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_error_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+    async def validation_error_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
         # Ошибки валидации запроса — 400 (422 по контракту зарезервирован
         # под нарушение бизнес-правила, а не под синтаксис запроса).
         detail = "; ".join(

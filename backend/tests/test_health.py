@@ -22,17 +22,20 @@ def test_unknown_route_is_rfc7807(client: TestClient) -> None:
 def test_app_error_is_rfc7807(client: TestClient) -> None:
     # эндпоинт для проверки обработчика AppError объявлен прямо в тесте
     from app.core.errors import AppError
-    from fastapi import APIRouter
-
     from app.main import create_app
+    from fastapi import APIRouter
 
     app = create_app()
     router = APIRouter()
 
     @router.get("/_test/app-error")
     def raise_app_error() -> None:
-        raise AppError("нарушено бизнес-правило", code="rule_check_failed",
-                       status_code=422, title="Нарушено бизнес-правило")
+        raise AppError(
+            "нарушено бизнес-правило",
+            code="rule_check_failed",
+            status_code=422,
+            title="Нарушено бизнес-правило",
+        )
 
     app.include_router(router)
     with TestClient(app, raise_server_exceptions=False) as c:
