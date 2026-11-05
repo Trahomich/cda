@@ -133,7 +133,7 @@ class TestOpenMeteoAdapter:
         frost = [d for d, i in by_day.items() if i.temperature_min_c == -1.3]
         assert by_day[heavy[0]].hazard == "heavy_rain"
         assert by_day[frost[0]].hazard == "frost"
-        assert by_day[by_day[min(by_day)]].hazard == "none"
+        assert by_day[min(by_day)].hazard == "none"
 
     def test_forecast_requests_windspeed_in_ms(self, db_session):
         make_field(db_session)
