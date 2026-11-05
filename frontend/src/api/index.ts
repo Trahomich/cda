@@ -131,3 +131,50 @@ export function createTreatmentPlan(payload: TreatmentPlanRequest): Promise<Trea
 export function approveTreatmentPlan(planId: string): Promise<TreatmentPlan> {
   return apiClient.request<TreatmentPlan>(`/treatment-plans/${planId}/approve`, { method: 'POST' })
 }
+
+/* ─── Экран E-10 «Погода и погодные окна» (docs/07-ux, SC-03) ─── */
+
+/** API-29: GET /weather/forecast?field_id&days — прогноз на N суток (кэш 3 ч). */
+export function getWeatherForecast(fieldId: string, days = 7): Promise<WeatherForecast> {
+  return apiClient.request<WeatherForecast>('/weather/forecast', {
+    query: { field_id: fieldId, days },
+  })
+}
+
+/** GET /weather/windows?field_id&operation_type — оценка погодного окна по
+ *  RULE-AGRO-09 (03 §3.3): ближайшие подходящие сутки с обоснованием. */
+export function getWeatherWindows(
+  fieldId: string,
+  operationType: WindowOperationType,
+): Promise<WeatherWindows> {
+  return apiClient.request<WeatherWindows>('/weather/windows', {
+    query: { field_id: fieldId, operation_type: operationType },
+  })
+}
+
+/* ─── Экран E-14 «Источники данных» (API-28) ─── */
+
+/** API-28: GET /sources/status — журнал адаптеров: источник, статус, last_success_at. */
+export function getSourcesStatus(): Promise<{ items: AdapterStatus[] }> {
+  return apiClient.list<AdapterStatus>('/sources/status')
+}
+
+/* ─── Экран E-18 «Техника и задания» (API-19/20) ─── */
+
+/** API-19: GET /machines — парк техники (read-only в MVP). */
+export function getMachines(): Promise<{ items: Machine[] }> {
+  return apiClient.list<Machine>('/machines')
+}
+
+/** GET /machine-jobs — задания смены с развёрнутыми именами (read-only + confirm). */
+export function getMachineJobs(params: { status?: MachineJobStatus } = {}): Promise<{
+  items: MachineJob[]
+  total: number
+}> {
+  return apiClient.list<MachineJob>('/machine-jobs', { status: params.status })
+}
+
+/** API-20: POST /machine-jobs/{id}/confirm — подтверждение черновика из телематики. */
+export function confirmMachineJob(jobId: string): Promise<MachineJob> {
+  return apiClient.request<MachineJob>(`/machine-jobs/${jobId}/confirm`, { method: 'POST' })
+}
