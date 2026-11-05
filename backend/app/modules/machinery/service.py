@@ -374,5 +374,5 @@ def list_maintenance(
     if machine_id is not None:
         stmt = stmt.where(Maintenance.machine_id == machine_id)
         count_stmt = count_stmt.where(Maintenance.machine_id == machine_id)
-    rows = list(db.execute(stmt.limit(limit).offset(offset)))
+    rows = [(item, machine) for item, machine in db.execute(stmt.limit(limit).offset(offset))]
     return rows, db.scalar(count_stmt) or 0
