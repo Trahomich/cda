@@ -13,6 +13,7 @@ from app.modules.fields import router as fields_router
 from app.modules.machinery import router as machinery_router
 from app.modules.operations.router import router as operations_router
 from app.modules.rotation import router as rotation_router
+from app.modules.satellite import router as satellite_router
 from app.modules.weather import router as weather_router
 
 settings = get_settings()
