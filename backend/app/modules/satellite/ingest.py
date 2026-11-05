@@ -252,7 +252,7 @@ class SatelliteIngest:
             existing = self._existing_keys(db, scenes)
             ok += self.save_scenes(db, scenes)
             db.commit()
-            published += self._publish_new(db, scenes, existing)
+            published += self._publish_new(scenes, existing)
         report = IngestReport(ok=ok, skipped=skipped, failed=failed)
         self.log_source(
             db,
