@@ -175,6 +175,10 @@ erDiagram
 | API-34 | POST /ai/explain | объяснение рекомендации по rationale/data_refs | REQ-F-037 |
 | API-35 | POST /ai/summary | сводка журнала/алертов за период | REQ-F-038 |
 
+Пост-MVP (описаны в своих документах, здесь — только индекс): API-36..39 —
+агроскаутинг (docs/11-agroscouting.md §5), API-40..45 — экономика
+(docs/12-economics.md §5). Формат пути и ошибок — настоящие §5 и §8 CONTRACTS.
+
 Пример ошибки 422 — нарушение бизнес-правила (`POST /api/v1/treatment-plans`):
 
 ```json
