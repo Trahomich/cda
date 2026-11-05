@@ -180,8 +180,12 @@ function kindLabel(kind: string): string {
           :class="{ 'card360__check--warn': !card.rotation_check.ok }"
         >
           Культура {{ currentCycle.year }}: {{ currentCycle.culture_name }} —
-          <template v-if="card.rotation_check.ok">✓ {{ card.rotation_check.message }}</template>
-          <template v-else>⚠ {{ card.rotation_check.message }}</template>
+          <template v-if="card.rotation_check.ok">
+            ✓ {{ card.rotation_check.message }}
+          </template>
+          <template v-else>
+            ⚠ {{ card.rotation_check.message }}
+          </template>
         </p>
       </div>
 
