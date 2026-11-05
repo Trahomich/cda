@@ -1431,6 +1431,92 @@ export class MockTransport implements Transport {
       return ok({ items: items.slice(offset, offset + limit), total: items.length, limit, offset })
     }
 
+    /* ── Погода: прогноз (API-29) и окна по RULE-AGRO-09 (MVP-6) ── */
+    if (method === 'GET' && pathname === '/weather/forecast') {
+      const fieldId = params.get('field_id') ?? ''
+      if (!FIELDS.some((f) => f.field_id === fieldId)) {
+        return problem(
+          404,
+          'https://cda.example/errors/not-found',
+          'Нет ресурса',
+          `Поле ${fieldId} не найдено`,
+        )
+      }
+      // days 1..14, по умолчанию 7 (05 §6, REQ-NF-009: кэш при недоступности).
+      const days = Math.min(Math.max(Number(params.get('days') ?? 7) || 7, 1), 14)
+      return ok({ field_id: fieldId, days: forecastDays(7).slice(0, days), stale: false })
+    }
+
+    if (method === 'GET' && pathname === '/weather/windows') {
+      const fieldId = params.get('field_id') ?? ''
+      const n = FIELD_N.get(fieldId)
+      if (n === undefined) {
+        return problem(
+          404,
+          'https://cda.example/errors/not-found',
+          'Нет ресурса',
+          `Поле ${fieldId} не найдено`,
+        )
+      }
+      const type = params.get('operation_type') as WindowOperationType | null
+      if (!type || !(type in OP_WINDOW_LABELS)) {
+        return problem(
+          400,
+          'https://cda.example/errors/validation',
+          'Некорректный запрос',
+          `Неизвестный тип операции: ${params.get('operation_type')}`,
+        )
+      }
+      return ok(windowsOf(n, type))
+    }
+
+    /* ── Источники данных (E-14, API-28) ── */
+    if (method === 'GET' && pathname === '/sources/status') {
+      return ok({ items: SOURCES })
+    }
+
+    /* ── Техника и задания (E-18, API-19/20) ── */
+    if (method === 'GET' && pathname === '/machines') {
+      return ok({ items: MACHINES })
+    }
+
+    // GET /machine-jobs — расширение мока (нет в 06 §5): список заданий смены
+    // с развёрнутыми именами машины и поля для таблицы на E-18.
+    if (method === 'GET' && pathname === '/machine-jobs') {
+      const status = params.get('status')
+      const stripped = MACHINE_JOBS.map(({ track_ref: _track, ...job }) => job)
+      let items = stripped
+      if (status) items = items.filter((j) => j.status === status)
+      const limit = Number(params.get('limit') ?? 50) || 50
+      const offset = Number(params.get('offset') ?? 0) || 0
+      return ok({ items: items.slice(offset, offset + limit), total: items.length, limit, offset })
+    }
+
+    // API-20: подтверждение черновика из телематики человеком.
+    const confirmJobMatch = /^\/machine-jobs\/([\w-]+)\/confirm$/.exec(pathname)
+    if (method === 'POST' && confirmJobMatch) {
+      const job = MACHINE_JOBS.find((j) => j.job_id === confirmJobMatch[1])
+      if (!job) {
+        return problem(
+          404,
+          'https://cda.example/errors/not-found',
+          'Нет ресурса',
+          `Задание ${confirmJobMatch[1]} не найдено`,
+        )
+      }
+      if (job.status !== 'draft') {
+        return problem(
+          409,
+          'https://cda.example/errors/conflict',
+          'Конфликт',
+          `Задание уже ${job.status === 'confirmed' ? 'подтверждено' : 'отклонено'}`,
+        )
+      }
+      job.status = 'confirmed'
+      const { track_ref: _track, ...rest } = job
+      return ok(rest)
+    }
+
     return problem(
       404,
       'https://cda.example/errors/not-found',
