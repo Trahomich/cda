@@ -5,7 +5,10 @@
   seed-references  — сиды справочников ref_culture / ref_source (MVP-2,
                      идемпотентно: ON CONFLICT DO NOTHING);
   seed-weather-rules — параметры погодных окон RULE-AGRO-09 в ref_weather_rule
-                     (MVP-6, идемпотентный upsert по operation_type).
+                     (MVP-6, идемпотентный upsert по operation_type);
+  seed-demo        — демо-хозяйство целиком (MVP-13: поля, циклы, операции,
+                     техника, задания, алерты, демо-погода; идемпотентно,
+                     --reset пересоздаёт; включает справочники и правила).
 """
 
 import argparse
