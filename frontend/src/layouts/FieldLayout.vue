@@ -13,9 +13,9 @@ const alertsBadge = ref(0)
 const nav = computed(() => [
   { label: 'Дашборд', route: { name: 'field-map' }, disabled: true },
   { label: 'Поля', route: { name: 'field-map' }, disabled: false },
-  { label: 'Работы', route: { name: 'field-map' }, disabled: true },
+  { label: 'Работы', route: { name: 'field-operations' }, disabled: false },
   { label: 'Животные', route: { name: 'field-map' }, disabled: true },
-  { label: 'Ещё…', route: { name: 'fields-map' }, disabled: false },
+  { label: 'Ещё…', route: { name: 'field-queue' }, disabled: false },
 ])
 
 function go(item: (typeof nav.value)[number]) {
