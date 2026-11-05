@@ -12,9 +12,8 @@ manager/admin, задания — группа machinery), RFC 7807. PostgreSQL+
 import uuid
 from datetime import date
 
-from app.models.agronomy import Field, FieldOperation
+from app.models.agronomy import FieldOperation
 from app.models.auth import UserRole
-from sqlalchemy import select
 from tests.test_auth import auth_header, make_user
 
 API = "/api/v1/machines"
