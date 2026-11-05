@@ -19,7 +19,6 @@ function logout() {
       <span class="cabinet__role">[роль: {{ auth.roleTitle }}]</span>
       <span class="cabinet__spacer" />
       <RouterLink class="cabinet__nav" :to="{ name: 'fields-map' }">Карта полей</RouterLink>
-      <RouterLink class="cabinet__nav" :to="{ name: 'fields-list' }">Список полей</RouterLink>
       <RouterLink class="cabinet__nav" :to="{ name: 'field-map' }">Полевой режим</RouterLink>
       <button type="button" class="cabinet__logout" @click="logout">Выйти</button>
     </header>
