@@ -32,6 +32,17 @@ class Settings(BaseSettings):
     jwt_ttl_minutes: int = 60
     farm_name: str = "КФХ «Восход»"  # наименование хозяйства в ответе API-46
 
+    # Погода (MVP-6, docs/05-integrations.md §2/§4/§6)
+    open_meteo_base_url: str = "https://api.open-meteo.com/v1"
+    open_meteo_archive_url: str = "https://archive-api.open-meteo.com/v1"
+    weather_poll_enabled: bool = False  # true — в docker-compose api
+    weather_poll_current_minutes: int = 30
+    weather_poll_forecast_hours: int = 3
+    weather_forecast_days: int = 7  # горизонт хранения (контракт API-07/29)
+    weather_retry_attempts: int = 5  # ретраи с экспоненциальной задержкой (05 §6)
+    weather_retry_base_seconds: float = 60.0  # 0 — без пауз (тесты)
+    weather_request_timeout: float = 10.0
+
     @property
     def sqlalchemy_database_uri(self) -> str:
         """DSN для SQLAlchemy (psycopg 3)."""
