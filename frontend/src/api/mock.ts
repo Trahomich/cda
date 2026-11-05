@@ -49,8 +49,7 @@ function makeField(
 }
 
 // Демо-хозяйство КФХ «Восход»: окрестности н.п. Степное (~48.73 с.ш., 41.98 в.д.).
-const FIELDS: MockField[] = [
-  makeField(1, 41.9812, 48.7261, 0.0098, 0.0051, 84.5, 'active', {
+const FIELDS: MockField[] = [  makeField(1, 41.9812, 48.7261, 0.0098, 0.0051, 84.5, 'active', {
     year: 2027,
     culture_name: 'Ячмень',
     kind: 'main',
