@@ -1,4 +1,10 @@
-"""Аутентификация: POST /auth/login и GET /auth/me (задача MVP-4)."""
+"""Аутентификация: API-46 POST /auth/login и API-47 GET /auth/me (задача MVP-4).
+
+Формат ответов зафиксирован в docs/06-data-api.md §5:
+- API-46: {login, password} → {token, user {name, role, farm_name}}, 401 bad_credentials;
+- API-47: {id, name, role}.
+Роли — значения enum UserRole (01-requirements §2).
+"""
 
 import uuid
 
@@ -8,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import CurrentUser
+from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.security import create_access_token, verify_password
@@ -21,15 +28,20 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=200, description="Пароль")
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+class UserBrief(BaseModel):
+    name: str = Field(description="ФИО пользователя")
+    role: UserRole
+    farm_name: str = Field(description="Наименование хозяйства (настройка FARM_NAME)")
+
+
+class LoginResponse(BaseModel):
+    token: str
+    user: UserBrief
 
 
 class MeResponse(BaseModel):
-    user_id: uuid.UUID
-    login: str
-    fio: str
+    id: uuid.UUID
+    name: str
     role: UserRole
 
 
@@ -47,8 +59,8 @@ def _audit_login(db: Session, *, user_id: uuid.UUID | None, login: str, success:
     db.commit()
 
 
-@router.post("/login", response_model=TokenResponse, summary="Вход: логин и пароль → JWT")
-def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)) -> TokenResponse:
+@router.post("/login", response_model=LoginResponse, summary="API-46: вход, логин и пароль → JWT")
+def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)) -> LoginResponse:
     user = db.scalar(select(User).where(User.login == body.login))
     ok = user is not None and user.is_active and verify_password(body.password, user.password_hash)
     if not ok:
@@ -62,9 +74,14 @@ def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)) -
         )
 
     _audit_login(db, user_id=user.id, login=body.login, success=True)
-    return TokenResponse(access_token=create_access_token(user_id=user.id, role=user.role))
+    return LoginResponse(
+        token=create_access_token(user_id=user.id, role=user.role),
+        user=UserBrief(
+            name=user.fio, role=user.role, farm_name=get_settings().farm_name
+        ),
+    )
 
 
-@router.get("/me", response_model=MeResponse, summary="Профиль текущего пользователя")
+@router.get("/me", response_model=MeResponse, summary="API-47: текущий пользователь по JWT")
 def me(user: CurrentUser) -> MeResponse:
-    return MeResponse(user_id=user.id, login=user.login, fio=user.fio, role=user.role)
+    return MeResponse(id=user.id, name=user.fio, role=user.role)
