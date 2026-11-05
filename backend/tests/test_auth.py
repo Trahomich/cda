@@ -87,10 +87,10 @@ class TestMe:
         headers = auth_header(client, "boss", "secret123")
         resp = client.get("/api/v1/auth/me", headers=headers)
         assert resp.status_code == 200
-        body = resp.json()
-        assert body["login"] == "boss"
+        body = resp.json()  # API-47: {id, name, role}
+        assert body["name"] == "Тест boss"
         assert body["role"] == "manager"
-        assert uuid.UUID(body["user_id"]) == user.id
+        assert uuid.UUID(body["id"]) == user.id
 
     def test_me_without_token_401(self, client):
         resp = client.get("/api/v1/auth/me")
