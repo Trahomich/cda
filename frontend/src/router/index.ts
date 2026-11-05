@@ -27,6 +27,27 @@ const router = createRouter({
         },
         // Список полей — вкладка экрана карты (решение в обсуждении #21).
         { path: 'fields', redirect: { name: 'fields-map' } },
+        {
+          // E-03 «Поле 360°» (07-ux §3.2): карточка поля из списка/карты.
+          path: 'fields/:fieldId',
+          name: 'field-card',
+          component: () => import('@/views/FieldCardView.vue'),
+          meta: { title: 'Карточка поля' },
+        },
+        {
+          // E-04 «План севооборота» (07-ux §3.3): матрица поле × год.
+          path: 'rotation',
+          name: 'rotation-plan',
+          component: () => import('@/views/RotationPlanView.vue'),
+          meta: { title: 'План севооборота' },
+        },
+        {
+          // E-05 «Планы удобрений и СЗР» (07-ux §2): список планов + создание.
+          path: 'treatment-plans',
+          name: 'treatment-plans',
+          component: () => import('@/views/TreatmentPlansView.vue'),
+          meta: { title: 'Планы удобрений и СЗР' },
+        },
       ],
     },
     {
