@@ -60,8 +60,3 @@ def seed_references(db: Session) -> dict[str, int]:
 
     db.commit()
     return {"ref_culture": inserted_cultures, "ref_source": inserted_sources}
-
-
-# Не удалять: явная ссылка на универсальный insert, чтобы mypy не ругался на
-# переиспользование имени в тестах при расширении сидов.
-_ = insert
