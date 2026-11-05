@@ -135,3 +135,34 @@ pre-commit install && pre-commit run --all-files
   соответствуют матрице прав docs/07-ux.md §5. Для отдельных эндпоинтов —
   `user: CurrentUser` + `role_checker(...)`.
 - Все входы (успешные и нет) пишутся в `dat_audit` (action = login / login_failed).
+
+## Модуль погоды (MVP-6, API-07/29, RULE-AGRO-09)
+
+`app/integrations/` + `app/modules/weather/` — контур приёма Open-Meteo по
+docs/05-integrations.md (IF-WEATHER):
+
+- адаптер `OpenMeteoAdapter` (source_id `weather.open-meteo`): прогноз (≤16 сут),
+  текущая погода, архив (archive-api); ветер запрашивается в м/с; валидация
+  диапазонов 05 §5 (T вне [-60;+60] °C, ветер >60 м/с → `DataQualityError`,
+  запись отбрасывается); сеть/5xx → `SourceUnavailableError` (ретраи
+  `WEATHER_RETRY_ATTEMPTS` с экспоненциальной задержкой от
+  `WEATHER_RETRY_BASE_SECONDS`); пустой ответ → `DataGapError` (не ошибка);
+  hazard по порогам: t_min ≤ 0 → frost, осадки ≥ 15 мм → heavy_rain,
+  ветер ≥ 15 м/с → wind;
+- ingest `WeatherIngest`: активные поля → центроид `ST_Centroid` → адаптер →
+  факты `dat_weather_observation` (дедуп UQ field+дата+источник), прогноз
+  `dat_forecast` (последняя версия перезаписывает), журнал `dat_source_journal`
+  (ok/degraded/error + причина) и `ref_source.last_status/last_success_at`;
+- API: `GET /api/v1/fields/{id}/weather` (API-07: факты 14 сут + прогноз 7 сут
+  + meta источника со stale-меткой: issued_at старше 12 ч), `GET
+  /api/v1/weather/forecast?field_id&days` (API-29), `GET
+  /api/v1/weather/windows?operation_type&field_id` — погодное окно RULE-AGRO-09:
+  вердикт по суткам, причины на русском, `alert` — текст для ENT-ALERT, если
+  окна нет. Права — группа RBAC `weather` (все 5 ролей, E-06/E-10);
+- пороги окон — `ref_weather_rule` (params JSONB по operation_type, редактируемые
+  руководителем), сид: `python -m app.cli seed-weather-rules` (идемпотентно);
+  маппинги суточных прогнозов к формулировкам правил — в `app/modules/weather/rules.py`;
+- фоновый опрос (05 §4): APScheduler, текущая — `WEATHER_POLL_CURRENT_MINUTES`
+  (30 мин), прогноз — `WEATHER_POLL_FORECAST_HOURS` (3 ч), джобы в Redis
+  (недоступен → in-memory). В local выключен (`WEATHER_POLL_ENABLED=false`),
+  в docker-compose api включён.
