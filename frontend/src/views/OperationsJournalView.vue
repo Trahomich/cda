@@ -46,7 +46,6 @@ const SOURCE_LABELS: Record<FieldOperation['source'], string> = {
  *  того же препарата на этом поле. Вне плана — отдельная пометка. */
 function deviationOf(op: FieldOperation): { text: string; level: 'warn' | 'info' | 'none' } {
   if (op.input_id === null || op.actual_dose === null) return { text: '—', level: 'none' }
-  const field = fields.value.find((f) => f.field_id === op.field_id)
   const candidates = plans.value.filter(
     (p) => p.field_id === op.field_id && p.input_id === op.input_id,
   )
@@ -58,11 +57,10 @@ function deviationOf(op: FieldOperation): { text: string; level: 'warn' | 'info'
     .filter((p) => p.planned_date <= op.date)
     .sort((a, b) => b.planned_date.localeCompare(a.planned_date))
   const plan = past[0] ?? candidates.sort((a, b) => a.planned_date.localeCompare(b.planned_date))[0]
-  const unit = field ? '' : ''
   const delta = ((op.actual_dose - plan.dose) / plan.dose) * 100
   const sign = delta > 0 ? '+' : ''
   const pct = `${sign}${delta.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} %`
-  const text = `факт ${op.actual_dose.toLocaleString('ru-RU')} против плана ${plan.dose.toLocaleString('ru-RU')} (${pct}${unit})`
+  const text = `факт ${op.actual_dose.toLocaleString('ru-RU')} против плана ${plan.dose.toLocaleString('ru-RU')} (${pct})`
   return { text, level: Math.abs(delta) > 10 ? 'warn' : 'none' }
 }
 
