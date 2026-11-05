@@ -85,11 +85,3 @@ test('422 не теряет запись: причина из problem+json по�
   await page.getByRole('button', { name: 'Синхронизировать' }).click()
   await expect(page.locator('.queue__item')).toHaveCount(0, { timeout: 30_000 })
 })
-
-// После тестов обоих сценариев в журнале могут остаться записи — тесты
-// независимы (разные страницы, но общая БД вкладки). Для стабильности
-// идемпотентность проверяется числом записей в конце первого теста.
-async function noop(_page: Page) {
-  void _page
-}
-void noop
