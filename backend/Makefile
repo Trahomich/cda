@@ -29,9 +29,13 @@ seed:
 	@echo "Сейчас доступны: python -m app.cli create-admin | seed-references" >&2
 	@exit 1
 
-## test: юнит/интеграционные тесты (pytest). Дымовой e2e — SMOKE=1 make test
+## test: юнит/интеграционные тесты (pytest)
 test:
 	python -m pytest
+
+## smoke: дымовой e2e против поднятого окружения (make up): healthz/login/me
+smoke:
+	SMOKE=1 python -m pytest tests_e2e
 
 ## lint: ruff (lint + формат) и mypy
 lint:
