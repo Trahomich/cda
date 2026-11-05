@@ -33,9 +33,11 @@ class User(Base):
 
     __tablename__ = "dat_user"
 
+    __table_args__ = (sa.UniqueConstraint("login", name="uq_dat_user_login"),)
+
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     fio: Mapped[str] = mapped_column(String(200), nullable=False)
-    login: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+    login: Mapped[str] = mapped_column(String(100), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, name="user_role", native_enum=False, length=40),
