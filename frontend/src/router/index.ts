@@ -25,12 +25,8 @@ const router = createRouter({
           component: () => import('@/views/FieldsMapView.vue'),
           meta: { title: 'Карта полей' },
         },
-        {
-          path: 'fields',
-          name: 'fields-list',
-          component: () => import('@/views/FieldsListView.vue'),
-          meta: { title: 'Список полей' },
-        },
+        // Список полей — вкладка экрана карты (решение в обсуждении #21).
+        { path: 'fields', redirect: { name: 'fields-map' } },
       ],
     },
     {
