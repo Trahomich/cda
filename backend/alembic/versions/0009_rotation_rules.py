@@ -12,8 +12,8 @@ Revises: 0007_cleanup_user_login_idx
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0008_rotation_rules"
-down_revision = "0007_cleanup_user_login_idx"
+revision = "0009_rotation_rules"
+down_revision = "0008_maintenance"
 branch_labels = None
 depends_on = None
 
