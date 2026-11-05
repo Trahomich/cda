@@ -149,7 +149,7 @@ class SatelliteIngest:
                 SatelliteScene.source_id,
             )
         ).fetchall()
-        return set(rows)
+        return {(str(r[0]), r[1], r[2], r[3]) for r in rows}
 
     def save_scenes(self, db: Session, scenes: list[Scene]) -> int:
         """Upsert по UQ(field_id, index, captured_at, source_id); >60 % не пишем."""
