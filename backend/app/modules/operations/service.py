@@ -53,6 +53,18 @@ def get_operation(db: Session, operation_id: uuid.UUID) -> FieldOperation:
     return operation
 
 
+def yield_of(db: Session, operation: FieldOperation) -> YieldRecord | None:
+    """Урожайность операции уборки: ENT-YIELD-RECORD того же цикла и даты."""
+    if operation.cycle_id is None:
+        return None
+    return db.scalars(
+        select(YieldRecord)
+        .where(YieldRecord.cycle_id == operation.cycle_id, YieldRecord.date == operation.date)
+        .order_by(YieldRecord.created_at if hasattr(YieldRecord, "created_at") else YieldRecord.id)
+        .limit(1)
+    ).first()
+
+
 def _deviation_rationale(actual: float, planned: float) -> str:
     """Текст обоснования отклонения (RULE-AGRO-11, 03 §3.4)."""
     percent = (actual - planned) / planned * 100
