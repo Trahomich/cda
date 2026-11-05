@@ -6,7 +6,7 @@
 //  - сетевая ошибка оставляет запись pending.
 import { db, uuidV4, type QueueRecord } from './db'
 import { createOperation } from '@/api'
-import type { OperationRequest } from '@/api/types'
+import type { Field, OperationRequest } from '@/api/types'
 import { ApiError } from '@/api/client'
 
 export type SyncResult = {
