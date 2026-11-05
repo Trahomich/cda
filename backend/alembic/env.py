@@ -12,7 +12,7 @@ from app.core.db import Base
 # видел метаданные:
 # import app.modules.fields.models  # noqa: F401
 
-config = config = context.config
+config = context.config
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
