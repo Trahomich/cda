@@ -185,27 +185,22 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
     fields: dict[str, Field] = {}
     for spec in DEMO_FIELDS:
         polygon = _polygon(spec)
-        field = Field(name=spec.name, contour=f"SRID=4326;{polygon['type']}", status="active")
-        # geography из GeoJSON — через WKT конвертацию ниже (см. insert)
-        db.add(field)
+        ring = ", ".join(f"{lon} {lat}" for lon, lat in polygon["coordinates"][0])
+        contour = f"SRID=4326;POLYGON(({ring}))"
+        demo_field = Field(name=spec.name, contour=contour, status="active")
+        db.add(demo_field)
         db.flush()
-        from geoalchemy2.shape import from_shape  # локальный импорт: heavy
-        from shapely.geometry import shape as shapely_shape
-
-        contour = from_shape(shapely_shape(polygon), srid=4326)
-        field.contour = contour
         version = FieldVersion(
-            field_id=field.id,
+            field_id=demo_field.id,
             version_no=1,
             contour=contour,
-            area_ga=spec.area_ha,
             valid_from=now.date() - timedelta(days=365),
             reason="демо-хозяйство (MVP-13)",
         )
         db.add(version)
         db.flush()
-        field.current_version_id = version.id
-        fields[spec.name] = field
+        demo_field.current_version_id = version.id
+        fields[spec.name] = demo_field
         report.fields += 1
     db.commit()
 
