@@ -408,9 +408,7 @@ class TestApi06:
         self.client = client
         self.db = db_session
         make_user(db_session, login="sat-agro", role=UserRole.AGRONOMIST, password="pw-sat")
-        make_user(
-            db_session, login="sat-mach", role=UserRole.MACHINE_OPERATOR, password="pw-sat2"
-        )
+        make_user(db_session, login="sat-mach", role=UserRole.MACHINE_OPERATOR, password="pw-sat2")
         self.auth = auth_header(client, "sat-agro", "pw-sat")
         self.field_id = make_field(db_session)
         make_satellite_source(db_session)
@@ -428,8 +426,15 @@ class TestApi06:
         dates = [item["captured_at"] for item in body["items"]]
         assert dates == sorted(dates, reverse=True)
         item = body["items"][0]
-        assert {"scene_id", "index_avg", "index_min", "index_max", "cloud_pct",
-                "composite_days", "trust"} <= set(item)
+        assert {
+            "scene_id",
+            "index_avg",
+            "index_min",
+            "index_max",
+            "cloud_pct",
+            "composite_days",
+            "trust",
+        } <= set(item)
         assert body["meta"]["source_id"] == SATELLITE_SOURCE_ID
         assert body["meta"]["status"] == "ok"
 

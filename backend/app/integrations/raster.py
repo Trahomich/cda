@@ -58,9 +58,7 @@ def validate_index_values(index: str, values: np.ndarray) -> None:
         return
     lo, hi = float(np.nanmin(values)), float(np.nanmax(values))
     if lo < -1.0 or hi > 1.0:
-        raise DataQualityError(
-            f"Индекс {index} вне [−1; 1]: min={lo:.3f}, max={hi:.3f} (05 §5)"
-        )
+        raise DataQualityError(f"Индекс {index} вне [−1; 1]: min={lo:.3f}, max={hi:.3f} (05 §5)")
 
 
 def stats_over_mask(values: np.ndarray, mask: np.ndarray) -> tuple[float, float, float]:
@@ -94,9 +92,7 @@ def contour_mask(
     geom = shape(contour_geojson)
     # all_touched=True: пиксель входит, если его касается контур, — на 10 м
     # разрешении и малых полях иначе теряется заметная доля площади
-    return ~geometry_mask(
-        [geom], out_shape=out_shape, transform=transform, all_touched=True
-    )
+    return ~geometry_mask([geom], out_shape=out_shape, transform=transform, all_touched=True)
 
 
 __all__ = [

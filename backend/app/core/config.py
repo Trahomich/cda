@@ -55,8 +55,7 @@ class Settings(BaseSettings):
     satellite_raster_cache_dir: str = "/var/lib/cda/satellite"  # распакованные каналы L2A
     # Ключи Copernicus Data Space (плейсхолдеры в .env.example; в local пусто)
     copernicus_auth_url: str = (
-        "https://identity.dataspace.copernicus.eu/auth/realms/CDAS"
-        "/protocol/openid-connect/token"
+        "https://identity.dataspace.copernicus.eu/auth/realms/CDAS/protocol/openid-connect/token"
     )
     copernicus_search_url: str = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
     copernicus_client_id: str = ""

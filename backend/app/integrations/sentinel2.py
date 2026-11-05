@@ -63,7 +63,7 @@ class SceneMeta:
     """Метаданные сцены из каталога Copernicus (до вычисления индексов)."""
 
     scene_ref: str  # идентификатор продукта (UUID OData)
-    name: str  | None = None
+    name: str | None = None
     tile_id: str | None = None
     captured_at: date | None = None
     cloud_pct: float | None = None
@@ -259,9 +259,7 @@ class Sentinel2Adapter:
         scenes: list[Scene] = []
         for meta in self.search_scenes(field_id, date_from, date_to, max_cloud_pct):
             assert meta.captured_at is not None and meta.cloud_pct is not None
-            scenes.append(
-                self._scene_from_rasters(field_id, index, meta, contour)
-            )
+            scenes.append(self._scene_from_rasters(field_id, index, meta, contour))
         return scenes
 
     def _scene_from_rasters(
@@ -386,7 +384,7 @@ class FakeSentinel2Adapter:
                             source_id=self.source_id,
                             trust=round(1.0 - cloud_pct / 100.0, 2),
                             composite_days=1,
-                            scene_ref=f"fake-{self._hash(f'{field_id}:{day}') :08x}",
+                            scene_ref=f"fake-{self._hash(f'{field_id}:{day}'):08x}",
                             cloud_method="synthetic",
                         )
                     )
