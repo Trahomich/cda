@@ -100,7 +100,7 @@ def list_fields(
     with_geometry: bool = Query(default=False, description="Добавить contour в элементы"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    db: Session = DbSession,
+    db: DbSession,
 ) -> FieldListResponse:
     fields, total = service.list_fields(db, status=status, q=q, limit=limit, offset=offset)
     cycles = service.current_cycles(db, [f.id for f in fields])
@@ -116,7 +116,7 @@ def create_field(
     body: FieldCreate,
     response: Response,
     user: WriteAccess,  # noqa: ARG001 (роль проверена зависимостью)
-    db: Session = DbSession,
+    db: DbSession,
 ) -> FieldDetail:
     field = service.create_field(
         db, user=user, name=body.name, contour=body.contour, reason=body.reason
@@ -127,7 +127,7 @@ def create_field(
 
 @router.get("/{field_id}", response_model=FieldDetail,
             summary="API-05: карточка поля («Поле 360°»)")
-def get_field(field_id: uuid.UUID, db: Session = DbSession) -> FieldDetail:
+def get_field(field_id: uuid.UUID, db: DbSession) -> FieldDetail:
     return _detail(db, service.get_field(db, field_id))
 
 
@@ -137,7 +137,7 @@ def update_field(
     field_id: uuid.UUID,
     body: FieldUpdate,
     user: WriteAccess,
-    db: Session = DbSession,
+    db: DbSession,
 ) -> FieldDetail:
     field = service.get_field(db, field_id)
     field = service.update_field(
@@ -149,7 +149,7 @@ def update_field(
 
 @router.get("/{field_id}/versions", response_model=VersionListResponse,
             summary="История версий контура (REQ-F-002)")
-def list_versions(field_id: uuid.UUID, db: Session = DbSession) -> VersionListResponse:
+def list_versions(field_id: uuid.UUID, db: DbSession) -> VersionListResponse:
     field = service.get_field(db, field_id)
     versions = [
         VersionItem(
@@ -173,7 +173,7 @@ def add_version(
     body: VersionCreate,
     response: Response,
     user: WriteAccess,
-    db: Session = DbSession,
+    db: DbSession,
 ) -> VersionItem:
     field = service.get_field(db, field_id)
     version = service.add_version(
@@ -197,7 +197,7 @@ def add_version(
 async def import_fields(
     file: UploadFile,
     user: WriteAccess,
-    db: Session = DbSession,
+    db: DbSession,
 ) -> ImportReport:
     """Импорт GeoJSON (FeatureCollection / Feature / Polygon).
 
