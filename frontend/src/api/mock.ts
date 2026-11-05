@@ -151,10 +151,9 @@ export class MockTransport implements Transport {
       if (status && status !== 'all') items = items.filter((f) => f.status === status)
 
       // API-01: contour опущен по умолчанию, with_geometry=true его добавляет.
-      const pageItems = items.slice(offset, offset + limit).map((f) => {
-        const { contour, ...rest } = f
-        return withGeometry ? f : (rest as Field)
-      })
+      const pageItems = items.slice(offset, offset + limit).map((f) =>
+        withGeometry ? f : ({ ...f, contour: undefined } as Field),
+      )
       const page: Page<Field> = {
         items: pageItems,
         total: items.length,
