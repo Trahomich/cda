@@ -66,7 +66,7 @@ def centroid_lookup_factory(db: Session):
     def lookup(field_id: str) -> tuple[float, float] | None:
         row = db.execute(
             text(
-                "SELECT ST_X(c), ST_Y(c) FROM dat_field, "
+                "SELECT ST_X(c::geometry), ST_Y(c::geometry) FROM dat_field, "
                 "ST_Centroid(contour) AS c WHERE id = CAST(:fid AS uuid) AND status = 'active'"
             ),
             {"fid": field_id},
