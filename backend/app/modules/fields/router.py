@@ -14,8 +14,9 @@
 
 import json
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, Query, Response, UploadFile
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -25,7 +26,7 @@ from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker, role_checker
-from app.models.auth import UserRole
+from app.models.auth import User, UserRole
 from app.modules.fields import service
 from app.modules.fields.schemas import (
     FieldCreate,
