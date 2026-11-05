@@ -35,10 +35,13 @@ from app.models.agronomy import (
     FieldOperation,
     FieldVersion,
     RotationPlan,
+    TreatmentPlan,
+    YieldRecord,
 )
 from app.models.auth import User, UserRole
-from app.models.machinery import Machine, MachineJob
-from app.models.references import Culture
+from app.models.integrations import Forecast, SatelliteScene, WeatherObservation
+from app.models.machinery import Machine, MachineJob, Maintenance
+from app.models.references import Culture, RefAgrochem
 from app.modules.weather.rules import seed_weather_rules
 from app.seed import seed_references
 
@@ -162,10 +165,20 @@ def _delete_demo_data(db: Session) -> None:
     """Удалить демо-сущности каскадно вручную (FK без ondelete cascade в MVP)."""
     field_ids = [f.id for f in demo_fields_exist(db)]
     if field_ids:
+        demo_cycle_ids = select(CropCycle.id).where(CropCycle.field_id.in_(field_ids))
+        demo_op_ids = select(FieldOperation.id).where(FieldOperation.field_id.in_(field_ids))
+        # задания техники, ссылающиеся на демо-операции (machine_job.field_operation_id)
+        db.execute(delete(MachineJob).where(MachineJob.field_operation_id.in_(demo_op_ids)))
         db.execute(delete(Alert).where(Alert.field_id.in_(field_ids)))
+        db.execute(delete(TreatmentPlan).where(TreatmentPlan.cycle_id.in_(demo_cycle_ids)))
+        db.execute(delete(YieldRecord).where(YieldRecord.cycle_id.in_(demo_cycle_ids)))
         db.execute(delete(FieldOperation).where(FieldOperation.field_id.in_(field_ids)))
         db.execute(delete(CropCycle).where(CropCycle.field_id.in_(field_ids)))
         db.execute(delete(RotationPlan).where(RotationPlan.field_id.in_(field_ids)))
+        db.execute(delete(WeatherObservation).where(WeatherObservation.field_id.in_(field_ids)))
+        db.execute(delete(Forecast).where(Forecast.field_id.in_(field_ids)))
+        db.execute(delete(SatelliteScene).where(SatelliteScene.field_id.in_(field_ids)))
+        db.execute(delete(RefAgrochem).where(RefAgrochem.field_id.in_(field_ids)))
         db.execute(delete(FieldVersion).where(FieldVersion.field_id.in_(field_ids)))
         db.execute(delete(Field).where(Field.id.in_(field_ids)))
     # машины и задания демо — по госномерам
@@ -173,6 +186,7 @@ def _delete_demo_data(db: Session) -> None:
     demo_machines = list(db.scalars(select(Machine).where(Machine.gov_number.in_(gov_numbers))))
     if demo_machines:
         machine_ids = [m.id for m in demo_machines]
+        db.execute(delete(Maintenance).where(Maintenance.machine_id.in_(machine_ids)))
         db.execute(delete(MachineJob).where(MachineJob.machine_id.in_(machine_ids)))
         db.execute(delete(Machine).where(Machine.id.in_(machine_ids)))
     db.commit()
