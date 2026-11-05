@@ -171,10 +171,9 @@ erDiagram
 | API-31 | POST /imports/telemetry | импорт CSV/ISOXML → черновики работ | REQ-F-016, 032 |
 | API-32 | GET /export?entity= | экспорт доменных таблиц JSON/CSV | REQ-NF-007 |
 
-Пример ошибки 422 (нарушение бизнес-правила, RFC 7807):
+Пример ошибки 422 — нарушение бизнес-правила (`POST /api/v1/treatment-plans`):
 
 ```json
-POST /api/v1/treatment-plans → 422
 {"type": "https://cda.example/errors/waiting-period",
  "title": "Нарушено бизнес-правило", "status": 422,
  "detail": "Срок ожидания препарата 20 дней, до плановой уборки 3 дня (RULE-AGRO-08)",
