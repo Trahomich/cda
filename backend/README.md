@@ -129,6 +129,15 @@ pre-commit install && pre-commit run --all-files
 (ST_IsValidReason), 422 `area_below_min` (< 0,1 га), 409 `duplicate_name`.
 Права: чтение — группа RBAC `fields` (агроном/руководитель/механизатор/админ),
 изменение — agronomist/admin (403 `insufficient_role`).
+
+## Экспорт данных хозяйства (MVP-14, API-32)
+
+`app/modules/export/` — `GET /api/v1/export?entity=&format=` (REQ-NF-007):
+- entity из белого списка MVP: fields, rotation_plans, crop_cycles, agro_inputs,
+  treatment_plans, operations, machines, machine_jobs, alerts (400 `unknown_entity`);
+- format=json|csv (400 `invalid_format`); отдача потоковая (StreamingResponse,
+  yield_per), CSV — «;», UTF-8 с BOM, даты ISO 8601, геометрия — GeoJSON-строка;
+- роли — группа RBAC `export` (manager, admin).
 - Первый администратор: `python -m app.cli create-admin --login admin --password ...`.
 - Доменные роутеры защищаются зависимостью из `app.core.rbac`:
   `APIRouter(dependencies=[Depends(group_checker("fields"))])` — группы ролей
