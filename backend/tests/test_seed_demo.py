@@ -11,9 +11,6 @@
 
 from datetime import date
 
-from geoalchemy2 import functions as gfunc
-from sqlalchemy import func, select, text
-
 from app.models.agronomy import (
     Alert,
     CropCycle,
@@ -27,6 +24,8 @@ from app.models.integrations import Forecast, WeatherObservation
 from app.models.machinery import Machine, MachineJob
 from app.models.references import Culture
 from app.seed_demo import DEMO_FIELDS, seed_demo
+from geoalchemy2 import functions as gfunc
+from sqlalchemy import func, select
 
 
 def _counts(db):
@@ -151,7 +150,7 @@ def test_seed_idempotent_without_reset(db_session):
 
 
 def test_seed_reset_recreates_demo_data(db_session):
-    first = seed_demo(db_session)
+    seed_demo(db_session)
     ids_before = set(db_session.scalars(select(Field.id)))
     counts_before = _counts(db_session)
     assert len(ids_before) == 8
@@ -175,11 +174,11 @@ def test_seed_reset_recreates_demo_data(db_session):
 
 def test_seed_demo_cli_registered():
     """Подкоманда seed-demo доступна в CLI (make seed её вызывает)."""
-    from app.cli import main
-
     # argparse: --reset есть, дефолтного поведения не трогаем (БД занята фикстурой)
     import contextlib
     import io
+
+    from app.cli import main
 
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):

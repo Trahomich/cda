@@ -20,8 +20,8 @@
 
 import logging
 import math
-import uuid
-from dataclasses import dataclass, field as dc_field
+from dataclasses import dataclass
+from dataclasses import field as dc_field
 from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import delete, select
@@ -330,7 +330,7 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
         (2, "Северное-2", 9, 87.0, "draft", "telemetry"),  # черновик из телематики
         (0, "Степное-7", 16, 111.6, "rejected", "telemetry"),
     )
-    for machine_idx, field_name, days_ago, area_ha, status, source in jobs:
+    for machine_idx, _field_name, days_ago, area_ha, status, source in jobs:
         db.add(
             MachineJob(
                 machine_id=machines[machine_idx].id,
@@ -353,7 +353,7 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
     from app.models.integrations import Forecast, WeatherObservation
 
     today = date.today()
-    for name, demo_field in fields.items():
+    for demo_field in fields.values():
         for day_off in range(-14, 0):  # факты: последние 14 суток
             t_min = rng.uniform(4.0, 12.0)
             t_max = t_min + rng.uniform(7.0, 13.0)
