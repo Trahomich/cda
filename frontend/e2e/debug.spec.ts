@@ -1,0 +1,22 @@
+import { expect, test } from '@playwright/test'
+
+test('debug offline submit', async ({ page }) => {
+  page.on('console', (m) => console.log('PAGE:', m.type(), m.text()))
+  page.on('pageerror', (e) => console.log('PAGEERROR:', e.message))
+  await page.goto('/login')
+  await page.fill('#login', 'agronom')
+  await page.fill('#password', 'demo')
+  await page.getByRole('button', { name: 'Войти' }).click()
+  await expect(page).toHaveURL(/fields\/map|\/f\//)
+  await page.goto('/f/operations')
+  await expect
+    .poll(async () => page.locator('#field option').count(), { timeout: 15_000 })
+    .toBeGreaterThan(1)
+  await page.context().setOffline(true)
+  await page.selectOption('#field', { index: 1 })
+  await page.fill('#area', '10')
+  await page.getByRole('button', { name: /ЗАПИСАТЬ/ }).click()
+  await page.waitForTimeout(3000)
+  const btn = await page.locator('.op-entry__queue-btn').textContent()
+  console.log('BTN:', btn)
+})
