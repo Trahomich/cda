@@ -116,6 +116,24 @@ function logout() {
   padding: 0.1rem 0.5rem;
 }
 
+.field__offline {
+  color: #1b5e20;
+  background: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.25rem 0.7rem;
+  font-size: 0.95rem;
+  text-decoration: none;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.field__offline--down {
+  background: #ff9800;
+  color: #000;
+}
+
 .field__logout {
   background: transparent;
   color: #fff;
