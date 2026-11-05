@@ -21,7 +21,6 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api.deps import CurrentUser
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.errors import AppError
