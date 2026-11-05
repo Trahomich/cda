@@ -73,7 +73,11 @@ def run_migrations_online() -> None:
 
     connectable = create_engine(settings.sqlalchemy_database_uri, poolclass=pool.NullPool)
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_object=include_object,
+        )
         with context.begin_transaction():
             context.run_migrations()
 
