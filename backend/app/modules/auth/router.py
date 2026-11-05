@@ -62,10 +62,17 @@ def _audit_login(db: Session, *, user_id: uuid.UUID | None, login: str, success:
 @router.post("/login", response_model=LoginResponse, summary="API-46: вход, логин и пароль → JWT")
 def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)) -> LoginResponse:
     user = db.scalar(select(User).where(User.login == body.login))
-    ok = user is not None and user.is_active and verify_password(body.password, user.password_hash)
-    if not ok:
-        _audit_login(db, user_id=user.id if user else None, login=body.login, success=False)
+    if user is None:
+        _audit_login(db, user_id=None, login=body.login, success=False)
         # единый ответ и для неизвестного логина, и для неверного пароля
+        raise AppError(
+            "Неверный логин или пароль",
+            code="bad_credentials",
+            title="Не авторизован",
+            status_code=401,
+        )
+    if not user.is_active or not verify_password(body.password, user.password_hash):
+        _audit_login(db, user_id=user.id, login=body.login, success=False)
         raise AppError(
             "Неверный логин или пароль",
             code="bad_credentials",
