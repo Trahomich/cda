@@ -10,11 +10,9 @@ PostgreSQL+PostGIS (DATABASE_URL_TEST, паттерн #20).
 import uuid
 from datetime import date
 
-import pytest
 from app.models.agronomy import CropCycle
-from app.models.auth import User, UserRole
+from app.models.auth import AuditRecord, UserRole
 from app.models.references import Culture
-from fastapi import TestClient
 from sqlalchemy import select
 
 from tests.test_auth import auth_header, make_user
