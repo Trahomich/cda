@@ -289,14 +289,14 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
         ("Луговое", "tillage", 11, "Иванов И.", False),
         ("Степное-7", "fertilizing", 14, "Кузнецов К.", True),  # отклонение от плана
         ("Южное", "spraying", 18, "Петров П.", False),
-        ("Восточное", "harvesting", 22, "Смирнов А.", False),
+        ("Восточное", "tillage", 22, "Смирнов А.", False),  # поле в паре, цикла нет
     )
     for name, op_type, day_off, performer, deviation in operations:
         op_spec = next(f for f in DEMO_FIELDS if f.name == name)
         db.add(
             FieldOperation(
                 field_id=fields[name].id,
-                cycle_id=cycle_by_field[name].id,
+                cycle_id=cy.id if (cy := cycle_by_field.get(name)) is not None else None,
                 operation_type=op_type,
                 date=month_ago + timedelta(days=day_off),
                 actual_area_ga=op_spec.area_ha
