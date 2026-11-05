@@ -84,7 +84,10 @@ def _forecast_days(db: Session, field_id: uuid.UUID, days: int) -> list[Forecast
             .order_by(Forecast.forecast_for)
             .limit(days)
         )
-    )@router.get(
+    )
+
+
+@router.get(
     "/fields/{field_id}/weather",
     response_model=FieldWeatherResponse,
     summary="API-07: погода по полю — факты и прогноз 7 сут",
