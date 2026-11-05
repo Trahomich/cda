@@ -93,7 +93,9 @@ onMounted(async () => {
         <dl class="src__meta">
           <div>
             <dt>Идентификатор</dt>
-            <dd class="src__mono">{{ s.source_id }}</dd>
+            <dd class="src__mono">
+              {{ s.source_id }}
+            </dd>
           </div>
           <div>
             <dt>Тип</dt>

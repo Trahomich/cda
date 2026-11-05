@@ -136,7 +136,7 @@ onMounted(async () => {
             <tr>
               <th scope="col">
                 Название
-            </th>
+              </th>
               <th scope="col">
                 Вид
               </th>
@@ -172,7 +172,9 @@ onMounted(async () => {
                   N{{ i.npk_content[0] }}-P{{ i.npk_content[1] }}-K{{ i.npk_content[2] }}
                 </template>
                 <template v-else-if="i.active_substance">
-                  {{ i.active_substance }}<template v-if="i.concentration">, {{ i.concentration }} %</template>
+                  {{ i.active_substance }}<template v-if="i.concentration">
+                    , {{ i.concentration }} %
+                  </template>
                 </template>
                 <template v-else>
                   —
