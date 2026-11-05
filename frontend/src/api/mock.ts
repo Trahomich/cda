@@ -109,6 +109,14 @@ function ok(json: unknown, status = 200): TransportResponse {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+// Журнал операций (API-17/18). Идемпотентность: повторный POST /operations
+// с тем же client_id не создаёт дубль — возвращает уже созданную операцию.
+const OPERATIONS: Array<FieldOperation & { created_at: string }> = []
+
+function uuid(n: number): string {
+  return `f1e2d3c4-0000-4000-8000-00000000${String(n).padStart(4, '0')}`
+}
+
 export class MockTransport implements Transport {
   async request(method: string, path: string, body?: unknown): Promise<TransportResponse> {
     await delay(200) // имитация сети
