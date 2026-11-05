@@ -53,10 +53,6 @@ function fmtDate(iso: string): string {
   return RU_DATE.format(new Date(iso))
 }
 
-function fmtDateTime(iso: string): string {
-  return new Intl.DateTimeFormat('ru-RU', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso))
-}
-
 onMounted(async () => {
   try {
     const page = await getFields({ status: 'all' })
