@@ -10,7 +10,7 @@ import subprocess
 import sys
 
 import pytest
-from sqlalchemy import inspect, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 
 from tests.conftest import _create_database, _drop_database, _test_url
