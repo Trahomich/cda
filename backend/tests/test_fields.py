@@ -46,15 +46,12 @@ REF_TOLERANCE = 0.02
 
 
 @pytest.fixture
-def agro_user(client, db_session) -> User:
-    make_user(db_session, login="agro_f", role=UserRole.AGRONOMIST)
-    return db_session.scalar(select(User).where(User.login == "agro_f"))
+def agro_headers_factory(client, db_session):
+    def _make(login: str = "agro_f", role: UserRole = UserRole.AGRONOMIST) -> dict:
+        make_user(db_session, login=login, role=role)
+        return auth_header(client, login, "secret123")
 
-
-@pytest.fixture
-def agro(client) -> dict:
-    make_user_via = None  # пользователь создаётся фикстурой agro_user
-    raise NotImplementedError
+    return _make
 
 
 def agro_headers(client, db_session) -> dict:
