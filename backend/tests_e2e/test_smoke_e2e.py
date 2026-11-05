@@ -1,6 +1,10 @@
 """Дымовой e2e-тест (задача MVP-18): сквозной сценарий против docker-compose.
 
-Запуск: `SMOKE=1 make test` (или SMOKE=1 python -m pytest tests/test_smoke_e2e.py).
+Запуск: `make smoke` (= SMOKE=1 python -m pytest tests_e2e).
+Файл живёт в tests_e2e/, а не tests/, чтобы не попадать под autouse-фикстуры
+юнит-контура (tests/conftest.py поднимает тестовую PostgreSQL для каждого теста),
+— e2e самодостаточен и работает только против живого окружения.
+
 Требует поднятого окружения: `make up` (api на :8000, PostgreSQL/PostGIS на :5432;
 миграции применяются при старте контейнера api).
 
