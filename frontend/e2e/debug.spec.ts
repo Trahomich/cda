@@ -9,7 +9,9 @@ test('debug offline submit', async ({ page }) => {
   await page.getByRole('button', { name: 'Войти' }).click()
   await expect(page).toHaveURL(/fields\/map|\/f\//)
   await page.goto('/f/operations')
-  await expect(page.locator('#field option')).not.toHaveCount(1, { timeout: 15_000 })
+  await expect
+    .poll(async () => page.locator('#field option').count(), { timeout: 15_000 })
+    .toBeGreaterThan(1)
   await page.context().setOffline(true)
   await page.selectOption('#field', { index: 1 })
   await page.fill('#area', '10')
