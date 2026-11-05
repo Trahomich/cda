@@ -171,8 +171,10 @@ def validate_cycle(
         raise _rule_violation(v, entity="crop_cycle")
 
     # RULE-AGRO-04: один main-цикл на поле+год (предпроверка; гонки ловит partial UQ)
-    if v := rules.check_main_cycle_unique(
-        year=year, existing_main_year=_main_cycle_year(db, field_id, year)
+    if kind == "main" and (
+        v := rules.check_main_cycle_unique(
+            year=year, existing_main_year=_main_cycle_year(db, field_id, year)
+        )
     ):
         raise _rule_violation(v, entity="crop_cycle")
 
