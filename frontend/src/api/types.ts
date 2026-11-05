@@ -94,6 +94,8 @@ export interface FieldOperation extends OperationRequest {
   deviation_flag: boolean
   status: string
 }
+
+/** Ответ GET /auth/me (API-47). */
 export interface AuthMe {
   id: string
   name: string
