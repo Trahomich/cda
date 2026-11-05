@@ -167,6 +167,34 @@ stateDiagram-v2
   dead --> [*]
 ```
 
+### Автомат статусов ветеринарного события (ENT-VET-EVENT)
+
+Событие лечения/вакцинации:
+
+```mermaid
+stateDiagram-v2
+  [*] --> planned: назначение обработки/вакцинации
+  planned --> performed: событие выполнено (event_date)
+  planned --> cancelled: отменено
+  performed --> withdrawal: withdrawal_days > 0
+  note right of withdrawal
+    срок ожидания продукции (RULE-LIVE-02):
+    надой/мясо с пометкой до истечения дней
+  end note
+  withdrawal --> [*]: истёк срок ожидания
+  performed --> [*]: withdrawal_days = 0
+  cancelled --> [*]
+```
+
+Карантин (переводит группу животных, действует RULE-LIVE-03):
+
+```mermaid
+stateDiagram-v2
+  [*] --> active
+  active --> quarantined: quarantine_start (RULE-LIVE-03)
+  quarantined --> active: quarantine_end, дата ≥ даты start (RULE-LIVE-03)
+```
+
 ## 3. Связи с доменом агрономии (03)
 
 | Связь | Что передаёт | Направление |
