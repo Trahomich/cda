@@ -32,10 +32,10 @@ test('офлайн-ввод 3 операций и синхронизация (10
   // Самолётный режим (CDP Network.emulateNetworkConditions через context API).
   await page.context().setOffline(true)
 
-  // Ввод 3 операций офлайн.
+  // Ввод 3 операций офлайн (площади валидны для Степное-1: 84.5 га, лимит 88.7).
   for (let i = 1; i <= 3; i++) {
     await page.selectOption('#field', { index: 1 })
-    await page.fill('#area', `1${i}0`)
+    await page.fill('#area', `1${i}`)
     await page.getByRole('button', { name: /ЗАПИСАТЬ/ }).click()
     await expect(page.locator('.op-entry__queue-btn')).toContainText(`⛁ ${i}`)
   }
