@@ -4,7 +4,7 @@
 
 Опирается на CONTRACTS.md (§4–§6, §8), docs/03-domain-agronomy.md (ENT, RULE-AGRO),
 docs/04-domain-farm.md (ENT, RULE-TECH/LIVE) и docs/05-integrations.md (IF, нормализованные
-структуры). Таблица хранится в PostgreSQL 16 + PostGIS (ADR-02); геометрия контуров —
+структуры). Таблица хранится в PostgreSQL 18 + PostGIS (ADR-02); геометрия контуров —
 тип geometry(Polygon, 4326), площадь вычисляется в равновеликой проекции (03 §1.1).
 
 Правила именования таблиц: `dat_<сущность>`; справочники — `ref_<имя>`; во внешнем API
