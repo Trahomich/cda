@@ -178,7 +178,14 @@ function cultureOf(field: Field): string {
             v-else
             :key="field.field_id"
           >
-            <td>{{ field.name }}</td>
+            <td>
+              <RouterLink
+                class="fields-list__link"
+                :to="{ name: 'field-card', params: { fieldId: field.field_id } }"
+              >
+                {{ field.name }}
+              </RouterLink>
+            </td>
             <td class="fields-list__num">
               {{ fmtArea(field.area_ga) }}
             </td>
