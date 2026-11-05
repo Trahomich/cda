@@ -60,4 +60,5 @@ def get_current_user(
     return user
 
 
-CurrentUser = Depends(get_current_user)
+# Аннотация для эндпоинтов: `user: CurrentUser` (FastAPI подставит Depends).
+CurrentUser = Annotated[User, Depends(get_current_user)]
