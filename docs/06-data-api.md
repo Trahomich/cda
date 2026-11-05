@@ -157,8 +157,8 @@ erDiagram
 | API-16 | POST /treatment-plans/{id}/approve | согласование | SC-02 |
 | API-17 | POST /operations | запись факта операции (мобильный, офлайн-очередь); опциональное поле запроса client_id (uuid) — идемпотентность офлайн-очереди: повтор с тем же client_id возвращает существующую операцию (200, без дубля) | REQ-F-013, SC-03 |
 | API-18 | GET /operations?field_id&date_from&date_to | журнал операций | SC-03 |
-| API-19 | GET /machines, POST /machines | парк техники | REQ-F-014 |
-| API-20 | POST /machine-jobs/{id}/confirm | подтверждение черновика из телематики | REQ-F-016, SC-04 |
+| API-19 | GET /machines, POST /machines; GET /machines/{id}/jobs | парк техники и задания машины | REQ-F-014 |
+| API-20 | GET /machine-jobs (фильтр status, пагинация items/total/limit/offset), POST /machine-jobs (создаёт draft, source=manual/telemetry), PATCH /machine-jobs/{id} (draft→confirmed/rejected, прочие — 409), POST /machine-jobs/{id}/confirm | задания смен: список, черновики и подтверждение (RULE-TECH-04) | REQ-F-015, F-016, SC-04 |
 | API-21 | GET /maintenance, POST /maintenance | ТО и ремонты | REQ-F-017 |
 | API-22 | GET /groups, POST /groups | группы животных | REQ-F-018 |
 | API-23 | POST /group-moves | перемещение; 422 при карантине (RULE-LIVE-01) | REQ-F-018 |
