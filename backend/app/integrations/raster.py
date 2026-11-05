@@ -45,7 +45,7 @@ def compute_index_array(index: str, nir: np.ndarray, other: np.ndarray) -> np.nd
     with np.errstate(divide="ignore", invalid="ignore"):
         if index == "savi":
             denom = nir + other + SAVI_L
-            array = SAVI_L * (nir - other) / np.where(denom == 0, np.nan, denom)
+            array = (1.0 + SAVI_L) * (nir - other) / np.where(denom == 0, np.nan, denom)
         else:
             denom = nir + other
             array = (nir - other) / np.where(denom == 0, np.nan, denom)
