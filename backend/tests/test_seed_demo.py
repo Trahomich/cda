@@ -117,10 +117,9 @@ def test_seed_contours_valid_postgis(db_session):
     seed_demo(db_session)
 
     rows = db_session.execute(
-        select(
-            Field.name,
-            gfunc.ST_IsValid(Field.contour).label("valid"),
-            gfunc.ST_Area(Field.contour.cast("geography")).label("area_m2"),
+        text(
+            "SELECT name, ST_IsValid(contour::geometry) AS valid, "
+            "ST_Area(contour::geography) AS area_m2 FROM dat_field"
         )
     ).all()
     assert len(rows) == 8
