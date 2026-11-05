@@ -36,6 +36,15 @@ def cmd_create_admin(args: argparse.Namespace) -> int:
         return 0
 
 
+def cmd_seed_references(_args: argparse.Namespace) -> int:
+    with SessionLocal() as db:
+        inserted = seed_references(db)
+    for table, count in inserted.items():
+        print(f"{table}: добавлено {count} записей")
+    print("Справочники наполнены (повторный запуск ничего не добавит)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="CLI ИС ЦДА")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -45,6 +54,11 @@ def main(argv: list[str] | None = None) -> int:
     p_admin.add_argument("--password", required=True, help="пароль (будет захеширован)")
     p_admin.add_argument("--fio", default="Администратор ЦДА", help="ФИО")
     p_admin.set_defaults(func=cmd_create_admin)
+
+    p_seed = sub.add_parser(
+        "seed-references", help="наполнить справочники культур и источников"
+    )
+    p_seed.set_defaults(func=cmd_seed_references)
 
     args = parser.parse_args(argv)
     return args.func(args)
