@@ -28,7 +28,7 @@ E-10, E-13, E-17. Экраны E-04, E-05, E-09 — адаптированы к 
 | Компонент | Выбор | Обоснование |
 |---|---|---|
 | Основа | SPA-фреймворк (фиксация при старте реализации, ADR-02 02-architecture §7) | один код для веба и PWA |
-| Установкa | Web App Manifest (name, icons 192/512, display: standalone, theme) | установка «На экран «Домой»» iOS/Android |
+| Установка | Web App Manifest (name, icons 192/512, display: standalone, theme) | установка «На экран «Домой»» iOS/Android |
 | Кэш ассетов | Service Worker (precache shell + stale-while-revalidate ассетов) | мгновенный старт офлайн |
 | Данные офлайн | IndexedDB (таблицы: задания, справочники, очередь операций, кэш карточек полей) | надёжное локальное хранилище >5 МБ |
 | Синхронизация | Background Sync API (Android/Chrome) + ручная кнопка «Синхронизировать» (все платформы) | iOS не поддерживает Background Sync — ручной режим обязателен |
