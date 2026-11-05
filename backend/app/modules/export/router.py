@@ -36,8 +36,7 @@ def export_data(
     model = service.ENTITIES.get(entity)
     if model is None:
         raise AppError(
-            f"Неизвестная сущность «{entity}»; допустимо: "
-            f"{', '.join(sorted(service.ENTITIES))}",
+            f"Неизвестная сущность «{entity}»; допустимо: {', '.join(sorted(service.ENTITIES))}",
             code="unknown_entity",
             title="Некорректный запрос",
             status_code=400,

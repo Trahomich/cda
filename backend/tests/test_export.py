@@ -5,11 +5,9 @@ GeoJSON-геометрия, пустой результат, 400 на неизв
 (export — manager/admin). Тестовый контур — PostgreSQL+PostGIS (паттерн #20).
 """
 
-import json
 from datetime import date
 
 import pytest
-from geoalchemy2 import WKTElement
 from app.models.agronomy import (
     AgroInput,
     Alert,
@@ -19,11 +17,10 @@ from app.models.agronomy import (
     RotationPlan,
     TreatmentPlan,
 )
+from app.models.auth import UserRole
 from app.models.machinery import Machine, MachineJob
 from app.models.references import Culture
-from app.models.auth import UserRole
-from sqlalchemy import select
-
+from geoalchemy2 import WKTElement
 from tests.test_auth import auth_header, make_user
 
 API = "/api/v1/export"
@@ -68,33 +65,39 @@ def demo_data(db_session):
     db_session.add(input_)
     db_session.flush()
     db_session.add(
-        TreatmentPlan(cycle_id=cycle.id, input_id=input_.id, dose=2.0,
-                      operation_type="spraying")
+        TreatmentPlan(cycle_id=cycle.id, input_id=input_.id, dose=2.0, operation_type="spraying")
     )
     operation = FieldOperation(
-        field_id=field.id, operation_type="spraying", date=date(2026, 6, 10),
-        actual_area_ga=10.0, source="manual", status="done",
+        field_id=field.id,
+        operation_type="spraying",
+        date=date(2026, 6, 10),
+        actual_area_ga=10.0,
+        source="manual",
+        status="done",
     )
     db_session.add(operation)
     machine = Machine(machine_type="tractor", model="К-744")
     db_session.add(machine)
     db_session.flush()
     db_session.add(
-        MachineJob(machine_id=machine.id, performed_at=date(2026, 6, 10),
-                   area_ha=10.0, source="manual", status="confirmed")
+        MachineJob(
+            machine_id=machine.id,
+            performed_at=date(2026, 6, 10),
+            area_ha=10.0,
+            source="manual",
+            status="confirmed",
+        )
     )
-    db_session.add(
-        Alert(type="weather_danger", severity="warning", field_id=field.id, payload={})
-    )
+    db_session.add(Alert(type="weather_danger", severity="warning", field_id=field.id, payload={}))
     db_session.commit()
     return {"field": field}
 
 
 class TestFormats:
-    def test_json_envelope_and_geojson_object(self, client, db_session, manager_headers,
-                                               demo_data):
-        resp = client.get(API, params={"entity": "fields", "format": "json"},
-                          headers=manager_headers)
+    def test_json_envelope_and_geojson_object(self, client, db_session, manager_headers, demo_data):
+        resp = client.get(
+            API, params={"entity": "fields", "format": "json"}, headers=manager_headers
+        )
         assert resp.status_code == 200
         body = resp.json()
         assert set(body) == {"items", "total", "limit", "offset"}
@@ -105,10 +108,12 @@ class TestFormats:
         assert item["contour"]["type"] == "Polygon"  # GeoJSON-объект, не строка
         assert item["status"] == "active"
 
-    def test_csv_bom_delimiter_and_geojson_string(self, client, db_session, manager_headers,
-                                                  demo_data):
-        resp = client.get(API, params={"entity": "fields", "format": "csv"},
-                          headers=manager_headers)
+    def test_csv_bom_delimiter_and_geojson_string(
+        self, client, db_session, manager_headers, demo_data
+    ):
+        resp = client.get(
+            API, params={"entity": "fields", "format": "csv"}, headers=manager_headers
+        )
         assert resp.status_code == 200
         assert resp.headers["content-type"].startswith("text/csv")
         assert "export_fields_" in resp.headers["content-disposition"]
@@ -120,8 +125,7 @@ class TestFormats:
         data_line = text.splitlines()[1]
         assert '"type": "Polygon"' in data_line or '"type":"Polygon"' in data_line
 
-    def test_json_dates_iso_and_decimal(self, client, db_session, manager_headers,
-                                        demo_data):
+    def test_json_dates_iso_and_decimal(self, client, db_session, manager_headers, demo_data):
         resp = client.get(API, params={"entity": "operations"}, headers=manager_headers)
         item = resp.json()["items"][0]
         assert item["date"] == "2026-06-10"
@@ -130,10 +134,10 @@ class TestFormats:
 
     @pytest.mark.parametrize("entity", ALL_ENTITIES)
     @pytest.mark.parametrize("fmt", ["json", "csv"])
-    def test_every_entity_both_formats(self, client, db_session, manager_headers,
-                                       demo_data, entity, fmt):
-        resp = client.get(API, params={"entity": entity, "format": fmt},
-                          headers=manager_headers)
+    def test_every_entity_both_formats(
+        self, client, db_session, manager_headers, demo_data, entity, fmt
+    ):
+        resp = client.get(API, params={"entity": entity, "format": fmt}, headers=manager_headers)
         assert resp.status_code == 200, resp.text
         if fmt == "json":
             assert resp.json()["total"] == 1
@@ -141,12 +145,14 @@ class TestFormats:
 
 class TestEdgeCases:
     def test_empty_result(self, client, db_session, manager_headers):
-        resp = client.get(API, params={"entity": "alerts", "format": "json"},
-                          headers=manager_headers)
+        resp = client.get(
+            API, params={"entity": "alerts", "format": "json"}, headers=manager_headers
+        )
         body = resp.json()
         assert body["items"] == [] and body["total"] == 0
-        resp = client.get(API, params={"entity": "alerts", "format": "csv"},
-                          headers=manager_headers)
+        resp = client.get(
+            API, params={"entity": "alerts", "format": "csv"}, headers=manager_headers
+        )
         assert resp.text.count("\n") == 1  # только строка заголовка
 
     def test_unknown_entity_400(self, client, db_session, manager_headers):
@@ -155,8 +161,9 @@ class TestEdgeCases:
         assert resp.json()["code"] == "unknown_entity"
 
     def test_unknown_format_400(self, client, db_session, manager_headers, demo_data):
-        resp = client.get(API, params={"entity": "fields", "format": "xml"},
-                          headers=manager_headers)
+        resp = client.get(
+            API, params={"entity": "fields", "format": "xml"}, headers=manager_headers
+        )
         assert resp.status_code == 400
         assert resp.json()["code"] == "invalid_format"
 
