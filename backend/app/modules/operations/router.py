@@ -37,11 +37,17 @@ router = APIRouter(
 )
 
 
-def _item(operation: FieldOperation) -> OperationItem:
+def _item(db: Session, operation: FieldOperation) -> OperationItem:
     yield_item: YieldRecordItem | None = None
-    if operation.cycle_id is not None:
-        record = service.db_yield_of(operation) if hasattr(service, "db_yield_of") else None
-        del record  # урожайность подтягивается в сервисе роутера ниже
+    if operation.operation_type == "harvesting" and operation.cycle_id is not None:
+        record = service.yield_of(db, operation)
+        if record is not None:
+            yield_item = YieldRecordItem(
+                yield_c_ha=float(record.yield_c_ha),
+                gross_t=float(record.gross_t) if record.gross_t is not None else None,
+                source=record.source,
+                date=record.date,
+            )
     return OperationItem(
         operation_id=operation.id,
         field_id=operation.field_id,
