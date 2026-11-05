@@ -168,7 +168,7 @@ const HISTORY: Record<number, Array<{ year: number; cid: string; yield_c_ha?: nu
     { year: 2023, cid: 'a2', yield_c_ha: 35.1 },
     { year: 2024, cid: 'a1', yield_c_ha: 43.7 },
     { year: 2025, cid: 'a8' },
-    { year: 2026, cid: 'a4', yield_c_ha: 20.8 },
+    { year: 2026, cid: 'a6', yield_c_ha: 14.2 },
   ],
   3: [
     { year: 2023, cid: 'a8' },
