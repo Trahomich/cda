@@ -13,7 +13,10 @@ from sqlalchemy.orm import Session
 from app.models.references import Culture, Source
 
 # Культуры средней полосы: name, kind, forage_flag, crop_group
-# (kind: main — основная, forage — кормовая, catch — сидерат/промежуточная)
+# (kind: main — основная, forage — кормовая, catch — сидерат/промежуточная,
+#  fallow — пар, полноправный элемент цепочки севооборота, RULE-AGRO-03)
+# repeat_years — минимальный возврат культуры, лет (RULE-AGRO-02, 03 §3.1:
+# default 3, рапс 4, картофель 5)
 CULTURES: list[dict] = [
     {"name": "Озимая пшеница", "kind": "main", "forage_flag": False, "crop_group": "cereals"},
     {"name": "Ячмень", "kind": "main", "forage_flag": False, "crop_group": "cereals"},
