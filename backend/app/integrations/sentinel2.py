@@ -265,7 +265,6 @@ class Sentinel2Adapter:
         contour = self._geometry(field_id)
         scenes: list[Scene] = []
         for meta in self.search_scenes(field_id, date_from, date_to, max_cloud_pct):
-            assert meta.captured_at is not None and meta.cloud_pct is not None
             scenes.append(self._scene_from_rasters(field_id, index, meta, contour))
         return scenes
 
