@@ -209,6 +209,7 @@ def downgrade() -> None:
     op.drop_index("ix_ref_price_item_date", table_name="ref_price")
     op.drop_table("ref_price")
     op.drop_index("ix_ref_agrochem_field_date", table_name="ref_agrochem")
+    op.drop_table("ref_agrochem")
     op.drop_table("ref_weather_rule")
     op.drop_table("ref_source")
     op.drop_table("ref_predecessor_matrix")
