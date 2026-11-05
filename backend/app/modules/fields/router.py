@@ -28,6 +28,7 @@ from app.core.rbac import group_checker, role_checker
 from app.models.auth import User, UserRole
 from app.modules.fields import service
 from app.modules.fields.schemas import (
+    CurrentCycle,
     FieldCreate,
     FieldDetail,
     FieldItem,
