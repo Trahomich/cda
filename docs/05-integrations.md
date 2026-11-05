@@ -88,7 +88,7 @@ source_id = "telemetry.csv-import"          # MVP: файлы CSV/ISOXML; API п
 import_tracks(machine_id: UUID, date_from: date, date_to: date,
               payload_ref: string) -> list[TelemetryDraft]
     # TelemetryDraft -> черновик ENT-MACHINE-JOB (status=draft, см. 04 §1);
-    # площадь считается буфером трека шириной захвата (RUL-TECH-04)
+    # площадь считается буфером трека шириной захвата (RULE-TECH-04)
 ```
 
 Периодичность: импорт за смену/сутки; реальные API интеграторов — вторая очередь.
@@ -238,7 +238,7 @@ trust <0.5 помечается «низкая уверенность».
 
 | Источник (research/02) | Адаптер | Потребители | REQ |
 |---|---|---|---|
-| И1 Open-Meteo [REC-16] | IF-WEATHER | mod-weather (окна, алерты), mod-fields (карточка), RUL-TECH-01 (04) | REQ-F-023..026 |
+| И1 Open-Meteo [REC-16] | IF-WEATHER | mod-weather (окна, алерты), mod-fields (карточка), RULE-TECH-01 (04) | REQ-F-023..026 |
 | И5 Sentinel-2 [REC-17] | IF-SATELLITE | mod-satellite, mod-inputs (дозы по NDVI/NDRE) | REQ-F-027..030 |
 | И10–И13 почвы/ГЗУ [REC-18] | IF-SOIL | mod-fields (агрохимия), mod-inputs (баланс) | REQ-F-004, 031 |
 | И14–И15 телематика [REC-20] | IF-TELEMETRY | mod-machinery (черновики работ) | REQ-F-016, 032 |
