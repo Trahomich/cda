@@ -213,13 +213,24 @@ def create_job(db: Session, *, user: User, data: MachineJobCreate) -> MachineJob
             f"Неизвестный источник записи «{data.source}» (допустимо: manual, telemetry)",
             code="unknown_job_source",
         )
+    # FK на операцию проверяем до вставки (иначе IntegrityError → 500)
+    if data.field_operation_id is not None and db.get(
+        FieldOperation, data.field_operation_id
+    ) is None:
+        raise AppError(
+            f"Операция {data.field_operation_id} не найдена",
+            code="not_found",
+            title="Ресурс не найден",
+            status_code=404,
+        )
     job = MachineJob(status="draft", **data.model_dump())
     db.add(job)
-    db.flush()  # проверка FK полей после вставки
+    db.flush()
     _audit(
         db,
         user=user,
         entity_id=job.id,
+        entity="machine_job",
         action="job_create",
         changed={"machine": machine.model, "performed_at": str(job.performed_at)},
     )
