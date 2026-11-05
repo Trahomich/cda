@@ -170,6 +170,81 @@ export class MockTransport implements Transport {
       return ok(page)
     }
 
+    if (method === 'POST' && pathname === '/operations') {
+      const op = (body ?? {}) as Partial<FieldOperation>
+      // Валидация обязательных полей (03 §1.6) → 400.
+      for (const key of ['client_id', 'field_id', 'operation_type', 'date', 'actual_area_ga']) {
+        if (!op[key as keyof FieldOperation]) {
+          return problem(
+            400,
+            'https://cda.example/errors/validation',
+            'Некорректный запрос',
+            `Не заполнено обязательное поле: ${key}`,
+          )
+        }
+      }
+      // Идемпотентность офлайн-очереди: тот же client_id → та же операция (201).
+      const existing = OPERATIONS.find((o) => o.client_id === op.client_id)
+      if (existing) return ok(existing, 201)
+
+      const field = FIELDS.find((f) => f.field_id === op.field_id)
+      if (!field) {
+        return problem(
+          404,
+          'https://cda.example/errors/not-found',
+          'Нет ресурса',
+          `Поле ${op.field_id} не найдено`,
+        )
+      }
+      // RULE-AGRO-12: факт. площадь ≤ 1,05 × площади поля → 422 (06 §5).
+      if ((op.actual_area_ga ?? 0) > 1.05 * field.area_ga) {
+        return {
+          status: 422,
+          ok: false,
+          json: null,
+          problem: {
+            type: 'https://cda.example/errors/area-limit',
+            title: 'Нарушено бизнес-правило',
+            status: 422,
+            detail: `Фактическая площадь ${op.actual_area_ga} га превышает 1,05 × площадь поля ${field.name} (${field.area_ga} га)`,
+            rule_id: 'RULE-AGRO-12',
+            entity: 'operation',
+          },
+        }
+      }
+      const created: FieldOperation & { created_at: string } = {
+        client_id: op.client_id!,
+        field_id: op.field_id!,
+        operation_type: op.operation_type!,
+        date: op.date!,
+        input_id: op.input_id ?? null,
+        actual_dose: op.actual_dose ?? null,
+        actual_area_ga: op.actual_area_ga!,
+        performer: op.performer ?? null,
+        source: op.source ?? 'manual',
+        operation_id: uuid(OPERATIONS.length + 1),
+        deviation_flag: false,
+        status: 'done',
+        created_at: new Date().toISOString(),
+      }
+      OPERATIONS.unshift(created)
+      return ok(created, 201)
+    }
+
+    if (method === 'GET' && pathname === '/operations') {
+      // API-18: журнал операций, фильтры field_id, date_from, date_to.
+      const fieldId = params.get('field_id')
+      const dateFrom = params.get('date_from')
+      const dateTo = params.get('date_to')
+      let items: FieldOperation[] = [...OPERATIONS]
+      if (fieldId) items = items.filter((o) => o.field_id === fieldId)
+      if (dateFrom) items = items.filter((o) => o.date >= dateFrom)
+      if (dateTo) items = items.filter((o) => o.date <= dateTo)
+      const limit = Number(params.get('limit') ?? 50) || 50
+      const offset = Number(params.get('offset') ?? 0) || 0
+      return ok({ items: items.slice(offset, offset + limit), total: items.length, limit, offset })
+    }
+
     return problem(
       404,
       'https://cda.example/errors/not-found',
