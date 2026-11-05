@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     jwt_secret: str = "dev-only-secret-change-me"  # в prod обязательно задаётся через .env
     jwt_algorithm: str = "HS256"
     jwt_ttl_minutes: int = 60
+    farm_name: str = "КФХ «Восход»"  # наименование хозяйства в ответе API-46
 
     @property
     def sqlalchemy_database_uri(self) -> str:
