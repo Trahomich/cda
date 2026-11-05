@@ -5,11 +5,11 @@ from logging.config import fileConfig
 from alembic import context
 from app.core.config import get_settings
 from app.core.db import Base
-from sqlalchemy import pool
 
 # Импортировать модели здесь по мере появления модулей, чтобы autogenerate
 # видел метаданные:
 from app.models.auth import AuditRecord, User  # noqa: F401
+from sqlalchemy import pool
 
 config = context.config
 
