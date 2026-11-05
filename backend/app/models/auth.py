@@ -15,7 +15,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.db import Base
 
 
-class UserRole(str, enum.Enum):
+class UserRole(enum.StrEnum):
     """Роли системы — docs/01-requirements.md §2, матрица прав 07-ux §5."""
 
     ADMIN = "admin"
