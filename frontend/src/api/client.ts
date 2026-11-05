@@ -74,7 +74,7 @@ export class ApiClient {
     let response
     try {
       response = await this.transport.request(method, fullPath, options.body)
-    } catch (e) {
+    } catch {
       const error = new ApiError(
         'Нет связи с сервером. Проверьте подключение к сети.',
         0,
