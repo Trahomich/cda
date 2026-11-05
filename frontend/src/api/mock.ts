@@ -794,6 +794,14 @@ const MACHINE_JOBS: MockMachineJob[] = [
   },
 ]
 
+/** Копия задания без track_ref: внутренняя ссылка на телеметрию
+ *  (S3) не отдаётся клиенту. */
+function withoutTrackRef(job: MockMachineJob): Omit<MockMachineJob, 'track_ref'> {
+  const { track_ref, ...rest } = job
+  void track_ref
+  return rest
+}
+
 /* ───── Источники данных (E-14, API-28): адаптеры и журнал состояний ───── */
 
 const NOW = Date.now()
