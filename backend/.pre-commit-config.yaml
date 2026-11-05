@@ -13,3 +13,12 @@ repos:
         files: ^backend/app/
         args: [--config-file, backend/pyproject.toml]
         additional_dependencies: []
+  # docker-compose.yml — валидный YAML (быстрая проверка без yamllint)
+  - repo: local
+    hooks:
+      - id: compose-yaml
+        name: docker-compose.yml валиден (yaml.safe_load)
+        language: python
+        additional_dependencies: [pyyaml]
+        entry: python -c "import sys, yaml; [yaml.safe_load(open(f, encoding='utf-8')) for f in sys.argv[1:]]; print('compose-yaml: ok')"
+        files: ^backend/docker-compose\.yml$
