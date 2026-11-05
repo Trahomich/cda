@@ -1,13 +1,15 @@
 """Роутер /api/v1 (CONTRACTS.md §8).
 
 Эндпоинты модулей подключаются сюда по мере реализации MVP:
-fields, rotation, inputs, weather, satellite, machinery.
+auth, fields, rotation, inputs, weather, satellite, machinery.
 """
 
 from fastapi import APIRouter
 
 from app.core.config import get_settings
+from app.modules.auth import router as auth_router
 
 settings = get_settings()
 
 api_router = APIRouter(prefix=settings.api_v1_prefix)
+api_router.include_router(auth_router)
