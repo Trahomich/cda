@@ -45,7 +45,15 @@ JOB_TRANSITIONS: dict[str, frozenset[str]] = {
 }
 
 
-def _audit(db: Session, *, user: User, entity_id: uuid.UUID, action: str, changed: dict) -> None:
+def _audit(
+    db: Session,
+    *,
+    user: User,
+    entity_id: uuid.UUID,
+    action: str,
+    changed: dict,
+    entity: str = "machine",
+) -> None:
     """Аудит критичного действия в dat_audit (06 §4)."""
     db.add(
         AuditRecord(
