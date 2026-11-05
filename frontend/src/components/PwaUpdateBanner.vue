@@ -4,7 +4,7 @@ import { ref, onMounted } from 'vue'
 import { registerSW } from 'virtual:pwa-register'
 
 const needRefresh = ref(false)
-let updateSW: ((reload?: boolean) => Promise<void>) | undefined
+let updateSW: ((reloadPage?: boolean) => Promise<void> | void) | undefined
 
 onMounted(() => {
   updateSW = registerSW({
