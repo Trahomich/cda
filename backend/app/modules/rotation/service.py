@@ -359,7 +359,7 @@ def _validate_plan_items(
                 status_code=404,
             )
         chain.append((draft.year, culture, draft))
-    for pos, (year, culture, draft) in enumerate(chain):
+    for pos, (year, culture, chain_draft) in enumerate(chain):
         if draft is not None and year in main_years:
             v = rules.check_main_cycle_unique(year=year, existing_main_year=year)
             if v:
