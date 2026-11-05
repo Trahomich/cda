@@ -93,7 +93,7 @@ def seed_weather_rules(db: Session) -> int:
 class DayMetrics:
     """Суточные метрики для оценки окна (прогноз ENT-FORECAST или факт)."""
 
-    day: str  # ISO-дата (в ответе API — строка)
+    day: date
     temperature_max_c: float | None
     temperature_min_c: float | None
     precipitation_mm: float | None
