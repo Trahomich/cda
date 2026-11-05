@@ -79,7 +79,7 @@ def test_alembic_upgrade_head(pg_admin):
             f"alembic upgrade head упал:\nstdout: {result.stdout}\nstderr: {result.stderr}"
         )
 
-        engine = __import__("sqlalchemy").create_engine(engine_url)
+        engine = create_engine(engine_url)
         tables = set(inspect(engine).get_table_names())
         engine.dispose()
         missing = EXPECTED_TABLES - tables
