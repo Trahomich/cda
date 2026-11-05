@@ -99,4 +99,35 @@ class MachineJob(Base):
     )
 
 
-__all__ = ["Machine", "MachineJob"]
+class Maintenance(Base):
+    """ТО и ремонт (ENT-MAINTENANCE, 04 §1); алерты RULE-TECH-02/05 — вне MVP-7."""
+
+    __tablename__ = "dat_maintenance"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('service', 'repair', 'inspection')", name="ck_dat_maintenance_kind"
+        ),
+        CheckConstraint("due_at_hours >= 0", name="ck_dat_maintenance_due_hours"),
+        CheckConstraint("done_at_hours >= 0", name="ck_dat_maintenance_done_hours"),
+        CheckConstraint("downtime_h >= 0", name="ck_dat_maintenance_downtime"),
+        Index("ix_dat_maintenance_machine_due", "machine_id", "due_at_hours"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    machine_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("dat_machine.id", name="fk_dat_maintenance_machine"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(15), nullable=False)
+    due_at_hours: Mapped[float] = mapped_column(Numeric(10, 1), nullable=False)
+    done_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    done_at_hours: Mapped[float | None] = mapped_column(Numeric(10, 1), nullable=True)
+    downtime_h: Mapped[float | None] = mapped_column(Numeric(6, 1), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+__all__ = ["Machine", "MachineJob", "Maintenance"]
