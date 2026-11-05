@@ -55,6 +55,24 @@ def cmd_seed_weather_rules(_args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_seed_demo(args: argparse.Namespace) -> int:
+    from app.seed_demo import seed_demo
+
+    with SessionLocal() as db:
+        report = seed_demo(db, reset=args.reset)
+    if report.skipped:
+        print(f"Демо-хозяйство уже создано ({report.extra[0]})")
+        return 0
+    print(
+        f"Демо-хозяйство создано: полей {report.fields}, циклов {report.cycles}, "
+        f"планов севооборота {report.plans}, операций {report.operations}, "
+        f"машин {report.machines}, заданий {report.jobs}, алертов {report.alerts}"
+    )
+    for line in report.extra:
+        print(f"- {line}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="CLI ИС ЦДА")
     sub = parser.add_subparsers(dest="command", required=True)
