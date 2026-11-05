@@ -126,27 +126,12 @@ def _last_year_of_culture(db: Session, field_id: uuid.UUID, culture_id: uuid.UUI
                           before_year: int) -> int | None:
     """Год последнего цикла с этой культурой раньше before_year (RULE-AGRO-02)."""
     return db.scalar(
-        select(func_max_year(CropCycle.year)).where(
+        select(func.max(CropCycle.year)).where(
             CropCycle.field_id == field_id,
             CropCycle.culture_id == culture_id,
             CropCycle.year < before_year,
         )
     )
-
-
-def func_max_year(column):  # noqa: ANN001, ANN202 — тонкая обёртка select(func.max)
-    from sqlalchemy import func
-
-    return func.max(column)
-
-
-def _kind_warnings(culture: Culture, kind: str) -> list[Violation]:
-    return [
-        v
-        for v in (rules.check_kind_culture(kind=kind, culture_kind=culture.kind,
-                                           culture_name=culture.name),)
-        if v is not None
-    ]
 
 
 def validate_cycle(
