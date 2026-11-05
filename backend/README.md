@@ -108,6 +108,27 @@ pre-commit install && pre-commit run --all-files
 - Вход: `POST /api/v1/auth/login` (API-46) → `{token, user {name, role, farm_name}}`;
   профиль: `GET /api/v1/auth/me` (API-47) → `{id, name, role}`.
   Пароли — argon2id, токены — JWT HS256 (`JWT_SECRET`, TTL `JWT_TTL_MINUTES`).
+
+## Модуль полей (MVP-5, API-01..05)
+
+`app/modules/fields/` — контуры, версии и статусы полей по docs/03 §1.1 и 06 §5:
+
+- `GET /api/v1/fields` (фильтры `status`, `q`, `with_geometry=true`, пагинация);
+  в элементах — агрегат `current_cycle {year, culture_name, kind} | null`;
+- `POST /fields` (201 + Location), `GET /fields/{id}` (карточка «Поле 360°»:
+  версии контура, последние операции; `ndvi`/`weather` — null до MVP-6/MVP-10),
+  `PATCH /fields/{id}` (смена контура создаёт версию; смена статуса — по автомату
+  `active → archived|merged` с обязательным `reason`, пишется в `dat_audit`);
+- `GET/POST /fields/{id}/versions` — история версий контура (REQ-F-002);
+- `POST /fields/import` — GeoJSON-файл (FeatureCollection), отчёт ImportReport
+  `{created, skipped, errors}` (KML/shapefile — v1; нужна зависимость python-multipart).
+
+Площадь — геодезическая `ST_Area(geography)/10000` га (generated column `area_ga`,
+03 §6.1), приёмка 2 % (REQ-F-001, тест с эталонным полигоном). Геовалидация PostGIS:
+422 `invalid_geometry` (структура, незамкнутое кольцо), 422 `self_intersection`
+(ST_IsValidReason), 422 `area_below_min` (< 0,1 га), 409 `duplicate_name`.
+Права: чтение — группа RBAC `fields` (агроном/руководитель/механизатор/админ),
+изменение — agronomist/admin (403 `insufficient_role`).
 - Первый администратор: `python -m app.cli create-admin --login admin --password ...`.
 - Доменные роутеры защищаются зависимостью из `app.core.rbac`:
   `APIRouter(dependencies=[Depends(group_checker("fields"))])` — группы ролей
