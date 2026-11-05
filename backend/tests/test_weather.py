@@ -238,9 +238,6 @@ class TestIngest:
         report = ingest.ingest_forecast(db_session)
         assert report.status == "error"
         assert "недоступен" in report.failed[0]
-        journal = db_session.query(
-            text("status")
-        )  # placeholder заменён ниже корректным запросом
         from app.models.integrations import SourceJournalEntry
 
         entry = db_session.query(SourceJournalEntry).one()
@@ -248,7 +245,6 @@ class TestIngest:
         assert entry.reason and "недоступен" in entry.reason
         source = db_session.query(Source).one()
         assert source.last_status == "error"
-        assert journal is not None  # строка оставлена для читаемости потока
 
     def test_journal_ok_on_success(self, db_session):
         make_field(db_session)
