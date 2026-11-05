@@ -23,7 +23,7 @@ CULTURES: list[dict] = [
     {"name": "Кукуруза", "kind": "main", "forage_flag": False, "crop_group": "cereals"},
     {"name": "Подсолнечник", "kind": "main", "forage_flag": False, "crop_group": "oilseeds"},
     {"name": "Соя", "kind": "main", "forage_flag": False, "crop_group": "legumes"},
-        {"name": "Рапс", "kind": "main", "forage_flag": False, "crop_group": "oilseeds",
+    {"name": "Рапс", "kind": "main", "forage_flag": False, "crop_group": "oilseeds",
      "repeat_years": 4},
     {"name": "Гречиха", "kind": "main", "forage_flag": False, "crop_group": "cereals"},
     {"name": "Горох", "kind": "main", "forage_flag": False, "crop_group": "legumes"},
