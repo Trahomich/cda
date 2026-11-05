@@ -14,6 +14,7 @@ npm run dev       # dev-сервер: http://localhost:5173 (мок-данные
 npm run build     # проверка типов (vue-tsc) + прод-сборка в dist/
 npm run preview   # превью прод-сборки: http://localhost:4173
 npm run lint      # ESLint
+npm run test:e2e  # Playwright: офлайн-сценарий 10-mobile-pwa §3.4 (нужен `npx playwright install chromium`)
 ```
 
 Демо-вход (мок): логин `agronom` (или `manager`), пароль `demo`.
