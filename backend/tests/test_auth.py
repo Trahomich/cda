@@ -33,7 +33,7 @@ def make_user(db, *, login: str, role: UserRole, password: str = "secret123",
 def auth_header(client: TestClient, login: str, password: str) -> dict:
     resp = client.post("/api/v1/auth/login", json={"login": login, "password": password})
     assert resp.status_code == 200, resp.text
-    return {"Authorization": f"Bearer {resp.json()['access_token']}"}
+    return {"Authorization": f"Bearer {resp.json()['token']}"}
 
 
 class TestLogin:
