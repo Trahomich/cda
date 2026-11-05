@@ -1,0 +1,64 @@
+# Клиент ЦДА (веб/PWA)
+
+Каркас PWA-клиента ИС «Цифровой двойник агронома». Стек зафиксирован ADR-06
+(docs/02-architecture.md §8): Vue 3 (Composition API, `<script setup>`) + Vite +
+TypeScript, Pinia, Vue Router, Leaflet, vite-plugin-pwa, ESLint + Prettier.
+
+## Запуск
+
+```bash
+cd frontend
+npm install
+
+npm run dev       # dev-сервер: http://localhost:5173 (мок-данные по умолчанию)
+npm run build     # проверка типов (vue-tsc) + прод-сборка в dist/
+npm run preview   # превью прод-сборки: http://localhost:4173
+npm run lint      # ESLint
+```
+
+Демо-вход (мок): логин `agronom` (или `manager`), пароль `demo`.
+
+## PWA
+
+Сборка `npm run build` генерирует Service Worker и Web App Manifest
+(vite-plugin-pwa): manifest с иконками 192/512 (+maskable), `display: standalone`,
+precache SPA-оболочки, офлайн-фолбэк `public/offline.html`. Проверка
+«installable»: `npm run build && npm run preview` → Lighthouse (PWA-аудит).
+
+## Переключение мок/реальный API
+
+По умолчанию в dev-режиме используется мок-транспорт (демо-хозяйство, ADR-07).
+Реальные запросы (когда появится backend, базовый префикс `/api/v1`):
+
+```bash
+VITE_USE_MOCK=false VITE_API_BASE=http://localhost:8000/api/v1 npm run dev
+```
+
+## Структура
+
+```
+src/
+  api/            # типизированный API-клиент: RFC 7807, пагинация, мок-транспорт
+    types.ts      # типы контрактов (docs/06-data-api.md, CONTRACTS §5/§8)
+    transport.ts  # Transport: FetchTransport | MockTransport
+    client.ts     # ApiClient + ApiError (единый разбор problem+json)
+    index.ts      # вызовы эндпоинтов (только API-NN из docs/06)
+    mock.ts       # демо-хозяйство для dev-режима
+  stores/         # Pinia: auth (POST /auth), toast (тосты problem+json)
+  router/         # роутер: кабинетный и полевой layout'ы
+  layouts/        # CabinetLayout (десктоп), FieldLayout (мобильный, нижняя навигация)
+  views/          # экраны: Login, карта полей, список полей
+  components/     # AppToast (RFC 7807), PwaUpdateBanner
+public/
+  icons/          # иконки-заглушки 192/512/maskable
+  offline.html    # офлайн-фолбэк-страница
+```
+
+## Контракты
+
+- API — только из docs/06-data-api.md §5 (REST `/api/v1`, обёртка
+  `{"items", "total", "limit", "offset"}`, ошибки RFC 7807).
+- Формат `POST /auth` — допущение каркаса (эндпоинт появится в backend,
+  обсуждение задачи #21).
+- Поле `current_cycle` в ответе `GET /fields` — предложение контракта
+  (для «культуры сезона» в попапе/списке; обсуждение задачи #21).
