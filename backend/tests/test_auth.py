@@ -16,8 +16,9 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 
-def make_user(db, *, login: str, role: UserRole, password: str = "secret123",
-              is_active: bool = True) -> User:
+def make_user(
+    db, *, login: str, role: UserRole, password: str = "secret123", is_active: bool = True
+) -> User:
     user = User(
         fio=f"Тест {login}",
         login=login,
@@ -39,9 +40,7 @@ def auth_header(client: TestClient, login: str, password: str) -> dict:
 class TestLogin:
     def test_login_ok_returns_jwt_and_audits(self, client, db_session):
         make_user(db_session, login="agro1", role=UserRole.AGRONOMIST, password="pw-agro-1")
-        resp = client.post(
-            "/api/v1/auth/login", json={"login": "agro1", "password": "pw-agro-1"}
-        )
+        resp = client.post("/api/v1/auth/login", json={"login": "agro1", "password": "pw-agro-1"})
         assert resp.status_code == 200
         body = resp.json()
         # API-46: {token, user {name, role, farm_name}}
@@ -50,28 +49,20 @@ class TestLogin:
         assert body["user"]["role"] == "agronomist"
         assert body["user"]["farm_name"]  # наименование хозяйства из настроек
         # аудит успешного входа
-        rec = db_session.scalar(
-            select(AuditRecord).where(AuditRecord.action == "login")
-        )
+        rec = db_session.scalar(select(AuditRecord).where(AuditRecord.action == "login"))
         assert rec is not None and rec.entity == "user" and rec.changed == {"login": "agro1"}
 
     def test_wrong_password_401_rfc7807(self, client, db_session):
         make_user(db_session, login="agro2", role=UserRole.AGRONOMIST, password="right")
-        resp = client.post(
-            "/api/v1/auth/login", json={"login": "agro2", "password": "wrong"}
-        )
+        resp = client.post("/api/v1/auth/login", json={"login": "agro2", "password": "wrong"})
         assert resp.status_code == 401
         assert resp.headers["content-type"].startswith("application/problem+json")
         assert resp.json()["code"] == "bad_credentials"
-        rec = db_session.scalar(
-            select(AuditRecord).where(AuditRecord.action == "login_failed")
-        )
+        rec = db_session.scalar(select(AuditRecord).where(AuditRecord.action == "login_failed"))
         assert rec is not None and rec.changed == {"login": "agro2"}
 
     def test_unknown_login_same_401(self, client, db_session):
-        resp = client.post(
-            "/api/v1/auth/login", json={"login": "ghost", "password": "whatever"}
-        )
+        resp = client.post("/api/v1/auth/login", json={"login": "ghost", "password": "whatever"})
         assert resp.status_code == 401
         assert resp.json()["code"] == "bad_credentials"  # тот же код, что при неверном пароле
 
@@ -98,9 +89,7 @@ class TestMe:
         assert resp.json()["code"] == "invalid_token"
 
     def test_me_with_garbage_token_401(self, client):
-        resp = client.get(
-            "/api/v1/auth/me", headers={"Authorization": "Bearer not.a.jwt"}
-        )
+        resp = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer not.a.jwt"})
         assert resp.status_code == 401
         assert resp.json()["code"] == "invalid_token"
 
@@ -149,7 +138,10 @@ class TestRbac:
         assert roles("operations") == {"admin", "agronomist", "manager", "machine_operator"}
         # E-15 Справочники: А, Р, З, Д
         assert roles("references") == {
-            "admin", "agronomist", "livestock_specialist", "manager",
+            "admin",
+            "agronomist",
+            "livestock_specialist",
+            "manager",
         }
 
 

@@ -70,9 +70,7 @@ def smoke_admin() -> dict[str, str]:
                 )
         engine.dispose()
     except OperationalError as exc:
-        pytest.skip(
-            f"PostgreSQL недоступна на {SMOKE_DATABASE_URL} (сначала `make up`): {exc}"
-        )
+        pytest.skip(f"PostgreSQL недоступна на {SMOKE_DATABASE_URL} (сначала `make up`): {exc}")
     return {"login": SMOKE_ADMIN_LOGIN, "password": SMOKE_ADMIN_PASSWORD}
 
 
@@ -88,9 +86,7 @@ def test_login_and_me(api_client: httpx.Client, smoke_admin: dict[str, str]) -> 
     token = resp.json()["token"]
     assert token, "API-46 должен вернуть JWT"
 
-    resp = api_client.get(
-        "/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"}
-    )
+    resp = api_client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200, resp.text
     body = resp.json()  # API-47: {id, name, role}
     assert body["role"] == "admin"

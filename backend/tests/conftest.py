@@ -14,6 +14,8 @@
 
 import os
 
+# импорт моделей, чтобы create_all создал все таблицы (включая PostGIS-геометрию)
+import app.models  # noqa: F401  (isort: app.models после app.core.db)
 import pytest
 from app.core.db import Base, get_db
 from app.main import create_app
@@ -22,9 +24,6 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
-
-# импорт моделей, чтобы create_all создал все таблицы (включая PostGIS-геометрию)
-import app.models  # noqa: F401  (isort: app.models после app.core.db)
 
 _TEST_DB = "cda_test"
 
