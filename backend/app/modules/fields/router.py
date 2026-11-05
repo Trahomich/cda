@@ -82,7 +82,7 @@ def _detail(db: Session, field) -> FieldDetail:
         name=field.name,
         area_ga=float(field.area_ga),
         status=field.status,
-        current_cycle=cycles.get(field.id),
+        current_cycle=_cycle_item(cycles.get(field.id)),
         contour=service.contour_geojson(db, field),
         versions=versions,
         operations=[OperationBrief(**op) for op in service.recent_operations(db, field)],
