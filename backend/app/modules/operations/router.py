@@ -42,7 +42,7 @@ def _item(db: Session, operation: FieldOperation) -> OperationItem:
     if operation.operation_type == "harvesting" and operation.cycle_id is not None:
         record = service.yield_of(db, operation)
         if record is not None:
-            yield_item = YieldRecordItem(
+            yield_item = YieldRecordItem(  # noqa: F841 — используется в OperationItem
                 yield_c_ha=float(record.yield_c_ha),
                 gross_t=float(record.gross_t) if record.gross_t is not None else None,
                 source=record.source,
