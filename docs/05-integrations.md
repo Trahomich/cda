@@ -169,6 +169,7 @@ fetch_prices(item: enum(crop, input), item_id: string,
 | field_id | uuid | — |
 | index | enum(ndvi, ndre, ndmi, savi) | тип индекса |
 | captured_at | date | дата съёмки |
+| resolution_m | int | пространственное разрешение сцены, м (Sentinel-2 — 10, Landsat — 30) |
 | index_avg | decimal(4,3) | среднее по полезной площади поля |
 | index_min / index_max | decimal(4,3) | разброс по полю |
 | anomaly_zones_ref | string | ссылка на полигоны аномалий в хранилище, nullable (REQ-F-029) |
