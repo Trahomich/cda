@@ -1,0 +1,111 @@
+// Типизированный API-клиент: единый разбор ошибок RFC 7807 (CONTRACTS §8),
+// пагинация ?limit&offset (06 §5), мок-транспорт в dev-режиме.
+import { FetchTransport, MockTransport, type Transport } from './transport'
+import type { Page, Problem } from './types'
+
+/** Ошибка API: либо RFC 7807 problem+json, либо сетевая/неожиданная. */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly problem: Problem | null,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+
+  /** Текст для пользователя: detail из problem+json или запасной. */
+  get userMessage(): string {
+    if (this.problem) {
+      const extra: string[] = []
+      if (typeof this.problem.rule_id === 'string') extra.push(this.problem.rule_id)
+      return extra.length ? `${this.problem.detail} (${extra.join(', ')})` : this.problem.detail
+    }
+    return this.message
+  }
+}
+
+export interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+  body?: unknown
+  query?: Record<string, string | number | undefined | null>
+}
+
+/** Обработчик ошибок (подключается из приложения: тост problem+json). */
+type ErrorHandler = (error: ApiError) => void
+
+const useMock =
+  import.meta.env.DEV && import.meta.env.VITE_USE_MOCK !== 'false'
+
+export class ApiClient {
+  private transport: Transport
+  private onError: ErrorHandler | null = null
+  private token: string | null = null
+
+  constructor() {
+    const baseUrl = import.meta.env.VITE_API_BASE ?? '/api/v1'
+    this.transport = useMock
+      ? new MockTransport()
+      : new FetchTransport(baseUrl, () => this.token)
+  }
+
+  setErrorHandler(handler: ErrorHandler): void {
+    this.onError = handler
+  }
+
+  setToken(token: string | null): void {
+    this.token = token
+  }
+
+  /** Запрос: бросает ApiError с разобранным problem+json при ошибке. */
+  async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+    const method = options.method ?? 'GET'
+    let fullPath = path
+    if (options.query) {
+      const params = new URLSearchParams()
+      for (const [key, value] of Object.entries(options.query)) {
+        if (value !== undefined && value !== null && value !== '') params.set(key, String(value))
+      }
+      const qs = params.toString()
+      if (qs) fullPath += `?${qs}`
+    }
+
+    let response
+    try {
+      response = await this.transport.request(method, fullPath, options.body)
+    } catch (e) {
+      const error = new ApiError(
+        'Нет связи с сервером. Проверьте подключение к сети.',
+        0,
+        null,
+      )
+      this.onError?.(error)
+      throw error
+    }
+
+    if (!response.ok) {
+      const problem = response.problem
+      const error = new ApiError(
+        problem?.detail ?? `Ошибка запроса ${method} ${path} (HTTP ${response.status})`,
+        response.status,
+        problem,
+      )
+      this.onError?.(error)
+      throw error
+    }
+
+    // 201/204 по CONTRACTS §8: POST создаёт (тело может быть), DELETE — 204 без тела.
+    if (response.status === 204) return undefined as T
+    return response.json as T
+  }
+
+  /** GET списочного эндпоинта с пагинацией (обёртка Page<T>). */
+  list<T>(
+    path: string,
+    query: { limit?: number; offset?: number } & Record<string, string | number | undefined> = {},
+  ): Promise<Page<T>> {
+    return this.request<Page<T>>(path, { query: { limit: 50, ...query } })
+  }
+}
+
+export const apiClient = new ApiClient()
