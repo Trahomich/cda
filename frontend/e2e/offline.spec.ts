@@ -16,8 +16,6 @@ test('офлайн-ввод 3 операций и синхронизация (10
   // Полевой режим → ввод операции. Кэш полей заполняется при онлайне.
   await page.goto('/f/operations')
   await expect(page.locator('#field option')).not.toHaveCount(1, { timeout: 15_000 })
-  const fieldOption = page.locator('#field option').nth(1)
-  const fieldName = (await fieldOption.textContent()) ?? ''
 
   // Самолётный режим (CDP Network.emulateNetworkConditions через context API).
   await page.context().setOffline(true)
