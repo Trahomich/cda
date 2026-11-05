@@ -105,7 +105,7 @@ class DayMetrics:
 class WindowDay:
     """Итог оценки суток: входят ли в погодное окно и почему нет."""
 
-    day: str
+    day: date
     ok: bool
     reasons: list[str]
 
