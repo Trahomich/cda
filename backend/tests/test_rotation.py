@@ -9,7 +9,6 @@ predecessor_cycle_id, warn-нарушения с обязательным reason
 
 import uuid
 
-import pytest
 from app.models.agronomy import CropCycle
 from app.models.auth import AuditRecord, UserRole
 from app.models.references import Culture, PredecessorRule
