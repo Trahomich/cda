@@ -24,8 +24,7 @@ from app.models.integrations import Forecast, WeatherObservation
 from app.models.machinery import Machine, MachineJob
 from app.models.references import Culture
 from app.seed_demo import DEMO_FIELDS, seed_demo
-from geoalchemy2 import functions as gfunc
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 
 
 def _counts(db):
