@@ -35,7 +35,7 @@ from app.models.agronomy import (
     FieldVersion,
     RotationPlan,
 )
-from app.models.auth import User
+from app.models.auth import User, UserRole
 from app.models.machinery import Machine, MachineJob
 from app.models.references import Culture
 from app.modules.weather.rules import seed_weather_rules
