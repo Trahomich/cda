@@ -317,4 +317,4 @@ class IngestReportBuilder:
         return IngestReport(ok=self._ok, skipped=self._skipped, failed=self._failed)
 
 
-__all__ = ["IngestReport", "STALE_FORECAST_HOURS", "WeatherIngest"]
+__all__ = ["IngestReport", "STALE_FORECAST_HOURS", "WeatherIngest", "centroid_lookup_factory"]
