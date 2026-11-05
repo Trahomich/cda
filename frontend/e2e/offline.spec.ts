@@ -41,7 +41,8 @@ test('офлайн-ввод 3 операций и синхронизация (10
   }
 
   // Очередь E-17 показывает 3 записи со статусом «ждёт сети».
-  await page.goto('/f/queue')
+  // В офлайне нельзя page.goto (full page load) — ходим SPA-навигацией.
+  await page.getByRole('button', { name: 'Ещё…', exact: true }).click()
   await expect(page.locator('.queue__item')).toHaveCount(3)
   await expect(page.locator('.queue__item').first()).toContainText('ждёт сети')
 
