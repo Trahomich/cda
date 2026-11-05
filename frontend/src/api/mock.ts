@@ -1,11 +1,14 @@
 // Мок-транспорт для dev-режима: демо-хозяйство по ADR-07 (5–10 полей со
 // синтетическими контурами, культуры средней полосы). Реализует эндпоинты
-// каркаса и экранов E-03/E-04/E-05 (docs/06 §5): auth (API-46), fields
-// (API-01/05/06/07), rotation-plans + crop-cycles (API-08/10/11),
-// agro-inputs (API-14), treatment-plans (API-15/16), operations (API-17/18).
+// каркаса и экранов E-03/E-04/E-05/E-10/E-13/E-14/E-15/E-18 (docs/06 §5):
+// auth (API-46), fields (API-01/05/06/07), rotation-plans + crop-cycles
+// (API-08/10/11), agro-inputs (API-14), treatment-plans (API-15/16),
+// operations (API-17/18), weather/forecast + weather/windows (API-29,
+// RULE-AGRO-09), sources/status (API-28), machines + machine-jobs (API-19/20).
 // Ошибки — RFC 7807 (CONTRACTS §8), нарушения бизнес-правил — 422 c rule_id.
 import type { Transport, TransportResponse } from './transport'
 import type {
+  AdapterStatus,
   AgroInput,
   CropCycle,
   Field,
@@ -13,11 +16,15 @@ import type {
   FieldCycle,
   FieldOperation,
   FieldStatus,
+  Machine,
+  MachineJob,
   NdviPoint,
   Page,
   RotationPlan,
   TreatmentPlan,
   TreatmentPlanRequest,
+  WeatherForecastDay,
+  WindowOperationType,
 } from './types'
 
 /* ───────────────────────── Демо-справочники ───────────────────────── */
