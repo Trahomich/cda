@@ -4,7 +4,7 @@
 // GET /fields (API-01) с фильтрами status, q и пагинацией limit/offset.
 // Ошибки отдаются в формате RFC 7807 (CONTRACTS §8).
 import type { Transport, TransportResponse } from './transport'
-import type { Field, FieldStatus, Page } from './types'
+import type { Field, FieldOperation, FieldStatus, Page } from './types'
 
 interface MockCycle {
   year: number
