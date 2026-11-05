@@ -72,7 +72,9 @@ test('422 не теряет запись: причина из problem+json по�
   await expect(page).toHaveURL(/fields\/map|\/f\//)
 
   await page.goto('/f/operations')
-  await expect(page.locator('#field option')).not.toHaveCount(1, { timeout: 15_000 })
+  await expect
+    .poll(async () => page.locator('#field option').count(), { timeout: 15_000 })
+    .toBeGreaterThan(1)
   // Первое поле демо-хозяйства — «Степное-1», 84.5 га; RULE-AGRO-12: лимит 1.05×.
   await page.selectOption('#field', { index: 1 })
   await page.fill('#area', '999') // заведомо больше 1,05 × площади
