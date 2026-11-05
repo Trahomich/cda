@@ -68,9 +68,9 @@ def post_cycle(client, headers, field_id, culture_id, *, year=2026, kind="main",
     return client.post(
         API_CYCLES,
         json={
-            "field_id": field_id,
+            "field_id": str(field_id),
             "year": year,
-            "culture_id": culture_id,
+            "culture_id": str(culture_id),
             "kind": kind,
             "out_of_rotation": out_of_rotation,
             "reason": reason,
