@@ -33,8 +33,8 @@ from app.modules.fields.schemas import (
     FieldItem,
     FieldListResponse,
     FieldUpdate,
-    ImportReport,
     ImportErrorItem,
+    ImportReport,
     OperationBrief,
     VersionCreate,
     VersionItem,
@@ -50,9 +50,7 @@ router = APIRouter(
 )
 
 
-def _item(
-    db: Session, field, *, cycles: dict, with_geometry: bool = False
-) -> FieldItem:
+def _item(db: Session, field, *, cycles: dict, with_geometry: bool = False) -> FieldItem:
     cycle = cycles.get(field.id)
     return FieldItem(
         field_id=field.id,
@@ -84,9 +82,7 @@ def _detail(db: Session, field) -> FieldDetail:
         current_cycle=cycles.get(field.id),
         contour=service.contour_geojson(db, field),
         versions=versions,
-        operations=[
-            OperationBrief(**op) for op in service.recent_operations(db, field)
-        ],
+        operations=[OperationBrief(**op) for op in service.recent_operations(db, field)],
         ndvi=None,  # заполняется модулем спутника (MVP-10, #28)
         weather=None,  # заполняется модулем погоды (MVP-6, #24)
     )
@@ -106,12 +102,15 @@ def list_fields(
     cycles = service.current_cycles(db, [f.id for f in fields])
     return FieldListResponse(
         items=[_item(db, f, cycles=cycles, with_geometry=with_geometry) for f in fields],
-        total=total, limit=limit, offset=offset,
+        total=total,
+        limit=limit,
+        offset=offset,
     )
 
 
-@router.post("", response_model=FieldDetail, status_code=201,
-             summary="API-02: создать поле с контуром")
+@router.post(
+    "", response_model=FieldDetail, status_code=201, summary="API-02: создать поле с контуром"
+)
 def create_field(
     body: FieldCreate,
     response: Response,
@@ -125,14 +124,18 @@ def create_field(
     return _detail(db, field)
 
 
-@router.get("/{field_id}", response_model=FieldDetail,
-            summary="API-05: карточка поля («Поле 360°»)")
+@router.get(
+    "/{field_id}", response_model=FieldDetail, summary="API-05: карточка поля («Поле 360°»)"
+)
 def get_field(field_id: uuid.UUID, db: DbSession) -> FieldDetail:
     return _detail(db, service.get_field(db, field_id))
 
 
-@router.patch("/{field_id}", response_model=FieldDetail,
-              summary="API-03: правка поля (смена контура создаёт версию)")
+@router.patch(
+    "/{field_id}",
+    response_model=FieldDetail,
+    summary="API-03: правка поля (смена контура создаёт версию)",
+)
 def update_field(
     field_id: uuid.UUID,
     body: FieldUpdate,
@@ -141,14 +144,22 @@ def update_field(
 ) -> FieldDetail:
     field = service.get_field(db, field_id)
     field = service.update_field(
-        db, field, user=user, name=body.name, status=body.status,
-        contour=body.contour, reason=body.reason,
+        db,
+        field,
+        user=user,
+        name=body.name,
+        status=body.status,
+        contour=body.contour,
+        reason=body.reason,
     )
     return _detail(db, field)
 
 
-@router.get("/{field_id}/versions", response_model=VersionListResponse,
-            summary="История версий контура (REQ-F-002)")
+@router.get(
+    "/{field_id}/versions",
+    response_model=VersionListResponse,
+    summary="История версий контура (REQ-F-002)",
+)
 def list_versions(field_id: uuid.UUID, db: DbSession) -> VersionListResponse:
     field = service.get_field(db, field_id)
     versions = [
@@ -161,13 +172,15 @@ def list_versions(field_id: uuid.UUID, db: DbSession) -> VersionListResponse:
         )
         for v in service.list_versions(db, field)
     ]
-    return VersionListResponse(
-        items=versions, total=len(versions), limit=len(versions), offset=0
-    )
+    return VersionListResponse(items=versions, total=len(versions), limit=len(versions), offset=0)
 
 
-@router.post("/{field_id}/versions", response_model=VersionItem, status_code=201,
-             summary="Новая версия контура (REQ-F-002)")
+@router.post(
+    "/{field_id}/versions",
+    response_model=VersionItem,
+    status_code=201,
+    summary="Новая версия контура (REQ-F-002)",
+)
 def add_version(
     field_id: uuid.UUID,
     body: VersionCreate,
@@ -177,8 +190,12 @@ def add_version(
 ) -> VersionItem:
     field = service.get_field(db, field_id)
     version = service.add_version(
-        db, field, user=user, contour=body.contour,
-        valid_from=body.valid_from, reason=body.reason,
+        db,
+        field,
+        user=user,
+        contour=body.contour,
+        valid_from=body.valid_from,
+        reason=body.reason,
     )
     response.headers["Location"] = (
         f"{get_settings().api_v1_prefix}/fields/{field.id}/versions/{version.version_no}"
@@ -192,8 +209,11 @@ def add_version(
     )
 
 
-@router.post("/import", response_model=ImportReport,
-             summary="API-04: импорт полей из GeoJSON-файла (KML/shapefile — v1)")
+@router.post(
+    "/import",
+    response_model=ImportReport,
+    summary="API-04: импорт полей из GeoJSON-файла (KML/shapefile — v1)",
+)
 async def import_fields(
     file: UploadFile,
     user: WriteAccess,
@@ -245,7 +265,10 @@ async def import_fields(
             continue
         try:
             service.create_field(
-                db, user=user, name=name, contour=geometry,
+                db,
+                user=user,
+                name=name,
+                contour=geometry,
                 reason=f"импорт GeoJSON: {file.filename}",
             )
             created += 1
