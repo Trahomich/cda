@@ -322,6 +322,7 @@ def update_job(db: Session, job: MachineJob, *, user: User, status: str, **fact)
         db,
         user=user,
         entity_id=job.id,
+        entity="machine_job",
         action=f"job_{status}",
         changed={"machine_id": str(job.machine_id), "status": status},
     )
