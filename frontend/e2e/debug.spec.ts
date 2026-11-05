@@ -26,8 +26,9 @@ test('debug 422 copy', async ({ page }) => {
   const btn = await page.locator('.op-entry__queue-btn').textContent()
   console.log('BTN:', btn)
   const state = await page.evaluate(async () => {
-    const db = await (indexedDB as any).databases?.()
-    return db?.map((d: any) => d.name)
+    const idb = indexedDB as unknown as { databases?: () => Promise<{ name: string }[]> }
+    const db = await idb.databases?.()
+    return db?.map((d) => d.name)
   })
   console.log('DBS:', JSON.stringify(state))
   const toasts = await page.evaluate(() => Array.from(document.querySelectorAll('[class*=toast]')).map((n) => n.textContent))
