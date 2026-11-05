@@ -66,6 +66,7 @@ def problem_response(
     title: str,
     detail: str | None,
     code: str | None = None,
+    extra: dict[str, str] | None = None,
 ) -> JSONResponse:
     body = Problem(
         status=status_code,
@@ -74,6 +75,9 @@ def problem_response(
         instance=str(request.url.path),
         code=code,
     ).model_dump(exclude_none=True)
+    if extra:
+        # доменные расширения RFC 7807 (rule_id, severity, rationale, ...)
+        body.update(extra)
     return JSONResponse(
         status_code=status_code, content=body, media_type="application/problem+json"
     )
