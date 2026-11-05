@@ -27,7 +27,7 @@ CULTURES: list[dict] = [
      "repeat_years": 4},
     {"name": "Гречиха", "kind": "main", "forage_flag": False, "crop_group": "cereals"},
     {"name": "Горох", "kind": "main", "forage_flag": False, "crop_group": "legumes"},
-        {"name": "Картофель", "kind": "main", "forage_flag": False, "crop_group": "tubers",
+    {"name": "Картофель", "kind": "main", "forage_flag": False, "crop_group": "tubers",
      "repeat_years": 5},
     {"name": "Многолетние травы", "kind": "forage", "forage_flag": True, "crop_group": "grasses"},
         {"name": "Горчица (сидерат)", "kind": "catch", "forage_flag": False, "crop_group": "other",
