@@ -37,9 +37,7 @@ class Field(Base):
 
     __tablename__ = "dat_field"
     __table_args__ = (
-        CheckConstraint(
-            "status IN ('active', 'merged', 'archived')", name="ck_dat_field_status"
-        ),
+        CheckConstraint("status IN ('active', 'merged', 'archived')", name="ck_dat_field_status"),
         UniqueConstraint("name", name="uq_dat_field_name"),
         Index("ix_dat_field_contour", "contour", postgresql_using="gist"),
     )
@@ -123,9 +121,7 @@ class RotationPlan(Base):
     year_to: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(10), nullable=False, server_default="draft")
     approved_by: Mapped[str | None] = mapped_column(String(200), nullable=True)
-    approved_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -169,9 +165,7 @@ class CropCycle(Base):
     )
     planned_yield_c_ha: Mapped[float | None] = mapped_column(Numeric(6, 1), nullable=True)
     planned_harvest_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    out_of_rotation: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default="false"
-    )
+    out_of_rotation: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     reason: Mapped[str | None] = mapped_column(String(300), nullable=True)
     status: Mapped[str] = mapped_column(String(15), nullable=False, server_default="planned")
     created_at: Mapped[datetime] = mapped_column(
@@ -188,9 +182,7 @@ class AgroInput(Base):
     __tablename__ = "dat_agro_input"
     __table_args__ = (
         CheckConstraint("kind IN ('fertilizer', 'ppp')", name="ck_dat_agro_input_kind"),
-        CheckConstraint(
-            "unit IN ('kg_ha', 'l_ha', 'kg_dv_ha')", name="ck_dat_agro_input_unit"
-        ),
+        CheckConstraint("unit IN ('kg_ha', 'l_ha', 'kg_dv_ha')", name="ck_dat_agro_input_unit"),
         CheckConstraint(
             "kind <> 'fertilizer' OR waiting_days IS NULL",
             name="ck_dat_agro_input_waiting_days",
@@ -248,9 +240,7 @@ class Recommendation(Base):
     rationale: Mapped[str] = mapped_column(String(1000), nullable=False)
     data_refs: Mapped[list] = mapped_column(JSONB, nullable=False)
     status: Mapped[str] = mapped_column(String(10), nullable=False, server_default="new")
-    expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -278,11 +268,13 @@ class TreatmentPlan(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     cycle_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("dat_crop_cycle.id", name="fk_dat_treatment_plan_cycle"),
+        Uuid,
+        ForeignKey("dat_crop_cycle.id", name="fk_dat_treatment_plan_cycle"),
         nullable=False,
     )
     input_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("dat_agro_input.id", name="fk_dat_treatment_plan_input"),
+        Uuid,
+        ForeignKey("dat_agro_input.id", name="fk_dat_treatment_plan_input"),
         nullable=False,
     )
     dose: Mapped[float] = mapped_column(Numeric(8, 2), nullable=False)
@@ -330,22 +322,22 @@ class FieldOperation(Base):
         Uuid, ForeignKey("dat_field.id", name="fk_dat_field_operation_field"), nullable=False
     )
     cycle_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid, ForeignKey("dat_crop_cycle.id", name="fk_dat_field_operation_cycle"),
+        Uuid,
+        ForeignKey("dat_crop_cycle.id", name="fk_dat_field_operation_cycle"),
         nullable=True,
     )
     operation_type: Mapped[str] = mapped_column(String(15), nullable=False)
     date: Mapped[date] = mapped_column(Date, nullable=False)
     input_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid, ForeignKey("dat_agro_input.id", name="fk_dat_field_operation_input"),
+        Uuid,
+        ForeignKey("dat_agro_input.id", name="fk_dat_field_operation_input"),
         nullable=True,
     )
     actual_dose: Mapped[float | None] = mapped_column(Numeric(8, 2), nullable=True)
     actual_area_ga: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     performer: Mapped[str | None] = mapped_column(String(200), nullable=True)
     source: Mapped[str] = mapped_column(String(20), nullable=False)
-    deviation_flag: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default="false"
-    )
+    deviation_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     status: Mapped[str] = mapped_column(String(15), nullable=False, server_default="draft")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

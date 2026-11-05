@@ -5,10 +5,6 @@ from logging.config import fileConfig
 from alembic import context
 from app.core.config import get_settings
 from app.core.db import Base
-
-# Импортировать модели здесь по мере появления модулей, чтобы autogenerate
-# видел метаданные:
-from app.models.auth import AuditRecord, User  # noqa: F401
 from app.models.agronomy import (  # noqa: F401
     AgroInput,
     Alert,
@@ -21,6 +17,10 @@ from app.models.agronomy import (  # noqa: F401
     TreatmentPlan,
     YieldRecord,
 )
+
+# Импортировать модели здесь по мере появления модулей, чтобы autogenerate
+# видел метаданные:
+from app.models.auth import AuditRecord, User  # noqa: F401
 from app.models.integrations import (  # noqa: F401
     Forecast,
     SatelliteScene,

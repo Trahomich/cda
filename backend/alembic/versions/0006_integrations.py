@@ -116,7 +116,7 @@ def upgrade() -> None:
             "index",
             sa.String(length=5),
             sa.CheckConstraint(
-                '"index" IN (\'ndvi\', \'ndre\', \'ndmi\', \'savi\')',
+                "\"index\" IN ('ndvi', 'ndre', 'ndmi', 'savi')",
                 name="ck_dat_satellite_scene_index",
             ),
             nullable=False,

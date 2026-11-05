@@ -55,9 +55,7 @@ def main(argv: list[str] | None = None) -> int:
     p_admin.add_argument("--fio", default="Администратор ЦДА", help="ФИО")
     p_admin.set_defaults(func=cmd_create_admin)
 
-    p_seed = sub.add_parser(
-        "seed-references", help="наполнить справочники культур и источников"
-    )
+    p_seed = sub.add_parser("seed-references", help="наполнить справочники культур и источников")
     p_seed.set_defaults(func=cmd_seed_references)
 
     args = parser.parse_args(argv)

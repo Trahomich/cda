@@ -58,9 +58,7 @@ def upgrade() -> None:
         ),
         sa.UniqueConstraint("name", name="uq_dat_field_name"),
     )
-    op.create_index(
-        "ix_dat_field_contour", "dat_field", ["contour"], postgresql_using="gist"
-    )
+    op.create_index("ix_dat_field_contour", "dat_field", ["contour"], postgresql_using="gist")
 
     # История контуров (03 §1.1): операции прошлых сезонов остаются
     # привязанными к версии, действовавшей на дату операции [REQ-F-002]
@@ -231,9 +229,7 @@ def upgrade() -> None:
         sa.Column(
             "kind",
             sa.String(length=15),
-            sa.CheckConstraint(
-                "kind IN ('fertilizer', 'ppp')", name="ck_dat_agro_input_kind"
-            ),
+            sa.CheckConstraint("kind IN ('fertilizer', 'ppp')", name="ck_dat_agro_input_kind"),
             nullable=False,
         ),
         sa.Column("name", sa.String(length=200), nullable=False),
@@ -261,9 +257,7 @@ def upgrade() -> None:
             nullable=False,
             server_default="{}",
         ),
-        sa.Column(
-            "max_treatments_per_season", sa.Integer(), nullable=False, server_default="2"
-        ),
+        sa.Column("max_treatments_per_season", sa.Integer(), nullable=False, server_default="2"),
         sa.Column("restrictions", sa.Text(), nullable=True),
         sa.Column(
             "created_at",
@@ -545,9 +539,7 @@ def upgrade() -> None:
         sa.Column(
             "status",
             sa.String(length=10),
-            sa.CheckConstraint(
-                "status IN ('new', 'read', 'closed')", name="ck_dat_alert_status"
-            ),
+            sa.CheckConstraint("status IN ('new', 'read', 'closed')", name="ck_dat_alert_status"),
             nullable=False,
             server_default="new",
         ),
@@ -576,9 +568,7 @@ def downgrade() -> None:
     op.drop_index("ix_dat_field_operation_cycle", table_name="dat_field_operation")
     op.drop_index("ix_dat_field_operation_field_date", table_name="dat_field_operation")
     op.drop_table("dat_field_operation")
-    op.drop_index(
-        "ix_dat_treatment_plan_cycle_status", table_name="dat_treatment_plan"
-    )
+    op.drop_index("ix_dat_treatment_plan_cycle_status", table_name="dat_treatment_plan")
     op.drop_table("dat_treatment_plan")
     op.drop_index("ix_dat_recommendation_target", table_name="dat_recommendation")
     op.drop_index("ix_dat_recommendation_status", table_name="dat_recommendation")

@@ -31,18 +31,14 @@ class Culture(Base):
 
     __tablename__ = "ref_culture"
     __table_args__ = (
-        CheckConstraint(
-            "kind IN ('main', 'forage', 'catch')", name="ck_ref_culture_kind"
-        ),
+        CheckConstraint("kind IN ('main', 'forage', 'catch')", name="ck_ref_culture_kind"),
         UniqueConstraint("name", name="uq_ref_culture_name"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     kind: Mapped[str] = mapped_column(String(10), nullable=False)
-    forage_flag: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default="false"
-    )
+    forage_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     crop_group: Mapped[str] = mapped_column(String(50), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -57,12 +53,8 @@ class PredecessorRule(Base):
 
     __tablename__ = "ref_predecessor_matrix"
     __table_args__ = (
-        CheckConstraint(
-            "verdict IN ('ok', 'warn', 'ban')", name="ck_ref_pred_matrix_verdict"
-        ),
-        UniqueConstraint(
-            "culture_id", "predecessor_id", name="uq_ref_pred_matrix_pair"
-        ),
+        CheckConstraint("verdict IN ('ok', 'warn', 'ban')", name="ck_ref_pred_matrix_verdict"),
+        UniqueConstraint("culture_id", "predecessor_id", name="uq_ref_pred_matrix_pair"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
@@ -70,7 +62,8 @@ class PredecessorRule(Base):
         Uuid, ForeignKey("ref_culture.id", name="fk_ref_pred_matrix_culture"), nullable=False
     )
     predecessor_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("ref_culture.id", name="fk_ref_pred_matrix_predecessor"),
+        Uuid,
+        ForeignKey("ref_culture.id", name="fk_ref_pred_matrix_predecessor"),
         nullable=False,
     )
     verdict: Mapped[str] = mapped_column(String(10), nullable=False)
@@ -100,9 +93,7 @@ class Source(Base):
     kind: Mapped[str] = mapped_column(String(30), nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     last_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    last_success_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

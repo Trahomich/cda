@@ -29,9 +29,7 @@ def upgrade() -> None:
         sa.Column(
             "kind",
             sa.String(length=10),
-            sa.CheckConstraint(
-                "kind IN ('main', 'forage', 'catch')", name="ck_ref_culture_kind"
-            ),
+            sa.CheckConstraint("kind IN ('main', 'forage', 'catch')", name="ck_ref_culture_kind"),
             nullable=False,
         ),
         sa.Column("forage_flag", sa.Boolean(), nullable=False, server_default=sa.false()),
@@ -200,9 +198,7 @@ def upgrade() -> None:
             nullable=False,
         ),
     )
-    op.create_index(
-        "ix_ref_price_item_date", "ref_price", ["item_type", "item_id", "date"]
-    )
+    op.create_index("ix_ref_price_item_date", "ref_price", ["item_type", "item_id", "date"])
 
 
 def downgrade() -> None:

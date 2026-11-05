@@ -29,14 +29,13 @@ class WeatherObservation(Base):
 
     __tablename__ = "dat_weather_observation"
     __table_args__ = (
-        UniqueConstraint(
-            "field_id", "observed_at", "source_id", name="uq_dat_weather_observation"
-        ),
+        UniqueConstraint("field_id", "observed_at", "source_id", name="uq_dat_weather_observation"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     field_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("dat_field.id", name="fk_dat_weather_observation_field"),
+        Uuid,
+        ForeignKey("dat_field.id", name="fk_dat_weather_observation_field"),
         nullable=False,
     )
     observed_at: Mapped[date] = mapped_column(Date, nullable=False)
@@ -98,7 +97,7 @@ class SatelliteScene(Base):
     __tablename__ = "dat_satellite_scene"
     __table_args__ = (
         CheckConstraint(
-            '"index" IN (\'ndvi\', \'ndre\', \'ndmi\', \'savi\')',
+            "\"index\" IN ('ndvi', 'ndre', 'ndmi', 'savi')",
             name="ck_dat_satellite_scene_index",
         ),
         CheckConstraint("cloud_pct <= 60", name="ck_dat_satellite_scene_cloud"),

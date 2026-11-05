@@ -51,9 +51,7 @@ class Machine(Base):
     gov_number: Mapped[str | None] = mapped_column(String(20), nullable=True)
     width_m: Mapped[float | None] = mapped_column(Numeric(5, 2), nullable=True)
     tank_capacity_l: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    engine_hours: Mapped[float] = mapped_column(
-        Numeric(10, 1), nullable=False, server_default="0"
-    )
+    engine_hours: Mapped[float] = mapped_column(Numeric(10, 1), nullable=False, server_default="0")
     status: Mapped[str] = mapped_column(String(15), nullable=False, server_default="active")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
@@ -73,9 +71,7 @@ class MachineJob(Base):
             "status IN ('draft', 'confirmed', 'rejected')",
             name="ck_dat_machine_job_status",
         ),
-        CheckConstraint(
-            "source IN ('manual', 'telemetry')", name="ck_dat_machine_job_source"
-        ),
+        CheckConstraint("source IN ('manual', 'telemetry')", name="ck_dat_machine_job_source"),
         Index("ix_dat_machine_job_machine_date", "machine_id", "performed_at"),
     )
 
