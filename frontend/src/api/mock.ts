@@ -56,13 +56,15 @@ const LEGUMES = new Set(['a4']) // горох
 type Verdict = 'ok' | 'warn' | 'ban'
 
 /** Совместимость «предшественник → культура» (RULE-AGRO-01; пар/сидерат —
- *  RULE-AGRO-03: любой предшественник допустим). */
+ *  RULE-AGRO-03: любой предшественник допустим). Упрощённая матрица:
+ *  одна и та же main-культура подряд — warn для зерновых (по 07-ux §3.3
+ *  возврат 3 лет для пшеницы — норма, подряд — нежелательно) и ban для
+ *  остальных (бобовые, рапс, кукуруза); разные зерновые — допустимо. */
 function compat(pred: MockCulture, cur: MockCulture): Verdict {
   if (pred.kind !== 'main' || cur.kind !== 'main') return 'ok'
   const p = pred.culture_id.slice(-2)
   const c = cur.culture_id.slice(-2)
   if (p === c) return GRAINS.has(p) ? 'warn' : 'ban' // та же культура подряд
-  if (GRAINS.has(p) && GRAINS.has(c)) return 'warn' // зерно по зерну
   if (LEGUMES.has(p) && LEGUMES.has(c)) return 'ban' // бобовые по бобовым
   return 'ok'
 }
