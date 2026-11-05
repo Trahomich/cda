@@ -43,6 +43,25 @@ class Settings(BaseSettings):
     weather_retry_base_seconds: float = 60.0  # 0 — без пауз (тесты)
     weather_request_timeout: float = 10.0
 
+    # Спутник (MVP-10, docs/05 §2 IF-SATELLITE, §4: опрос каталога раз в 6 ч)
+    satellite_enabled: bool = False  # true — нужны ключи Copernicus (см. ниже)
+    satellite_poll_hours: int = 6
+    satellite_indices: str = "ndvi"  # список через запятую: ndvi,ndre,ndmi,savi
+    satellite_lookback_days: int = 14  # окно опроса каталога
+    satellite_max_cloud_pct: int = 20  # порог отбора сцен (05 §2/§5)
+    satellite_retry_attempts: int = 5  # ретраи 1→6 ч (05 §4), base задаёт шаг
+    satellite_retry_base_seconds: float = 3600.0
+    satellite_request_timeout: float = 30.0
+    satellite_raster_cache_dir: str = "/var/lib/cda/satellite"  # распакованные каналы L2A
+    # Ключи Copernicus Data Space (плейсхолдеры в .env.example; в local пусто)
+    copernicus_auth_url: str = (
+        "https://identity.dataspace.copernicus.eu/auth/realms/CDAS"
+        "/protocol/openid-connect/token"
+    )
+    copernicus_search_url: str = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+    copernicus_client_id: str = ""
+    copernicus_client_secret: str = ""
+
     @property
     def sqlalchemy_database_uri(self) -> str:
         """DSN для SQLAlchemy (psycopg 3)."""
