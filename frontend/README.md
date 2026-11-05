@@ -58,11 +58,13 @@ src/
     client.ts     # ApiClient + ApiError (единый разбор problem+json)
     index.ts      # вызовы эндпоинтов (только API-NN из docs/06)
     mock.ts       # демо-хозяйство для dev-режима
-  stores/         # Pinia: auth (POST /auth), toast (тосты problem+json)
+  stores/         # Pinia: auth (POST /auth), toast (тосты problem+json), offline (сеть/очередь)
+  services/       # db.ts (Dexie/IndexedDB), offline.ts (очередь, синхронизация, кэш полей)
   router/         # роутер: кабинетный и полевой layout'ы
   layouts/        # CabinetLayout (десктоп), FieldLayout (мобильный, нижняя навигация)
-  views/          # экраны: Login, карта полей, список полей
-  components/     # AppToast (RFC 7807), PwaUpdateBanner
+  views/          # экраны: Login, карта полей, ввод операции (E-08), офлайн-очередь (E-17)
+  components/     # AppToast (RFC 7807), PwaUpdateBanner, FieldsListPanel
+e2e/              # Playwright: офлайн-сценарий 10-mobile-pwa §3.4
 public/
   icons/          # иконки-заглушки 192/512/maskable
   offline.html    # офлайн-фолбэк-страница
