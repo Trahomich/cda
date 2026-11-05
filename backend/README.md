@@ -59,3 +59,15 @@ pre-commit install && pre-commit run --all-files
 - Форматы данных (JSON, snake_case, UUID v4, ISO 8601) — CONTRACTS.md §5.
 - Модули не пишут SQL к чужим таблицам; схемы БД меняем только через Alembic.
 - Идентификаторы — латиница snake_case; комментарии — русский, по делу.
+
+## Аутентификация и RBAC (MVP-4)
+
+- Вход: `POST /api/v1/auth/login` (API-46) → `{token, user {name, role, farm_name}}`;
+  профиль: `GET /api/v1/auth/me` (API-47) → `{id, name, role}`.
+  Пароли — argon2id, токены — JWT HS256 (`JWT_SECRET`, TTL `JWT_TTL_MINUTES`).
+- Первый администратор: `python -m app.cli create-admin --login admin --password ...`.
+- Доменные роутеры защищаются зависимостью из `app.core.rbac`:
+  `APIRouter(dependencies=[Depends(group_checker("fields"))])` — группы ролей
+  соответствуют матрице прав docs/07-ux.md §5. Для отдельных эндпоинтов —
+  `user: CurrentUser` + `role_checker(...)`.
+- Все входы (успешные и нет) пишутся в `dat_audit` (action = login / login_failed).
