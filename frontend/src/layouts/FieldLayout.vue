@@ -15,7 +15,7 @@ const nav = computed(() => [
   { label: 'Поля', route: { name: 'field-map' }, disabled: false },
   { label: 'Работы', route: { name: 'field-map' }, disabled: true },
   { label: 'Животные', route: { name: 'field-map' }, disabled: true },
-  { label: 'Ещё…', route: { name: 'fields-list' }, disabled: false },
+  { label: 'Ещё…', route: { name: 'fields-map' }, disabled: false },
 ])
 
 function go(item: (typeof nav.value)[number]) {
