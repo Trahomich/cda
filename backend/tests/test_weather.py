@@ -456,9 +456,6 @@ class TestWeatherApi:
         field_id = make_field(db_session)
         seed_weather_rules(db_session)
         # день 0: окно spraying открыто; день 1: ветер блокирует (в прогнозе 9 м/с)
-        db.add = None  # защита от случайного использования
-        from app.models.integrations import Forecast as F
-
         db_session.add_all(
             [
                 F(
