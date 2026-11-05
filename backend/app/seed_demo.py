@@ -302,6 +302,45 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
         report.jobs += 1
     db.commit()
 
+    # --- демо-погода: факты 14 сут + прогноз 7 сут (напрямую в БД, MVP-6) ---
+    import random
+
+    rng = random.Random(20261105)  # стабильные демо-данные
+    source_id = "weather.open-meteo"
+    from app.models.integrations import Forecast, WeatherObservation
+
+    today = date.today()
+    for name, demo_field in fields.items():
+        for day_off in range(-14, 0):  # факты: последние 14 суток
+            t_min = rng.uniform(4.0, 12.0)
+            t_max = t_min + rng.uniform(7.0, 13.0)
+            db.add(WeatherObservation(
+                field_id=demo_field.id,
+                observed_at=today + timedelta(days=day_off),
+                temperature_avg_c=round((t_min + t_max) / 2, 1),
+                temperature_min_c=round(t_min, 1),
+                temperature_max_c=round(t_max, 1),
+                precipitation_mm=round(rng.choice([0.0, 0.0, 0.0, 0.5, 3.2, 11.0]), 1),
+                wind_max_ms=round(rng.uniform(2.0, 9.0), 1),
+                humidity_avg_pct=round(rng.uniform(45.0, 85.0), 1),
+                source_id=source_id,
+            ))
+        for day_off in range(0, 7):  # прогноз: 7 суток, issued_at = сейчас
+            t_min = rng.uniform(5.0, 13.0)
+            t_max = t_min + rng.uniform(7.0, 12.0)
+            db.add(Forecast(
+                field_id=demo_field.id,
+                forecast_for=today + timedelta(days=day_off),
+                issued_at=now,
+                temperature_min_c=round(t_min, 1),
+                temperature_max_c=round(t_max, 1),
+                precipitation_mm=round(rng.choice([0.0, 0.0, 0.2, 1.5, 6.0]), 1),
+                wind_max_ms=round(rng.uniform(2.0, 11.0), 1),
+                humidity_avg_pct=round(rng.uniform(45.0, 80.0), 1),
+                hazard="none",
+            ))
+    db.commit()
+
     # --- алерты -------------------------------------------------------------
     db.add(Alert(
         type="weather_danger", severity="warning", field_id=fields["Среднее"].id,
