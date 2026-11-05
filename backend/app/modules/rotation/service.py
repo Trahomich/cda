@@ -440,6 +440,7 @@ def create_plan(
     violations = _validate_plan_items(db, field_id, items) if items else []
     plan = RotationPlan(field_id=field_id, year_from=year_from, year_to=year_to)
     db.add(plan)
+    db.flush()  # id для аудита
     _audit(
         db,
         user=user,
