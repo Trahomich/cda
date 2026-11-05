@@ -48,6 +48,13 @@ def cmd_seed_references(_args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_seed_weather_rules(_args: argparse.Namespace) -> int:
+    with SessionLocal() as db:
+        changed = seed_weather_rules(db)
+    print(f"ref_weather_rule: актуализировано {changed} правил (повторный запуск безопасен)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="CLI ИС ЦДА")
     sub = parser.add_subparsers(dest="command", required=True)
