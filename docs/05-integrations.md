@@ -146,6 +146,18 @@ fetch_prices(item: enum(crop, input), item_id: string,
 | humidity_avg_pct | decimal(4,1) | % |
 | hazard | enum(none, frost, heavy_rain, hail, wind) | опасное явление (REQ-F-026) |
 
+```json
+{
+  "forecast_id": "e3f4a5b6-0000-4000-8000-abcdefabcdef",
+  "field_id": "550e8400-e29b-41d4-a716-446655440000",
+  "forecast_for": "2026-05-15",
+  "issued_at": "2026-05-14T21:00:00+03:00",
+  "temperature_min_c": 8.2, "temperature_max_c": 19.5,
+  "precipitation_mm": 1.0, "wind_max_ms": 5.1, "humidity_avg_pct": 71.0,
+  "hazard": "none"
+}
+```
+
 Прогноз не хранит историю всех выдач: сохраняется последняя актуальная версия на
 горизонт 7 сут; предыдущая перезаписывается (прогноз — не факт).
 
