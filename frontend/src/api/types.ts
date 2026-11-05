@@ -52,8 +52,13 @@ export interface Field {
   } | null
 }
 
-/** Роли пользователей (docs/01-requirements.md §2, docs/07-ux.md §5). */
-export type UserRole = 'agronom' | 'manager' | 'operator' | 'livestock' | 'admin'
+/** Роли пользователей: enum бэкенда по docs/01-requirements.md §2 (см. #22). */
+export type UserRole =
+  | 'agronomist'
+  | 'manager'
+  | 'machine_operator'
+  | 'livestock_specialist'
+  | 'admin'
 
 /** Ответ POST /auth/login (API-46, docs/06 §5). */
 export interface AuthResponse {
