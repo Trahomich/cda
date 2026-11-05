@@ -83,7 +83,7 @@ onMounted(() => {
     maxZoom: 19,
     attribution: '&copy; участники OpenStreetMap',
   }).addTo(map)
-  contoursLayer = L.layerGroup().addTo(map)
+  contoursLayer = L.featureGroup().addTo(map)
   void loadFields(contoursLayer)
 })
 
