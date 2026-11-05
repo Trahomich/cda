@@ -75,12 +75,12 @@ def seed_weather_rules(db: Session) -> int:
 
     Возвращает число изменённых строк (insert + update).
     """
-    statement = pg_insert(WeatherRule).values(DEFAULT_WEATHER_RULES)
-    statement = statement.on_conflict_do_update(
+    insert_stmt = pg_insert(WeatherRule).values(DEFAULT_WEATHER_RULES)
+    statement = insert_stmt.on_conflict_do_update(
         index_elements=["operation_type"],
         set_={
-            "params": statement.excluded.params,
-            "rule_text": statement.excluded.rule_text,
+            "params": insert_stmt.excluded.params,
+            "rule_text": insert_stmt.excluded.rule_text,
             "updated_at": func.now(),
         },
     ).returning(WeatherRule.id)
