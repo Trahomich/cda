@@ -89,7 +89,7 @@ async function submit() {
     if (offline.online) {
       // Онлайн — сразу на сервер (мимо очереди, как в 10-pwa §3.2).
       const { createOperation } = await import('@/api')
-      await createOperation({ ...payload, client_id: crypto.randomUUID() })
+      await createOperation({ ...payload, client_id: uuidV4() })
       toast.push('info', 'Записано', 'Операция отправлена на сервер.')
     } else {
       await enqueueOperation(payload)
