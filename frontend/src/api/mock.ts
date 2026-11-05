@@ -202,7 +202,7 @@ const HISTORY: Record<number, Array<{ year: number; cid: string; yield_c_ha?: nu
 const MATRIX: Record<number, string[]> = {
   1: ['a2', 'a8', 'a1', 'a4', 'a3'],
   2: ['a1', 'a4', 'a2', 'a1', 'a3'],
-  3: ['a2', 'a8', 'a1', 'a4', 'a1'],
+  3: ['a6', 'a8', 'a1', 'a4', 'a1'],
   4: ['a8', 'a1', 'a2', 'a8', 'a1'],
   5: ['a4', 'a1', 'a2', 'a8', 'a1'],
   7: ['a1', 'a1', 'a2', 'a8', 'a1'],
