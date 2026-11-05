@@ -49,6 +49,13 @@ config.set_main_option("sqlalchemy.url", settings.sqlalchemy_database_uri)
 target_metadata = Base.metadata
 
 
+def include_object(obj, name, type_, reflected, compare_to):  # noqa: ANN001
+    """Служебные таблицы PostGIS не сравниваются autogenerate."""
+    if type_ == "table" and name in {"spatial_ref_sys"}:
+        return False
+    return True
+
+
 def run_migrations_offline() -> None:
     context.configure(
         url=settings.sqlalchemy_database_uri,
