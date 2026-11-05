@@ -356,7 +356,12 @@ class TestMaintenance:
         mid = create_machine(client, headers, engine_hours=100)["machine_id"]
         resp = client.post(
             MAINT,
-            json={"machine_id": mid, "kind": "inspection", "due_at_hours": 150, "done_at_hours": 140},
+            json={
+                "machine_id": mid,
+                "kind": "inspection",
+                "due_at_hours": 150,
+                "done_at_hours": 140,
+            },
             headers=headers,
         )
         assert resp.status_code == 422
