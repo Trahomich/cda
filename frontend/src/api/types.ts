@@ -70,7 +70,30 @@ export interface AuthResponse {
   }
 }
 
-/** Ответ GET /auth/me (API-47). */
+/** Тип операции на поле (ENT-FIELD-OPERATION, 03 §1.6). */
+export type OperationType = 'spraying' | 'fertilizing' | 'seeding' | 'harvesting' | 'tillage' | 'other'
+
+/** Запись факта операции: POST /operations (API-17).
+ *  client_id — ключ идемпотентности офлайн-очереди (10-mobile-pwa §3). */
+export interface OperationRequest {
+  client_id: string
+  field_id: string
+  operation_type: OperationType
+  /** ISO-дата YYYY-MM-DD (CONTRACTS §5). */
+  date: string
+  input_id?: string | null
+  actual_dose?: number | null
+  actual_area_ga: number
+  performer?: string | null
+  source: 'manual' | 'telemetry_import' | 'plan_execution'
+}
+
+/** Операция — ответ API-17/18 (06 §5, пример создания). */
+export interface FieldOperation extends OperationRequest {
+  operation_id: string
+  deviation_flag: boolean
+  status: string
+}
 export interface AuthMe {
   id: string
   name: string
