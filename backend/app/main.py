@@ -14,21 +14,27 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Старт/остановка фоновой подсистемы (опрос погоды, 05 §4)."""
-    scheduler = None
+    """Старт/остановка фоновых подсистем (опрос погоды и каталога Sentinel-2)."""
+    schedulers = []
     try:
         # импорт внутри lifespan: не тянуть APScheduler в тесты без необходимости
+        from app.modules.satellite.scheduler import create_satellite_scheduler
         from app.modules.weather.scheduler import create_scheduler
 
-        scheduler = create_scheduler(get_settings())
-        if scheduler is not None:
+        weather = create_scheduler(get_settings())
+        if weather is not None:
+            schedulers.append(weather)
+        satellite = create_satellite_scheduler(get_settings())
+        if satellite is not None:
+            schedulers.append(satellite)
+        for scheduler in schedulers:
             scheduler.start()
     except Exception as exc:  # noqa: BLE001 — сбой планировщика не должен ронять API
         import logging
 
-        logging.getLogger(__name__).warning("планировщик погоды не запущен: %s", exc)
+        logging.getLogger(__name__).warning("планировщики не запущены: %s", exc)
     yield
-    if scheduler is not None:
+    for scheduler in schedulers:
         scheduler.shutdown(wait=False)
 
 
