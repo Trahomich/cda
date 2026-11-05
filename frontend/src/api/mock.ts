@@ -1492,7 +1492,7 @@ export class MockTransport implements Transport {
     // с развёрнутыми именами машины и поля для таблицы на E-18.
     if (method === 'GET' && pathname === '/machine-jobs') {
       const status = params.get('status')
-      const stripped = MACHINE_JOBS.map(({ track_ref: _track, ...job }) => job)
+      const stripped = MACHINE_JOBS.map(withoutTrackRef)
       let items = stripped
       if (status) items = items.filter((j) => j.status === status)
       const limit = Number(params.get('limit') ?? 50) || 50
