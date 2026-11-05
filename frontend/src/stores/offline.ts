@@ -19,14 +19,26 @@ export const useOfflineStore = defineStore('offline', {
   },
   actions: {
     init() {
-      window.addEventListener('online', () => {
-        this.online = true
-        void this.autoSync()
-      })
+      const goOnline = () => {
+        if (!this.online) {
+          this.online = true
+          void this.autoSync()
+        }
+      }
+      window.addEventListener('online', goOnline)
       window.addEventListener('offline', () => {
         this.online = false
       })
+      // Событие 'online' ненадёжно (WebView, iOS Safari, эмуляция сети в
+      // тестах): сверяемся с navigator.onLine при возврате фокуса.
+      window.addEventListener('focus', goOnline)
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') goOnline()
+      })
       void this.refresh()
+      // Старт приложения онлайн с несинхронизированной очередью (например,
+      // страница перезагружена уже в сети) — синхронизируем сразу.
+      if (this.online) void this.autoSync()
     },
     async refresh() {
       this.queue = await listQueue()
