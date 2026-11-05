@@ -44,7 +44,7 @@ function popupHtml(field: Field): string {
   )
 }
 
-async function loadFields(layer: LayerGroup) {
+async function loadFields(layer: L.FeatureGroup) {
   try {
     // Карта запрашивает контуры: with_geometry=true (docs/06 §5, API-01).
     const page = await getFields({ status: 'active', with_geometry: true, limit: 100 })
