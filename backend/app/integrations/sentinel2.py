@@ -202,7 +202,11 @@ class Sentinel2Adapter:
             "att:att/Name eq 'cloudCover' and att/OData.CSC.DoubleAttribute le "
             f"{float(max_cloud_pct)})"
         )
-        params = {"$filter": odata_filter, "$top": 100, "$orderby": "ContentDate/Start asc"}
+        params: dict[str, str | int] = {
+            "$filter": odata_filter,
+            "$top": 100,
+            "$orderby": "ContentDate/Start asc",
+        }
 
         token = self._ensure_token()
         try:
@@ -219,21 +223,24 @@ class Sentinel2Adapter:
             captured_raw = (item.get("ContentDate") or {}).get("Start")
             if not captured_raw:
                 continue
-            cloud = None
+            cloud: float | None = None
             for attribute in item.get("Attributes", ()):  # если каталог вернул атрибуты
                 if attribute.get("Name") == "cloudCover" and attribute.get("Value") is not None:
                     cloud = float(attribute["Value"])
                     break
+            if cloud is None:
+                continue  # без облачности сцена бесполезна (05 §2)
             metas.append(
                 SceneMeta(
                     scene_ref=str(item.get("Id", "")),
                     name=item.get("Name"),
-                    captured_at=datetime.fromisoformat(captured_raw.replace("Z", "+00:00")).date(),
+                    captured_at=datetime.fromisoformat(
+                        captured_raw.replace("Z", "+00:00")
+                    ).date(),
                     cloud_pct=cloud,
                     assets=json.loads(item.get("Assets", "{}")) if item.get("Assets") else {},
                 )
             )
-        metas = [m for m in metas if m.captured_at is not None and m.cloud_pct is not None]
         return metas
 
     # -- IF-SATELLITE (05 §2) --------------------------------------------------
