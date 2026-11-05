@@ -21,7 +21,9 @@ const NAV_ITEMS = [
 
 /** Ссылки, доступные роли текущего пользователя (07-ux §5). */
 const visibleNav = () =>
-  NAV_ITEMS.filter((item) => !('roles' in item) || (auth.user && item.roles.includes(auth.user.role)))
+  NAV_ITEMS.filter(
+    (item) => !('roles' in item) || (auth.user && (item.roles as readonly string[]).includes(auth.user.role)),
+  )
 
 function logout() {
   auth.logout()
