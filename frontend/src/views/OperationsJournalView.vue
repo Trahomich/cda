@@ -185,15 +185,12 @@ onMounted(async () => {
           v-model="opType"
           class="jrn__input"
         >
-          <option value="all">
-            Все типы
-          </option>
           <option
-            v-for="(label, value) in OP_LABELS"
-            :key="value"
-            :value="value"
+            v-for="opt in OP_OPTIONS"
+            :key="opt.value"
+            :value="opt.value"
           >
-            {{ label }}
+            {{ opt.label }}
           </option>
         </select>
       </label>
