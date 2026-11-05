@@ -46,7 +46,13 @@ async function loadFields(layer: LayerGroup) {
   try {
     const page = await getFields({ status: 'active', limit: 100 })
     fieldCount.value = page.total
-    L.geoJSON(page.items as unknown as GeoJSON.GeoJsonObject[], {
+    // Каждый поле → GeoJSON Feature: geometry = contour, properties = поле.
+    const features = page.items.map((field) => ({
+      type: 'Feature' as const,
+      properties: field,
+      geometry: field.contour,
+    }))
+    L.geoJSON(features as unknown as GeoJSON.Feature[], {
       style: (feature) => ({
         color: STATUS_COLORS[(feature?.properties?.status as Field['status']) ?? 'active'],
         weight: 2,
