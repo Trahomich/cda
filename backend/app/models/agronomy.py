@@ -316,6 +316,14 @@ class FieldOperation(Base):
         ),
         Index("ix_dat_field_operation_field_date", "field_id", "date"),
         Index("ix_dat_field_operation_cycle", "cycle_id"),
+        # Идемпотентность офлайн-очереди PWA (API-17): повторный POST с тем же
+        # client_id не создаёт дубль (partial unique — client_id необязателен).
+        Index(
+            "uq_dat_field_operation_client_id",
+            "client_id",
+            unique=True,
+            postgresql_where=text("client_id IS NOT NULL"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
