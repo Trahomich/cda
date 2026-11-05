@@ -31,7 +31,7 @@ async function load() {
   windows.value = {}
   try {
     const [w, fc, ...wins] = await Promise.all([
-      import('@/api').then((m) => m.getFieldWeather(fieldId.value)),
+      getFieldWeather(fieldId.value),
       getWeatherForecast(fieldId.value, 7),
       ...OP_TYPES.map((t) => getWeatherWindows(fieldId.value, t.value)),
     ])
