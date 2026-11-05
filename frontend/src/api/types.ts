@@ -320,3 +320,113 @@ export interface TreatmentPlanRequest {
   planned_date: string
   planned_phase?: string | null
 }
+
+/* ─── Погода: прогноз и окна операций (API-29, /weather/windows; E-10) ─── */
+
+/** Сутки прогноза — GET /weather/forecast?field_id&days (API-29, кэш 3 ч). */
+export interface WeatherForecastDay {
+  date: string
+  temp_min_c: number
+  temp_max_c: number
+  precip_mm: number
+  /** Вероятность осадков, % (RULE-AGRO-09). */
+  precip_prob_pct: number
+  wind_ms: number
+  humidity_pct: number
+}
+
+/** Прогноз на горизонт days суток; stale — данные из кэша при недоступности
+ *  источника (05 §6, REQ-NF-009). */
+export interface WeatherForecast {
+  field_id: string
+  days: WeatherForecastDay[]
+  stale: boolean
+}
+
+/** Тип операции для оценки погодного окна (RULE-AGRO-09, 03 §3.3). */
+export type WindowOperationType = 'spraying' | 'fertilizing' | 'seeding' | 'harvesting'
+
+/** Сутки горизонта с оценкой окна (обоснование — REQ-F-025). */
+export interface WeatherWindowDay {
+  date: string
+  is_window: boolean
+  /** Почему сутки подходят/не подходят, по-русски. */
+  summary: string
+}
+
+/** Ответ GET /weather/windows?field_id&operation_type (MVP-6, RULE-AGRO-09). */
+export interface WeatherWindows {
+  field_id: string
+  operation_type: WindowOperationType
+  days: WeatherWindowDay[]
+  /** Ближайшие сутки окна или null, если в горизонте нет (→ ENT-ALERT). */
+  nearest_window_date: string | null
+}
+
+/* ─── Источники данных (API-28, экран E-14; ref_source, 06 §3) ─── */
+
+/** Статус адаптера: ok / degraded / error (05 §6). */
+export type AdapterState = 'ok' | 'degraded' | 'error'
+
+/** Событие журнала dat_source_journal (источник, at, статус, причина). */
+export interface SourceEvent {
+  at: string
+  status: AdapterState
+  reason: string | null
+}
+
+/** Текущее состояние адаптера — GET /sources/status (API-28). */
+export interface AdapterStatus {
+  source_id: string
+  kind: string
+  title: string
+  last_status: AdapterState
+  last_success_at: string | null
+  reason: string | null
+  events: SourceEvent[]
+}
+
+/* ─── Техника (API-19..21, экран E-18; ENT-MACHINE/-JOB, 04 §1) ─── */
+
+export type MachineType =
+  | 'tractor'
+  | 'combine'
+  | 'sprayer'
+  | 'spreader'
+  | 'seeder'
+  | 'truck'
+  | 'loader'
+  | 'other'
+
+export type MachineStatus = 'active' | 'maintenance' | 'retired'
+
+/** Машина — ENT-MACHINE (04 §1), GET /machines (API-19). */
+export interface Machine {
+  machine_id: string
+  machine_type: MachineType
+  model: string
+  gov_number: string | null
+  width_m: number | null
+  tank_capacity_l: number | null
+  engine_hours: number
+  status: MachineStatus
+}
+
+/** Статус задания смены: draft — черновик из телематики, подтверждается человеком. */
+export type MachineJobStatus = 'draft' | 'confirmed' | 'rejected'
+
+/** Задание смены — ENT-MACHINE-JOB (04 §1), список + API-20 confirm. */
+export interface MachineJob {
+  job_id: string
+  machine_id: string
+  /** Развёрнутые имена для списка (машина, поле). */
+  machine_model: string
+  field_id: string | null
+  field_name: string | null
+  performed_at: string
+  area_ha: number
+  fuel_l: number | null
+  duration_h: number | null
+  status: MachineJobStatus
+  source: 'manual' | 'telemetry'
+}
