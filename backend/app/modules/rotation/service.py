@@ -81,8 +81,9 @@ def _rule_violation(violation: Violation, entity: str) -> AppError:
     )
 
 
-def _audit(db: Session, *, user: User, entity: str, entity_id: uuid.UUID,
-           action: str, changed: dict) -> None:
+def _audit(
+    db: Session, *, user: User, entity: str, entity_id: uuid.UUID, action: str, changed: dict
+) -> None:
     db.add(
         AuditRecord(
             entity=entity, entity_id=entity_id, user_id=user.id, action=action, changed=changed
@@ -90,8 +91,9 @@ def _audit(db: Session, *, user: User, entity: str, entity_id: uuid.UUID,
     )
 
 
-def _matrix_verdict(db: Session, culture_id: uuid.UUID,
-                    predecessor_id: uuid.UUID) -> tuple[str | None, str | None]:
+def _matrix_verdict(
+    db: Session, culture_id: uuid.UUID, predecessor_id: uuid.UUID
+) -> tuple[str | None, str | None]:
     """Вердикт пары (predecessor → culture) из ref_predecessor_matrix."""
     row = db.execute(
         select(PredecessorRule.verdict, PredecessorRule.comment).where(
@@ -122,8 +124,9 @@ def _main_cycle_year(db: Session, field_id: uuid.UUID, year: int) -> int | None:
     return cycle.year if cycle else None
 
 
-def _last_year_of_culture(db: Session, field_id: uuid.UUID, culture_id: uuid.UUID,
-                          before_year: int) -> int | None:
+def _last_year_of_culture(
+    db: Session, field_id: uuid.UUID, culture_id: uuid.UUID, before_year: int
+) -> int | None:
     """Год последнего цикла с этой культурой раньше before_year (RULE-AGRO-02)."""
     return db.scalar(
         select(func.max(CropCycle.year)).where(
@@ -159,8 +162,9 @@ def validate_cycle(
     culture = get_culture(db, culture_id)
 
     # RULE-AGRO-03: согласование kind цикла и вида культуры
-    if v := rules.check_kind_culture(kind=kind, culture_kind=culture.kind,
-                                     culture_name=culture.name):
+    if v := rules.check_kind_culture(
+        kind=kind, culture_kind=culture.kind, culture_name=culture.name
+    ):
         raise _rule_violation(v, entity="crop_cycle")
     # RULE-AGRO-03: цикл вне севооборота — с причиной
     if v := rules.check_out_of_rotation(out_of_rotation=out_of_rotation, reason=reason):
@@ -192,7 +196,9 @@ def validate_cycle(
     last_year = _last_year_of_culture(db, field_id, culture_id, before_year=year)
     if last_year is not None:
         if v := rules.check_repeat_years(
-            year=year, last_year=last_year, repeat_years=culture.repeat_years,
+            year=year,
+            last_year=last_year,
+            repeat_years=culture.repeat_years,
             culture_name=culture.name,
         ):
             warnings.append(v)
@@ -251,8 +257,13 @@ def create_cycle(
         entity="crop_cycle",
         entity_id=cycle.id,
         action="create",
-        changed={"field_id": str(field_id), "year": year, "kind": kind,
-                 "culture_id": str(culture_id), "reason": reason},
+        changed={
+            "field_id": str(field_id),
+            "year": year,
+            "kind": kind,
+            "culture_id": str(culture_id),
+            "reason": reason,
+        },
     )
     try:
         db.commit()
@@ -282,8 +293,7 @@ def list_plans(
     if status is not None:
         if status not in PLAN_STATUSES:
             raise AppError(
-                f"Неизвестный статус плана «{status}» (допустимо: "
-                f"{', '.join(PLAN_STATUSES)})",
+                f"Неизвестный статус плана «{status}» (допустимо: {', '.join(PLAN_STATUSES)})",
                 code="invalid_status",
                 title="Некорректный запрос",
                 status_code=400,
@@ -357,8 +367,9 @@ def _validate_plan_items(
         if draft is None:
             continue
         main_years.add(year)
-        if v := rules.check_kind_culture(kind=draft.kind, culture_kind=culture.kind,
-                                         culture_name=culture.name):
+        if v := rules.check_kind_culture(
+            kind=draft.kind, culture_kind=culture.kind, culture_name=culture.name
+        ):
             violations.append(v)
         if v := rules.check_out_of_rotation(
             out_of_rotation=draft.out_of_rotation, reason=draft.reason
@@ -447,8 +458,12 @@ def create_plan(
         entity="rotation_plan",
         entity_id=plan.id,
         action="create",
-        changed={"field_id": str(field_id), "year_from": year_from,
-                 "year_to": year_to, "dry_run_items": len(items)},
+        changed={
+            "field_id": str(field_id),
+            "year_from": year_from,
+            "year_to": year_to,
+            "dry_run_items": len(items),
+        },
     )
     db.commit()
     db.refresh(plan)
@@ -482,4 +497,3 @@ def approve_plan(db: Session, *, user: User, plan: RotationPlan) -> RotationPlan
     db.commit()
     db.refresh(plan)
     return plan
-

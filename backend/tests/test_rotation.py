@@ -34,19 +34,25 @@ def agro_headers(client, db_session, *, login="agro_r", role=UserRole.AGRONOMIST
 
 def make_culture(db_session, *, name: str, kind: str = "main", repeat_years: int = 3) -> Culture:
     culture = Culture(
-        name=f"{name}-{uuid.uuid4().hex[:6]}", kind=kind, forage_flag=False,
-        crop_group="test", repeat_years=repeat_years,
+        name=f"{name}-{uuid.uuid4().hex[:6]}",
+        kind=kind,
+        forage_flag=False,
+        crop_group="test",
+        repeat_years=repeat_years,
     )
     db_session.add(culture)
     db_session.commit()
     return culture
 
 
-def make_matrix(db_session, culture: Culture, predecessor: Culture, verdict: str,
-                comment: str | None = None) -> None:
+def make_matrix(
+    db_session, culture: Culture, predecessor: Culture, verdict: str, comment: str | None = None
+) -> None:
     db_session.add(
         PredecessorRule(
-            culture_id=culture.id, predecessor_id=predecessor.id, verdict=verdict,
+            culture_id=culture.id,
+            predecessor_id=predecessor.id,
+            verdict=verdict,
             comment=comment,
         )
     )
@@ -55,16 +61,25 @@ def make_matrix(db_session, culture: Culture, predecessor: Culture, verdict: str
 
 def make_field(client, headers, *, name="Поле-Р") -> dict:
     resp = client.post(
-        "/api/v1/fields", json={"name": f"{name}-{uuid.uuid4().hex[:6]}",
-                                "contour": REF_POLYGON},
+        "/api/v1/fields",
+        json={"name": f"{name}-{uuid.uuid4().hex[:6]}", "contour": REF_POLYGON},
         headers=headers,
     )
     assert resp.status_code == 201, resp.text
     return resp.json()
 
 
-def post_cycle(client, headers, field_id, culture_id, *, year=2026, kind="main",
-               reason=None, out_of_rotation=False):
+def post_cycle(
+    client,
+    headers,
+    field_id,
+    culture_id,
+    *,
+    year=2026,
+    kind="main",
+    reason=None,
+    out_of_rotation=False,
+):
     return client.post(
         API_CYCLES,
         json={
@@ -84,37 +99,52 @@ def post_cycle(client, headers, field_id, culture_id, *, year=2026, kind="main",
 
 class TestPureRules:
     def test_01_ok_absent_and_allowed(self):
-        assert rules.check_predecessor(None, culture_name="Пшеница",
-                                       predecessor_name="Горох", year=2026) is None
-        assert rules.check_predecessor("ok", culture_name="Пшеница",
-                                       predecessor_name="Горох", year=2026) is None
+        assert (
+            rules.check_predecessor(
+                None, culture_name="Пшеница", predecessor_name="Горох", year=2026
+            )
+            is None
+        )
+        assert (
+            rules.check_predecessor(
+                "ok", culture_name="Пшеница", predecessor_name="Горох", year=2026
+            )
+            is None
+        )
 
     def test_01_ban(self):
-        v = rules.check_predecessor("ban", culture_name="Пшеница",
-                                    predecessor_name="Пшеница", year=2026,
-                                    comment="истощает почву")
+        v = rules.check_predecessor(
+            "ban",
+            culture_name="Пшеница",
+            predecessor_name="Пшеница",
+            year=2026,
+            comment="истощает почву",
+        )
         assert (v.rule_id, v.severity) == (rules.RULE_01, rules.SEVERITY_BAN)
         assert "Пшеница" in v.rationale and "2026" in v.rationale
 
     def test_01_warn(self):
-        v = rules.check_predecessor("warn", culture_name="Картофель",
-                                    predecessor_name="Картофель", year=2026)
+        v = rules.check_predecessor(
+            "warn", culture_name="Картофель", predecessor_name="Картофель", year=2026
+        )
         assert (v.rule_id, v.severity) == (rules.RULE_01, rules.SEVERITY_WARN)
 
     def test_02_pass_and_fail(self):
-        assert rules.check_repeat_years(year=2029, last_year=2026, repeat_years=3,
-                                        culture_name="Рапс") is None
-        v = rules.check_repeat_years(year=2028, last_year=2026, repeat_years=3,
-                                     culture_name="Рапс")
+        assert (
+            rules.check_repeat_years(year=2029, last_year=2026, repeat_years=3, culture_name="Рапс")
+            is None
+        )
+        v = rules.check_repeat_years(year=2028, last_year=2026, repeat_years=3, culture_name="Рапс")
         assert (v.rule_id, v.severity) == (rules.RULE_02, rules.SEVERITY_WARN)
         assert "2028" in v.rationale and "3" in v.rationale
 
     def test_03_kind_mismatch_and_out_of_rotation(self):
-        v = rules.check_kind_culture(kind="fallow", culture_kind="main",
-                                     culture_name="Пшеница")
+        v = rules.check_kind_culture(kind="fallow", culture_kind="main", culture_name="Пшеница")
         assert (v.rule_id, v.severity) == (rules.RULE_03, rules.SEVERITY_BAN)
-        assert rules.check_kind_culture(kind="main", culture_kind="main",
-                                        culture_name="Пшеница") is None
+        assert (
+            rules.check_kind_culture(kind="main", culture_kind="main", culture_name="Пшеница")
+            is None
+        )
         v = rules.check_out_of_rotation(out_of_rotation=True, reason=None)
         assert v is not None and v.rule_id == rules.RULE_03
 
@@ -162,10 +192,12 @@ class TestCreateCycle:
         field = make_field(client, headers)
         wheat = make_culture(db_session, name="Пшеница")
         make_matrix(db_session, wheat, wheat, "ban", "повторный посев зерновых")
-        assert post_cycle(client, headers, field["field_id"], wheat.id, year=2026).status_code \
-            == 201
-        resp = post_cycle(client, headers, field["field_id"], wheat.id, year=2027,
-                          reason="агроном настаивает")
+        assert (
+            post_cycle(client, headers, field["field_id"], wheat.id, year=2026).status_code == 201
+        )
+        resp = post_cycle(
+            client, headers, field["field_id"], wheat.id, year=2027, reason="агроном настаивает"
+        )
         assert resp.status_code == 422, resp.text
         body = resp.json()
         assert body["code"] == "rule_violation"
@@ -180,15 +212,22 @@ class TestCreateCycle:
         field = make_field(client, headers)
         potato = make_culture(db_session, name="Картофель", repeat_years=5)
         make_matrix(db_session, potato, potato, "warn", "риск нематоды")
-        assert post_cycle(client, headers, field["field_id"], potato.id, year=2026).status_code \
-            == 201
+        assert (
+            post_cycle(client, headers, field["field_id"], potato.id, year=2026).status_code == 201
+        )
         resp = post_cycle(client, headers, field["field_id"], potato.id, year=2027)
         assert resp.status_code == 422
         body = resp.json()
         assert body["rule_id"] == "RULE-AGRO-01"
         assert body["severity"] == "warn"
-        resp = post_cycle(client, headers, field["field_id"], potato.id, year=2027,
-                          reason="песчаные почвы, обработка от нематоды")
+        resp = post_cycle(
+            client,
+            headers,
+            field["field_id"],
+            potato.id,
+            year=2027,
+            reason="песчаные почвы, обработка от нематоды",
+        )
         assert resp.status_code == 201, resp.text
         warnings = resp.json()["warnings"]
         assert {w["rule_id"] for w in warnings} == {"RULE-AGRO-01", "RULE-AGRO-02"}
@@ -199,8 +238,7 @@ class TestCreateCycle:
         headers = agro_headers(client, db_session)
         field = make_field(client, headers)
         rape = make_culture(db_session, name="Рапс", repeat_years=4)
-        assert post_cycle(client, headers, field["field_id"], rape.id, year=2026).status_code \
-            == 201
+        assert post_cycle(client, headers, field["field_id"], rape.id, year=2026).status_code == 201
         # 2029 - 2026 = 3 < 4 → warn без reason → 422 RULE-AGRO-02
         resp = post_cycle(client, headers, field["field_id"], rape.id, year=2029)
         assert resp.status_code == 422
@@ -217,8 +255,7 @@ class TestCreateCycle:
         fallow = make_culture(db_session, name="Пар", kind="fallow")
         wheat = make_culture(db_session, name="Пшеница")
         make_matrix(db_session, wheat, fallow, "ok")
-        resp = post_cycle(client, headers, field["field_id"], fallow.id, year=2026,
-                          kind="fallow")
+        resp = post_cycle(client, headers, field["field_id"], fallow.id, year=2026, kind="fallow")
         assert resp.status_code == 201, resp.text
         resp = post_cycle(client, headers, field["field_id"], wheat.id, year=2027)
         assert resp.status_code == 201, resp.text
@@ -238,12 +275,17 @@ class TestCreateCycle:
         headers = agro_headers(client, db_session)
         field = make_field(client, headers)
         wheat = make_culture(db_session, name="Пшеница")
-        resp = post_cycle(client, headers, field["field_id"], wheat.id,
-                          out_of_rotation=True)
+        resp = post_cycle(client, headers, field["field_id"], wheat.id, out_of_rotation=True)
         assert resp.status_code == 422
         assert resp.json()["rule_id"] == "RULE-AGRO-03"
-        resp = post_cycle(client, headers, field["field_id"], wheat.id,
-                          out_of_rotation=True, reason="залитый участок")
+        resp = post_cycle(
+            client,
+            headers,
+            field["field_id"],
+            wheat.id,
+            out_of_rotation=True,
+            reason="залитый участок",
+        )
         assert resp.status_code == 201
 
     def test_04_one_main_per_year(self, client, db_session):
@@ -251,8 +293,9 @@ class TestCreateCycle:
         field = make_field(client, headers)
         wheat = make_culture(db_session, name="Пшеница")
         barley = make_culture(db_session, name="Ячмень")
-        assert post_cycle(client, headers, field["field_id"], wheat.id, year=2026).status_code \
-            == 201
+        assert (
+            post_cycle(client, headers, field["field_id"], wheat.id, year=2026).status_code == 201
+        )
         resp = post_cycle(client, headers, field["field_id"], barley.id, year=2026)
         assert resp.status_code == 422
         assert resp.json()["rule_id"] == "RULE-AGRO-04"
@@ -263,12 +306,16 @@ class TestCreateCycle:
         field = make_field(client, headers)
         mustard = make_culture(db_session, name="Горчица", kind="catch")
         wheat = make_culture(db_session, name="Пшеница")
-        assert post_cycle(client, headers, field["field_id"], wheat.id, year=2026).status_code \
+        assert (
+            post_cycle(client, headers, field["field_id"], wheat.id, year=2026).status_code == 201
+        )
+        assert (
+            post_cycle(
+                client, headers, field["field_id"], mustard.id, year=2026, kind="catch"
+            ).status_code
             == 201
-        assert post_cycle(client, headers, field["field_id"], mustard.id, year=2026,
-                          kind="catch").status_code == 201
-        resp = post_cycle(client, headers, field["field_id"], mustard.id, year=2026,
-                          kind="catch")
+        )
+        resp = post_cycle(client, headers, field["field_id"], mustard.id, year=2026, kind="catch")
         assert resp.status_code == 201, resp.text
 
     def test_404_field_or_culture(self, client, db_session):
@@ -281,8 +328,7 @@ class TestCreateCycle:
         assert resp.status_code == 404
 
     def test_rbac_machine_operator_403(self, client, db_session):
-        headers = agro_headers(client, db_session, login="op_r",
-                               role=UserRole.MACHINE_OPERATOR)
+        headers = agro_headers(client, db_session, login="op_r", role=UserRole.MACHINE_OPERATOR)
         resp = client.post(API_CYCLES, json={}, headers=headers)
         assert resp.status_code == 403
         assert resp.json()["code"] == "insufficient_role"
@@ -302,12 +348,15 @@ class TestCreateCycle:
 
 
 class TestRotationPlans:
-    def make_plan(self, client, headers, field_id, *, year_from=2026, year_to=2030,
-                  items=None):
+    def make_plan(self, client, headers, field_id, *, year_from=2026, year_to=2030, items=None):
         return client.post(
             API_PLANS,
-            json={"field_id": field_id, "year_from": year_from, "year_to": year_to,
-                  "items": items or []},
+            json={
+                "field_id": field_id,
+                "year_from": year_from,
+                "year_to": year_to,
+                "items": items or [],
+            },
             headers=headers,
         )
 
@@ -330,8 +379,7 @@ class TestRotationPlans:
         # фильтры
         resp = client.get(API_PLANS, params={"status": "approved"}, headers=headers)
         assert resp.json()["total"] == 0
-        resp = client.get(API_PLANS, params={"field_id": str(uuid.uuid4())},
-                          headers=headers)
+        resp = client.get(API_PLANS, params={"field_id": str(uuid.uuid4())}, headers=headers)
         assert resp.json()["total"] == 0
 
     def test_items_dry_run_returns_violations(self, client, db_session):
@@ -359,18 +407,29 @@ class TestRotationPlans:
     def test_plan_horizon_422_and_bad_range_400(self, client, db_session):
         headers = agro_headers(client, db_session)
         field = make_field(client, headers)
-        assert self.make_plan(client, headers, field["field_id"],
-                              year_from=2026, year_to=2026).status_code == 422
-        assert self.make_plan(client, headers, field["field_id"],
-                              year_from=2026, year_to=2025).status_code == 400
+        assert (
+            self.make_plan(
+                client, headers, field["field_id"], year_from=2026, year_to=2026
+            ).status_code
+            == 422
+        )
+        assert (
+            self.make_plan(
+                client, headers, field["field_id"], year_from=2026, year_to=2025
+            ).status_code
+            == 400
+        )
 
     def test_overlapping_active_plan_409(self, client, db_session):
         headers = agro_headers(client, db_session)
         field = make_field(client, headers)
-        assert self.make_plan(client, headers, field["field_id"],
-                              year_from=2026, year_to=2030).status_code == 201
-        resp = self.make_plan(client, headers, field["field_id"],
-                              year_from=2028, year_to=2032)
+        assert (
+            self.make_plan(
+                client, headers, field["field_id"], year_from=2026, year_to=2030
+            ).status_code
+            == 201
+        )
+        resp = self.make_plan(client, headers, field["field_id"], year_from=2028, year_to=2032)
         assert resp.status_code == 409
         assert resp.json()["code"] == "overlapping_plan"
 
@@ -383,10 +442,8 @@ class TestRotationPlans:
         resp = client.post(f"{API_PLANS}/{plan['plan_id']}/approve", headers=headers)
         assert resp.status_code == 403
 
-        manager_headers = agro_headers(client, db_session, login="mgr_r",
-                                       role=UserRole.MANAGER)
-        resp = client.post(f"{API_PLANS}/{plan['plan_id']}/approve",
-                           headers=manager_headers)
+        manager_headers = agro_headers(client, db_session, login="mgr_r", role=UserRole.MANAGER)
+        resp = client.post(f"{API_PLANS}/{plan['plan_id']}/approve", headers=manager_headers)
         assert resp.status_code == 200, resp.text
         body = resp.json()
         assert body["status"] == "approved"
@@ -394,8 +451,7 @@ class TestRotationPlans:
         assert body["approved_at"] is not None
 
         # повтор → 409 invalid_state
-        resp = client.post(f"{API_PLANS}/{plan['plan_id']}/approve",
-                           headers=manager_headers)
+        resp = client.post(f"{API_PLANS}/{plan['plan_id']}/approve", headers=manager_headers)
         assert resp.status_code == 409
         assert resp.json()["code"] == "invalid_state"
 
@@ -415,15 +471,15 @@ class TestRotationPlans:
         peas = make_culture(db_session, name="Горох")
         post_cycle(client, headers, field["field_id"], wheat.id, year=2025)
         post_cycle(client, headers, field["field_id"], peas.id, year=2027)
-        plan = self.make_plan(client, headers, field["field_id"],
-                              year_from=2026, year_to=2030).json()
+        plan = self.make_plan(
+            client, headers, field["field_id"], year_from=2026, year_to=2030
+        ).json()
         # items — main-циклы в диапазоне (2025 вне диапазона)
         assert [i["year"] for i in plan["items"]] == [2027]
 
     def test_401_and_operator_403(self, client, db_session):
         assert client.get(API_PLANS).status_code == 401
-        headers = agro_headers(client, db_session, login="op2_r",
-                               role=UserRole.MACHINE_OPERATOR)
+        headers = agro_headers(client, db_session, login="op2_r", role=UserRole.MACHINE_OPERATOR)
         assert client.get(API_PLANS, headers=headers).status_code == 403
 
 

@@ -117,8 +117,7 @@ def check_out_of_rotation(*, out_of_rotation: bool, reason: str | None) -> Viola
         return Violation(
             RULE_03,
             SEVERITY_BAN,
-            f"{RULE_03}: для цикла с пометкой out_of_rotation обязательна причина "
-            "(поле reason)",
+            f"{RULE_03}: для цикла с пометкой out_of_rotation обязательна причина (поле reason)",
         )
     return None
 
