@@ -116,16 +116,22 @@ export class MockTransport implements Transport {
     const [pathname, search = ''] = path.split('?')
     const params = new URLSearchParams(search)
 
-    if (method === 'POST' && pathname === '/auth') {
+    if (method === 'POST' && pathname === '/auth/login') {
       const { login = '', password = '' } = (body ?? {}) as Record<string, string>
       const user = USERS.find((u) => u.login === login && u.password === password)
       if (!user) {
-        return problem(
-          401,
-          'https://cda.example/errors/unauthorized',
-          'Ошибка входа',
-          'Неверный логин или пароль. Демо-доступ: agronom / demo.',
-        )
+        return {
+          status: 401,
+          ok: false,
+          json: null,
+          problem: {
+            type: 'https://cda.example/errors/bad-credentials',
+            title: 'Ошибка входа',
+            status: 401,
+            detail: 'Неверный логин или пароль. Демо-доступ: agronom / demo.',
+            code: 'bad_credentials',
+          },
+        }
       }
       return ok({
         token: `mock-token-${user.login}`,
@@ -136,6 +142,7 @@ export class MockTransport implements Transport {
     if (method === 'GET' && pathname === '/fields') {
       const q = (params.get('q') ?? '').trim().toLowerCase()
       const status = params.get('status')
+      const withGeometry = params.get('with_geometry') === 'true'
       const limit = Number(params.get('limit') ?? 50) || 50
       const offset = Number(params.get('offset') ?? 0) || 0
 
@@ -143,8 +150,13 @@ export class MockTransport implements Transport {
       if (q) items = items.filter((f) => f.name.toLowerCase().includes(q))
       if (status && status !== 'all') items = items.filter((f) => f.status === status)
 
+      // API-01: contour опущен по умолчанию, with_geometry=true его добавляет.
+      const pageItems = items.slice(offset, offset + limit).map((f) => {
+        const { contour, ...rest } = f
+        return withGeometry ? f : (rest as Field)
+      })
       const page: Page<Field> = {
-        items: items.slice(offset, offset + limit),
+        items: pageItems,
         total: items.length,
         limit,
         offset,
