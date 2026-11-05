@@ -1001,9 +1001,9 @@ export class MockTransport implements Transport {
               title: 'Нарушено бизнес-правило',
               status: 422,
               detail:
-                `Срок ожидания препарата «${input.name}» ${input.waiting_days} дней, ` +
-                `до плановой уборки ${cycleCulture.name} ${Math.max(daysLeft, 0)} дн.` +
-                `(${req.planned_date} → ${harvestDate})`,
+                `Срок ожидания препарата «${input.name}» ${input.waiting_days} дн., ` +
+                `до плановой уборки (${cycleCulture.name}, ${harvestDate}) осталось ` +
+                `${Math.max(daysLeft, 0)} дн. — обработка ${req.planned_date} слишком поздняя`,
               rule_id: 'RULE-AGRO-08',
               entity: 'treatment_plan',
             },
