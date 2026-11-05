@@ -79,14 +79,9 @@ def seed_weather_rules(db: Session) -> int:
         set_={
             "params": statement.excluded.params,
             "rule_text": statement.excluded.rule_text,
-            "updated_at": db.execute(  # func.now() в RETURNING не нужен — серверный default
-                pg_insert(WeatherRule)  # placeholder; реальный now() ниже
-            )
-            if False
-            else statement.excluded.rule_text,  # noqa: SIM910 — см. примечание
+            "updated_at": func.now(),
         },
     )
-    # updated_at проставим простым UPDATE … now() после upsert (см. ниже)
     result = db.execute(statement)
     changed = result.rowcount or 0
     db.commit()
