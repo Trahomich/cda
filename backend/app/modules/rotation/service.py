@@ -244,6 +244,7 @@ def create_cycle(
         reason=reason,
     )
     db.add(cycle)
+    db.flush()  # id для аудита
     _audit(
         db,
         user=user,
@@ -257,6 +258,8 @@ def create_cycle(
         db.commit()
     except IntegrityError as exc:  # гонка двух main-циклов (partial UQ, RULE-AGRO-04)
         db.rollback()
+        if "uq_dat_crop_cycle_main" not in str(exc):
+            raise
         v = rules.check_main_cycle_unique(year=year, existing_main_year=year)
         assert v is not None
         raise _rule_violation(v, entity="crop_cycle") from exc
