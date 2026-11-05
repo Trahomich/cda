@@ -20,6 +20,23 @@ export function getFields(params: {
   })
 }
 
+/** API-17: POST /operations — запись факта операции (мобильный, офлайн-очередь).
+ *  Идемпотентность по client_id: повторная отправка не создаёт дубль. */
+export function createOperation(payload: OperationRequest): Promise<FieldOperation> {
+  return apiClient.request<FieldOperation>('/operations', { method: 'POST', body: payload })
+}
+
+/** API-18: GET /operations — журнал операций (фильтры field_id, date_from, date_to). */
+export function getOperations(params: {
+  field_id?: string
+  date_from?: string
+  date_to?: string
+  limit?: number
+  offset?: number
+}): Promise<{ items: FieldOperation[]; total: number; limit: number; offset: number }> {
+  return apiClient.list<FieldOperation>('/operations', params)
+}
+
 /** API-46: POST /auth/login — аутентификация ({login, password} → токен и пользователь). */
 export function login(login: string, password: string): Promise<AuthResponse> {
   return apiClient.request<AuthResponse>('/auth/login', {
