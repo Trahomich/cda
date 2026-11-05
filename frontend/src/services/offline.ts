@@ -55,6 +55,13 @@ export async function updateQueuePayload(
 
 let syncing = false
 
+/** Восстановление записей, застрявших в sending (перезагрузка страницы во
+ *  время синхронизации). Повторная отправка безопасна: идемпотентность
+ *  POST /operations по client_id (API-17) не создаёт дублей. */
+async function recoverStuckSending(): Promise<void> {
+  await db.queue.where('status').equals('sending').modify({ status: 'pending' })
+}
+
 /** Синхронизация: отправляет pending и error записи по одной.
  *  422 → error (запись остаётся с причиной), сетевой сбой → прервать. */
 export async function syncQueue(): Promise<SyncResult> {
@@ -63,6 +70,7 @@ export async function syncQueue(): Promise<SyncResult> {
   let sent = 0
   let rejected = 0
   try {
+    await recoverStuckSending()
     const records = await db.queue
       .filter((r) => r.status === 'pending' || r.status === 'error')
       .sortBy('created_at')
