@@ -70,7 +70,6 @@ class TestMachinesCrud:
         assert body["machine_type"] == "tractor"
         assert body["status"] == "active"
         assert body["engine_hours"] == 1500.0
-        assert client.app is not None
         resp = client.post(
             API,
             json={"machine_type": "combine", "model": "Torum 760"},
