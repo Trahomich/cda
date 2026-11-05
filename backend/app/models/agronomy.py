@@ -54,7 +54,10 @@ class Field(Base):
     )
     status: Mapped[str] = mapped_column(String(10), nullable=False, server_default="active")
     current_version_id: Mapped[uuid.UUID | None] = mapped_column(
-        Uuid, ForeignKey("dat_field_version.id", name="fk_dat_field_current_version"),
+        Uuid,
+        ForeignKey(
+            "dat_field_version.id", name="fk_dat_field_current_version", ondelete="SET NULL"
+        ),
         nullable=True,
     )
     created_at: Mapped[datetime] = mapped_column(
