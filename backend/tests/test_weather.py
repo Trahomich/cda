@@ -458,7 +458,7 @@ class TestWeatherApi:
         # день 0: окно spraying открыто; день 1: ветер блокирует (в прогнозе 9 м/с)
         db_session.add_all(
             [
-                F(
+                Forecast(
                     field_id=field_id,
                     forecast_for=date.today(),
                     issued_at=datetime.now(tz=UTC),
