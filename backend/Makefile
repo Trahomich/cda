@@ -22,12 +22,13 @@ logs:
 migrate:
 	$(COMPOSE) exec api alembic upgrade head
 
-## seed: наполнить демо-хозяйство (появится в задаче MVP-13/#31)
+## seed: демо-хозяйство (MVP-13/#31): python -m app.cli seed-demo
+## (справочники ref_* и погодные правила входят в сид; --reset пересоздаёт)
 seed:
-	@echo "ОШИБКА: make seed ещё не реализован — цель-заглушка." >&2
-	@echo "Демо-хозяйство (python -m app.cli seed-demo) появится в задаче #31 (MVP-13)." >&2
-	@echo "Сейчас доступны: python -m app.cli create-admin | seed-references" >&2
-	@exit 1
+	python -m app.cli seed-demo
+
+seed-reset:
+	python -m app.cli seed-demo --reset
 
 ## test: юнит/интеграционные тесты (pytest)
 test:
