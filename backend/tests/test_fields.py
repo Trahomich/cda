@@ -11,9 +11,8 @@ import uuid
 from datetime import date
 
 import pytest
-from app.core.security import hash_password
 from app.models.agronomy import CropCycle
-from app.models.auth import AuditRecord, User, UserRole
+from app.models.auth import User, UserRole
 from app.models.references import Culture
 from fastapi import TestClient
 from sqlalchemy import select
