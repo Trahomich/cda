@@ -68,13 +68,6 @@ const cycles = computed(() => {
     }))
 })
 
-/** Культуры по циклу — для подсказки допустимости препарата. */
-function cultureOfCycle(cycleId: string): Culture | null {
-  const cell = plan.value?.cells.find((c) => c.cycle?.cycle_id === cycleId)
-  if (!cell?.cycle) return null
-  return plan.value?.cultures.find((c) => c.culture_id === cell.cycle!.culture_id) ?? null
-}
-
 /** Форма создания. */
 const form = ref<{
   cycle_id: string
