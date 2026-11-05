@@ -359,20 +359,20 @@ def _validate_plan_items(
                 status_code=404,
             )
         chain.append((draft.year, culture, draft))
-    for pos, (year, culture, chain_draft) in enumerate(chain):
-        if draft is not None and year in main_years:
+    for pos, (year, culture, draft_item) in enumerate(chain):
+        if draft_item is None:
+            continue
+        if year in main_years:
             v = rules.check_main_cycle_unique(year=year, existing_main_year=year)
             if v:
                 violations.append(v)
-        if draft is None:
-            continue
         main_years.add(year)
         if v := rules.check_kind_culture(
-            kind=draft.kind, culture_kind=culture.kind, culture_name=culture.name
+            kind=draft_item.kind, culture_kind=culture.kind, culture_name=culture.name
         ):
             violations.append(v)
         if v := rules.check_out_of_rotation(
-            out_of_rotation=draft.out_of_rotation, reason=draft.reason
+            out_of_rotation=draft_item.out_of_rotation, reason=draft_item.reason
         ):
             violations.append(v)
         # предшественник — предыдущий цикл цепочки (RULE-AGRO-01/03)
