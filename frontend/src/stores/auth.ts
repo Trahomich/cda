@@ -37,10 +37,10 @@ export const useAuthStore = defineStore('auth', {
     /** Название роли по docs/07-ux.md §2. */
     roleTitle(): string {
       const titles: Record<UserRole, string> = {
-        agronom: 'Агроном',
+        agronomist: 'Агроном',
         manager: 'Руководитель',
-        operator: 'Механизатор',
-        livestock: 'Зоотехник/вет.',
+        machine_operator: 'Механизатор',
+        livestock_specialist: 'Зоотехник/вет.',
         admin: 'Администратор',
       }
       return this.user ? titles[this.user.role] : ''
