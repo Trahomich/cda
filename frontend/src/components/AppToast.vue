@@ -6,7 +6,11 @@ const store = useToastStore()
 </script>
 
 <template>
-  <div class="toasts" role="status" aria-live="polite">
+  <div
+    class="toasts"
+    role="status"
+    aria-live="polite"
+  >
     <div
       v-for="t in store.toasts"
       :key="t.id"

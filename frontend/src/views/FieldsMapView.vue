@@ -96,8 +96,14 @@ onUnmounted(() => {
 <template>
   <section class="map-screen">
     <div class="map-screen__toolbar">
-      <h1 class="map-screen__title">Карта полей</h1>
-      <div class="map-screen__tabs" role="tablist" aria-label="Вид: карта или список">
+      <h1 class="map-screen__title">
+        Карта полей
+      </h1>
+      <div
+        class="map-screen__tabs"
+        role="tablist"
+        aria-label="Вид: карта или список"
+      >
         <button
           type="button"
           role="tab"
@@ -120,20 +126,36 @@ onUnmounted(() => {
         </button>
       </div>
       <span class="map-screen__spacer" />
-      <span v-if="tab === 'map' && loading" class="map-screen__state">Загрузка контуров…</span>
+      <span
+        v-if="tab === 'map' && loading"
+        class="map-screen__state"
+      >Загрузка контуров…</span>
       <span
         v-else-if="tab === 'map' && failed"
         class="map-screen__state map-screen__state--error"
       >
         Не удалось загрузить поля
       </span>
-      <span v-else-if="tab === 'map'" class="map-screen__state">Полей: {{ fieldCount }}</span>
+      <span
+        v-else-if="tab === 'map'"
+        class="map-screen__state"
+      >Полей: {{ fieldCount }}</span>
     </div>
 
-    <div v-show="tab === 'map'" class="map-screen__map-wrap">
-      <div ref="mapEl" class="map-screen__map" aria-label="Карта контуров полей хозяйства"></div>
+    <div
+      v-show="tab === 'map'"
+      class="map-screen__map-wrap"
+    >
+      <div
+        ref="mapEl"
+        class="map-screen__map"
+        aria-label="Карта контуров полей хозяйства"
+      />
     </div>
-    <div v-if="tab === 'list'" class="map-screen__list">
+    <div
+      v-if="tab === 'list'"
+      class="map-screen__list"
+    >
       <FieldsListPanel />
     </div>
   </section>

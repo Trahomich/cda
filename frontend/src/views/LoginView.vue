@@ -27,11 +27,21 @@ async function submit() {
 
 <template>
   <div class="login">
-    <form class="login__card" @submit.prevent="submit">
-      <h1 class="login__title">Цифровой двойник агронома</h1>
-      <p class="login__farm">КФХ «Восход»</p>
+    <form
+      class="login__card"
+      @submit.prevent="submit"
+    >
+      <h1 class="login__title">
+        Цифровой двойник агронома
+      </h1>
+      <p class="login__farm">
+        КФХ «Восход»
+      </p>
 
-      <label class="login__label" for="login">Логин</label>
+      <label
+        class="login__label"
+        for="login"
+      >Логин</label>
       <input
         id="login"
         v-model="loginName"
@@ -39,9 +49,12 @@ async function submit() {
         type="text"
         autocomplete="username"
         required
-      />
+      >
 
-      <label class="login__label" for="password">Пароль</label>
+      <label
+        class="login__label"
+        for="password"
+      >Пароль</label>
       <input
         id="password"
         v-model="password"
@@ -49,15 +62,27 @@ async function submit() {
         type="password"
         autocomplete="current-password"
         required
-      />
+      >
 
-      <p v-if="errorMessage" class="login__error" role="alert">{{ errorMessage }}</p>
+      <p
+        v-if="errorMessage"
+        class="login__error"
+        role="alert"
+      >
+        {{ errorMessage }}
+      </p>
 
-      <button type="submit" class="login__submit" :disabled="auth.loading">
+      <button
+        type="submit"
+        class="login__submit"
+        :disabled="auth.loading"
+      >
         {{ auth.loading ? 'Вход…' : 'Войти' }}
       </button>
 
-      <p class="login__hint">Демо-доступ (мок): agronom / demo</p>
+      <p class="login__hint">
+        Демо-доступ (мок): agronom / demo
+      </p>
     </form>
   </div>
 </template>

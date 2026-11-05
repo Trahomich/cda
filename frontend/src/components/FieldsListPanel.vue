@@ -92,48 +92,96 @@ function cultureOf(field: Field): string {
 
 <template>
   <div class="fields-list">
-    <form class="fields-list__filters" @submit.prevent>
-      <label class="fields-list__label" for="q">Поиск по названию</label>
+    <form
+      class="fields-list__filters"
+      @submit.prevent
+    >
+      <label
+        class="fields-list__label"
+        for="q"
+      >Поиск по названию</label>
       <input
         id="q"
         v-model="search"
         class="fields-list__input"
         type="search"
         placeholder="Например, Степное-1"
-      />
-      <label class="fields-list__label" for="status">Статус</label>
-      <select id="status" v-model="status" class="fields-list__input">
-        <option v-for="opt in STATUS_OPTIONS" :key="opt.value" :value="opt.value">
+      >
+      <label
+        class="fields-list__label"
+        for="status"
+      >Статус</label>
+      <select
+        id="status"
+        v-model="status"
+        class="fields-list__input"
+      >
+        <option
+          v-for="opt in STATUS_OPTIONS"
+          :key="opt.value"
+          :value="opt.value"
+        >
           {{ opt.label }}
         </option>
       </select>
     </form>
 
-    <div class="fields-list__table-wrap" role="region" aria-label="Таблица полей">
+    <div
+      class="fields-list__table-wrap"
+      role="region"
+      aria-label="Таблица полей"
+    >
       <table class="fields-list__table">
         <thead>
           <tr>
-            <th scope="col">Название</th>
-            <th scope="col">Площадь, га</th>
-            <th scope="col">Культура сезона</th>
-            <th scope="col">Статус</th>
+            <th scope="col">
+              Название
+            </th>
+            <th scope="col">
+              Площадь, га
+            </th>
+            <th scope="col">
+              Культура сезона
+            </th>
+            <th scope="col">
+              Статус
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr v-if="loading">
-            <td colspan="4" class="fields-list__state">Загрузка…</td>
+            <td
+              colspan="4"
+              class="fields-list__state"
+            >
+              Загрузка…
+            </td>
           </tr>
           <tr v-else-if="failed">
-            <td colspan="4" class="fields-list__state fields-list__state--error">
+            <td
+              colspan="4"
+              class="fields-list__state fields-list__state--error"
+            >
               Не удалось загрузить список
             </td>
           </tr>
           <tr v-else-if="rows.length === 0">
-            <td colspan="4" class="fields-list__state">Полей не найдено</td>
+            <td
+              colspan="4"
+              class="fields-list__state"
+            >
+              Полей не найдено
+            </td>
           </tr>
-          <tr v-for="field in rows" v-else :key="field.field_id">
+          <tr
+            v-for="field in rows"
+            v-else
+            :key="field.field_id"
+          >
             <td>{{ field.name }}</td>
-            <td class="fields-list__num">{{ fmtArea(field.area_ga) }}</td>
+            <td class="fields-list__num">
+              {{ fmtArea(field.area_ga) }}
+            </td>
             <td>{{ cultureOf(field) }}</td>
             <td>{{ STATUS_LABELS[field.status] }}</td>
           </tr>

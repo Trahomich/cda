@@ -34,15 +34,28 @@ function logout() {
       <span class="field__brand">ЦДА · {{ auth.user?.farm_name ?? 'Хозяйство' }}</span>
       <span class="field__role">[роль: {{ auth.roleTitle }}]</span>
       <span class="field__spacer" />
-      <span v-if="alertsBadge > 0" class="field__badge" aria-label="Уведомления">
+      <span
+        v-if="alertsBadge > 0"
+        class="field__badge"
+        aria-label="Уведомления"
+      >
         ({{ alertsBadge }})
       </span>
-      <button type="button" class="field__logout" @click="logout">Выйти</button>
+      <button
+        type="button"
+        class="field__logout"
+        @click="logout"
+      >
+        Выйти
+      </button>
     </header>
     <main class="field__main">
       <RouterView />
     </main>
-    <nav class="field__nav" aria-label="Основная навигация">
+    <nav
+      class="field__nav"
+      aria-label="Основная навигация"
+    >
       <button
         v-for="item in nav"
         :key="item.label"

@@ -20,10 +20,23 @@ function apply() {
 </script>
 
 <template>
-  <div v-if="needRefresh" class="update-banner">
+  <div
+    v-if="needRefresh"
+    class="update-banner"
+  >
     <span>Доступна новая версия — применится при перезапуске.</span>
-    <button type="button" @click="apply">Обновить</button>
-    <button type="button" class="update-banner__close" aria-label="Закрыть" @click="needRefresh = false">
+    <button
+      type="button"
+      @click="apply"
+    >
+      Обновить
+    </button>
+    <button
+      type="button"
+      class="update-banner__close"
+      aria-label="Закрыть"
+      @click="needRefresh = false"
+    >
       ✕
     </button>
   </div>
