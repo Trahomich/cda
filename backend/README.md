@@ -118,8 +118,7 @@ pre-commit install && pre-commit run --all-files
 - `POST /fields` (201 + Location), `GET /fields/{id}` (карточка «Поле 360°»:
   версии контура, последние операции; `ndvi`/`weather` — null до MVP-6/MVP-10),
   `PATCH /fields/{id}` (смена контура создаёт версию; смена статуса — по автомату
-  `active → archived|merged` с обязательным `reason`, пишется в `dat_audit`);
-- `GET/POST /fields/{id}/versions` — история версий контура (REQ-F-002);
+  `active → archived|merged` с обязательным `reason`, пишется в `dat_audit`);- `GET/POST /fields/{id}/versions` — история версий контура (REQ-F-002);
 - `POST /fields/import` — GeoJSON-файл (FeatureCollection), отчёт ImportReport
   `{created, skipped, errors}` (KML/shapefile — v1; нужна зависимость python-multipart).
 
