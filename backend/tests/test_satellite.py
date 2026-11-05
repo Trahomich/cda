@@ -172,7 +172,8 @@ class TestFakeAdapter:
 
     def test_cloud_above_threshold_filtered(self):
         fake = FakeSentinel2Adapter(forced_cloud_pct=70.0)
-        assert fake.fetch_scenes("f" * 8 + "-0000-4000-8000-000000000001", "ndvi", *self.WINDOW) == []
+        field = "ffffffff-0000-4000-8000-000000000001"
+        assert fake.fetch_scenes(field, "ndvi", *self.WINDOW) == []
         softer = FakeSentinel2Adapter(forced_cloud_pct=30.0)
         scenes = softer.fetch_scenes(
             "f" * 8 + "-0000-4000-8000-000000000001", "ndvi", *self.WINDOW, max_cloud_pct=40
