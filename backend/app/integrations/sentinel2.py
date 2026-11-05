@@ -234,9 +234,7 @@ class Sentinel2Adapter:
                 SceneMeta(
                     scene_ref=str(item.get("Id", "")),
                     name=item.get("Name"),
-                    captured_at=datetime.fromisoformat(
-                        captured_raw.replace("Z", "+00:00")
-                    ).date(),
+                    captured_at=datetime.fromisoformat(captured_raw.replace("Z", "+00:00")).date(),
                     cloud_pct=cloud,
                     assets=json.loads(item.get("Assets", "{}")) if item.get("Assets") else {},
                 )
