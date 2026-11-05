@@ -1,6 +1,7 @@
 // Типизированный API-клиент: единый разбор ошибок RFC 7807 (CONTRACTS §8),
 // пагинация ?limit&offset (06 §5), мок-транспорт в dev-режиме.
-import { FetchTransport, MockTransport, type Transport } from './transport'
+import { FetchTransport, type Transport } from './transport'
+import { MockTransport } from './mock'
 import type { Page, Problem } from './types'
 
 /** Ошибка API: либо RFC 7807 problem+json, либо сетевая/неожиданная. */
