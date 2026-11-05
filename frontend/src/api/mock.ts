@@ -1521,8 +1521,7 @@ export class MockTransport implements Transport {
         )
       }
       job.status = 'confirmed'
-      const { track_ref: _track, ...rest } = job
-      return ok(rest)
+      return ok(withoutTrackRef(job))
     }
 
     return problem(
