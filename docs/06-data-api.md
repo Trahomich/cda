@@ -171,6 +171,9 @@ erDiagram
 | API-30 | POST /imports/soil | импорт агрохимии → ImportReport | REQ-F-031 |
 | API-31 | POST /imports/telemetry | импорт CSV/ISOXML → черновики работ | REQ-F-016, 032 |
 | API-32 | GET /export?entity= | экспорт доменных таблиц JSON/CSV | REQ-NF-007 |
+| API-33 | POST /ai/chat | диалог ИИ-ассистента по данным хозяйства (ответ + refs) | REQ-F-035 |
+| API-34 | POST /ai/explain | объяснение рекомендации по rationale/data_refs | REQ-F-037 |
+| API-35 | POST /ai/summary | сводка журнала/алертов за период | REQ-F-038 |
 
 Пример ошибки 422 — нарушение бизнес-правила (`POST /api/v1/treatment-plans`):
 
