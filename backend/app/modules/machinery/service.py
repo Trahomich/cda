@@ -276,6 +276,28 @@ def list_jobs(
     return list(db.scalars(stmt.limit(limit).offset(offset))), db.scalar(count_stmt) or 0
 
 
+def list_all_jobs(
+    db: Session,
+    *,
+    status: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> tuple[list[MachineJob], int]:
+    """API-20: GET /machine-jobs — все задания (для списка смены на E-18)."""
+    stmt = select(MachineJob).order_by(MachineJob.performed_at.desc(), MachineJob.created_at.desc())
+    count_stmt = select(func.count()).select_from(MachineJob)
+    if status:
+        if status not in JOB_STATUSES:
+            raise AppError(
+                f"Неизвестный статус задания «{status}» "
+                f"(допустимо: {', '.join(JOB_STATUSES)})",
+                code="unknown_job_status",
+            )
+        stmt = stmt.where(MachineJob.status == status)
+        count_stmt = count_stmt.where(MachineJob.status == status)
+    return list(db.scalars(stmt.limit(limit).offset(offset))), db.scalar(count_stmt) or 0
+
+
 def update_job(db: Session, job: MachineJob, *, user: User, status: str, **fact) -> MachineJob:
     """PATCH /machine-jobs/{id} и API-20 confirm: автомат draft →
     confirmed/rejected (RULE-TECH-04); прочие переходы — 409."""
