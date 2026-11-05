@@ -153,13 +153,12 @@ def get_field(db: Session, field_id: uuid.UUID) -> Field:
     return field
 
 
-def _audit(
-    db: Session, *, user: User, entity_id: uuid.UUID, action: str, changed: dict
-) -> None:
+def _audit(db: Session, *, user: User, entity_id: uuid.UUID, action: str, changed: dict) -> None:
     """Аудит критичного действия в dat_audit (06 §4)."""
     db.add(
-        AuditRecord(entity="field", entity_id=entity_id, user_id=user.id, action=action,
-                    changed=changed)
+        AuditRecord(
+            entity="field", entity_id=entity_id, user_id=user.id, action=action, changed=changed
+        )
     )
 
 
@@ -193,9 +192,7 @@ def _new_version(
     return version
 
 
-def create_field(
-    db: Session, *, user: User, name: str, contour: dict, reason: str | None
-) -> Field:
+def create_field(db: Session, *, user: User, name: str, contour: dict, reason: str | None) -> Field:
     """API-02: создать поле с контуром (версия 1 создаётся автоматически)."""
     geojson_str = validate_contour_structure(contour)
     area_ga = check_geometry(db, geojson_str)
@@ -213,7 +210,10 @@ def create_field(
         ) from exc
     _new_version(db, field, geojson_str, valid_from=None, reason=reason or "создание поля")
     _audit(
-        db, user=user, entity_id=field.id, action="create",
+        db,
+        user=user,
+        entity_id=field.id,
+        action="create",
         changed={"name": field.name, "area_ga": area_ga},
     )
     db.commit()
@@ -260,7 +260,10 @@ def update_field(
         previous = field.status
         field.status = status
         _audit(
-            db, user=user, entity_id=field.id, action="status_change",
+            db,
+            user=user,
+            entity_id=field.id,
+            action="status_change",
             changed={"status_from": previous, "status_to": status, "reason": reason},
         )
         changed = True
@@ -269,7 +272,10 @@ def update_field(
         field.name = name.strip()
         changed = True
         _audit(
-            db, user=user, entity_id=field.id, action="update",
+            db,
+            user=user,
+            entity_id=field.id,
+            action="update",
             changed={"name_from": previous_name, "name_to": field.name},
         )
     if contour is not None:
@@ -277,9 +283,11 @@ def update_field(
         area_ga = check_geometry(db, geojson_str)
         version = _new_version(db, field, geojson_str, valid_from=None, reason=reason)
         _audit(
-            db, user=user, entity_id=field.id, action="update",
-            changed={"new_version_no": version.version_no, "area_ga": area_ga,
-                     "reason": reason},
+            db,
+            user=user,
+            entity_id=field.id,
+            action="update",
+            changed={"new_version_no": version.version_no, "area_ga": area_ga, "reason": reason},
         )
         changed = True
     if not changed:
@@ -312,7 +320,10 @@ def add_version(
     area_ga = check_geometry(db, geojson_str)
     version = _new_version(db, field, geojson_str, valid_from=valid_from, reason=reason)
     _audit(
-        db, user=user, entity_id=field.id, action="update",
+        db,
+        user=user,
+        entity_id=field.id,
+        action="update",
         changed={"new_version_no": version.version_no, "area_ga": area_ga, "reason": reason},
     )
     db.commit()
@@ -322,8 +333,12 @@ def add_version(
 
 
 def list_fields(
-    db: Session, *, status: str | None = None, q: str | None = None,
-    limit: int = 20, offset: int = 0,
+    db: Session,
+    *,
+    status: str | None = None,
+    q: str | None = None,
+    limit: int = 20,
+    offset: int = 0,
 ) -> tuple[list[Field], int]:
     """API-01: список полей с фильтрами и пагинацией; возвращает (страница, всего)."""
     filters = []
@@ -340,9 +355,7 @@ def list_fields(
         filters.append(Field.name.ilike(f"%{q}%"))
     total = db.scalar(select(func.count()).select_from(Field).where(*filters)) or 0
     fields = list(
-        db.scalars(
-            select(Field).where(*filters).order_by(Field.name).limit(limit).offset(offset)
-        )
+        db.scalars(select(Field).where(*filters).order_by(Field.name).limit(limit).offset(offset))
     )
     return fields, int(total)
 

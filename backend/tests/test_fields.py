@@ -14,7 +14,6 @@ from app.models.agronomy import CropCycle
 from app.models.auth import AuditRecord, UserRole
 from app.models.references import Culture
 from sqlalchemy import select
-
 from tests.test_auth import auth_header, make_user
 
 API = "/api/v1/fields"
@@ -49,9 +48,7 @@ def agro_headers(client, db_session) -> dict:
 
 
 def create_field(client, headers, *, name="Степное-1", contour=None) -> dict:
-    resp = client.post(
-        API, json={"name": name, "contour": contour or REF_POLYGON}, headers=headers
-    )
+    resp = client.post(API, json={"name": name, "contour": contour or REF_POLYGON}, headers=headers)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -96,7 +93,10 @@ class TestCreateField:
         headers = agro_headers(client, db_session)
         resp = client.post(
             API,
-            json={"name": "Бэд", "contour": {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}},
+            json={
+                "name": "Бэд",
+                "contour": {"type": "LineString", "coordinates": [[0, 0], [1, 1]]},
+            },
             headers=headers,
         )
         assert resp.status_code == 422
@@ -107,8 +107,9 @@ class TestCreateField:
             "type": "Polygon",
             "coordinates": [[[0, 0], [0.01, 0], [0.01, 0.01], [0, 0.01], [0.05, 0.05]]],
         }
-        resp = client.post(API, json={"name": "Бэд", "contour": contour},
-                           headers=agro_headers(client, db_session))
+        resp = client.post(
+            API, json={"name": "Бэд", "contour": contour}, headers=agro_headers(client, db_session)
+        )
         assert resp.status_code == 422
         assert resp.json()["code"] == "invalid_geometry"
 
@@ -126,15 +127,17 @@ class TestCreateField:
                 ]
             ],
         }
-        resp = client.post(API, json={"name": "Бэд", "contour": contour},
-                           headers=agro_headers(client, db_session))
+        resp = client.post(
+            API, json={"name": "Бэд", "contour": contour}, headers=agro_headers(client, db_session)
+        )
         assert resp.status_code == 422
         assert resp.json()["code"] == "self_intersection"
 
     def test_area_below_min_422(self, client, db_session):
         tiny = square(40.0, 0.0, 0.0002, 0.0002)  # ≈ 0,05 га < 0,1 га
-        resp = client.post(API, json={"name": "Мелкое", "contour": tiny},
-                           headers=agro_headers(client, db_session))
+        resp = client.post(
+            API, json={"name": "Мелкое", "contour": tiny}, headers=agro_headers(client, db_session)
+        )
         assert resp.status_code == 422
         assert resp.json()["code"] == "area_below_min"
 
@@ -168,11 +171,19 @@ class TestListAndGet:
     def test_list_current_cycle_aggregate(self, client, db_session):
         headers = agro_headers(client, db_session)
         field_id = create_field(client, headers, name="С циклом")["field_id"]
-        culture = Culture(name="Пшеница озимая", kind="main", forage_flag=False, crop_group="зерновые")
+        culture = Culture(
+            name="Пшеница озимая", kind="main", forage_flag=False, crop_group="зерновые"
+        )
         db_session.add(culture)
         db_session.flush()
-        db_session.add(CropCycle(field_id=uuid.UUID(field_id), year=date.today().year,
-                                 culture_id=culture.id, kind="main"))
+        db_session.add(
+            CropCycle(
+                field_id=uuid.UUID(field_id),
+                year=date.today().year,
+                culture_id=culture.id,
+                kind="main",
+            )
+        )
         db_session.commit()
         resp = client.get(API, headers=headers)
         cycle = resp.json()["items"][0]["current_cycle"]
@@ -213,7 +224,8 @@ class TestPatchAndVersions:
         field_id = create_field(client, headers, name="Версионное")["field_id"]
         bigger = square(40.0, 0.0, 0.02, 0.02)  # в 4 раза больше эталона
         resp = client.patch(
-            f"{API}/{field_id}", json={"contour": bigger, "reason": "уточнили по GPS"},
+            f"{API}/{field_id}",
+            json={"contour": bigger, "reason": "уточнили по GPS"},
             headers=headers,
         )
         assert resp.status_code == 200, resp.text
@@ -244,14 +256,13 @@ class TestPatchAndVersions:
         headers = agro_headers(client, db_session)
         field_id = create_field(client, headers, name="В архив")["field_id"]
         resp = client.patch(
-            f"{API}/{field_id}", json={"status": "archived", "reason": "объединили хозяйства"},
+            f"{API}/{field_id}",
+            json={"status": "archived", "reason": "объединили хозяйства"},
             headers=headers,
         )
         assert resp.status_code == 200
         assert resp.json()["status"] == "archived"
-        rec = db_session.scalar(
-            select(AuditRecord).where(AuditRecord.action == "status_change")
-        )
+        rec = db_session.scalar(select(AuditRecord).where(AuditRecord.action == "status_change"))
         assert rec is not None
         assert rec.changed["status_from"] == "active"
         assert rec.changed["status_to"] == "archived"
@@ -267,7 +278,9 @@ class TestPatchAndVersions:
     def test_terminal_status_transition_422(self, client, db_session):
         headers = agro_headers(client, db_session)
         field_id = create_field(client, headers, name="Терминальное")["field_id"]
-        client.patch(f"{API}/{field_id}", json={"status": "archived", "reason": "x"}, headers=headers)
+        client.patch(
+            f"{API}/{field_id}", json={"status": "archived", "reason": "x"}, headers=headers
+        )
         resp = client.patch(
             f"{API}/{field_id}", json={"status": "active", "reason": "вернём"}, headers=headers
         )
@@ -278,7 +291,8 @@ class TestPatchAndVersions:
         headers = agro_headers(client, db_session)
         field_id = create_field(client, headers, name="Слива")["field_id"]
         resp = client.patch(
-            f"{API}/{field_id}", json={"status": "merged", "reason": "слияние с соседним"},
+            f"{API}/{field_id}",
+            json={"status": "merged", "reason": "слияние с соседним"},
             headers=headers,
         )
         assert resp.status_code == 200
@@ -312,7 +326,9 @@ class TestImport:
         }
         resp = client.post(
             f"{API}/import",
-            files={"file": ("fields.geojson", __import__("json").dumps(fc), "application/geo+json")},
+            files={
+                "file": ("fields.geojson", __import__("json").dumps(fc), "application/geo+json")
+            },
             headers=headers,
         )
         assert resp.status_code == 200, resp.text
@@ -346,8 +362,12 @@ class TestRbac:
         make_user(db_session, login="boss_f", role=UserRole.MANAGER)
         headers = auth_header(client, "boss_f", "secret123")
         assert client.get(API, headers=headers).status_code == 200
-        assert client.post(API, json={"name": "X", "contour": REF_POLYGON},
-                           headers=headers).status_code == 403
+        assert (
+            client.post(
+                API, json={"name": "X", "contour": REF_POLYGON}, headers=headers
+            ).status_code
+            == 403
+        )
 
     def test_livestock_specialist_forbidden(self, client, db_session):
         make_user(db_session, login="zoo", role=UserRole.LIVESTOCK_SPECIALIST)
@@ -357,6 +377,5 @@ class TestRbac:
     def test_admin_can_write(self, client, db_session):
         make_user(db_session, login="root_f", role=UserRole.ADMIN)
         headers = auth_header(client, "root_f", "secret123")
-        resp = client.post(API, json={"name": "Админское", "contour": REF_POLYGON},
-                           headers=headers)
+        resp = client.post(API, json={"name": "Админское", "contour": REF_POLYGON}, headers=headers)
         assert resp.status_code == 201

@@ -8,7 +8,8 @@ area_below_min — RFC 7807), поэтому в схемах contour — сло�
 import uuid
 from datetime import date
 
-from pydantic import BaseModel, ConfigDict, Field as PydField
+from pydantic import BaseModel, ConfigDict
+from pydantic import Field as PydField
 
 FIELD_STATUSES = ("active", "merged", "archived")
 
