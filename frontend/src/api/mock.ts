@@ -689,6 +689,242 @@ function daysBetween(a: string, b: string): number {
   return Math.round((Date.parse(b) - Date.parse(a)) / (24 * 3600 * 1000))
 }
 
+/* ─────────── Техника (E-18, API-19/20): парк и задания смены ─────────── */
+
+const MACHINES: Machine[] = [
+  {
+    machine_id: 'a11ce000-0000-4000-8000-000000000001',
+    machine_type: 'tractor',
+    model: 'МТЗ-1221',
+    gov_number: 'А321ВС40',
+    width_m: 3.5,
+    tank_capacity_l: null,
+    engine_hours: 5420.5,
+    status: 'active',
+  },
+  {
+    machine_id: 'a11ce000-0000-4000-8000-000000000002',
+    machine_type: 'sprayer',
+    model: 'Amazone UX 5200',
+    gov_number: 'Е501АО40',
+    width_m: 24,
+    tank_capacity_l: 3600,
+    engine_hours: 1875.2,
+    status: 'active',
+  },
+  {
+    machine_id: 'a11ce000-0000-4000-8000-000000000003',
+    machine_type: 'combine',
+    model: 'John Deere S660',
+    gov_number: 'В777МК40',
+    width_m: null,
+    tank_capacity_l: null,
+    engine_hours: 2310.0,
+    status: 'active',
+  },
+  {
+    machine_id: 'a11ce000-0000-4000-8000-000000000004',
+    machine_type: 'seeder',
+    model: 'Kverneland Exact CD',
+    gov_number: 'К905РТ40',
+    width_m: 6,
+    tank_capacity_l: null,
+    engine_hours: 940.7,
+    status: 'maintenance',
+  },
+  {
+    machine_id: 'a11ce000-0000-4000-8000-000000000005',
+    machine_type: 'truck',
+    model: 'MAN TGS 26.400',
+    gov_number: 'О120НХ40',
+    width_m: null,
+    tank_capacity_l: null,
+    engine_hours: 3812.3,
+    status: 'active',
+  },
+]
+
+interface MockMachineJob extends MachineJob {
+  track_ref: string | null
+}
+
+const MACHINE_JOBS: MockMachineJob[] = [
+  {
+    // Черновик из телематики — подтверждается человеком (SC-04, API-20).
+    job_id: 'b0b5f000-0000-4000-8000-000000000001',
+    machine_id: MACHINES[1].machine_id,
+    machine_model: MACHINES[1].model,
+    field_id: FIELDS[0].field_id,
+    field_name: FIELDS[0].name,
+    performed_at: '2027-06-08',
+    area_ha: 82.4,
+    fuel_l: 96.5,
+    duration_h: 5.2,
+    status: 'draft',
+    source: 'telemetry',
+    track_ref: 's3://tracks/2027/06/08/ux5200-stepnoe-1.jsonl',
+  },
+  {
+    job_id: 'b0b5f000-0000-4000-8000-000000000002',
+    machine_id: MACHINES[0].machine_id,
+    machine_model: MACHINES[0].model,
+    field_id: FIELDS[2].field_id,
+    field_name: FIELDS[2].name,
+    performed_at: '2027-04-14',
+    area_ha: 208.1,
+    fuel_l: 64.0,
+    duration_h: 7.5,
+    status: 'confirmed',
+    source: 'manual',
+    track_ref: null,
+  },
+  {
+    job_id: 'b0b5f000-0000-4000-8000-000000000003',
+    machine_id: MACHINES[2].machine_id,
+    machine_model: MACHINES[2].model,
+    field_id: FIELDS[3].field_id,
+    field_name: FIELDS[3].name,
+    performed_at: '2027-07-28',
+    area_ha: 96.2,
+    fuel_l: 210.3,
+    duration_h: 9.1,
+    status: 'confirmed',
+    source: 'telemetry',
+    track_ref: 's3://tracks/2027/07/28/s660-stepnoe-4.jsonl',
+  },
+]
+
+/* ───── Источники данных (E-14, API-28): адаптеры и журнал состояний ───── */
+
+const NOW = Date.now()
+const HOUR = 3600 * 1000
+const DAY = 24 * HOUR
+const isoAgo = (ms: number) => new Date(NOW - ms).toISOString()
+
+const SOURCES: AdapterStatus[] = [
+  {
+    source_id: 'weather.open-meteo',
+    kind: 'weather',
+    title: 'Погода Open-Meteo',
+    last_status: 'ok',
+    last_success_at: isoAgo(0.6 * HOUR),
+    reason: null,
+    events: [
+      { at: isoAgo(0.6 * HOUR), status: 'ok', reason: null },
+      { at: isoAgo(1.6 * HOUR), status: 'ok', reason: null },
+    ],
+  },
+  {
+    // Деградация: свежих снимков нет — NDVI-таймлайн показывает последнюю точку
+    // с пометкой (05 §6); ядро продолжает работать.
+    source_id: 'satellite.sentinel2-l2a',
+    kind: 'satellite',
+    title: 'Спутник Sentinel-2 L2A',
+    last_status: 'degraded',
+    last_success_at: isoAgo(2 * DAY),
+    reason: 'Нет снимков с облачностью ≤60 % за последние 5 суток',
+    events: [
+      { at: isoAgo(3 * HOUR), status: 'degraded', reason: 'Нет снимков с облачностью ≤60 % за последние 5 суток' },
+      { at: isoAgo(2 * DAY), status: 'ok', reason: null },
+    ],
+  },
+  {
+    source_id: 'manual',
+    kind: 'manual',
+    title: 'Ручной ввод',
+    last_status: 'ok',
+    last_success_at: isoAgo(5 * HOUR),
+    reason: null,
+    events: [{ at: isoAgo(5 * HOUR), status: 'ok', reason: null }],
+  },
+]
+
+/* ───────── Погодные окна (RULE-AGRO-09, 03 §3.3) и прогноз (API-29) ───────── */
+
+/** Прогноз 7 суток с деталями для оценки окон (детерминированный паттерн). */
+function forecastDays(n: number): WeatherForecastDay[] {
+  const iso = (offset: number) => new Date(NOW + offset * DAY).toISOString().slice(0, 10)
+  const pattern = [
+    { min: 8 + (n % 3), max: 19, precip: 0, prob: 10, wind: 3.2, hum: 62 },
+    { min: 9 + (n % 3), max: 21, precip: 0, prob: 15, wind: 2.8, hum: 58 },
+    { min: 10, max: 23, precip: 2.5, prob: 60, wind: 4.6, hum: 72 },
+    { min: 11, max: 20, precip: 7.8, prob: 90, wind: 7.4, hum: 88 },
+    { min: 10, max: 17, precip: 4.1, prob: 70, wind: 5.1, hum: 76 },
+    { min: 7, max: 15, precip: 0.5, prob: 30, wind: 3.0, hum: 60 },
+    { min: 6, max: 16, precip: 0, prob: 5, wind: 2.2 + (n % 2) * 0.4, hum: 54 },
+  ]
+  return pattern.map((d, i) => ({
+    date: iso(i + 1),
+    temp_min_c: d.min,
+    temp_max_c: d.max,
+    precip_mm: d.precip,
+    precip_prob_pct: d.prob,
+    wind_ms: d.wind,
+    humidity_pct: d.hum,
+  }))
+}
+
+const OP_WINDOW_LABELS: Record<WindowOperationType, string> = {
+  spraying: 'опрыскивание',
+  fertilizing: 'внесение удобрений',
+  seeding: 'посев',
+  harvesting: 'уборка',
+}
+
+/** Сутки входят в окно операции T? Условия — RULE-AGRO-09 (03 §3.3);
+ *  возвращает [флаг, список нарушенных условий по-русски]. */
+function windowCheck(
+  type: WindowOperationType,
+  day: WeatherForecastDay,
+  prevPrecip: number | null,
+): [boolean, string[]] {
+  const tAvg = (day.temp_min_c + day.temp_max_c) / 2
+  const fails: string[] = []
+  if (type === 'spraying') {
+    if (tAvg < 5) fails.push(`t° ${tAvg} < 5 °C`)
+    if (tAvg > 25) fails.push(`t° ${tAvg} > 25 °C`)
+    if (day.wind_ms > 4) fails.push(`ветер ${day.wind_ms} > 4 м/с`)
+    if (day.precip_prob_pct >= 50) fails.push(`вероятность осадков ${day.precip_prob_pct} % ≥ 50 %`)
+    if (day.humidity_pct < 40 || day.humidity_pct > 80)
+      fails.push(`влажность ${day.humidity_pct} % вне 40–80 %`)
+  } else if (type === 'fertilizing') {
+    if (tAvg < 5) fails.push(`t° ${tAvg} < 5 °C`)
+    if (day.wind_ms > 6) fails.push(`ветер ${day.wind_ms} > 6 м/с`)
+    if (day.precip_prob_pct >= 50 || day.precip_mm > 0)
+      fails.push(`осадки ожидаются (${day.precip_mm} мм, ${day.precip_prob_pct} %)`)
+  } else if (type === 'seeding') {
+    if (tAvg - 1 < 4) fails.push(`t° почвы ~${tAvg - 1} < 4 °C`)
+    if (prevPrecip !== null && prevPrecip >= 10)
+      fails.push(`осадки за предшествующие сутки ${prevPrecip} ≥ 10 мм`)
+  } else {
+    if (day.precip_mm >= 2) fails.push(`осадки ${day.precip_mm} ≥ 2 мм`)
+    if (day.humidity_pct >= 90) fails.push(`влажность ${day.humidity_pct} % ≥ 90 %`)
+  }
+  return [fails.length === 0, fails]
+}
+
+/** GET /weather/windows: сутки горизонта с оценкой и ближайшее окно. */
+function windowsOf(n: number, type: WindowOperationType) {
+  const days = forecastDays(n)
+  const assessed = days.map((d, i) => {
+    const [isWindow, fails] = windowCheck(type, d, i === 0 ? 0 : days[i - 1].precip_mm)
+    return {
+      date: d.date,
+      is_window: isWindow,
+      summary: isWindow
+        ? `Все условия ${OP_WINDOW_LABELS[type]} выполнены`
+        : fails.join('; '),
+    }
+  })
+  const nearest = assessed.find((d) => d.is_window)
+  return {
+    field_id: FIELDS.find((f) => FIELD_N.get(f.field_id) === n)!.field_id,
+    operation_type: type,
+    days: assessed,
+    nearest_window_date: nearest ? nearest.date : null,
+  }
+}
+
 /* ───────────────────────── Транспорт ───────────────────────── */
 
 export class MockTransport implements Transport {
