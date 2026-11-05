@@ -10,7 +10,8 @@
     "typecheck": "vue-tsc -b",
     "preview": "vite preview --port 4173 --strictPort",
     "lint": "eslint .",
-    "format": "prettier --write src"
+    "format": "prettier --write src",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "dexie": "^4.4.7",
