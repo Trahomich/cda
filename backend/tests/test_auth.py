@@ -7,7 +7,7 @@
 import uuid
 
 import pytest
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
