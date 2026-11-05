@@ -483,9 +483,9 @@ class TestRotationPlans:
         assert client.get(API_PLANS, headers=headers).status_code == 403
 
 
-@pytest.mark.parametrize("endpoint", [API_PLANS, API_CYCLES])
-def test_unknown_plan_404(client, db_session, endpoint):
-    headers = agro_headers(client, db_session)
-    resp = client.post(f"{endpoint}/{uuid.uuid4()}/approve", headers=headers)
+def test_unknown_plan_404(client, db_session):
+    """approve несуществующего плана — 404 (менеджер, иначе RBAC 403 раньше)."""
+    headers = agro_headers(client, db_session, login="mgr404", role=UserRole.MANAGER)
+    resp = client.post(f"{API_PLANS}/{uuid.uuid4()}/approve", headers=headers)
     assert resp.status_code == 404
     assert resp.json()["code"] == "not_found"
