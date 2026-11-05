@@ -219,10 +219,16 @@ function goQueue() {
         type="number"
         step="0.01"
         min="0.01"
-        :max="selectedField ? selectedField.area_ga * 1.05 : undefined"
         placeholder="182"
         required
       >
+      <p
+        v-if="selectedField"
+        class="op-entry__hint"
+      >
+        Лимит по RULE-AGRO-12 — {{ (selectedField.area_ga * 1.05).toFixed(1) }} га;
+        превышение отклонит сервер с пояснением при синхронизации.
+      </p>
 
       <label
         class="op-entry__label"
