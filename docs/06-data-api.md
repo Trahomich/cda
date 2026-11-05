@@ -37,7 +37,7 @@ erDiagram
   DAT_FIELD ||--o{ DAT_ALERT : "field_id"
 ```
 
-### 1.2. Техника и животновodство
+### 1.2. Техника и животноводство
 
 ```mermaid
 erDiagram
