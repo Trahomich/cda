@@ -276,6 +276,16 @@ function cultureOf(field: Field): string {
   font-variant-numeric: tabular-nums;
 }
 
+.fields-list__link {
+  color: #1b5e20;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.fields-list__link:hover {
+  text-decoration: underline;
+}
+
 .fields-list__state {
   color: #424242;
   text-align: center;
