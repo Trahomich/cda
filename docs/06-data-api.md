@@ -109,7 +109,7 @@ erDiagram
 | ref_feed | корма: name, energy_eke_per_kg, protein_pct, dry_matter_pct | REQ-F-020 |
 | ref_feeding_norm | нормы кормления по kind группы (ЭКЕ, протеин) — RULE-LIVE-05 | REQ-F-020 |
 | ref_manure_norm | выход навоза и д.в. на голову по виду — RULE-LIVE-08 | REQ-F-022 |
-| ref_price | цена: item_type (crop/input), item_id, price_rub, date, source_id | REQ-F-033 |
+| ref_price | цена: item_type (crop/input; пост-MVP v2: +feed/product — 12-economics.md §3.3, §4), item_id, price_rub, date, source_id | REQ-F-033 |
 | ref_source | адаптеры: source_id, kind, enabled, last_status, last_success_at | REQ-F-034 |
 | ref_user / ref_role | пользователи и роли (01 §2); пароли — только хеш (REQ-NF-005) | матрица прав 07-ux |
 | ref_weather_rule | параметры погодных окон по operation_type (RULE-AGRO-09) | REQ-F-025 |
