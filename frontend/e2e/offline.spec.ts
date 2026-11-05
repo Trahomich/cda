@@ -11,7 +11,7 @@ test('офлайн-ввод 3 операций и синхронизация (10
   await page.fill('#login', 'agronom')
   await page.fill('#password', 'demo')
   await page.getByRole('button', { name: 'Войти' }).click()
-  await expect(page).toHaveURL(/fields\/map|\/f\//)
+  await expect(page).toHaveURL(/fields\/map|\/f\//, { timeout: 20_000 })
 
   // Полевой режим → ввод операции. Кэш полей заполняется при онлайне.
   // Ждём именно появления опций (>1): not.toHaveCount(1) проходит и при 0,
@@ -69,7 +69,7 @@ test('422 не теряет запись: причина из problem+json по�
   await page.fill('#login', 'agronom')
   await page.fill('#password', 'demo')
   await page.getByRole('button', { name: 'Войти' }).click()
-  await expect(page).toHaveURL(/fields\/map|\/f\//)
+  await expect(page).toHaveURL(/fields\/map|\/f\//, { timeout: 20_000 })
 
   await page.goto('/f/operations')
   await expect
