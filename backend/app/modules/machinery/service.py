@@ -17,6 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError
+from app.models.agronomy import FieldOperation
 from app.models.auth import AuditRecord, User
 from app.models.machinery import Machine, MachineJob, Maintenance
 from app.modules.machinery.schemas import (
