@@ -468,7 +468,7 @@ class TestWeatherApi:
                     wind_max_ms=3.4,
                     humidity_avg_pct=62,
                 ),
-                F(
+                Forecast(
                     field_id=field_id,
                     forecast_for=date.today() + timedelta(days=1),
                     issued_at=datetime.now(tz=UTC),
