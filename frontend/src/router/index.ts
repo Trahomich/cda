@@ -48,6 +48,49 @@ const router = createRouter({
           component: () => import('@/views/TreatmentPlansView.vue'),
           meta: { title: 'Планы удобрений и СЗР' },
         },
+        {
+          // E-10 «Погода и погодные окна» (07-ux §2, SC-03): факт, прогноз,
+          // окна операций RULE-AGRO-09.
+          path: 'weather',
+          name: 'weather',
+          component: () => import('@/views/WeatherView.vue'),
+          meta: { title: 'Погода' },
+        },
+        {
+          // E-13 «Журнал операций» (состав MVP 08 §1): API-18, отклонения RULE-AGRO-11.
+          path: 'operations',
+          name: 'operations-journal',
+          component: () => import('@/views/OperationsJournalView.vue'),
+          meta: { title: 'Журнал операций' },
+        },
+        {
+          // E-18 «Техника и задания» (состав MVP 08 §1): API-19/20, read-only.
+          path: 'machinery',
+          name: 'machinery',
+          component: () => import('@/views/MachineryView.vue'),
+          meta: { title: 'Техника' },
+        },
+        {
+          // E-15 «Справочники» (07-ux §2): культуры, препараты.
+          path: 'references',
+          name: 'references',
+          component: () => import('@/views/ReferencesView.vue'),
+          meta: { title: 'Справочники' },
+        },
+        {
+          // E-14 «Источники данных» (07-ux §5): руководитель/админ, API-28.
+          path: 'sources',
+          name: 'sources',
+          component: () => import('@/views/SourcesView.vue'),
+          meta: { title: 'Источники данных', roles: ['manager', 'admin'] },
+        },
+        {
+          // E-16 «Пользователи и права» (07-ux §5): админ/руководитель.
+          path: 'users',
+          name: 'users',
+          component: () => import('@/views/UsersView.vue'),
+          meta: { title: 'Пользователи и права', roles: ['manager', 'admin'] },
+        },
       ],
     },
     {
