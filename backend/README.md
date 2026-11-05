@@ -10,9 +10,12 @@ backend/
 ├── app/
 │   ├── main.py          # приложение FastAPI, /healthz
 │   ├── api/v1.py        # роутер /api/v1 (эндпоинты добавляют модули)
-│   ├── core/            # config (pydantic-settings), db, errors (RFC 7807)
-│   └── modules/         # доменные модули: fields, rotation, inputs, weather, satellite, machinery
-├── alembic/             # миграции (пустая первая — 0001_init)
+│   ├── api/deps.py      # зависимости: текущий пользователь из JWT (MVP-4)
+│   ├── cli.py           # python -m app.cli create-admin (MVP-4)
+│   ├── core/            # config, db, errors (RFC 7807), security (argon2/JWT), rbac
+│   ├── models/          # ORM-модели (auth: dat_user, dat_audit)
+│   └── modules/         # доменные модули: auth, fields, rotation, inputs, weather, satellite, machinery
+├── alembic/             # миграции (0001_init каркас; 0002_auth — dat_user, dat_audit)
 ├── docker-compose.yml   # api + db (postgis/postgis:18-3.5) + redis, healthchecks
 ├── docker/db-init/      # CREATE EXTENSION postgis при первом старте БД
 ├── tests/               # pytest (smoke: /healthz, RFC 7807)
