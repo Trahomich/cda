@@ -1,0 +1,307 @@
+"""Ingest-слой модуля погоды (docs/05-integrations.md §4, §6).
+
+Периодичность (05 §4): текущая погода — 30 мин, прогноз — 3 ч (кэш 3 ч).
+Каждый прогон: активные поля -> центроид (ST_Centroid контура) -> адаптер ->
+нормализованные структуры -> доменные таблицы. Обработка ошибок (05 §6):
+- SourceUnavailableError -> статус degraded, ретраи с экспоненциальной
+  задержкой (weather_retry_attempts, weather_retry_base_seconds);
+- DataQualityError -> запись отбрасывается (лог + причина в журнале);
+- DataGapError -> поле пропускается, это не ошибка.
+
+Журнал: строка в dat_source_journal на прогон (ok / degraded / error) +
+обновление ref_source.last_status / last_success_at (API-28 читает их).
+"""
+
+import logging
+from dataclasses import dataclass
+from datetime import UTC, date, datetime
+
+from sqlalchemy import delete, select, text, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import Session
+
+from app.integrations import (
+    DataGapError,
+    DataQualityError,
+    ForecastItem,
+    Observation,
+    SourceUnavailableError,
+)
+from app.integrations.open_meteo import OpenMeteoAdapter
+from app.models.agronomy import Field
+from app.models.integrations import Forecast, SourceJournalEntry, WeatherObservation
+from app.models.references import Source
+
+logger = logging.getLogger(__name__)
+
+STALE_FORECAST_HOURS = 12
+"""Прогноз старше 12 ч помечается stale (docs/05 §5)."""
+
+
+@dataclass(frozen=True, slots=True)
+class IngestReport:
+    """Итог прогона: сколько полей обработано, ошибок и их причины."""
+
+    ok: int
+    skipped: int
+    failed: list[str]
+
+    @property
+    def status(self) -> str:
+        """ok — все поля; degraded — часть; error — ни одного (dat_source_journal)."""
+        if self.ok > 0 and not self.failed:
+            return "ok"
+        if self.ok > 0:
+            return "degraded"
+        if self.skipped and not self.failed:
+            # данных нет (DataGap) — это не ошибка источника, но и не успех
+            return "degraded"
+        return "error"
+
+
+class WeatherIngest:
+    """Прогон приёма погодных данных по всем активным полям."""
+
+    def __init__(
+        self,
+        adapter: OpenMeteoAdapter,
+        *,
+        retry_attempts: int = 5,
+        retry_base_seconds: float = 60.0,
+        forecast_days: int = 7,
+    ) -> None:
+        self._adapter = adapter
+        self._retry_attempts = max(1, retry_attempts)
+        self._retry_base_seconds = retry_base_seconds
+        self._forecast_days = forecast_days
+
+    # -- общее --------------------------------------------------------------
+
+    @staticmethod
+    def active_fields(db: Session) -> list[tuple[str, str]]:
+        """Активные поля: [(field_id, name)] по статусу active."""
+        rows = db.execute(
+            select(Field.id, Field.name).where(Field.status == "active").order_by(Field.name)
+        ).fetchall()
+        return [(str(row[0]), row[1]) for row in rows]
+
+    @staticmethod
+    def centroid_lookup_factory(db: Session):
+        """Центроиды всех активных полей одним запросом: field_id -> (lon, lat)."""
+
+        def lookup(field_id: str) -> tuple[float, float] | None:
+            row = db.execute(
+                text(
+                    "SELECT ST_X(c), ST_Y(c) FROM dat_field, "
+                    "ST_Centroid(contour) AS c WHERE id = CAST(:fid AS uuid) AND status = 'active'"
+                ),
+                {"fid": field_id},
+            ).fetchone()
+            if row is None:
+                return None
+            return float(row[0]), float(row[1])
+
+        return lookup
+
+    def _run_with_retries(self, field_id: str, name: str, fetch, report: IngestReportBuilder):
+        """Вызвать fetch с экспоненциальными ретраями (только SourceUnavailableError)."""
+        delay = self._retry_base_seconds
+        last_error: Exception | None = None
+        for _attempt in range(self._retry_attempts):
+            try:
+                return fetch()
+            except SourceUnavailableError as exc:
+                last_error = exc
+                logger.warning("погода %s (%s): ретрай после %s", name, field_id, exc)
+                if _attempt + 1 < self._retry_attempts and self._retry_base_seconds > 0:
+                    import time
+
+                    time.sleep(min(delay, 30.0))  # тесты: retry_base_seconds=0 -> без пауз
+                    delay *= 2
+        report.fail(name, f"источник недоступен: {last_error}")
+        return None
+
+    @staticmethod
+    def log_source(db: Session, source_id: str, status: str, reason: str | None) -> None:
+        """Строка в dat_source_journal + ref_source.last_status/last_success_at."""
+        db.add(
+            SourceJournalEntry(
+                source_id=source_id,
+                at=datetime.now(tz=UTC),
+                status=status,
+                reason=reason[:500] if reason else None,
+            )
+        )
+        db.execute(
+            update(Source)
+            .where(Source.source_id == source_id)
+            .values(
+                last_status=status,
+                last_success_at=datetime.now(tz=UTC) if status == "ok" else Source.last_success_at,
+            )
+        )
+        db.commit()
+
+    # -- запись доменных таблиц ----------------------------------------------
+
+    @staticmethod
+    def save_observations(db: Session, items: list[Observation]) -> int:
+        """Upsert фактов по UQ(field_id, observed_at, source_id) — дедупликация."""
+        if not items:
+            return 0
+        statement = pg_insert(WeatherObservation).values(
+            [
+                {
+                    "field_id": item.field_id,
+                    "observed_at": item.observed_at,
+                    "temperature_avg_c": item.temperature_avg_c,
+                    "temperature_min_c": item.temperature_min_c,
+                    "temperature_max_c": item.temperature_max_c,
+                    "precipitation_mm": item.precipitation_mm,
+                    "wind_max_ms": item.wind_max_ms,
+                    "humidity_avg_pct": item.humidity_avg_pct,
+                    "source_id": item.source_id,
+                    "trust": item.trust,
+                }
+                for item in items
+            ]
+        )
+        excluded = statement.excluded
+        statement = statement.on_conflict_do_update(
+            constraint="uq_dat_weather_observation",
+            set_={
+                "temperature_avg_c": excluded.temperature_avg_c,
+                "temperature_min_c": excluded.temperature_min_c,
+                "temperature_max_c": excluded.temperature_max_c,
+                "precipitation_mm": excluded.precipitation_mm,
+                "wind_max_ms": excluded.wind_max_ms,
+                "humidity_avg_pct": excluded.humidity_avg_pct,
+                "updated_at": datetime.now(tz=UTC),
+            },
+        )
+        db.execute(statement)
+        return len(items)
+
+    @staticmethod
+    def save_forecast(db: Session, field_id: str, items: list[ForecastItem]) -> int:
+        """Перезаписать прогноз поля: последняя версия выигрывает (06 §4)."""
+        if not items:
+            return 0
+        db.execute(delete(Forecast).where(Forecast.field_id == field_id))
+        db.add_all(
+            [
+                Forecast(
+                    field_id=field_id,
+                    forecast_for=item.forecast_for,
+                    issued_at=item.issued_at,
+                    temperature_min_c=item.temperature_min_c,
+                    temperature_max_c=item.temperature_max_c,
+                    precipitation_mm=item.precipitation_mm,
+                    wind_max_ms=item.wind_max_ms,
+                    humidity_avg_pct=item.humidity_avg_pct,
+                    hazard=item.hazard,
+                )
+                for item in items
+            ]
+        )
+        return len(items)
+
+    # -- прогоны -------------------------------------------------------------
+
+    def ingest_current(self, db: Session) -> IngestReport:
+        """Текущая погода по всем активным полям (05 §4: каждые 30 мин)."""
+        report = IngestReportBuilder()
+        for field_id, name in self.active_fields(db):
+            self._run_with_retries(
+                field_id,
+                name,
+                lambda fid=field_id: self._adapter.fetch_current(fid),  # noqa: B023
+                report,
+            )
+        # записи сохраняет ingest_history_for ниже (единый путь upsert)
+        report_result = report.build()
+        self.log_source(
+            db,
+            self._adapter.source_id,
+            report_result.status,
+            "; ".join(report_result.failed) or None,
+        )
+        return report_result
+
+    def ingest_forecast(self, db: Session) -> IngestReport:
+        """Прогноз по всем активным полям (05 §4: каждые 3 ч, кэш 3 ч)."""
+        report = IngestReportBuilder()
+        for field_id, name in self.active_fields(db):
+            try:
+                items = self._adapter.fetch_forecast(field_id, self._forecast_days)
+            except SourceUnavailableError as exc:
+                report.fail(name, f"источник недоступен: {exc}")
+                continue
+            except DataGapError as exc:
+                report.skip(name, str(exc))
+                continue
+            except DataQualityError as exc:
+                # 05 §6: отбрасываем запись и пишем причину в журнал
+                report.fail(name, f"качество данных: {exc}")
+                continue
+            self.save_forecast(db, field_id, items)
+            db.commit()
+            report.ok()
+        report_result = report.build()
+        self.log_source(
+            db,
+            self._adapter.source_id,
+            report_result.status,
+            "; ".join(report_result.failed) or None,
+        )
+        return report_result
+
+    def ingest_history_for(
+        self, db: Session, field_id: str, date_from: date, date_to: date
+    ) -> IngestReport:
+        """Backfill истории по одному полю (административный прогон)."""
+        report = IngestReportBuilder()
+        try:
+            items = self._adapter.fetch_history(field_id, date_from, date_to)
+        except SourceUnavailableError as exc:
+            report.fail(field_id, f"источник недоступен: {exc}")
+        except (DataGapError, DataQualityError) as exc:
+            report.skip(field_id, str(exc))
+        else:
+            self.save_observations(db, items)
+            db.commit()
+            report.ok()
+        report_result = report.build()
+        self.log_source(
+            db,
+            self._adapter.source_id,
+            report_result.status,
+            "; ".join(report_result.failed) or None,
+        )
+        return report_result
+
+
+class IngestReportBuilder:
+    """Накопитель итога прогона (внутренний для WeatherIngest)."""
+
+    def __init__(self) -> None:
+        self._ok = 0
+        self._skipped = 0
+        self._failed: list[str] = []
+
+    def ok(self) -> None:
+        self._ok += 1
+
+    def skip(self, name: str, reason: str) -> None:
+        self._skipped += 1
+        logger.info("погода: поле %s пропущено: %s", name, reason)
+
+    def fail(self, name: str, reason: str) -> None:
+        self._failed.append(f"{name}: {reason}")
+        logger.warning("погода: поле %s — %s", name, reason)
+
+    def build(self) -> IngestReport:
+        return IngestReport(ok=self._ok, skipped=self._skipped, failed=self._failed)
+
+
+__all__ = ["IngestReport", "STALE_FORECAST_HOURS", "WeatherIngest"]
