@@ -52,7 +52,9 @@ fetch_current(field_id: UUID) -> Observation   # опционально, для 
 source_id = "satellite.sentinel2-l2a"
 
 capabilities() -> {"indices": ["ndvi", "ndre", "ndmi", "savi"],
-                   "resolution_m": 10, "revisit_days": 5, "scenes_since": "2017-03"}
+                   "resolution_m": 10,
+                   "revisit_days": "2-3 (два аппарата: Sentinel-2B/2C)",
+                   "scenes_since": "2017-03"}
 
 fetch_scenes(field_id: UUID, index: IndexType,
              date_from: date, date_to: date,
