@@ -190,7 +190,7 @@ class SatelliteIngest:
         return len(rows)
 
     @staticmethod
-    def _publish_new(db: Session, scenes: list[Scene], existing: set[tuple]) -> int:
+    def _publish_new(scenes: list[Scene], existing: set[tuple]) -> int:
         """События scene.ingested по новым сценам (после commit — согласованно)."""
         published = 0
         for scene in scenes:
