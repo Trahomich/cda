@@ -33,17 +33,17 @@ export interface GeoJsonPolygon {
   coordinates: number[][][]
 }
 
-/** Поле — ENT-FIELD (03 §1.1), формат ответа API-01/05. */
+/** Поле — ENT-FIELD (03 §1.1), формат ответа API-01/05.
+ *  В GET /fields контур опущен по умолчанию (лёгкий список); добавляется
+ *  при with_geometry=true (карта запрашивает с ним) — docs/06 §5, API-01. */
 export interface Field {
   field_id: string
   name: string
-  contour: GeoJsonPolygon
+  contour?: GeoJsonPolygon
   area_ga: number
   status: FieldStatus
   /**
-   * Культура текущего сезона для попапа/списка полей.
-   * ПРЕДЛОЖЕНИЕ контракта (обсуждение задачи #21): включать агрегат цикла
-   * текущего сезона в GET /fields, пока отдельного эндпоинта нет.
+   * Агрегат цикла текущего сезона (API-01: {year, culture_name, kind} | null).
    */
   current_cycle?: {
     year: number
