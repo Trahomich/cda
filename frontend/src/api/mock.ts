@@ -87,11 +87,11 @@ interface MockUser {
   login: string
   password: string
   name: string
-  role: 'agronom' | 'manager' | 'operator' | 'livestock' | 'admin'
+  role: 'agronomist' | 'manager' | 'machine_operator' | 'livestock_specialist' | 'admin'
 }
 
 const USERS: MockUser[] = [
-  { login: 'agronom', password: 'demo', name: 'Агроном', role: 'agronom' },
+  { login: 'agronom', password: 'demo', name: 'Агроном', role: 'agronomist' },
   { login: 'manager', password: 'demo', name: 'Руководитель', role: 'manager' },
 ]
 
