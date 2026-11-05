@@ -496,6 +496,16 @@ const TREATMENTS: MockTreatment[] = [
     planned_phase: 'колошение',
     status: 'draft',
   },
+  {
+    plan_id: '5e6f7a8b-0000-4000-8000-000000000005',
+    cycle_id: cycleUuid(1, 2027),
+    input_id: INPUTS[3].input_id,
+    dose: 120,
+    operation_type: 'fertilizing',
+    planned_date: '2027-04-25',
+    planned_phase: 'кущение',
+    status: 'draft',
+  },
 ]
 
 function treatmentView(t: MockTreatment): TreatmentPlan {
