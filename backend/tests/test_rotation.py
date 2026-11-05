@@ -339,7 +339,6 @@ class TestRotationPlans:
         headers = agro_headers(client, db_session)
         field = make_field(client, headers)
         wheat = make_culture(db_session, name="Пшеница")
-        rape = make_culture(db_session, name="Рапс", repeat_years=4)
         make_matrix(db_session, wheat, wheat, "ban", "повторный посев")
         items = [
             {"year": 2026, "culture_id": str(wheat.id), "kind": "main"},
