@@ -235,7 +235,7 @@ class SatelliteIngest:
                 for index in self._indices:
                     fetched, error = self._fetch_with_retries(
                         lambda fid=field_id, idx=index: self._adapter.fetch_scenes(
-                            fid, idx, start, end
+                            fid, idx, start, end, max_cloud_pct=self._max_cloud_pct
                         )
                     )
                     if error is not None:
