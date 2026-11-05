@@ -3,7 +3,9 @@
 Команды:
   create-admin     — создание первого администратора (MVP-4, идемпотентно);
   seed-references  — сиды справочников ref_culture / ref_source (MVP-2,
-                     идемпотентно: ON CONFLICT DO NOTHING).
+                     идемпотентно: ON CONFLICT DO NOTHING);
+  seed-weather-rules — параметры погодных окон RULE-AGRO-09 в ref_weather_rule
+                     (MVP-6, идемпотентный upsert по operation_type).
 """
 
 import argparse
@@ -14,6 +16,7 @@ from sqlalchemy import select
 from app.core.db import SessionLocal
 from app.core.security import hash_password
 from app.models.auth import User, UserRole
+from app.modules.weather.rules import seed_weather_rules
 from app.seed import seed_references
 
 
