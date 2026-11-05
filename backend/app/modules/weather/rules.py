@@ -84,7 +84,7 @@ def seed_weather_rules(db: Session) -> int:
         },
     )
     result = db.execute(statement)
-    changed = result.rowcount or 0
+    changed = int(getattr(result, "rowcount", 0) or 0)
     db.commit()
     return changed
 
