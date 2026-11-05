@@ -32,6 +32,8 @@ src = ["app", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]
+# B008 отключён: вызов Depends() в значениях по умолчанию — идиоматичный FastAPI
+ignore = ["B008"]
 
 [tool.mypy]
 # «мягкий» режим: предупреждаем, но не блокируем PR на этапе MVP
