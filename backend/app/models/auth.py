@@ -50,7 +50,15 @@ class User(Base):
     login: Mapped[str] = mapped_column(String(100), nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name="user_role", native_enum=False, length=40),
+        # values_callable: храним ЗНАЧЕНИЯ ('agronomist'), а не имена ('AGRONOMIST') —
+        # как в CHECK-констрейнте миграции 0002_auth (ck_dat_user_role).
+        Enum(
+            UserRole,
+            name="user_role",
+            native_enum=False,
+            length=40,
+            values_callable=lambda cls: [e.value for e in cls],
+        ),
         nullable=False,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
