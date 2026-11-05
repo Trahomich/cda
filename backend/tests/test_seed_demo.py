@@ -73,12 +73,12 @@ def test_seed_creates_demo_farm(db_session):
     cycles = db_session.scalars(select(CropCycle)).all()
     assert len(cycles) == 6
     assert all(c.year == year and c.kind == "main" and c.status == "in_progress" for c in cycles)
-    assert all(c.planned_yield_c_ha is not None and c.planned_harvest_date is not None for c in cycles)
+    assert all(
+        c.planned_yield_c_ha is not None and c.planned_harvest_date is not None for c in cycles
+    )
 
     # планы севооборота: один approved, один draft
-    plan_statuses = {
-        p.status for p in db_session.scalars(select(RotationPlan.status))
-    }
+    plan_statuses = {p.status for p in db_session.scalars(select(RotationPlan.status))}
     assert plan_statuses == {"approved", "draft"}
 
     # операции за прошлый месяц: одна с deviation_flag и обоснованием
@@ -104,9 +104,7 @@ def test_seed_creates_demo_farm(db_session):
     assert db_session.scalar(select(func.count(Forecast.id))) == 8 * 7
 
     # демо-агроном для входа в UI
-    demo_user = db_session.scalar(
-        select(User).where(User.login == "demo_agronomist")
-    )
+    demo_user = db_session.scalar(select(User).where(User.login == "demo_agronomist"))
     assert demo_user is not None
     assert demo_user.role == UserRole.AGRONOMIST
     assert demo_user.is_active is True

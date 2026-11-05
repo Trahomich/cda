@@ -88,12 +88,28 @@ DEMO_CULTURES = (
 )
 
 DEMO_MACHINES = (
-    {"machine_type": "tractor", "model": "Кировец К-744Р", "gov_number": "А362ВВ36",
-     "width_m": 4.2, "engine_hours": 4820.5},
-    {"machine_type": "combine", "model": "Torum 760", "gov_number": "В118МК36",
-     "width_m": 7.0, "engine_hours": 2310.0},
-    {"machine_type": "sprayer", "model": "Hardi Navigator", "gov_number": "Е907ТК36",
-     "width_m": 24.0, "tank_capacity_l": 3200, "engine_hours": 1560.3},
+    {
+        "machine_type": "tractor",
+        "model": "Кировец К-744Р",
+        "gov_number": "А362ВВ36",
+        "width_m": 4.2,
+        "engine_hours": 4820.5,
+    },
+    {
+        "machine_type": "combine",
+        "model": "Torum 760",
+        "gov_number": "В118МК36",
+        "width_m": 7.0,
+        "engine_hours": 2310.0,
+    },
+    {
+        "machine_type": "sprayer",
+        "model": "Hardi Navigator",
+        "gov_number": "Е907ТК36",
+        "width_m": 24.0,
+        "tank_capacity_l": 3200,
+        "engine_hours": 1560.3,
+    },
 )
 
 
@@ -118,8 +134,12 @@ def _polygon(spec: DemoFieldSpec) -> dict:
     side_w = math.sqrt(area_m2 / spec.aspect)  # ширина, м
     side_l = side_w * spec.aspect  # длина, м
     # локальные координаты углов (м), поворот вокруг центра
-    corners = [(-side_l / 2, -side_w / 2), (side_l / 2, -side_w / 2),
-               (side_l / 2, side_w / 2), (-side_l / 2, side_w / 2)]
+    corners = [
+        (-side_l / 2, -side_w / 2),
+        (side_l / 2, -side_w / 2),
+        (side_l / 2, side_w / 2),
+        (-side_l / 2, side_w / 2),
+    ]
     rad = math.radians(spec.rotate_deg)
     cos_r, sin_r = math.cos(rad), math.sin(rad)
     center_lon = CENTER_LON + spec.d_lon_m / M_PER_DEG_LON_AT_52
@@ -149,9 +169,7 @@ def _delete_demo_data(db: Session) -> None:
         db.execute(delete(Field).where(Field.id.in_(field_ids)))
     # машины и задания демо — по госномерам
     gov_numbers = [m["gov_number"] for m in DEMO_MACHINES]
-    demo_machines = list(
-        db.scalars(select(Machine).where(Machine.gov_number.in_(gov_numbers)))
-    )
+    demo_machines = list(db.scalars(select(Machine).where(Machine.gov_number.in_(gov_numbers))))
     if demo_machines:
         machine_ids = [m.id for m in demo_machines]
         db.execute(delete(MachineJob).where(MachineJob.machine_id.in_(machine_ids)))
@@ -171,8 +189,7 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
     if existing and not reset:
         report.skipped = True
         report.extra.append(
-            f"демо-хозяйство уже есть ({len(existing)} полей); "
-            "перезапуск с --reset пересоздаст его"
+            f"демо-хозяйство уже есть ({len(existing)} полей); перезапуск с --reset пересоздаст его"
         )
         return report
     if existing and reset:
@@ -207,11 +224,22 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
     # --- культурные циклы текущего года ------------------------------------
     cultures = {c.name: c for c in db.scalars(select(Culture))}
     cycle_by_field: dict[str, CropCycle] = {}
-    planned_yields = {"Озимая пшеница": 55.0, "Ячмень": 45.0, "Кукуруза": 70.0,
-                      "Подсолнечник": 28.0, "Соя": 25.0, "Многолетние травы": 40.0}
-    harvest_dates = {"Озимая пшеница": date(year, 7, 20), "Ячмень": date(year, 7, 10),
-                     "Кукуруза": date(year, 9, 25), "Подсолнечник": date(year, 9, 15),
-                     "Соя": date(year, 9, 10), "Многолетние травы": date(year, 6, 15)}
+    planned_yields = {
+        "Озимая пшеница": 55.0,
+        "Ячмень": 45.0,
+        "Кукуруза": 70.0,
+        "Подсолнечник": 28.0,
+        "Соя": 25.0,
+        "Многолетние травы": 40.0,
+    }
+    harvest_dates = {
+        "Озимая пшеница": date(year, 7, 20),
+        "Ячмень": date(year, 7, 10),
+        "Кукуруза": date(year, 9, 25),
+        "Подсолнечник": date(year, 9, 15),
+        "Соя": date(year, 9, 10),
+        "Многолетние травы": date(year, 6, 15),
+    }
     for spec, culture_name in zip(DEMO_FIELDS, DEMO_CULTURES, strict=False):
         culture = cultures[culture_name]
         cycle = CropCycle(
@@ -229,16 +257,24 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
     db.commit()
 
     # --- планы севооборота: один approved, один draft «на согласовании» ----
-    db.add(RotationPlan(
-        field_id=fields["Северное-1"].id,
-        year_from=year, year_to=year + 4, status="approved",
-        approved_by="Руководитель КФХ «Восход»",
-        approved_at=now - timedelta(days=12),
-    ))
-    db.add(RotationPlan(
-        field_id=fields["Степное-7"].id,
-        year_from=year + 1, year_to=year + 5, status="draft",
-    ))
+    db.add(
+        RotationPlan(
+            field_id=fields["Северное-1"].id,
+            year_from=year,
+            year_to=year + 4,
+            status="approved",
+            approved_by="Руководитель КФХ «Восход»",
+            approved_at=now - timedelta(days=12),
+        )
+    )
+    db.add(
+        RotationPlan(
+            field_id=fields["Степное-7"].id,
+            year_from=year + 1,
+            year_to=year + 5,
+            status="draft",
+        )
+    )
     report.plans += 2
     db.commit()
 
@@ -255,22 +291,27 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
         ("Восточное", "harvesting", 22, "Смирнов А.", False),
     )
     for name, op_type, day_off, performer, deviation in operations:
-        demo_field = next(f for f in DEMO_FIELDS if f.name == name)
-        db.add(FieldOperation(
-            field_id=fields[name].id,
-            cycle_id=cycle_by_field[name].id,
-            operation_type=op_type,
-            date=month_ago + timedelta(days=day_off),
-            actual_area_ga=demo_field.area_ha if not deviation else round(demo_field.area_ha * 0.93, 2),
-            performer=performer,
-            source="manual",
-            deviation_flag=deviation,
-            deviation_rationale=(
-                "недосев 7 % площади: дождь прервал работу (демо, RULE-AGRO-11)"
-                if deviation else None
-            ),
-            status="done",
-        ))
+        op_spec = next(f for f in DEMO_FIELDS if f.name == name)
+        db.add(
+            FieldOperation(
+                field_id=fields[name].id,
+                cycle_id=cycle_by_field[name].id,
+                operation_type=op_type,
+                date=month_ago + timedelta(days=day_off),
+                actual_area_ga=op_spec.area_ha
+                if not deviation
+                else round(op_spec.area_ha * 0.93, 2),
+                performer=performer,
+                source="manual",
+                deviation_flag=deviation,
+                deviation_rationale=(
+                    "недосев 7 % площади: дождь прервал работу (демо, RULE-AGRO-11)"
+                    if deviation
+                    else None
+                ),
+                status="done",
+            )
+        )
         report.operations += 1
     db.commit()
 
@@ -290,15 +331,17 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
         (0, "Степное-7", 16, 111.6, "rejected", "telemetry"),
     )
     for machine_idx, field_name, days_ago, area_ha, status, source in jobs:
-        db.add(MachineJob(
-            machine_id=machines[machine_idx].id,
-            performed_at=date.today() - timedelta(days=days_ago),
-            area_ha=area_ha,
-            fuel_l=round(area_ha * 9.5, 1),
-            duration_h=round(area_ha / 11.0, 2),
-            status=status,
-            source=source,
-        ))
+        db.add(
+            MachineJob(
+                machine_id=machines[machine_idx].id,
+                performed_at=date.today() - timedelta(days=days_ago),
+                area_ha=area_ha,
+                fuel_l=round(area_ha * 9.5, 1),
+                duration_h=round(area_ha / 11.0, 2),
+                status=status,
+                source=source,
+            )
+        )
         report.jobs += 1
     db.commit()
 
@@ -314,46 +357,62 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
         for day_off in range(-14, 0):  # факты: последние 14 суток
             t_min = rng.uniform(4.0, 12.0)
             t_max = t_min + rng.uniform(7.0, 13.0)
-            db.add(WeatherObservation(
-                field_id=demo_field.id,
-                observed_at=today + timedelta(days=day_off),
-                temperature_avg_c=round((t_min + t_max) / 2, 1),
-                temperature_min_c=round(t_min, 1),
-                temperature_max_c=round(t_max, 1),
-                precipitation_mm=round(rng.choice([0.0, 0.0, 0.0, 0.5, 3.2, 11.0]), 1),
-                wind_max_ms=round(rng.uniform(2.0, 9.0), 1),
-                humidity_avg_pct=round(rng.uniform(45.0, 85.0), 1),
-                source_id=source_id,
-            ))
+            db.add(
+                WeatherObservation(
+                    field_id=demo_field.id,
+                    observed_at=today + timedelta(days=day_off),
+                    temperature_avg_c=round((t_min + t_max) / 2, 1),
+                    temperature_min_c=round(t_min, 1),
+                    temperature_max_c=round(t_max, 1),
+                    precipitation_mm=round(rng.choice([0.0, 0.0, 0.0, 0.5, 3.2, 11.0]), 1),
+                    wind_max_ms=round(rng.uniform(2.0, 9.0), 1),
+                    humidity_avg_pct=round(rng.uniform(45.0, 85.0), 1),
+                    source_id=source_id,
+                )
+            )
         for day_off in range(0, 7):  # прогноз: 7 суток, issued_at = сейчас
             t_min = rng.uniform(5.0, 13.0)
             t_max = t_min + rng.uniform(7.0, 12.0)
-            db.add(Forecast(
-                field_id=demo_field.id,
-                forecast_for=today + timedelta(days=day_off),
-                issued_at=now,
-                temperature_min_c=round(t_min, 1),
-                temperature_max_c=round(t_max, 1),
-                precipitation_mm=round(rng.choice([0.0, 0.0, 0.2, 1.5, 6.0]), 1),
-                wind_max_ms=round(rng.uniform(2.0, 11.0), 1),
-                humidity_avg_pct=round(rng.uniform(45.0, 80.0), 1),
-                hazard="none",
-            ))
+            db.add(
+                Forecast(
+                    field_id=demo_field.id,
+                    forecast_for=today + timedelta(days=day_off),
+                    issued_at=now,
+                    temperature_min_c=round(t_min, 1),
+                    temperature_max_c=round(t_max, 1),
+                    precipitation_mm=round(rng.choice([0.0, 0.0, 0.2, 1.5, 6.0]), 1),
+                    wind_max_ms=round(rng.uniform(2.0, 11.0), 1),
+                    humidity_avg_pct=round(rng.uniform(45.0, 80.0), 1),
+                    hazard="none",
+                )
+            )
     db.commit()
 
     # --- алерты -------------------------------------------------------------
-    db.add(Alert(
-        type="weather_danger", severity="warning", field_id=fields["Среднее"].id,
-        payload={"text": "Заморозки до −2 °C в ночь на 12 мая: риск для всходов (демо)",
-                 "hazard": "frost"},
-        status="new",
-    ))
-    db.add(Alert(
-        type="ndvi_anomaly", severity="warning", field_id=fields["Северное-2"].id,
-        payload={"text": "Падение NDVI на 0.18 за 10 суток в восточной части поля (демо)",
-                 "ndvi_delta": -0.18},
-        status="new",
-    ))
+    db.add(
+        Alert(
+            type="weather_danger",
+            severity="warning",
+            field_id=fields["Среднее"].id,
+            payload={
+                "text": "Заморозки до −2 °C в ночь на 12 мая: риск для всходов (демо)",
+                "hazard": "frost",
+            },
+            status="new",
+        )
+    )
+    db.add(
+        Alert(
+            type="ndvi_anomaly",
+            severity="warning",
+            field_id=fields["Северное-2"].id,
+            payload={
+                "text": "Падение NDVI на 0.18 за 10 суток в восточной части поля (демо)",
+                "ndvi_delta": -0.18,
+            },
+            status="new",
+        )
+    )
     report.alerts += 2
     db.commit()
 
@@ -361,13 +420,15 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
     if db.scalar(select(User).where(User.login == "demo_agronomist")) is None:
         from app.core.security import hash_password
 
-        db.add(User(
-            fio="Демо Агроном",
-            login="demo_agronomist",
-            password_hash=hash_password("demo123"),
-            role=UserRole.AGRONOMIST,
-            is_active=True,
-        ))
+        db.add(
+            User(
+                fio="Демо Агроном",
+                login="demo_agronomist",
+                password_hash=hash_password("demo123"),
+                role=UserRole.AGRONOMIST,
+                is_active=True,
+            )
+        )
         db.commit()
         report.extra.append("создан демо-агроном: demo_agronomist / demo123")
 
