@@ -105,6 +105,10 @@ async function submit() {
       await enqueueOperation(payload)
       await offline.refresh()
       toast.push('info', 'Сохранено офлайн', 'Сеть пропала — запись уйдёт при появлении сети.')
+    } else if (!(e instanceof ApiError)) {
+      // Неожиданная ошибка (например, IndexedDB) — не глотать молча.
+      console.error('Ошибка сохранения операции:', e)
+      toast.push('error', 'Не сохранено', 'Неожиданная ошибка, запись не добавлена.')
     }
     // Иные ошибки (422 и т.п.) уже показаны тостом problem+json.
   } finally {
