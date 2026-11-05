@@ -111,9 +111,9 @@ class TestRbac:
         """Приложение с тестовым роутером, защищённым role_checker (как модуль)."""
         admin_only = APIRouter(prefix="/api/v1/_test_admin", tags=["test"])
 
-        @admin_only.get("")
-        def secret(users: User = role_checker(UserRole.ADMIN)):
-            return {"ok": True, "role": users.role.value}
+        @admin_only.get("", response_model=None)
+        def secret(user: User = Depends(role_checker(UserRole.ADMIN))):
+            return {"ok": True, "role": user.role.value}
 
         app = client.app
         app.include_router(admin_only)
