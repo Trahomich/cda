@@ -1,0 +1,47 @@
+/* Базовые стили ЦДА: мобильный приоритет, контраст для яркого солнца,
+   крупные цели касания (07-ux §1.3, §1.4). */
+:root {
+  color-scheme: light;
+  --cda-green: #2e7d32;
+  --cda-green-dark: #1b5e20;
+  --cda-text: #1b1b1b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'PT Sans',
+    sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--cda-text);
+  background: #f6faf6;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  min-height: 100dvh;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Сетка Leaflet не должна ломать layout при загрузке. */
+.leaflet-container {
+  font-family: inherit;
+  font-size: 1rem;
+}
