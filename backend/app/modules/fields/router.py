@@ -94,12 +94,13 @@ def _detail(db: Session, field) -> FieldDetail:
 
 @router.get("", response_model=FieldListResponse, summary="API-01: список полей")
 def list_fields(
+    db: DbSession,
+    *,
     status: str | None = None,
     q: str | None = Query(default=None, max_length=100, description="Поиск по названию"),
     with_geometry: bool = Query(default=False, description="Добавить contour в элементы"),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    db: DbSession,
 ) -> FieldListResponse:
     fields, total = service.list_fields(db, status=status, q=q, limit=limit, offset=offset)
     cycles = service.current_cycles(db, [f.id for f in fields])
