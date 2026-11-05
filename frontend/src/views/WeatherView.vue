@@ -3,7 +3,7 @@
 // погода по выбранному полю (API-07), прогноз 7 суток (API-29) и индикатор
 // погодного окна по типам операций — RULE-AGRO-09 (03 §3.3, GET /weather/windows).
 import { computed, onMounted, ref, watch } from 'vue'
-import { getFields, getWeatherForecast, getWeatherWindows } from '@/api'
+import { getFields, getFieldWeather, getWeatherForecast, getWeatherWindows } from '@/api'
 import type { Field, FieldWeather, WeatherForecast, WeatherWindows, WindowOperationType } from '@/api/types'
 
 const fields = ref<Field[]>([])
