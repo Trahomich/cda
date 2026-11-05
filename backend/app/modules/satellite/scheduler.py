@@ -38,6 +38,7 @@ def _run_job(settings: Settings) -> None:
             adapter,
             indices=tuple(s.strip() for s in settings.satellite_indices.split(",") if s.strip()),
             lookback_days=settings.satellite_lookback_days,
+            max_cloud_pct=settings.satellite_max_cloud_pct,
             retry_attempts=settings.satellite_retry_attempts,
             retry_base_seconds=settings.satellite_retry_base_seconds,
         )
