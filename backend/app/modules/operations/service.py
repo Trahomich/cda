@@ -13,6 +13,7 @@ docs/10-mobile-pwa.md §3: «факт важнее плана» — 422 при �
 
 import uuid
 from datetime import date
+from decimal import Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
