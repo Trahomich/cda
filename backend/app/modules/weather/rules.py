@@ -83,9 +83,8 @@ def seed_weather_rules(db: Session) -> int:
             "rule_text": statement.excluded.rule_text,
             "updated_at": func.now(),
         },
-    )
-    result = db.execute(statement)
-    changed = int(getattr(result, "rowcount", 0) or 0)
+    ).returning(WeatherRule.id)
+    changed = len(db.execute(statement).fetchall())
     db.commit()
     return changed
 
