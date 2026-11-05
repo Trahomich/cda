@@ -26,6 +26,11 @@ class Settings(BaseSettings):
 
     api_v1_prefix: str = "/api/v1"
 
+    # Аутентификация (MVP-4)
+    jwt_secret: str = "dev-only-secret-change-me"  # в prod обязательно задаётся через .env
+    jwt_algorithm: str = "HS256"
+    jwt_ttl_minutes: int = 60
+
     @property
     def sqlalchemy_database_uri(self) -> str:
         """DSN для SQLAlchemy (psycopg 3)."""
