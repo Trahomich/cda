@@ -59,7 +59,28 @@ curl http://localhost:8000/healthz   # {"status":"ok"}
 
 Пароль БД задаётся в `.env` (`POSTGRES_PASSWORD`), по умолчанию dev-значение.
 
+## Схема БД и справочники (MVP-2)
+
+Миграции `0003_references`…`0006_integrations` создают справочники `ref_*`
+и таблицы ядра `dat_*` по docs/06-data-api.md §2–§4: агрономия (поля
+с PostGIS-географией и generated column `area_ga`, севооборот, СЗР, журнал
+операций, алерты, рекомендации), техника, погода/спутник/журнал источников.
+ORM-модели — `app/models/` (зеркало миграций; расхождение ловит `alembic check`).
+
+Сиды справочников (идемпотентны, повторный запуск ничего не добавит):
+
+```bash
+python -m app.cli seed-references   # ref_culture (11 культур) + ref_source (3 адаптера)
+```
+
 ## Разработка и тесты
+
+Тесты работают на реальном PostgreSQL+PostGIS (SQLite не умеет географию):
+DSN — env `DATABASE_URL_TEST`, по умолчанию
+`postgresql+psycopg://cda:cda_dev_password@localhost:5432/cda_test`;
+БД пересоздаётся фикстурой. Если PostgreSQL недоступен, тесты пропускаются
+с явной причиной. Цепочка миграций проверяется tests/test_alembic.py
+(`alembic upgrade head` на чистой БД). В docker compose: `docker compose up -d db`.
 
 ```bash
 cd backend
