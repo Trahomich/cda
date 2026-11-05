@@ -28,7 +28,8 @@ CULTURES: list[dict] = [
     {"name": "Горох", "kind": "main", "forage_flag": False, "crop_group": "legumes"},
     {"name": "Картофель", "kind": "main", "forage_flag": False, "crop_group": "tubers", "repeat_years": 5},
     {"name": "Многолетние травы", "kind": "forage", "forage_flag": True, "crop_group": "grasses"},
-    {"name": "Горчица (сидерат)", "kind": "catch", "forage_flag": False, "crop_group": "other"},
+    {"name": "Горчица (сидерат)", "kind": "catch", "forage_flag": False, "crop_group": "other", "repeat_years": 3},
+    {"name": "Пар", "kind": "fallow", "forage_flag": False, "crop_group": "other", "repeat_years": 3},
 ]
 
 # Адаптеры MVP: source_id (05 §2), kind, enabled
