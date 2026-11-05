@@ -464,8 +464,6 @@ def approve_plan(db: Session, *, user: User, plan: RotationPlan) -> RotationPlan
             status_code=409,
         )
     previous = plan.status
-    from datetime import datetime, timezone
-
     plan.status = "approved"
     plan.approved_by = user.fio
     plan.approved_at = datetime.now(timezone.utc)
