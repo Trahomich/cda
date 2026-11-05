@@ -156,7 +156,6 @@ class SatelliteIngest:
         rows = [s for s in scenes if s.cloud_pct <= 60.0]
         if not rows:
             return 0
-        existing = self._existing_keys(db, rows)
         statement = pg_insert(SatelliteScene).values(
             [
                 {
