@@ -178,7 +178,7 @@ def _delete_demo_data(db: Session) -> None:
         db.execute(delete(WeatherObservation).where(WeatherObservation.field_id.in_(field_ids)))
         db.execute(delete(Forecast).where(Forecast.field_id.in_(field_ids)))
         db.execute(delete(SatelliteScene).where(SatelliteScene.field_id.in_(field_ids)))
-        db.execute(delete(Agrochem).where(RefAgrochem.field_id.in_(field_ids)))
+        db.execute(delete(Agrochem).where(Agrochem.field_id.in_(field_ids)))
         db.execute(delete(FieldVersion).where(FieldVersion.field_id.in_(field_ids)))
         db.execute(delete(Field).where(Field.id.in_(field_ids)))
     # машины и задания демо — по госномерам
