@@ -262,12 +262,7 @@ onMounted(async () => {
               <td>{{ fieldName(op.field_id) }}</td>
               <td>{{ OP_LABELS[op.operation_type] }}</td>
               <td class="jrn__num">
-                <template v-if="op.actual_dose !== null">
-                  {{ op.actual_dose.toLocaleString('ru-RU') }}
-                </template>
-                <template v-else>
-                  —
-                </template>
+                {{ fmtDose(op) }}
               </td>
               <td class="jrn__num">
                 {{ op.actual_area_ga.toLocaleString('ru-RU') }}
