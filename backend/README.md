@@ -31,15 +31,16 @@ backend/
 make up          # docker compose up -d --build (api + PostgreSQL/PostGIS + Redis)
 make migrate     # alembic upgrade head в контейнере api
 make seed        # демо-хозяйство — цель-заглушка до задачи #31 (MVP-13)
-make test        # pytest (юнит/интеграционные)
+make test        # pytest (юнит/интеграционные, tests/)
+make smoke       # дымовой e2e против живого окружения (tests_e2e/, SMOKE=1)
 make lint        # ruff check + ruff format --check + mypy app
 make fmt         # автоправка ruff (фиксы + формат)
 make check       # lint + test — полный прогон для CI и ревью
 make down        # остановить окружение (данные в томах сохраняются)
 ```
 
-Дымовой e2e-тест (tests/test_smoke_e2e.py) гоняется против поднятого
-docker-compose окружения: `make up && SMOKE=1 make test`. Сценарий:
+Дымовой e2e-тест (tests_e2e/test_smoke_e2e.py) гоняется против поднятого
+docker-compose окружения: `make up && make smoke`. Сценарий:
 `/healthz` → 200; вход тестового администратора (создаётся фикстурой в БД)
 → JWT; `GET /auth/me` → 200. Без `SMOKE=1` тест пропускается; при
 недоступном окружении — skip с явной причиной. Адреса переопределяются
