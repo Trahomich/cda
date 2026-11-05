@@ -19,7 +19,9 @@ def test_cultures_names_unique() -> None:
 
 def test_cultures_kinds_valid() -> None:
     for culture in CULTURES:
-        assert culture["kind"] in {"main", "forage", "catch"}
+        # допустимые виды культур = CHECK ck_ref_culture_kind (fallow — пар,
+        # полноправный элемент севооборота, RULE-AGRO-03)
+        assert culture["kind"] in {"main", "forage", "catch", "fallow"}
         assert isinstance(culture["forage_flag"], bool)
         assert culture["crop_group"]
 
