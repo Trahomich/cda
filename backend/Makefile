@@ -4,7 +4,7 @@
 
 COMPOSE := docker compose
 
-.PHONY: up down logs migrate seed test lint check fmt
+.PHONY: up down logs migrate seed seed-reset test lint check fmt
 
 ## up: поднять окружение (api + PostgreSQL/PostGIS + Redis), собрать образ
 up:
