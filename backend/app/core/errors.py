@@ -46,6 +46,7 @@ class AppError(Exception):
         code: str | None = None,
         title: str | None = None,
         status_code: int | None = None,
+        extra: dict[str, str] | None = None,
     ) -> None:
         super().__init__(detail)
         self.detail = detail
@@ -55,6 +56,7 @@ class AppError(Exception):
             self.title = title
         if status_code is not None:
             self.status_code = status_code
+        self.extra = extra
 
 
 def problem_response(
