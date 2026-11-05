@@ -1,6 +1,7 @@
 """Общие зависимости API: сессия БД и текущий пользователь (MVP-4)."""
 
 import uuid
+from typing import Annotated
 
 import jwt as pyjwt
 from fastapi import Depends
