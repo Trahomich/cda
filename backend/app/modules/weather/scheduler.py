@@ -4,7 +4,7 @@ APScheduler BackgroundScheduler; джобы — WeatherIngest.ingest_current /
 ingest_forecast с собственными сессиями БД. Включается настройкой
 weather_poll_enabled (по умолчанию выключен: тесты и локальная разработка
 не должны ходить наружу; в docker-compose api — WEATHER_POLL_ENABLED=true).
-Хранилище джоб — Redis (нужен при нескольких воркерах uvicorn); при его
+Хранилище джоб — Redis (актуально при нескольких воркерах uvicorn); при его
 недоступности — in-memory, планирование в рамках процесса сохраняется.
 """
 
@@ -17,39 +17,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from app.core.config import Settings
 from app.core.db import SessionLocal
 from app.integrations.open_meteo import OpenMeteoAdapter
-from app.modules.weather.ingest import WeatherIngest, centroid_lookup_factory if False else (  # noqa: F401
-    WeatherIngest,
-)
+from app.modules.weather.ingest import WeatherIngest, centroid_lookup_factory
 
 logger = logging.getLogger(__name__)
-
-
-def build_ingest(settings: Settings) -> WeatherIngest:
-    """Собрать WeatherIngest с адаптером Open-Meteo (сессия передаётся в прогон)."""
-    from app.modules.weather.ingest import centroid_lookup_factory  # локальный импорт см. ниже
-
-    def adapter_factory():
-        raise NotImplementedError
-
-    # адаптеру нужен центроид на момент запроса — обёртка с ленивой сессией
-    def make_adapter():
-        db = SessionLocal()
-        try:
-            return OpenMeteoAdapter(
-                centroid_lookup=centroid_lookup_factory(db),
-                base_url=settings.open_meteo_base_url,
-                archive_url=settings.open_meteo_archive_url,
-                request_timeout=settings.weather_request_timeout,
-            )
-        finally:
-            pass  # сессия закрывается вместе с прогоном (см. _run_job)
-
-    return WeatherIngest(
-        make_adapter(),  # type: ignore[arg-type]
-        retry_attempts=settings.weather_retry_attempts,
-        retry_base_seconds=settings.weather_retry_base_seconds,
-        forecast_days=settings.weather_forecast_days,
-    )
 
 
 def _run_job(kind: str, settings: Settings) -> None:
@@ -57,6 +27,7 @@ def _run_job(kind: str, settings: Settings) -> None:
     db = SessionLocal()
     try:
         adapter = OpenMeteoAdapter(
+            # центроид вычисляется в момент запроса по сессии прогона
             centroid_lookup=centroid_lookup_factory(db),
             base_url=settings.open_meteo_base_url,
             archive_url=settings.open_meteo_archive_url,
