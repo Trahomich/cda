@@ -6,6 +6,23 @@ import { useAuthStore } from '@/stores/auth'
 const auth = useAuthStore()
 const router = useRouter()
 
+// Ссылки кабинета; restricted — роли с доступом (матрица прав 07-ux §5).
+const NAV_ITEMS = [
+  { label: 'Поля', to: { name: 'fields-map' } },
+  { label: 'Севооборот', to: { name: 'rotation-plan' } },
+  { label: 'Планы СЗР', to: { name: 'treatment-plans' } },
+  { label: 'Погода', to: { name: 'weather' } },
+  { label: 'Журнал', to: { name: 'operations-journal' } },
+  { label: 'Техника', to: { name: 'machinery' } },
+  { label: 'Справочники', to: { name: 'references' } },
+  { label: 'Источники', to: { name: 'sources' }, roles: ['manager', 'admin'] },
+  { label: 'Права', to: { name: 'users' }, roles: ['manager', 'admin'] },
+] as const
+
+/** Ссылки, доступные роли текущего пользователя (07-ux §5). */
+const visibleNav = () =>
+  NAV_ITEMS.filter((item) => !('roles' in item) || (auth.user && item.roles.includes(auth.user.role)))
+
 function logout() {
   auth.logout()
   router.push({ name: 'login' })
