@@ -31,7 +31,7 @@ CONTRACTS.md (§4–§6). Сущности агрономии (ENT-FIELD, ENT-FI
 |---|---|---|
 | job_id | uuid | PK |
 | machine_id | uuid | FK → ENT-MACHINE |
-| field_operation_id | uuid | FK → ENT-FIELD-OPERATION (03); nullable для неб_FIELDных работ |
+| field_operation_id | uuid | FK → ENT-FIELD-OPERATION (03); nullable для внеполевых работ |
 | performed_at | date | дата выполнения |
 | area_ha | decimal(8,2) | фактическая обработанная площадь, га; ≥0 |
 | fuel_l | decimal(8,1) | расход топлива, л; nullable |
