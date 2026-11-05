@@ -141,8 +141,8 @@ class TestRbac:
         all5 = {"admin", "agronomist", "manager", "machine_operator", "livestock_specialist"}
         # E-10 Погода и алерты: все 5 ролей
         assert roles("weather") == all5
-        # E-16 Пользователи и права: только админ
-        assert roles("users") == {"admin"}
+        # E-16 Пользователи и права: Р (чтение), Д (чтение/правка)
+        assert roles("users") == {"admin", "manager"}
         # E-09 Спутниковый мониторинг: А, Р, Д
         assert roles("satellite") == {"admin", "agronomist", "manager"}
         # E-07/E-08: А, Р, М, Д (без зоотехника)
