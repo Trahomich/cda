@@ -49,13 +49,14 @@ class IngestReport:
 
     @property
     def status(self) -> str:
-        """ok — все поля; degraded — часть; error — ни одного (dat_source_journal)."""
+        """ok — все поля; degraded — часть или полей не было; error — все упали."""
         if self.ok > 0 and not self.failed:
             return "ok"
         if self.ok > 0:
             return "degraded"
-        if self.skipped and not self.failed:
-            # данных нет (DataGap) — это не ошибка источника, но и не успех
+        if not self.failed:
+            # полей не было или все пропущены (DataGap) — источник не виноват,
+            # но и успехом прогон не является
             return "degraded"
         return "error"
 
