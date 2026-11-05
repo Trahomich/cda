@@ -1,6 +1,6 @@
 // IndexedDB через Dexie: таблицы офлайн-режима по docs/10-mobile-pwa.md §2.
 // Выбор: Dexie (а не idb-keyval), потому что очереди нужны индексы
-// (статус, дата создания) и запросы «все pending», транзакции и правка
+// (статус, дата создания), запросы «все pending», транзакции и правка
 // отдельных записей; idb-keyval — только ключ-значение.
 import Dexie, { type Table } from 'dexie'
 import type { Field, OperationRequest } from '@/api/types'
@@ -20,11 +20,8 @@ export interface QueueRecord {
   error_detail?: string
 }
 
-/** Кэш карточек полей «перед выездом» (10-mobile-pwa §3.1). */
-export interface CachedField {
-  field: Field
-  cached_at: string
-}
+/** Кэш карточек полей «перед выездом» (10-mobile-pwa §3.1) — поля плоско. */
+export type CachedField = Field & { cached_at: string }
 
 export class CdaDb extends Dexie {
   queue!: Table<QueueRecord, string>
@@ -34,14 +31,20 @@ export class CdaDb extends Dexie {
     super('cda-offline')
     this.version(1).stores({
       queue: 'client_id, status, created_at, entity',
-      fields: '[field_id], cached_at',
+      fields: 'field_id, status',
     })
   }
 }
 
-// Ключ кэша полей — field_id (поле хранится вложенным объектом).
-export function makeCachedField(field: Field): CachedField {
-  return { field, cached_at: new Date().toISOString() } as unknown as CachedField
-}
-
 export const db = new CdaDb()
+
+/** UUID v4 — ключ идемпотентности записи очереди. */
+export function uuidV4(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+  // Запасной вариант для сред без crypto.randomUUID.
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
