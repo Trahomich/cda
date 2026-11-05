@@ -31,10 +31,16 @@ def upgrade() -> None:
         sa.Column("done_at_hours", sa.Numeric(10, 1), nullable=True),
         sa.Column("downtime_h", sa.Numeric(6, 1), nullable=True),
         sa.Column(
-            "created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
         sa.Column(
-            "updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
         ),
         sa.CheckConstraint(
             "kind IN ('service', 'repair', 'inspection')", name="ck_dat_maintenance_kind"
