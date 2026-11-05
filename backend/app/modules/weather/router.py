@@ -123,8 +123,15 @@ def weather_forecast(
     offset: int = Query(default=0, ge=0),
 ) -> ForecastListResponse:
     field = _get_field(db, field_id)
-    forecasts = _forecast_days(db, field.id, days=days + offset)
-    window = forecasts[offset:]
+    # полный горизонт (total) без limit, окно — offset..offset+days
+    forecasts = list(
+        db.scalars(
+            select(Forecast)
+            .where(Forecast.field_id == field.id, Forecast.forecast_for >= date.today())
+            .order_by(Forecast.forecast_for)
+        )
+    )
+    window = forecasts[offset : offset + days]
     return ForecastListResponse(
         items=[ForecastDayItem.model_validate(f) for f in window],
         total=len(forecasts),
