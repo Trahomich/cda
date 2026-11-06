@@ -86,6 +86,7 @@ onMounted(async () => {
             {{ s.title }}
           </h2>
           <span
+            v-if="s.last_status"
             class="src__badge"
             :class="`src__badge--${s.last_status}`"
           >{{ STATE_LABELS[s.last_status] }}</span>
