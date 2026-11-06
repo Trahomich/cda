@@ -58,6 +58,10 @@ export class ApiClient {
     this.onError = handler
   }
 
+  setUnauthorizedHandler(handler: UnauthorizedHandler): void {
+    this.onUnauthorized = handler
+  }
+
   setToken(token: string | null): void {
     this.token = token
   }
