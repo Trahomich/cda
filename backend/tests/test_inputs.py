@@ -16,7 +16,6 @@ from app.models.auth import AuditRecord, UserRole
 from app.models.references import Culture
 from app.modules.inputs import rules
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 from tests.test_auth import auth_header, make_user
 from tests.test_fields import square
 
