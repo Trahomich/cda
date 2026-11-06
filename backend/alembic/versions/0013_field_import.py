@@ -26,7 +26,7 @@ _AREA_GA = "round((ST_Area(contour) / 10000.0)::numeric, 2)"
 # column (area_ga), — его пересоздаём вокруг смены типа contour.
 
 
-def _retypе_contour(table: str) -> None:
+def _retype_contour(table: str) -> None:
     op.execute(f"ALTER TABLE {table} DROP COLUMN area_ga")
     op.execute(
         f"ALTER TABLE {table} "
@@ -40,8 +40,8 @@ def _retypе_contour(table: str) -> None:
 
 
 def upgrade() -> None:
-    _retypе_contour("dat_field")
-    _retypе_contour("dat_field_version")
+    _retype_contour("dat_field")
+    _retype_contour("dat_field_version")
     op.add_column("dat_field", sa.Column("external_id", sa.String(100), nullable=True))
     op.create_unique_constraint("uq_dat_field_external_id", "dat_field", ["external_id"])
     op.drop_constraint("uq_dat_field_name", "dat_field", type_="unique")
