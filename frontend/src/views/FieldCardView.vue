@@ -418,30 +418,6 @@ function fmtNum(v: number, digits = 1): string {
   stroke-width: 1.5;
 }
 
-.card360__history {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.card360__year {
-  display: inline-block;
-  min-width: 3rem;
-  font-weight: 700;
-  color: #2e7d32;
-}
-
-.card360__kind {
-  color: #616161;
-}
-
-.card360__yield {
-  color: #616161;
-}
-
 .card360__check {
   margin: 0.6rem 0 0;
   padding: 0.5rem 0.6rem;
