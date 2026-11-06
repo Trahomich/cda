@@ -87,6 +87,21 @@ ssh cda@192.168.99.201 'cd cda && \
 - api публикуется на `127.0.0.1:8000` только для проверок с сервера.
 - БД-данные в named volume `pgdata`; при пересборке сохраняются.
 
+## Известная проблема: блокировка DPI api.open-meteo.com (2026-11-06) — РЕШЕНО
+
+После пересева на реальное хозяйство воркер weather-ingest залил архив
+(`archive-api.open-meteo.com`, IP 5.9.98.12), но current/forecast бесконечно
+ретраились `сеть недоступна: timed out`: `api.open-meteo.com` резолвится в
+157.90.83.168, и периметр режет соединения к этому IP (с того же сервера
+через SOCKS-прокси пользователя — 200 OK за 0.4 с; earth-search и
+sentinel-cogs доступны напрямую).
+
+Решение: httpx (адаптеры Open-Meteo) ходит через тот же SOCKS5-прокси, что и
+fragrelay: в сервисы api и weather-ingest добавлен env
+`ALL_PROXY=socks5://${SOCKS_HOST}:${SOCKS_PORT}` (SOCKS_HOST/SOCKS_PORT —
+в ~/cda/.env, default 192.168.99.45:1080), в зависимостях — `httpx[socks]`.
+httpx читает ALL_PROXY сам (trust_env); sentinel-ingest прокси не нужен.
+
 ## Известная проблема: исходящие соединения cloudflared блокируются DPI (2026-11-06) — РЕШЕНО
 
 Симптом: контейнер `cloudflared` бесконечно писал
