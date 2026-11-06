@@ -59,12 +59,19 @@ def catalog_window(settings: Settings) -> tuple[date, date]:
 
 
 def run_once(settings: Settings) -> None:
-    """Один цикл каталогизации с собственной сессией БД и ретраями.
+    """Один цикл воркера: каталогизация (с ретраями), затем расчёт NDVI.
 
-    Ретраи (05 §4/§6): при недоступности источника повтор с экспоненциальной
-    паузой INGEST_SATELLITE_RETRY_BASE_SECONDS×2^n; после исчерпания —
-    ошибка уже записана в журнал, цикл повторит планировщик.
+    Ретраи каталога (05 §4/§6): при недоступности источника повтор с
+    экспоненциальной паузой INGEST_SATELLITE_RETRY_BASE_SECONDS×2^n; после
+    исчерпания — ошибка уже записана в журнал, цикл повторит планировщик.
+    Расчёт NDVI устойчив к ошибкам сам (ndvi.py): недоступность COG —
+    журнал error, строки ждут следующего цикла.
     """
+    _catalog_attempts(settings)
+    _ndvi_cycle(settings)
+
+
+def _catalog_attempts(settings: Settings) -> None:
     attempts = max(1, settings.ingest_satellite_retry_attempts)
     date_from, date_to = catalog_window(settings)
     for attempt in range(1, attempts + 1):
@@ -98,6 +105,21 @@ def run_once(settings: Settings) -> None:
                     pause,
                 )
                 time.sleep(pause)
+
+
+def _ndvi_cycle(settings: Settings) -> None:
+    """Цикл расчёта NDVI по каталогизированным сценам (#51, 05 §2 v1)."""
+    db = SessionLocal()
+    try:
+        run_ndvi_cycle(
+            db,
+            batch_limit=settings.ingest_satellite_ndvi_batch,
+            max_workers=settings.ingest_satellite_ndvi_workers,
+        )
+    except Exception:  # noqa: BLE001 — фоновая джоба не роняет воркер
+        logger.exception("sentinel-ingest [ndvi]: сбой прогона")
+    finally:
+        db.close()
 
 
 def create_worker(settings: Settings) -> BlockingScheduler:
