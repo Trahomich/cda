@@ -299,7 +299,7 @@ class TestCatalogCycle:
         assert row.field_id == field_id
         assert row.item_id == "S2C_37UFT_20261031_0_L2A"
         assert row.status == "cataloged" and row.processed_at is None
-        assert row.cloud_pct == pytest.approx(3.6)
+        assert float(row.cloud_pct) == pytest.approx(3.6)
         assert row.assets == {"b04": "s3://b04", "b08": "s3://b08", "scl": "s3://scl"}
 
         source, journal = last_source_state(db_session)
