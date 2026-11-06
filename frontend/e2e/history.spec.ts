@@ -58,7 +58,7 @@ test('лента истории: пустое состояние с подска
   await page.goto('/login')
   await page.locator('.login__submit').click()
   await page.waitForURL(/\/fields\/map/)
-  await page.goto(`/fields/f1e2d3c4-0a9b-4c8d-8e5f-a1b2c3d4e5f6`)
+  await page.goto(`/fields/${EMPTY_FIELD}`)
 
   await expect(page.locator('.strip__empty')).toBeVisible({ timeout: 15_000 })
   await expect(page.locator('.strip__empty')).toContainText('Истории севооборота')
