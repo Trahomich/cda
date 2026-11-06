@@ -174,17 +174,18 @@ const approveTarget = ref<TreatmentPlan | null>(null)
 const approveWindow = ref<PlanWeatherWindow | null>(null)
 const approveDone = ref(false)
 
-function openApprove(p: TreatmentPlan) {
+function openApprove(p: TreatmentPlan | null) {
   approveTarget.value = p
   approveWindow.value = null
   approveDone.value = false
 }
 
 async function confirmApprove() {
-  if (!approveTarget.value) return
+  const target = approveTarget.value
+  if (!target) return
   busy.value = true
   try {
-    const approved = await approveTreatmentPlan(approveTarget.value.plan_id)
+    const approved = await approveTreatmentPlan(target.plan_id)
     approveWindow.value = approved.weather_window ?? null
     approveDone.value = true
     await load()
