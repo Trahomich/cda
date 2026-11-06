@@ -15,6 +15,11 @@ const loginName = ref(useMock ? 'agronom' : 'demo_agronomist')
 const password = ref(useMock ? 'demo' : 'demo123')
 const errorMessage = ref('')
 
+/** Подсказка демо-доступа зависит от режима (мок ↔ реальный API). */
+const demoHint = useMock
+  ? 'Демо-доступ (мок): agronom / demo'
+  : 'Демо-доступ: demo_agronomist / demo123'
+
 async function submit() {
   errorMessage.value = ''
   try {
@@ -22,7 +27,14 @@ async function submit() {
     const redirect = (route.query.redirect as string) || '/'
     router.push(redirect)
   } catch (e) {
-    errorMessage.value = e instanceof ApiError ? e.userMessage : 'Не удалось войти'
+    // 401 bad_credentials — единая понятная формулировка, без сырого
+    // problem+json (title/detail бэкенда могут отличаться между моком и API).
+    const problem = e instanceof ApiError ? e.problem : null
+    if (problem && (problem.status === 401 || problem.code === 'bad_credentials')) {
+      errorMessage.value = 'Неверный логин или пароль'
+    } else {
+      errorMessage.value = e instanceof ApiError ? e.userMessage : 'Не удалось войти'
+    }
   }
 }
 </script>
