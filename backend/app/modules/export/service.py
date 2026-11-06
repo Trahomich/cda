@@ -67,13 +67,25 @@ def count_rows(db: Session, model: type) -> int:
 
 
 def csv_value(value: Any) -> Any:
-    """Значение для CSV: null -> пусто, bool -> true/false, ISO 8601, Decimal как есть."""
+    """Значение для CSV: null -> пусто, bool -> true/false, ISO 8601, Decimal как есть.
+
+    GeoJSON-строка (ST_AsGeoJSON) — как обычно, но одиночный MultiPolygon
+    разворачивается в Polygon (контракт API-14, v1-02).
+    """
     if value is None:
         return ""
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, datetime | date):
         return value.isoformat()
+    if isinstance(value, str) and value.startswith('{"type"'):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return value
+        if isinstance(parsed, dict) and "type" in parsed:
+            return json.dumps(unwrap_single_multi(parsed), ensure_ascii=False)
+        return value
     if isinstance(value, (list, dict)):
         return json.dumps(value, ensure_ascii=False, default=str)
     return value
