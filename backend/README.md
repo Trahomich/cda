@@ -221,6 +221,35 @@ agronomist/admin; согласование — manager/admin.
 Композит «лучшая сцена за 14 суток» (05 §2) не реализован — все сцены
 сохраняются с `composite_days=1`; отмечено как развитие.
 
+## Модуль алертов (MVP-12, API-27/28)
+
+`app/modules/alerts/` — оповещения и состояние адаптеров по docs/03 §1.8:
+
+- генераторы (`generators.py`, ADR-04) на нормализованных данных:
+  - погодный: неблагоприятное явление в прогнозе (`dat_forecast.hazard`:
+    frost/hail → critical, heavy_rain/wind → warning) на поле с активным
+    циклом → алерт `weather_danger`;
+  - NDVI: падение mean NDVI между соседними сценами (окно
+    `ALERTS_NDVI_WINDOW_DAYS` = 10 дн) более `ALERTS_NDVI_DROP_PCT` = 15 % →
+    алерт `ndvi_anomaly` (кандидат на обследование, REQ-F-029 базово);
+  - спутниковая пауза: нет свежих сцен `ALERTS_SATELLITE_STALE_DAYS` = 14 сут →
+    алерт `data_source` (info);
+- дедупликация: активный (не closed) алерт того же type + field_id не
+  дублируется; data_refs — в payload JSONB;
+- запуск: `engine.py` подписан на события шины `scene.ingested` (спутник) и
+  `forecast.ingested` (погода; публикуется `WeatherIngest.ingest_forecast`),
+  плюс страховочный периодический прогон APScheduler за флагом
+  `ALERTS_POLL_ENABLED` (по умолчанию false);
+- API-27: `GET /api/v1/alerts?status=&type=&field_id=` (пагинация),
+  `POST /api/v1/alerts/{id}/read`, `PATCH /api/v1/alerts/{id}` {status}
+  (автомат new → read → closed, неверный переход — 409). Права — группа
+  `alerts` (все роли, E-13);
+- API-28: `GET /api/v1/sources/status` — ref_source (kind/enabled/
+  last_status/last_success_at) + последнее событие dat_source_journal,
+  экран E-14. Права — группа `sources` (руководитель/админ).
+
+Ручные алерты (POST /alerts) и тип `custom` — v1, в MVP не входят.
+
 ## Экспорт данных хозяйства (MVP-14, API-32)
 
 `app/modules/export/` — `GET /api/v1/export?entity=&format=` (REQ-NF-007):
