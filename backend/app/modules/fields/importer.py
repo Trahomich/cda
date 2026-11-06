@@ -224,7 +224,8 @@ def import_fields(db: Session, payload_ref: str, *, replace: bool = False) -> Im
         f.external_id: f for f in db.scalars(select(Field).where(Field.external_id.isnot(None)))
     }
     seen_external: set[str] = set()
-    touched: list[Field] = []
+    # (field, attr_ha): пары «сохранённое поле ↔ атрибут area_ha из файла»
+    touched: list[tuple[Field, float | None]] = []
     for rec in records:
         if rec["geom"] is None:
             report.skipped += 1  # запись без геометрии — по контракту пропускается
