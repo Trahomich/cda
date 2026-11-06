@@ -141,6 +141,7 @@ class DemoReport:
 
 # Демо-препараты для справочника СЗР/удобрений (RULE-AGRO-07/08/10, задача #46):
 # по паре удобрений и СЗР, чтобы экраны E-05/E-16 и проверки доз работали «из коробки».
+# Ключи во всех строках одинаковые (multi-values INSERT): None → NULL.
 DEMO_INPUTS: tuple[dict[str, Any], ...] = (
     {
         "kind": "fertilizer",
@@ -149,6 +150,10 @@ DEMO_INPUTS: tuple[dict[str, Any], ...] = (
         "p2o5_pct": 0.0,
         "k2o_pct": 0.0,
         "unit": "kg_ha",
+        "active_substance": None,
+        "concentration": None,
+        "waiting_days": None,
+        "max_treatments_per_season": 2,
     },
     {
         "kind": "fertilizer",
@@ -157,22 +162,32 @@ DEMO_INPUTS: tuple[dict[str, Any], ...] = (
         "p2o5_pct": 52.0,
         "k2o_pct": 0.0,
         "unit": "kg_ha",
+        "active_substance": None,
+        "concentration": None,
+        "waiting_days": None,
+        "max_treatments_per_season": 2,
     },
     {
         "kind": "ppp",
         "name": "Борус Некст, КЭ (демо)",
+        "n_pct": None,
+        "p2o5_pct": None,
+        "k2o_pct": None,
+        "unit": "l_ha",
         "active_substance": "изопротурон, 500 г/л",
         "concentration": 50.0,
-        "unit": "l_ha",
         "waiting_days": 40,
         "max_treatments_per_season": 1,
     },
     {
         "kind": "ppp",
         "name": "Фалькон, КЭ (демо)",
+        "n_pct": None,
+        "p2o5_pct": None,
+        "k2o_pct": None,
+        "unit": "l_ha",
         "active_substance": "спироксамин 250 + тебуконазол 167 + триадименол 43, г/л",
         "concentration": 46.0,
-        "unit": "l_ha",
         "waiting_days": 35,
         "max_treatments_per_season": 2,
     },
