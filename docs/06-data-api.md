@@ -155,7 +155,7 @@ erDiagram
 | API-14 | GET /agro-inputs, POST /agro-inputs | справочник препаратов | REQ-F-009 |
 | API-15 | GET /treatment-plans, POST /treatment-plans | планы внесения (422 — RULE-AGRO-07/08/10) | REQ-F-010, SC-02 |
 | API-16 | POST /treatment-plans/{id}/approve | согласование | SC-02 |
-| API-17 | POST /operations | запись факта операции (мобильный, офлайн-очередь); опциональное поле запроса client_id (uuid) — идемпотентность офлайн-очереди: повтор с тем же client_id возвращает существующую операцию (200, без дубля) | REQ-F-013, SC-03 |
+| API-17 | POST /operations | запись факта операции (мобильный, офлайн-очередь); опциональное поле запроса client_id (uuid) — идемпотентность офлайн-очереди: повтор с тем же client_id возвращает существующую операцию (200, без дубля); RULE-AGRO-12: если actual_area_ga > 1,05 × area_ga поля по последней версии контура — операция СОХРАНЯЕТСЯ с needs_review=true (не 422, «факт важнее плана») | REQ-F-013, SC-03 |
 | API-18 | GET /operations?field_id&date_from&date_to | журнал операций | SC-03 |
 | API-19 | GET /machines, POST /machines; GET /machines/{id}/jobs | парк техники и задания машины | REQ-F-014 |
 | API-20 | GET /machine-jobs (фильтр status, пагинация items/total/limit/offset), POST /machine-jobs (создаёт draft, source=manual/telemetry), PATCH /machine-jobs/{id} (draft→confirmed/rejected, прочие — 409), POST /machine-jobs/{id}/confirm | задания смен: список, черновики и подтверждение (RULE-TECH-04) | REQ-F-015, F-016, SC-04 |
