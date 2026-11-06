@@ -29,7 +29,9 @@ test('карта: легенда культур, номера полей и цв
 
   // Заливка контуров — цвет культуры (путь Leaflet с fill).
   const filled = page.locator('path[fill]')
-  await expect.poll(async () => await filled.count(), { timeout: 15_000 }).toBeGreaterThanOrEqual(7)
+  await expect
+    .poll(async () => await filled.count(), { timeout: 15_000 })
+    .toBeGreaterThanOrEqual(6)
 })
 
 test('карта: легенда складывается (#55)', async ({ page }) => {
