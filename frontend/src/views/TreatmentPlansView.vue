@@ -202,15 +202,7 @@ function closeApprove() {
 }
 
 async function approve(planId: string) {
-  busy.value = true
-  try {
-    await approveTreatmentPlan(planId)
-    await load()
-  } catch {
-    // тост уже показан
-  } finally {
-    busy.value = false
-  }
+  openApprove(plans.value.find((p) => p.plan_id === planId) ?? null)
 }
 
 onMounted(load)
