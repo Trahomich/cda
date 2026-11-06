@@ -33,6 +33,9 @@ class ForecastDayItem(BaseModel):
     precipitation_mm: float | None
     wind_max_ms: float | None
     humidity_avg_pct: float | None
+    precip_prob_pct: int | None = Field(
+        default=None, description="Вероятность осадков, %; null — провайдер не отдаёт (§7.2)"
+    )
     hazard: str
 
 
