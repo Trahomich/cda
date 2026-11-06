@@ -161,8 +161,6 @@ def _read_shp(path: Path) -> list[dict]:
                 f"проекция {path.name} не WGS84 (EPSG:4326): перепроектирование "
                 "при импорте не поддерживается — сконвертируйте файл"
             )
-        import tempfile
-
         with tempfile.TemporaryDirectory() as tmp:
             zf.extractall(tmp)
             reader = shapefile.Reader(
