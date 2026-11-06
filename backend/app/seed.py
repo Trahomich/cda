@@ -292,9 +292,12 @@ def seed_references(db: Session) -> dict[str, int]:
     ref_predecessor_matrix по паре (culture_id, predecessor_id) — DO NOTHING.
     """
     before = db.scalar(select(func.count()).select_from(Culture)) or 0
+    # нормализация ключей: multi-values INSERT берёт набор колонок из первой
+    # строки, поэтому repeat_years задаём явно (default 3, 03 §3.1)
+    rows = [{**c, "repeat_years": c.get("repeat_years", 3)} for c in CULTURES]
     db.execute(
         pg_insert(Culture)
-        .values(CULTURES)
+        .values(rows)
         .on_conflict_do_update(
             index_elements=["name"], set_={"color_hex": pg_insert(Culture).excluded.color_hex}
         )
