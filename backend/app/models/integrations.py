@@ -209,4 +209,10 @@ class SourceJournalEntry(Base):
     )
 
 
-__all__ = ["Forecast", "SatelliteScene", "SourceJournalEntry", "WeatherObservation"]
+__all__ = [
+    "Forecast",
+    "SatelliteCatalogItem",
+    "SatelliteScene",
+    "SourceJournalEntry",
+    "WeatherObservation",
+]
