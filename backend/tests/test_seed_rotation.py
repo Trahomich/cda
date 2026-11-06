@@ -35,7 +35,8 @@ def make_field(db_session, *, name: str, external_id: str | None = None, offset:
 
 def ewkt_square(lon0: float, lat0: float, d_lon: float, d_lat: float) -> str:
     """EWKT-полигон из GeoJSON-квадрата (паттерн seed_demo)."""
-    ring = ", ".join(f"{lon} {lat}" for lon, lat in square(lon0, lat0, d_lon, d_lat)["coordinates"][0])
+    coords = square(lon0, lat0, d_lon, d_lat)["coordinates"][0]
+    ring = ", ".join(f"{lon} {lat}" for lon, lat in coords)
     return f"SRID=4326;POLYGON(({ring}))"
 
 
@@ -51,7 +52,10 @@ def hdr(client, db_session, *, login="agro_rot", role=None) -> dict:
 
 def test_seed_rotation_creates_plan_and_cycles(db_session) -> None:
     seed_references(db_session)
-    fields = [make_field(db_session, name=f"Поле-{i}", external_id=f"F-{i:03d}", offset=i) for i in range(6)]
+    fields = [
+        make_field(db_session, name=f"Поле-{i}", external_id=f"F-{i:03d}", offset=i)
+        for i in range(6)
+    ]
     report = seed_rotation(db_session, years_back=2, years_forward=2)
 
     assert report.fields_processed == 6
@@ -94,7 +98,8 @@ def test_seed_rotation_creates_plan_and_cycles(db_session) -> None:
 def test_seed_rotation_respects_agronomy_rules(db_session) -> None:
     seed_references(db_session)
     fields = [
-        make_field(db_session, name=f"Ротация-{i}", external_id=f"R-{i:03d}", offset=i) for i in range(8)
+        make_field(db_session, name=f"Ротация-{i}", external_id=f"R-{i:03d}", offset=i)
+        for i in range(8)
     ]
     seed_rotation(db_session, years_back=4, years_forward=4)
 
@@ -136,7 +141,10 @@ def test_seed_rotation_respects_agronomy_rules(db_session) -> None:
 
 def test_seed_rotation_idempotent_and_deterministic(db_session) -> None:
     seed_references(db_session)
-    fields = [make_field(db_session, name=f"Идем-{i}", external_id=f"I-{i:03d}", offset=i) for i in range(4)]
+    fields = [
+        make_field(db_session, name=f"Идем-{i}", external_id=f"I-{i:03d}", offset=i)
+        for i in range(4)
+    ]
     seed_rotation(db_session, years_back=1, years_forward=1)
     first = {
         f.id: [
