@@ -11,7 +11,7 @@ class CultureItem(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    culture_id: uuid.UUID
+    culture_id: uuid.UUID = Field(validation_alias="id")
     name: str = Field(max_length=100)
     kind: str = Field(max_length=10)
     forage_flag: bool
