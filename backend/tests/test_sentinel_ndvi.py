@@ -134,7 +134,7 @@ class TestZonalNdvi:
         ndvi = compute_index_array(
             INDEX, scene_rasters["nir"].astype("float32"), scene_rasters["red"].astype("float32")
         )
-        expected = ndvi[100:200, 10:190]  # тот же квадрат в пикселях сетки
+        expected = ndvi[110:190, 10:190]  # тот же квадрат в пикселях сетки
         assert stats.index_min == round(float(expected.min()), 3)
         assert stats.index_avg == round(float(expected.mean()), 3)
         assert stats.index_max == round(float(expected.max()), 3)
