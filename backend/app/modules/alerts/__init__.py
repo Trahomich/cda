@@ -14,6 +14,6 @@ type + field_id. data_refs — в payload JSONB (docs/03 §1.8: у ENT-ALERT
 детали события в payload; data_refs отдельным полем — у ENT-RECOMMENDATION).
 """
 
-from app.modules.alerts.router import router
+from app.modules.alerts.router import router, sources_router
 
-__all__ = ["router"]
+__all__ = ["router", "sources_router"]
