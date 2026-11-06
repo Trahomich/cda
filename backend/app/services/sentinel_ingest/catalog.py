@@ -85,7 +85,11 @@ def intersecting_field_ids(db: Session, geometry: dict) -> list[uuid.UUID]:
 
 
 def catalog_upsert(db: Session, field_id: uuid.UUID, item: StacItem) -> bool:
-    """Вставка каталог-строки; False, если (field_id, item_id) уже есть."""
+    """Вставка каталог-строки; False, если (field_id, item_id) уже есть.
+
+    rowcount при ON CONFLICT DO NOTHING ненадёжен (драйвер может вернуть 1),
+    поэтому факт вставки определяется по RETURNING.
+    """
     statement = (
         pg_insert(SatelliteCatalogItem)
         .values(
@@ -98,9 +102,10 @@ def catalog_upsert(db: Session, field_id: uuid.UUID, item: StacItem) -> bool:
             status="cataloged",
         )
         .on_conflict_do_nothing(constraint="uq_dat_satellite_catalog")
+        .returning(SatelliteCatalogItem.id)
     )
-    result = db.execute(statement)
-    return bool(result.rowcount)
+    row = db.execute(statement).first()
+    return row is not None
 
 
 def log_source(db: Session, status: str, reason: str | None) -> None:
