@@ -66,6 +66,9 @@ services:
       STAC_API_URL: https://earth-search.aws.element84.com/v1
       INGEST_SATELLITE_CATALOG_HOURS: "6"
       INGEST_SATELLITE_BACKFILL_DAYS: "14"
+      # POST /search к earth-search душится периметром напрямую (>60 c против
+      # ~2 c через прокси, 2026-11-06) — исходящий httpx через SOCKS, см. deploy/README
+      ALL_PROXY: socks5://${SOCKS_HOST:-192.168.99.45}:${SOCKS_PORT:-1080}
     depends_on:
       db:
         condition: service_healthy
