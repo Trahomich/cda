@@ -64,11 +64,59 @@ SOURCES: list[dict] = [
 ]
 
 
+# Матрица совместимости «предшественник → культура» (RULE-AGRO-01, 03 §3.2):
+# culture — что сеем, predecessor — что было на поле до этого.
+# Демо-минимум для демонстрации нарушений в UI и dry-run API-11/12:
+# минимум одна пара warn и одна ban (наблюдения #132/#134, задачи #40/#41).
+PREDECESSOR_RULES: list[dict] = [
+    # ban — монокультура и критически несовместимые пары
+    {
+        "culture": "Озимая пшеница",
+        "predecessor": "Озимая пшеница",
+        "verdict": "ban",
+        "comment": "монокультура: накопление корневых гнилей и сорняков (демо, RULE-AGRO-01)",
+    },
+    {
+        "culture": "Подсолнечник",
+        "predecessor": "Подсолнечник",
+        "verdict": "ban",
+        "comment": "истощение почвы и болезни подсолнечника при повторе (демо)",
+    },
+    # warn — допустимо с оговоркой
+    {
+        "culture": "Озимая пшеница",
+        "predecessor": "Ячмень",
+        "verdict": "warn",
+        "comment": "общие болезни злаков после ячменя — нужен протравитель (демо)",
+    },
+    {
+        "culture": "Озимая пшеница",
+        "predecessor": "Кукуруза",
+        "verdict": "warn",
+        "comment": "кукуруза иссушает почву — риск зимостойкости озимых (демо)",
+    },
+    # ok — лучшие предшественники
+    {
+        "culture": "Озимая пшеница",
+        "predecessor": "Горох",
+        "verdict": "ok",
+        "comment": "парозанимающий горох — лучший предшественник озимых (демо)",
+    },
+    {
+        "culture": "Озимая пшеница",
+        "predecessor": "Пар",
+        "verdict": "ok",
+        "comment": "чистый пар — идеальный предшественник озимых (демо)",
+    },
+]
+
+
 def seed_references(db: Session) -> dict[str, int]:
     """Вставить справочные записи; вернуть счётчики добавленного.
 
     Идемпотентность — ON CONFLICT DO NOTHING:
-    ref_culture по name, ref_source по source_id.
+    ref_culture по name, ref_source по source_id,
+    ref_predecessor_matrix по паре (culture_id, predecessor_id).
     """
     cultures = (
         pg_insert(Culture)
@@ -86,5 +134,29 @@ def seed_references(db: Session) -> dict[str, int]:
     )
     inserted_sources = len(db.execute(sources).fetchall())
 
+    # матрица предшественников — по id культур (справочники уже актуальны)
+    culture_ids = dict(db.execute(select(Culture.name, Culture.id)).fetchall())
+    rules = (
+        pg_insert(PredecessorRule)
+        .values(
+            [
+                {
+                    "culture_id": culture_ids[r["culture"]],
+                    "predecessor_id": culture_ids[r["predecessor"]],
+                    "verdict": r["verdict"],
+                    "comment": r["comment"],
+                }
+                for r in PREDECESSOR_RULES
+            ]
+        )
+        .on_conflict_do_nothing(index_elements=["culture_id", "predecessor_id"])
+        .returning(PredecessorRule.id)
+    )
+    inserted_rules = len(db.execute(rules).fetchall())
+
     db.commit()
-    return {"ref_culture": inserted_cultures, "ref_source": inserted_sources}
+    return {
+        "ref_culture": inserted_cultures,
+        "ref_source": inserted_sources,
+        "ref_predecessor_matrix": inserted_rules,
+    }
