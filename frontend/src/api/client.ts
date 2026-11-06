@@ -35,6 +35,9 @@ export interface RequestOptions {
 /** Обработчик ошибок (подключается из приложения: тост problem+json). */
 type ErrorHandler = (error: ApiError) => void
 
+/** Реакция на 401 (подключается из приложения): сессия истекла → выход на /login. */
+type UnauthorizedHandler = () => void
+
 const useMock =
   import.meta.env.DEV && import.meta.env.VITE_USE_MOCK !== 'false'
 
