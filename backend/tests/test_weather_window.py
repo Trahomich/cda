@@ -155,9 +155,6 @@ def test_approve_same_window_as_post(client, db_session) -> None:
     assert resp.status_code == 201, resp.text
     posted = resp.json()["weather_window"]
 
-    make_user(db_session, login="mgr_ww", role=None)  # роль ниже переопределим
-    from app.models.auth import UserRole
-
     make_user(db_session, login="mgr_ww2", role=UserRole.MANAGER)
     mgr_hdr = headers(client, db_session, login="mgr_ww2", role=UserRole.MANAGER)
     plan_id = resp.json()["plan_id"]
