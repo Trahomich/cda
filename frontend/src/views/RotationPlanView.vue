@@ -238,8 +238,17 @@ onMounted(load)
               :key="field.field_id"
             >
               <th scope="row">
-                {{ field.field_name }}
-                <span class="rotation__area">{{ field.area_ga }} га</span>
+                <button
+                  type="button"
+                  class="rotation__field-toggle"
+                  :class="{ 'rotation__field-toggle--open': historyField === field.field_id }"
+                  :aria-expanded="historyField === field.field_id"
+                  :title="historyField === field.field_id ? 'Скрыть историю севооборота' : 'Показать историю севооборота (API-49)'"
+                  @click="toggleHistory(field.field_id)"
+                >
+                  {{ field.field_name }}
+                  <span class="rotation__area">{{ field.area_ga }} га</span>
+                </button>
               </th>
               <td
                 v-for="year in years"
