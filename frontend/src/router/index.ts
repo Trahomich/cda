@@ -127,6 +127,10 @@ router.beforeEach((to) => {
   if (!to.meta.public && !auth.isAuthenticated) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
+  // /login при живой сессии — сразу в приложение (без цикла редиректов, #58).
+  if (to.name === 'login' && auth.isAuthenticated) {
+    return { name: 'fields-map' }
+  }
   // Ограничение по ролям (meta.roles, матрица прав 07-ux §5).
   const roles = to.meta.roles as string[] | undefined
   if (roles && auth.user && !roles.includes(auth.user.role)) {
