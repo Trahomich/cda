@@ -385,7 +385,7 @@ export async function getWeatherForecast(fieldId: string, days = 7): Promise<Wea
     temp_min_c: d.temperature_min_c,
     temp_max_c: d.temperature_max_c,
     precip_mm: d.precipitation_mm,
-    precip_prob_pct: undefined,
+    precip_prob_pct: d.precip_prob_pct ?? undefined,
     wind_ms: d.wind_max_ms,
     humidity_pct: d.humidity_avg_pct,
   }))
