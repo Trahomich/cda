@@ -383,18 +383,34 @@ def list_fields(
 
 
 def current_cycles(db: Session, field_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict]:
-    """Текущий (последний основной) цикл культуры по каждому полю (API-01)."""
+    """Текущий (последний основной) цикл культуры по каждому полю (API-01).
+
+    «Текущий» = последний завершённый/идущий год, не будущий плановый
+    (v1-10: у полей есть циклы на годы вперёд); если циклов в прошлом
+    нет — последний имеющийся (поле с планом только на будущее).
+    """
     if not field_ids:
         return {}
+    current_year = datetime.now(UTC).year
     rows = db.execute(
-        select(CropCycle.field_id, CropCycle.year, CropCycle.kind, Culture.name)
+        select(
+            CropCycle.field_id,
+            CropCycle.year,
+            CropCycle.kind,
+            Culture.name,
+            case((CropCycle.year <= current_year, 1), else_=0).label("is_past"),
+        )
         .join(Culture, CropCycle.culture_id == Culture.id)
         .where(CropCycle.field_id.in_(field_ids), CropCycle.kind == "main")
-        .order_by(CropCycle.field_id, CropCycle.year.desc())
+        .order_by(
+            CropCycle.field_id,
+            text("is_past DESC"),
+            CropCycle.year.desc(),
+        )
     ).all()
     result: dict[uuid.UUID, dict] = {}
-    for field_id, year, kind, culture_name in rows:
-        if field_id not in result:  # первый по году desc — текущий
+    for field_id, year, kind, culture_name, _is_past in rows:
+        if field_id not in result:  # первый по (прошлое, год desc) — текущий
             result[field_id] = {"year": year, "kind": kind, "culture_name": culture_name}
     return result
 
