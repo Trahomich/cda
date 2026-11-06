@@ -92,6 +92,23 @@ def _plan_item(row: tuple) -> TreatmentPlanItem:
     )
 
 
+def _plan_window(db: Session, cycle: CropCycle, plan: TreatmentPlan) -> WeatherWindow | None:
+    """WEATHER-WINDOW (§7.2) для планов spraying; общая логика POST (API-15)
+    и approve (API-16). null — не spraying (без даты) или нет прогноза в кэше."""
+    if plan.operation_type != "spraying" or plan.planned_date is None:
+        return None
+    result = weather_window_for_plan(
+        db, field_id=cycle.field_id, planned_date=plan.planned_date
+    )
+    if result is None:
+        return None
+    return WeatherWindow(
+        ok=result.ok,
+        detail=result.detail,
+        suggested_dates=result.suggested_dates,
+    )
+
+
 @router.get(
     "/agro-inputs", response_model=InputListResponse, summary="API-14: справочник препаратов"
 )
