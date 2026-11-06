@@ -32,7 +32,7 @@ def test_cultures_color_hex_valid_and_unique() -> None:
     """color_hex: формат #rrggbb, стабильность (уникальность в справочнике)."""
     colors = [c["color_hex"] for c in CULTURES]
     assert all(c is not None for c in colors)
-    assert all(re.fullmatch(r"#[0-9a-fA-F]{6}", c) for c in colors)  # noqa: A?
+    assert all(re.fullmatch(r"#[0-9a-fA-F]{6}", c) for c in colors)
     assert len(colors) == len(set(colors))
 
 
