@@ -89,7 +89,7 @@ class FieldVersion(Base):
     )
     version_no: Mapped[int] = mapped_column(Integer, nullable=False)
     contour: Mapped[Geography] = mapped_column(
-        Geography(geometry_type="POLYGON", srid=4326), nullable=False
+        Geography(geometry_type="MULTIPOLYGON", srid=4326), nullable=False
     )
     area_ga: Mapped[float] = mapped_column(
         Numeric(10, 2), Computed(AREA_GA_COMPUTED, persisted=True), nullable=False
