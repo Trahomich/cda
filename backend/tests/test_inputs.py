@@ -439,33 +439,25 @@ class TestApprove:
         assert resp.status_code == 403
 
     def test_approve_revalidates_rules(self, client, db_session):
-        """Черновик согласуют повторной проверкой: вернувшийся из cancelled
-        план упирается в лимит обработок (RULE-AGRO-10)."""
+        """Черновик согласуют повторной проверкой: если за время жизни
+        черновика лимит обработок занят другими планами — 422 (RULE-AGRO-10)."""
         hdr = headers(client, db_session)
         cycle = make_cycle(db_session, field=make_field(db_session))
         item = make_ppp(db_session, substance="флуазифоп", max_treatments=2)
         p1 = post_plan(client, hdr, cycle, item).json()["plan_id"]
-        p2 = post_plan(client, hdr, cycle, item).json()["plan_id"]
-        assert post_plan(client, hdr, cycle, item).status_code == 422  # лимит
-        # p1 отменяют, третья обработка снова возможна
-        row = db_session.get(TreatmentPlan := __import__(  # noqa: F841 — type alias trick
-            "app.models.agronomy", fromlist=["TreatmentPlan"]
-        ).TreatmentPlan, __import__("uuid").UUID(p1))
-        row.status = "cancelled"
-        db_session.commit()
+        assert post_plan(client, hdr, cycle, item).status_code == 201
+        assert post_plan(client, hdr, cycle, item).status_code == 422  # лимит 2 из 2
+
+        def set_status(plan_id: str, status: str) -> None:
+            row = db_session.get(TreatmentPlan, uuid.UUID(plan_id))
+            assert row is not None
+            row.status = status
+            db_session.commit()
+
+        set_status(p1, "cancelled")  # p1 отменён — появилась третья обработка
         p3 = post_plan(client, hdr, cycle, item).json()["plan_id"]
-        # p2 возвращают в draft из БД: при согласовании p3 лимит снова занят
-        row2 = db_session.get(
-            __import__("app.models.agronomy", fromlist=["TreatmentPlan"]).TreatmentPlan,
-            __import__("uuid").UUID(p2),
-        )
-        row2.status = "cancelled"
-        row3 = db_session.get(
-            __import__("app.models.agronomy", fromlist=["TreatmentPlan"]).TreatmentPlan,
-            __import__("uuid").UUID(p1),
-        )
-        row3.status = "draft"
-        db_session.commit()  # в draft снова p1 и p3 → обработок 2 из 2
+        # p1 возвращают в draft: снова 2 не отменённых + p3 → лимит занят
+        set_status(p1, "draft")
         make_user(db_session, login="mgr_r", role=UserRole.MANAGER)
         mgr = auth_header(client, "mgr_r", "secret123")
         resp = client.post(f"{API_PLANS}/{p3}/approve", headers=mgr)
