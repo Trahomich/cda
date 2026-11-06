@@ -147,6 +147,18 @@ function logout() {
   color: #000;
 }
 
+.field__exit {
+  background: #fff;
+  color: #1b5e20;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  padding: 0.4rem 0.7rem;
+  font-size: 1rem;
+  min-height: 48px;
+  cursor: pointer;
+}
+
 .field__logout {
   background: transparent;
   color: #fff;
