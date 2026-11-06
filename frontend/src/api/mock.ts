@@ -1390,22 +1390,26 @@ export class MockTransport implements Transport {
           `Поле ${op.field_id} не найдено`,
         )
       }
-      // RULE-AGRO-12: факт. площадь ≤ 1,05 × площади поля → 422 (06 §5).
-      if ((op.actual_area_ga ?? 0) > 1.05 * field.area_ga) {
+      // Урожайность — только в операции уборки (03 §1.6, backend #27):
+      // yield_record при operation_type≠harvesting → 422.
+      if (op.yield_record && op.operation_type !== 'harvesting') {
         return {
           status: 422,
           ok: false,
           json: null,
           problem: {
-            type: 'https://cda.example/errors/area-limit',
+            type: 'https://cda.example/errors/yield-not-harvesting',
             title: 'Нарушено бизнес-правило',
             status: 422,
-            detail: `Фактическая площадь ${op.actual_area_ga} га превышает 1,05 × площадь поля ${field.name} (${field.area_ga} га)`,
-            rule_id: 'RULE-AGRO-12',
+            detail: `Урожайность указана для операции «${OPERATION_TYPE_LABELS[op.operation_type] ?? op.operation_type}» — запись урожая возможна только в операции уборки`,
+            rule_id: 'RULE-AGRO-11',
             entity: 'operation',
           },
         }
       }
+      // RULE-AGRO-12 (06 §5, коммит 5afd553): площадь > 1,05 × поля —
+      // НЕ 422, «факт важнее плана»: сохраняем с needs_review=true.
+      const needsReview = (op.actual_area_ga ?? 0) > 1.05 * field.area_ga
       const created: FieldOperation & { created_at: string } = {
         client_id: op.client_id!,
         field_id: op.field_id!,
