@@ -23,6 +23,7 @@ from app.core.errors import AppError
 from app.models.agronomy import CropCycle, Field, FieldOperation, FieldVersion
 from app.models.auth import AuditRecord, User
 from app.models.references import Culture
+from app.modules.geo import parse_geojson
 
 # Минимальная площадь контура, га (03 §1.1: «площадь ≥ 0,1 га»)
 MIN_AREA_GA = 0.1
