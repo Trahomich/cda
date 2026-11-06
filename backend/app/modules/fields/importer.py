@@ -286,7 +286,7 @@ def import_fields(db: Session, payload_ref: str, *, replace: bool = False) -> Im
             db.flush()
             field_.current_version_id = version.id
             report.updated += 1
-        touched.append(field_)
+        touched.append((field_, rec["area_ha"]))
 
     db.flush()
 
