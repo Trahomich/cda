@@ -1566,7 +1566,7 @@ export class MockTransport implements Transport {
           `Неизвестный тип операции: ${params.get('operation_type')}`,
         )
       }
-      return ok(windowsOf(n, type))
+      return ok(windowsOf(n, type, fieldId))
     }
 
     /* ── Источники данных (E-14, API-28) ── */
