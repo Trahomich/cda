@@ -178,25 +178,16 @@ function kindLabel(kind: string): string {
           />
         </svg>
         <h2 class="card360__block-title">
-          История культур (годы)
+          Севооборот по годам
         </h2>
-        <ul class="card360__history">
-          <li
-            v-for="cycle in card.cycles"
-            :key="cycle.cycle_id"
-          >
-            <span class="card360__year">{{ cycle.year }}</span>
-            {{ cycle.culture_name }}
-            <span
-              v-if="kindLabel(cycle.kind)"
-              class="card360__kind"
-            >({{ kindLabel(cycle.kind) }})</span>
-            <span
-              v-if="cycle.yield_c_ha"
-              class="card360__yield"
-            >· {{ fmtNum(cycle.yield_c_ha) }} ц/га</span>
-          </li>
-        </ul>
+        <CropHistoryStrip
+          :items="cropHistory"
+          :yields="cycleYields"
+        />
+        <p class="card360__muted">
+          Цвет полосы — культура справочника (API-48); пунктир — план, обводка —
+          текущий год.
+        </p>
         <p
           v-if="currentCycle && card.rotation_check"
           class="card360__check"
