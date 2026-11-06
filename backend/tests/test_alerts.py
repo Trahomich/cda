@@ -292,13 +292,17 @@ class TestSatelliteGap:
 
 
 class TestAlertEngine:
-    def test_scene_ingested_event_generates(self, db_session):
+    def test_scene_ingested_event_generates(self, db_session, db_engine):
         """scene.ingested → прогон NDVI-проверки и паузы (своя сессия БД)."""
+        from sqlalchemy.orm import sessionmaker
+
         field_id = make_field(db_session)
         make_scene(db_session, field_id, captured_at=date.today() - timedelta(days=6),
                    index_avg=0.60)
         make_scene(db_session, field_id, captured_at=date.today(), index_avg=0.40)
-        engine = AlertEngine(session_factory=type(db_session))
+        engine = AlertEngine(
+            session_factory=sessionmaker(bind=db_engine, expire_on_commit=False)
+        )
         events.publish(
             SCENE_INGESTED_EVENT,
             {"field_id": str(field_id), "index": "ndvi", "index_avg": 0.4},
