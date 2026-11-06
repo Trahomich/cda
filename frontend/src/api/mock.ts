@@ -995,7 +995,7 @@ export class MockTransport implements Transport {
       return ok(page)
     }
 
-    /* ── Карточка «Поле 360°» (API-05) ── */
+    /* ── Карточка «Поле 360°» (API-05): поле целиком, как реальный backend ── */
     const cardMatch = /^\/fields\/([\w-]+)$/.exec(pathname)
     if (method === 'GET' && cardMatch) {
       const field = FIELDS.find((f) => f.field_id === cardMatch[1])
@@ -1004,40 +1004,42 @@ export class MockTransport implements Transport {
       }
       const n = FIELD_N.get(field.field_id)!
 
-      // Проверка предшественника текущего цикла (RULE-AGRO-01).
-      const cycles = cyclesOfField(n)
-      let rotationCheck: FieldCard['rotation_check'] = null
-      const current = cycles.find((c) => c.year === 2027)
-      const prev = current ? prevMain(n, current.year) : null
-      if (current && prev) {
-        const verdict = compat(prev.culture, current.culture)
-        rotationCheck = {
-          ok: verdict === 'ok',
-          message:
-            verdict === 'ok'
-              ? `${current.culture.name}: предшественник — ${prev.culture.name} (${prev.year}). Севооборот без нарушений.`
-              : `${current.culture.name} после ${prev.culture.name} (${prev.year}): зерновые по зерновым не рекомендованы (RULE-AGRO-01).`,
-        }
-      }
+      // Журнал поля — последние операции мока (API-18), как в агрегате API-05.
+      const ops = JOURNAL.filter((o) => o.field_id === field.field_id)
+        .slice(-3)
+        .map((o) => ({
+          date: o.date,
+          operation_type: o.operation_type,
+          status: o.status ?? 'done',
+          performer: o.performer ?? null,
+        }))
 
-      const card: FieldCard = {
-        field: field as FieldCard['field'],
-        cycles: cycles.map((c) => toFieldCycle(n, c.year, c.culture, c.yield)),
-        agrochem: {
-          sample_date: '2026-04-15',
-          ph: Math.round((5.4 + n * 0.1) * 10) / 10,
-          humus_pct: Math.round((3.8 + n * 0.15) * 10) / 10,
-          n_mg100: Math.round((4.5 + n * 0.3) * 10) / 10,
-          p2o5_mg100: 150 + n * 7,
-          k2o_mg100: 180 + n * 9,
+      // Сырая форма API-05: поле + версии + журнал; ndvi/weather — null
+      // (спутник/погода в MVP агрегируются отдельными вызовами API-06/07).
+      const detail: Api05FieldDetail = {
+        ...(field as Field),
+        contour: field.contour ?? {
+          type: 'Polygon',
+          coordinates: [[[41.3, 52.0], [41.4, 52.0], [41.4, 52.1], [41.3, 52.1], [41.3, 52.0]]],
         },
-        rotation_check: rotationCheck,
-        treatment_plans: TREATMENTS.filter((t) => fieldOfCycle(t.cycle_id)?.field.field_id === field.field_id).map((t) => {
-          const v = treatmentView(t)
-          return { plan_id: v.plan_id, input_name: v.input_name, dose: v.dose, unit: v.unit, planned_date: v.planned_date, status: v.status }
-        }),
+        versions: [
+          {
+            version_no: 1,
+            area_ga: field.area_ga,
+            valid_from: '2026-01-01',
+            reason: 'демо-хозяйство (мок)',
+            contour: field.contour ?? {
+              type: 'Polygon',
+              coordinates: [[[41.3, 52.0], [41.4, 52.0], [41.4, 52.1], [41.3, 52.1], [41.3, 52.0]]],
+            },
+          },
+        ],
+        operations: ops,
+        ndvi: null,
+        weather: null,
       }
-      return ok(card)
+      void n
+      return ok(detail)
     }
 
     /* ── NDVI-таймлайн (API-06) ── */
