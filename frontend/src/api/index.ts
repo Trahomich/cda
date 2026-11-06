@@ -56,9 +56,11 @@ export function getFields(params: {
 }): Promise<{ items: Field[]; total: number; limit: number; offset: number }> {
   return apiClient.list<Field>('/fields', {
     q: params.q,
-    status: params.status,
+    // 'all' — все статусы: значение не отправляем (у API-01 допустимы active/merged/archived)
+    status: params.status && params.status !== 'all' ? params.status : undefined,
     with_geometry: params.with_geometry === true ? 'true' : undefined,
-    limit: params.limit,
+    // API-01: limit ≤ 100, иначе 400
+    limit: params.limit !== undefined ? Math.min(params.limit, 100) : undefined,
     offset: params.offset,
   })
 }
