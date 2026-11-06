@@ -12,7 +12,7 @@ services:
       POSTGRES_HOST: db
       REDIS_HOST: redis
       ENV: prod
-      WEATHER_POLL_ENABLED: "true"
+      WEATHER_POLL_ENABLED: "false" # опрос погоды перенесён в воркер weather-ingest (ADR-09)
     ports:
       - "127.0.0.1:8000:8000" # только локально для проверок; наружу — через туннель
     depends_on:
@@ -27,6 +27,25 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+
+  # Воркер приёма погоды Open-Meteo (ADR-09, v1-03): тот же образ, без API
+  # наружу; джобы current/forecast/archive по расписанию 05 §4 (env INGEST_*)
+  weather-ingest:
+    image: cda/api:latest
+    command: python -m app.services.weather_ingest
+    env_file: ../.env
+    environment:
+      POSTGRES_HOST: db
+      REDIS_HOST: redis
+      INGEST_WEATHER_CURRENT_MINUTES: "30"
+      INGEST_WEATHER_FORECAST_HOURS: "3"
+      INGEST_WEATHER_ARCHIVE_MINUTES: "60"
+      INGEST_WEATHER_BACKFILL_DAYS: "14"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 
   db:
     image: postgis/postgis:18-3.6
