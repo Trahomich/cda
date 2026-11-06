@@ -46,6 +46,15 @@ const currentCycle = computed(() => {
   return card.value?.cycles.find((c) => c.year === year) ?? card.value?.cycles[0] ?? null
 })
 
+/** Урожайность по году (из API-05 cycles) — в подсказку ленты API-49. */
+const cycleYields = computed(() => {
+  const out: Record<number, number> = {}
+  for (const c of card.value?.cycles ?? []) {
+    if (c.yield_c_ha) out[c.year] = c.yield_c_ha
+  }
+  return out
+})
+
 const lastSatelliteDate = computed(() => {
   const clear = ndvi.value.filter((p) => p.cloud_pct <= 80)
   return clear.length ? clear[clear.length - 1].date : ''
