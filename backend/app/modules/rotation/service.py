@@ -328,6 +328,32 @@ def plan_cycles(db: Session, plan: RotationPlan) -> list[CropCycle]:
     )
 
 
+def field_crop_cycles(
+    db: Session,
+    field_id: uuid.UUID,
+    *,
+    year_from: int | None = None,
+    year_to: int | None = None,
+) -> tuple[list[tuple[CropCycle, Culture]], int]:
+    """API-49: история севооборота поля — (цикл, культура) по убыванию года.
+
+    Без фильтров — все годы; подсчёт total учитывает те же фильтры.
+    """
+    filters = [CropCycle.field_id == field_id]
+    if year_from is not None:
+        filters.append(CropCycle.year >= year_from)
+    if year_to is not None:
+        filters.append(CropCycle.year <= year_to)
+    total = db.scalar(select(func.count()).select_from(CropCycle).where(*filters))
+    rows = db.execute(
+        select(CropCycle, Culture)
+        .join(Culture, CropCycle.culture_id == Culture.id)
+        .where(*filters)
+        .order_by(CropCycle.year.desc(), CropCycle.kind)
+    ).all()
+    return [(cycle, culture) for cycle, culture in rows], int(total or 0)
+
+
 def _validate_plan_items(
     db: Session, field_id: uuid.UUID, items: list[PlanItemDraft]
 ) -> list[Violation]:
