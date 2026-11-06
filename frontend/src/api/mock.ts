@@ -616,6 +616,8 @@ function weatherOf(n: number, fieldId: string): unknown {
       temperature_min_c: d.min,
       temperature_max_c: d.max,
       precipitation_mm: d.precip,
+      // precip_prob_pct — docs/06 §7.2 (в агрегат API-07 тоже входит).
+      precip_prob_pct: d.prob,
       wind_max_ms: 2 + ((n + i) % 7),
       humidity_avg_pct: 55 + ((n * 3 + i) % 30),
       hazard: 'none',
