@@ -73,6 +73,18 @@ def _http_error(status_code: int) -> Exception:
     )
 
 
+def _catalog_assets(assets: dict) -> dict[str, str]:
+    """Канонические каналы → href: b04←red, b08←nir (ESA-имена каталога)."""
+    result: dict[str, str] = {}
+    for band, names in CATALOG_ASSETS.items():
+        for name in names:
+            asset = assets.get(name)
+            if isinstance(asset, dict) and "href" in asset:
+                result[band] = asset["href"]
+                break
+    return result
+
+
 class EarthSearchStacClient:
     """Поиск сцен L2A по bbox хозяйства (source_id="satellite.sentinel2-l2a")."""
 
