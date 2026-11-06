@@ -15,7 +15,7 @@ from geoalchemy2 import Geography
 from sqlalchemy import select
 
 from app.models.agronomy import CropCycle, Field, RotationPlan
-from app.models.references import PredecessorRule
+from app.models.references import Culture, PredecessorRule
 from app.seed import seed_references
 from app.seed_rotation import seed_rotation
 from tests.test_auth import auth_header, make_user
@@ -105,7 +105,7 @@ def test_seed_rotation_respects_agronomy_rules(db_session) -> None:
         (r.culture_id, r.predecessor_id): r.verdict
         for r in db_session.scalars(select(PredecessorRule))
     }
-    cultures = {c.id: c for c in db_session.scalars(select(Culture := __import__("app.models.references", fromlist=["Culture"]).Culture))}
+    cultures = {c.id: c for c in db_session.scalars(select(Culture))}
 
     for field in fields:
         cycles = list(
@@ -169,7 +169,7 @@ def test_seed_rotation_skips_fields_with_existing_data(db_session) -> None:
     db_session.add(CropCycle(
         field_id=with_cycle.id,
         year=CURRENT_YEAR,
-        culture_id=db_session.scalar(select(__import__("app.models.references", fromlist=["Culture"]).Culture.id).where(__import__("app.models.references", fromlist=["Culture"]).Culture.name == "Озимая пшеница")),
+        culture_id=db_session.scalar(select(Culture.id).where(Culture.name == "Озимая пшеница")),
         kind="main",
         status="in_progress",
     ))
@@ -188,7 +188,6 @@ def test_seed_rotation_skips_fields_with_existing_data(db_session) -> None:
 
     report = seed_rotation(db_session, years_back=1, years_forward=1)
     # обработаны только поле без данных и поле с архивным планом
-    assert {empty.id, archived_plan_field.id} <= {f.id for f in [empty, archived_plan_field]}
     assert report.fields_processed == 2
     for field in (with_cycle, with_plan):
         cycles = db_session.scalars(
