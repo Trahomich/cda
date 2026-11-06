@@ -51,7 +51,7 @@ const CULTURES: MockCulture[] = [
   { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a7', name: 'Кукуруза на силос', kind: 'main', repeat_years: 4, harvest_md: '09-05', crop_group: 'forage', color_hex: '#e5761b' },
   { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a8', name: 'Пар', kind: 'fallow', repeat_years: 0, harvest_md: '09-30', crop_group: 'other', color_hex: '#c8c8c8' },
   { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a9', name: 'Горчица белая (сидерат)', kind: 'catch', repeat_years: 0, harvest_md: '09-30', crop_group: 'grasses', color_hex: '#c5e1a5' },
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000aa', name: 'Рапс (сидерат)', kind: 'catch', repeat_years: 0, harvest_md: '09-30' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000aa', name: 'Рапс (сидерат)', kind: 'catch', repeat_years: 0, harvest_md: '09-30', crop_group: 'oilseeds', color_hex: '#c0ca33' },
 ]
 
 function cultureById(id: string): MockCulture | undefined {
