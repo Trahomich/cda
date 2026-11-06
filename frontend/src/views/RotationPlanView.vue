@@ -6,8 +6,9 @@
 // Согласование и правка — по матрице прав 07-ux §5: агроном Ч/Р, руководитель Ч/С.
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import { approveRotationPlan, createCropCycle, getRotationPlan } from '@/api'
-import type { Culture, RotationPlan } from '@/api/types'
+import { approveRotationPlan, createCropCycle, getFieldCropCycles, getRotationPlan } from '@/api'
+import type { CropCycleHistoryItem, Culture, RotationPlan } from '@/api/types'
+import CropHistoryStrip from '@/components/CropHistoryStrip.vue'
 
 const auth = useAuthStore()
 
@@ -19,6 +20,11 @@ const saving = ref(false)
 /** Клетка в редактировании: `field_id:year`. */
 const editing = ref<string | null>(null)
 const editCulture = ref('')
+
+/** История севооборота поля (API-49): кэш по field_id, грузим по требованию. */
+const historyField = ref<string | null>(null)
+const historyItems = ref<CropCycleHistoryItem[]>([])
+const historyLoading = ref(false)
 
 /** Принятые агрономом предупреждения (локально, до перезагрузки плана). */
 const accepted = ref(new Set<string>())
