@@ -165,7 +165,7 @@ erDiagram
 | API-24 | GET /animals, POST /animals | животные | REQ-F-019 |
 | API-25 | GET /rations, POST /rations | рационы (422 — RULE-LIVE-05) | REQ-F-020 |
 | API-26 | GET /vet-events, POST /vet-events | ветсобытия | REQ-F-021 |
-| API-27 | GET /alerts, POST /alerts/{id}/read | оповещения пользователя | REQ-F-026, 034 |
+| API-27 | GET /alerts (фильтры status/type/field_id, пагинация), POST /alerts/{id}/read, PATCH /alerts/{id} {status} (new→read→closed, неверный переход — 409) | оповещения пользователя | REQ-F-026, 034 |
 | API-28 | GET /sources/status | журнал адаптеров (источник, статус, last_success_at) | REQ-F-034 |
 | API-29 | GET /weather/forecast?field_id&days | прогноз (кэш 3 ч) | REQ-F-024 |
 | API-30 | POST /imports/soil | импорт агрохимии → ImportReport | REQ-F-031 |
