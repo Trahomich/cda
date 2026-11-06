@@ -5,7 +5,10 @@
 - API-15 GET /treatment-plans, POST /treatment-plans — планы внесения;
   нарушения RULE-AGRO-07/08/10 — 422 rule_violation (RFC 7807 + extra);
 - API-16 POST /treatment-plans/{id}/approve — согласование руководителем
-  (draft → approved, правила перепроверяются; повтор — 409 invalid_state).
+  (draft → approved, правила перепроверяются; повтор — 409 invalid_state);
+- для operation_type=spraying ответы POST/approve дополняются погодным окном
+  WEATHER-WINDOW (§7.2, задача #74): {ok, detail, suggested_dates} | null —
+  подсказка по кэшу прогноза, НЕ блокирующая создание/согласование.
 
 Права (07-ux §5): группа «inputs» (агроном, руководитель, админ) — чтение;
 создание — agronomist/admin; согласование — manager/admin.
