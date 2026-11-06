@@ -63,6 +63,17 @@ export interface CultureReference {
   color_hex?: string | null
 }
 
+/** Элемент истории севооборота поля — GET /fields/{id}/crop-cycles (API-49):
+ *  годы по убыванию; цвет — из справочника культур (API-48). */
+export interface CropCycleHistoryItem {
+  year: number
+  culture_id: string
+  culture_name: string
+  kind: 'main' | 'catch' | 'fallow'
+  status: 'completed' | 'in_progress' | 'planned'
+  color_hex?: string | null
+}
+
 /** Роли пользователей: enum бэкенда по docs/01-requirements.md §2 (см. #22). */
 export type UserRole =
   | 'agronomist'
