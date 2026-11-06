@@ -22,8 +22,9 @@ test('карта: легенда культур, номера полей и цв
   }
 
   // Краткие номера полей (формат пилота «N/ВОСХОД/NNNга» → «N») в центроидах.
+  // На карте только активные поля демо-хозяйства: 7 − 1 архивное = 6.
   const labels = page.locator('.field-label')
-  await expect.poll(async () => await labels.count(), { timeout: 15_000 }).toBe(7)
+  await expect.poll(async () => await labels.count(), { timeout: 15_000 }).toBe(6)
   await expect(labels.first()).toHaveText('1')
 
   // Заливка контуров — цвет культуры (путь Leaflet с fill).
