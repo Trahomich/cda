@@ -31,10 +31,15 @@ _TEST_DB = "cda_test"
 def _test_url() -> str:
     if url := os.environ.get("DATABASE_URL_TEST"):
         return url
-    host = os.environ.get("POSTGRES_HOST", "localhost")
-    port = os.environ.get("POSTGRES_PORT", "5432")
-    user = os.environ.get("POSTGRES_USER", "cda")
-    password = os.environ.get("POSTGRES_PASSWORD", "cda_dev_password")
+    # env процесса приоритетен; иначе значения из .env (pydantic-settings),
+    # иначе дефолты (localhost) — как в app.core.config
+    from app.core.config import Settings
+
+    s = Settings()
+    host = os.environ.get("POSTGRES_HOST") or s.postgres_host
+    port = os.environ.get("POSTGRES_PORT") or str(s.postgres_port)
+    user = os.environ.get("POSTGRES_USER") or s.postgres_user
+    password = os.environ.get("POSTGRES_PASSWORD") or s.postgres_password
     return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{_TEST_DB}"
 
 
