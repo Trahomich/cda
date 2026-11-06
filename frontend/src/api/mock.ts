@@ -822,7 +822,7 @@ function windowCheck(
     if (tAvg < 5) fails.push(`t° ${tAvg} < 5 °C`)
     if (tAvg > 25) fails.push(`t° ${tAvg} > 25 °C`)
     if (day.wind_ms > 4) fails.push(`ветер ${day.wind_ms} > 4 м/с`)
-    if (day.precip_prob_pct >= 50) fails.push(`вероятность осадков ${day.precip_prob_pct} % ≥ 50 %`)
+    if ((day.precip_prob_pct ?? 0) >= 50) fails.push(`вероятность осадков ${day.precip_prob_pct} % ≥ 50 %`)
     if (day.humidity_pct < 40 || day.humidity_pct > 80)
       fails.push(`влажность ${day.humidity_pct} % вне 40–80 %`)
   } else if (type === 'fertilizing') {
