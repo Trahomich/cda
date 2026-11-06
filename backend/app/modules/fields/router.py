@@ -149,7 +149,8 @@ def get_field_crop_cycles(
     year_to: int | None = Query(default=None, ge=1900, le=2200),
 ) -> FieldCropCycleListResponse:
     from app.modules.rotation.schemas import FieldCropCycleItem
-    from app.modules.rotation.service import field_crop_cycles, get_field as get_rotation_field
+    from app.modules.rotation.service import field_crop_cycles
+    from app.modules.rotation.service import get_field as get_rotation_field
 
     get_rotation_field(db, field_id)  # 404 для несуществующего поля
     rows, total = field_crop_cycles(db, field_id, year_from=year_from, year_to=year_to)

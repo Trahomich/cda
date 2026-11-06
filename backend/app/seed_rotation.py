@@ -15,7 +15,7 @@ CLI ``python -m app.cli seed-rotation``: для каждого активног�
 import logging
 import random
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field as dc_field
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -56,7 +56,7 @@ class SeedRotationReport:
     cycles_created: int = 0
     skipped_existing: int = 0
     missing_cultures: list[str] = field(default_factory=list)
-    violations: list[str] = field(default_factory=list)
+    violations: list[str] = dc_field(default_factory=list)
 
     def as_dict(self) -> dict:
         return {
@@ -167,15 +167,15 @@ def seed_rotation(
     ).all()
 
     field_no = 0
-    for field in fields:
-        rng = random.Random(f"rotation:{_stable_key(field)}")
+    for farm_field in fields:
+        rng = random.Random(f"rotation:{_stable_key(farm_field)}")
         with_fallow = fallow if field_no % FALLOW_EVERY_N_FIELDS == 0 and fallow else None
         sequence = _pick_sequence(
             rng, pool=pool, matrix=matrix, fallow=with_fallow, years=years
         )
         db.add(
             RotationPlan(
-                field_id=field.id,
+                field_id=farm_field.id,
                 year_from=report.year_from,
                 year_to=report.year_to,
                 status="approved",
@@ -187,7 +187,7 @@ def seed_rotation(
         prev_cycle_id: uuid.UUID | None = None
         for year, culture in zip(years, sequence, strict=True):
             cycle = CropCycle(
-                field_id=field.id,
+                field_id=farm_field.id,
                 year=year,
                 culture_id=culture.id,
                 kind="main",
