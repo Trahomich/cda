@@ -220,6 +220,8 @@ export interface FieldWeather {
     temp_min_c: number
     temp_max_c: number
     precip_mm: number
+    /** Вероятность осадков, % (§7.2); null — провайдер не отдаёт. */
+    precip_prob_pct?: number | null
   }>
   summary: {
     /** Осадки за 7 сут, мм. */
