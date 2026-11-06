@@ -534,7 +534,6 @@ function fmtNum(v: number, digits = 1): string {
   font-size: 0.9rem;
 }
 
-<style point="end-marker" />
 .card360 {
   display: flex;
   flex-direction: column;
