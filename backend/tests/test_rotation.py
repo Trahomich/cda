@@ -491,3 +491,112 @@ def test_unknown_plan_404(client, db_session):
     resp = client.post(f"{API_PLANS}/{uuid.uuid4()}/approve", headers=headers)
     assert resp.status_code == 404
     assert resp.json()["code"] == "not_found"
+
+
+# ---------- API-08: violations on-demand (docs/06 §7.2, v2-03 #73) ----------
+
+
+class TestPlanViolationsOnDemand:
+    def make_plan(self, client, headers, field_id, *, year_from=2026, year_to=2030, items=None):
+        return client.post(
+            API_PLANS,
+            json={
+                "field_id": str(field_id),
+                "year_from": year_from,
+                "year_to": year_to,
+                "items": items or [],
+            },
+            headers=headers,
+        )
+
+    def test_violations_on_demand_match_dry_run(self, client, db_session):
+        """Пересчёт по фактическим циклам: тот же вердикт, что dry-run POST,
+        плюс cycle_year/detail; RULE-AGRO-02 не входит (контракт: 01/03/04)."""
+        headers = agro_headers(client, db_session)
+        field = make_field(client, headers)
+        wheat = make_culture(db_session, name="Пшеница")
+        make_matrix(db_session, wheat, wheat, "ban", "повторный посев")
+        items = [
+            {"year": 2026, "culture_id": str(wheat.id), "kind": "main"},
+            {"year": 2027, "culture_id": str(wheat.id), "kind": "main"},  # ban + repeat
+        ]
+        resp = self.make_plan(client, headers, field["field_id"], items=items)
+        assert resp.status_code == 201, resp.text
+        plan = resp.json()
+        dry = {(v["rule_id"], v["severity"]) for v in plan["violations"]}
+        assert ("RULE-AGRO-01", "ban") in dry
+        assert ("RULE-AGRO-02", "warn") in dry
+
+        # фактические циклы: API блокирует ban-пару, вставляем напрямую
+        field_id = uuid.UUID(field["field_id"])
+        db_session.add_all(
+            [
+                CropCycle(field_id=field_id, year=2026, culture_id=wheat.id, kind="main"),
+                CropCycle(field_id=field_id, year=2027, culture_id=wheat.id, kind="main"),
+            ]
+        )
+        db_session.commit()
+
+        resp = client.get(f"{API_PLANS}/{plan['plan_id']}/violations", headers=headers)
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["plan_id"] == plan["plan_id"]
+        assert body["field_id"] == field["field_id"]
+        assert body["checked_at"]
+        assert body["total"] == len(body["items"]) == 1
+        item = body["items"][0]
+        assert (item["rule_id"], item["severity"], item["cycle_year"]) == (
+            "RULE-AGRO-01",
+            "ban",
+            2027,
+        )
+        assert "RULE-AGRO-01" in item["detail"] and "повторный посев" in item["detail"]
+
+    def test_violations_on_demand_out_of_rotation(self, client, db_session):
+        """RULE-AGRO-03: цикл вне севооборота без причины (найден пересчётом)."""
+        headers = agro_headers(client, db_session)
+        field = make_field(client, headers)
+        wheat = make_culture(db_session, name="Пшеница")
+        plan = self.make_plan(client, headers, field["field_id"]).json()
+        db_session.add(
+            CropCycle(
+                field_id=uuid.UUID(field["field_id"]),
+                year=2026,
+                culture_id=wheat.id,
+                kind="main",
+                out_of_rotation=True,
+                reason=None,
+            )
+        )
+        db_session.commit()
+        resp = client.get(f"{API_PLANS}/{plan['plan_id']}/violations", headers=headers)
+        assert resp.status_code == 200, resp.text
+        items = resp.json()["items"]
+        assert [i["rule_id"] for i in items] == ["RULE-AGRO-03"]
+        assert items[0]["cycle_year"] == 2026
+
+    def test_violations_on_demand_empty_and_no_write(self, client, db_session):
+        """Чистый план: items пуст, total 0; GET ничего не пишет в БД."""
+        headers = agro_headers(client, db_session)
+        field = make_field(client, headers)
+        wheat = make_culture(db_session, name="Пшеница")
+        post_cycle(client, headers, field["field_id"], wheat.id, year=2026)
+        plan = self.make_plan(client, headers, field["field_id"]).json()
+        before = db_session.scalars(select(CropCycle)).all()
+        resp = client.get(f"{API_PLANS}/{plan['plan_id']}/violations", headers=headers)
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["items"] == [] and body["total"] == 0
+        assert db_session.scalars(select(CropCycle)).all() == before
+
+    def test_violations_on_demand_404_and_rbac(self, client, db_session):
+        assert client.get(f"{API_PLANS}/{uuid.uuid4()}/violations").status_code == 401
+        headers = agro_headers(client, db_session)
+        resp = client.get(f"{API_PLANS}/{uuid.uuid4()}/violations", headers=headers)
+        assert resp.status_code == 404
+        assert resp.json()["code"] == "not_found"
+        operator = agro_headers(client, db_session, login="op_v2", role=UserRole.MACHINE_OPERATOR)
+        assert (
+            client.get(f"{API_PLANS}/{uuid.uuid4()}/violations", headers=operator).status_code
+            == 403
+        )
