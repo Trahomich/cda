@@ -192,8 +192,28 @@ def _new_version(
     return version
 
 
+def _check_name_free(db: Session, name: str, *, exclude_id: uuid.UUID | None = None) -> None:
+    """409 duplicate_name: имена полей уникальны среди полей, созданных вручную.
+
+    Ограничение uq_dat_field_name снято в v1-02 (в импортированном реальном
+    хозяйстве имена повторяются), поэтому проверка выполняется в сервисе
+    (API-02/API-03 сохраняют контракт 409 duplicate_name).
+    """
+    stmt = select(Field.id).where(Field.name == name)
+    if exclude_id is not None:
+        stmt = stmt.where(Field.id != exclude_id)
+    if db.scalar(stmt) is not None:
+        raise AppError(
+            f"Поле с названием «{name}» уже существует",
+            code="duplicate_name",
+            title="Конфликт состояния",
+            status_code=409,
+        )
+
+
 def create_field(db: Session, *, user: User, name: str, contour: dict, reason: str | None) -> Field:
     """API-02: создать поле с контуром (версия 1 создаётся автоматически)."""
+    _check_name_free(db, name.strip())
     geojson_str = validate_contour_structure(contour)
     area_ga = check_geometry(db, geojson_str)
     field = Field(name=name.strip(), contour=_geom(geojson_str))
