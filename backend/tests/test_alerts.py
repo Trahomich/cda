@@ -310,12 +310,16 @@ class TestAlertEngine:
         types = {a.type for a in alerts(db_session)}
         assert "ndvi_anomaly" in types
 
-    def test_forecast_ingested_event_generates(self, db_session):
+    def test_forecast_ingested_event_generates(self, db_session, db_engine):
+        from sqlalchemy.orm import sessionmaker
+
         field_id = make_field(db_session)
         make_cycle(db_session, field_id)
         make_forecast(db_session, field_id, forecast_for=date.today() + timedelta(days=1),
                       hazard="hail")
-        engine = AlertEngine(session_factory=type(db_session))
+        engine = AlertEngine(
+            session_factory=sessionmaker(bind=db_engine, expire_on_commit=False)
+        )
         engine.subscribe()
         try:
             events.publish(FORECAST_INGESTED_EVENT, {"fields": 1})
