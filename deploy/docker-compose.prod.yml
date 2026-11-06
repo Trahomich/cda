@@ -35,7 +35,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-cda}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD обязателен в .env}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql # PG18: маунт на родителя, данные в подкаталоге версии
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cda} -d ${POSTGRES_DB:-cda}"]
       interval: 5s
