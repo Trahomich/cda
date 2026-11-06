@@ -385,4 +385,4 @@ class TestWorker:
         job = scheduler.get_job(JOB_CATALOG)
         assert job is not None
         assert job.trigger.interval == timedelta(hours=6)
-        scheduler.shutdown(wait=False)
+        # планировщик не запускался (start) — воркер не тестируем живьём
