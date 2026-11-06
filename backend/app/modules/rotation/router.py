@@ -140,6 +140,31 @@ def create_plan(
     return _plan_detail(db, plan, violations=[ViolationItem(**vars(v)) for v in violations])
 
 
+@router.get(
+    "/rotation-plans/{plan_id}/violations",
+    response_model=PlanViolationsResponse,
+    summary="API-08: пересчёт нарушений плана (RULE-AGRO-01/03/04) без записи",
+)
+def plan_violations_view(plan_id: uuid.UUID, db: DbSession) -> PlanViolationsResponse:
+    plan = service.get_plan(db, plan_id)
+    items = [
+        PlanViolationItem(
+            rule_id=v.rule_id,
+            severity=v.severity,
+            cycle_year=year,
+            detail=v.rationale,
+        )
+        for year, v in service.plan_violations(db, plan)
+    ]
+    return PlanViolationsResponse(
+        plan_id=plan.id,
+        field_id=plan.field_id,
+        checked_at=datetime.now(tz=UTC),
+        items=items,
+        total=len(items),
+    )
+
+
 @router.post(
     "/rotation-plans/{plan_id}/approve",
     response_model=PlanDetail,
