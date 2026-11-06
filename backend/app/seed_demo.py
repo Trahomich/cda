@@ -246,9 +246,7 @@ def _seed_treatment_plans(
     inputs = {
         (i.kind, i.name): i
         for i in db.scalars(
-            select(AgroInput).where(
-                AgroInput.name.in_([spec["name"] for spec in DEMO_INPUTS])
-            )
+            select(AgroInput).where(AgroInput.name.in_([spec["name"] for spec in DEMO_INPUTS]))
         )
     }
     year = date.today().year
