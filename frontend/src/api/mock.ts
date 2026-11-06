@@ -593,7 +593,7 @@ function weatherOf(n: number, fieldId: string): unknown {
     { min: 7, max: 15, precip: 0.5, prob: 30 },
     { min: 6, max: 16, precip: 0, prob: 5 },
   ]
-  const fact = (d: { min: number; max: number; precip: number }, i: number, offset: number) => {
+  const fact = (d: { min: number; max: number; precip: number; prob: number }, i: number, offset: number) => {
     const avg = Math.round(((d.min + d.max) / 2) * 10) / 10
     return {
       observed_at: iso(offset),
