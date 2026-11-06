@@ -95,7 +95,7 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --protocol http2 --edge fragrelay:7844,fragrelay2:7844 run
+    command: tunnel --no-autoupdate --protocol http2 --edge fragrelay:7844 --edge fragrelay2:7844 run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN обязателен в .env}
     depends_on:
