@@ -110,6 +110,26 @@ def cmd_seed_inputs(_args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_seed_operations(_args: argparse.Namespace) -> int:
+    import json
+
+    from app.seed_operations import seed_operations
+
+    with SessionLocal() as db:
+        report = seed_operations(db)
+    print(json.dumps(report.as_dict(), ensure_ascii=False, indent=2))
+    if report.violations:
+        print(f"ВНИМАНИЕ: {len(report.violations)} планов отклонено правилами (см. violations)")
+    if report.operations_created or report.plans_created:
+        print(
+            f"Работы: операций +{report.operations_created}, планов +{report.plans_created} "
+            "(повторный запуск ничего не изменит)"
+        )
+    else:
+        print("История и планы уже на месте — дублей не создано")
+    return 0
+
+
 def cmd_seed_rotation(args: argparse.Namespace) -> int:
     import json
 
