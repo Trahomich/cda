@@ -96,7 +96,8 @@ export function getAuthMe(): Promise<AuthMe> {
 
 /* ─── Экран E-03 «Поле 360°» (docs/07-ux §3.2) ─── */
 
-const CYCLE_LIST_LIMIT = 200
+// Бэкенд ограничивает limit сотней (query.limit ≤ 100) — больше запросить нельзя.
+const CYCLE_LIST_LIMIT = 100
 
 function toFieldCycle(c: RotationCycleItem): FieldCycle {
   return {
