@@ -66,10 +66,10 @@ class SourcesStatusResponse(BaseModel):
 
 
 __all__ = [
-    AlertItem,
-    AlertPatch,
-    AlertsListResponse,
-    JournalEventItem,
-    SourceStatusItem,
-    SourcesStatusResponse,
+    "AlertItem",
+    "AlertPatch",
+    "AlertsListResponse",
+    "JournalEventItem",
+    "SourceStatusItem",
+    "SourcesStatusResponse",
 ]
