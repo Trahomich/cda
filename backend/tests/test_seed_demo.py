@@ -101,11 +101,31 @@ def test_seed_creates_demo_farm(db_session):
     assert db_session.scalar(select(func.count(WeatherObservation.id))) == 8 * 14
     assert db_session.scalar(select(func.count(Forecast.id))) == 8 * 7
 
-    # демо-агроном для входа в UI
+    # демо-агроном и демо-руководитель для входа в UI (задача #46)
     demo_user = db_session.scalar(select(User).where(User.login == "demo_agronomist"))
     assert demo_user is not None
     assert demo_user.role == UserRole.AGRONOMIST
     assert demo_user.is_active is True
+    demo_manager = db_session.scalar(select(User).where(User.login == "demo_manager"))
+    assert demo_manager is not None
+    assert demo_manager.role == UserRole.MANAGER
+    assert demo_manager.is_active is True
+
+    # демо-препараты и планы внесения (задача #46)
+    from app.models.agronomy import AgroInput, TreatmentPlan as TreatmentPlanModel
+    from app.models.references import PredecessorRule
+
+    inputs = db_session.scalars(select(AgroInput)).all()
+    assert len(inputs) == 4
+    assert {i.kind for i in inputs} == {"fertilizer", "ppp"}
+    assert all(i.waiting_days is not None for i in inputs if i.kind == "ppp")
+    treatment_plans = db_session.scalars(select(TreatmentPlanModel)).all()
+    assert len(treatment_plans) == 3
+    assert {p.status for p in treatment_plans} == {"completed", "draft", "approved"}
+
+    # матрица предшественников: минимум по одной warn- и ban-паре (RULE-AGRO-01)
+    rule_verdicts = set(db_session.scalars(select(PredecessorRule.verdict)))
+    assert {"ok", "warn", "ban"} <= rule_verdicts
 
     # справочники и погодные правила актуализированы
     assert db_session.scalar(select(func.count(Culture.id))) >= 6
