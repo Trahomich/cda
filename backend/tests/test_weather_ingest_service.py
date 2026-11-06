@@ -119,8 +119,8 @@ class TestIngestHistoryGaps:
 
         assert report.ok == 1
         days = observation_days(db_session, field_id)
-        assert len(days) == 15
-        assert {today - timedelta(days=i) for i in range(15)} == days
+        assert len(days) == 16
+        assert {date.today() + timedelta(days=off) for off in offsets} == days
 
     def test_source_unavailable_fails_field(self, db_session):
         make_weather_source(db_session)
