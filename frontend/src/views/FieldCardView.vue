@@ -32,7 +32,10 @@ const PLAN_STATUS_LABELS: Record<string, string> = {
   cancelled: 'отменён',
 }
 
-const currentCycle = computed(() => card.value?.cycles.find((c) => c.year === 2027) ?? null)
+const currentCycle = computed(() => {
+  const year = new Date().getFullYear()
+  return card.value?.cycles.find((c) => c.year === year) ?? card.value?.cycles[0] ?? null
+})
 
 const lastSatelliteDate = computed(() => {
   const clear = ndvi.value.filter((p) => p.cloud_pct <= 80)
