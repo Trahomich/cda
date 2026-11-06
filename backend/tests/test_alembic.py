@@ -14,7 +14,9 @@ from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 from tests.conftest import _create_database, _drop_database, _test_url
 
-_MIGRATIONS_DB = "cda_test_migrations"
+# БД для прогона цепочки миграций; переопределяется env MIGRATIONS_TEST_DB,
+# чтобы параллельные прогоны (у каждого свой DATABASE_URL_TEST) не конфликтовали
+_MIGRATIONS_DB = os.environ.get("MIGRATIONS_TEST_DB", "cda_test_migrations")
 
 # Таблицы, которые обязана создать цепочка миграций (06-data-api §2–§4, MVP-2)
 EXPECTED_TABLES = {
