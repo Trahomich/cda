@@ -470,6 +470,29 @@ class TestWeatherApi:
         assert len(body["items"]) == 3
         assert body["total"] == 5 and body["limit"] == 3 and body["offset"] == 0
 
+    def test_29_and_07_precip_prob_pct_from_provider(self, client, db_session):
+        """precip_prob_pct доезжает из провайдера в API-29 и API-07 (§7.2),
+        включая null-случай (провайдер не отдал вероятность)."""
+        field_id = make_field(db_session)
+        make_weather_source(db_session)
+        ingest = make_ingest(
+            db_session,
+            {"/forecast": load_fixture("openmeteo_forecast.json", day_offsets=list(range(7)))},
+        )
+        assert ingest.ingest_forecast(db_session).ok == 1
+        headers = api_headers(client, db_session)
+        forecast = client.get(
+            f"{API}/weather/forecast",
+            params={"field_id": field_id, "days": 7},
+            headers=headers,
+        )
+        assert forecast.status_code == 200, forecast.text
+        expected = [10, 35, 90, 55, None, 0, 45]
+        assert [i["precip_prob_pct"] for i in forecast.json()["items"]] == expected
+        weather = client.get(f"{API}/fields/{field_id}/weather", headers=headers)
+        assert weather.status_code == 200, weather.text
+        assert [i["precip_prob_pct"] for i in weather.json()["forecast"]] == expected
+
     def test_windows_ok_and_blocked_days(self, client, db_session):
         field_id = make_field(db_session)
         seed_weather_rules(db_session)
