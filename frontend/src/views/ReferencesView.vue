@@ -44,10 +44,18 @@ const filteredInputs = computed(() => inputs.value)
 
 onMounted(async () => {
   try {
-    const [rot, agi] = await Promise.all([getRotationPlan(), getAgroInputs()])
-    plan.value = rot
-    cultures.value = rot.cultures
+    // Справочник культур (API-48) — источник вкладки «Культуры»; не зависит
+    // от наличия плана севооборота (#65: без плана список был пуст).
+    const [refs, agi] = await Promise.all([getCultureReferences(), getAgroInputs()])
+    cultures.value = refs
     inputs.value = agi.items
+    // План севооборота — необязательное дополнение (норма возврата RULE-AGRO-02);
+    // его отсутствие/ошибка не должны ломать экран справочников.
+    try {
+      plan.value = await getRotationPlan()
+    } catch {
+      plan.value = null
+    }
   } catch {
     failed.value = true // тост уже показан
   } finally {
