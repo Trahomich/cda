@@ -100,8 +100,15 @@ async function saveEdit(fieldId: string, year: number) {
   saving.value = true
   try {
     // API-11: 422 (rule_id=RULE-AGRO-01) отдаётся problem+json — текст
-    // покажет API-клиент в тосте, план не меняется.
-    await createCropCycle({ field_id: fieldId, year, culture_id: editCulture.value })
+    // покажет API-клиент в тосте, план не меняется. kind — вид выбранной
+    // культуры (обязателен по схеме backend, согласуется с RULE-AGRO-03).
+    const culture = plan.value?.cultures.find((c) => c.culture_id === editCulture.value)
+    await createCropCycle({
+      field_id: fieldId,
+      year,
+      culture_id: editCulture.value,
+      kind: culture?.kind ?? 'main',
+    })
     editing.value = null
     await load()
   } catch {
