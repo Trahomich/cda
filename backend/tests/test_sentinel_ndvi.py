@@ -70,10 +70,14 @@ def scene_rasters(tmp_path):
 
     t10 = Affine(10.0, 0.0, X0, 0.0, -10.0, Y1)
     t20 = Affine(20.0, 0.0, X0, 0.0, -20.0, Y1)
+    b04 = _write_tif(tmp_path / "b04.tif", red, t10, CRS)
+    b08 = _write_tif(tmp_path / "b08.tif", nir, t10, CRS)
+    scl = _write_tif(tmp_path / "scl.tif", scl, t20, CRS)
     return {
-        "b04": _write_tif(tmp_path / "b04.tif", red, t10, CRS),
-        "b08": _write_tif(tmp_path / "b08.tif", nir, t10, CRS),
-        "scl": _write_tif(tmp_path / "scl.tif", scl, t20, CRS),
+        "assets": {"b04": b04, "b08": b08, "scl": scl},  # для JSONB-колонки каталога
+        "b04": b04,
+        "b08": b08,
+        "scl": scl,
         "nir": nir,
         "red": red,
     }
