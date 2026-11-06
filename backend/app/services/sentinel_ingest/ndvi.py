@@ -198,7 +198,9 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     return NdviStats(index_min, index_avg, index_max, std, cloud_pct)
 
 
-def scene_upsert(db: Session, field_id: uuid.UUID, captured_at, stats: NdviStats) -> bool:
+def scene_upsert(
+    db: Session, field_id: uuid.UUID, captured_at: date, stats: NdviStats
+) -> bool:
     """Запись сцены ndvi; False, если (field, index, дата, источник) уже есть."""
     statement = (
         pg_insert(SatelliteScene)
