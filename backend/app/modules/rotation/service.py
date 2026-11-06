@@ -457,14 +457,11 @@ def plan_violations(db: Session, plan: RotationPlan) -> list[tuple[int, Violatio
     year_to] (items плана, 03 §1.2). Без записи в БД (docs/06 §7.2).
     Возвращает [(cycle_year, Violation)].
     """
-    cycles = (
-        db.scalars(
-            select(CropCycle)
-            .where(CropCycle.field_id == plan.field_id, CropCycle.kind == "main")
-            .order_by(CropCycle.year)
-        )
-        .all()
-    )
+    cycles = db.scalars(
+        select(CropCycle)
+        .where(CropCycle.field_id == plan.field_id, CropCycle.kind == "main")
+        .order_by(CropCycle.year)
+    ).all()
     chain: list[tuple[int, Culture, PlanItemDraft | None]] = []
     for cycle in cycles:
         culture = db.get_one(Culture, cycle.culture_id)

@@ -221,8 +221,7 @@ class TestNdviCycle:
         # контур поля — верхняя (облачная) половина плашки
         db_session.execute(
             db_text(
-                "UPDATE dat_field SET contour = ST_GeomFromGeoJSON(:geo)::geography "
-                "WHERE id = :id"
+                "UPDATE dat_field SET contour = ST_GeomFromGeoJSON(:geo)::geography WHERE id = :id"
             ),
             {"id": str(field_id), "geo": json.dumps(wgs_box(300100, 5761100, 301900, 5761900))},
         )
@@ -234,9 +233,7 @@ class TestNdviCycle:
         assert report.cloud_skipped == 1
         assert report.scenes == 0
         assert (
-            db_session.scalar(
-                select(SatelliteScene.id).where(SatelliteScene.field_id == field_id)
-            )
+            db_session.scalar(select(SatelliteScene.id).where(SatelliteScene.field_id == field_id))
             is None
         )
         db_session.refresh(item)
@@ -248,8 +245,7 @@ class TestNdviCycle:
         field_id = make_ndvi_field(db_session, name="Половинчатое-1")
         db_session.execute(
             db_text(
-                "UPDATE dat_field SET contour = ST_GeomFromGeoJSON(:geo)::geography "
-                "WHERE id = :id"
+                "UPDATE dat_field SET contour = ST_GeomFromGeoJSON(:geo)::geography WHERE id = :id"
             ),
             {"id": str(field_id), "geo": json.dumps(wgs_box(300050, 5760050, 301950, 5761950))},
         )
@@ -342,9 +338,7 @@ class TestNdviCycle:
         """Нет cataloged-строк: цикл idle, журнал не трогаем."""
         report = run_ndvi_cycle(db_session)
         assert report.status == "skipped"
-        assert (
-            db_session.execute(select(SourceJournalEntry)).scalars().first() is None
-        )
+        assert db_session.execute(select(SourceJournalEntry)).scalars().first() is None
 
 
 # =============================================================================

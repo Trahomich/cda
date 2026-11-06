@@ -223,9 +223,7 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     return NdviStats(index_min, index_avg, index_max, std, cloud_pct)
 
 
-def scene_upsert(
-    db: Session, field_id: uuid.UUID, captured_at: date, stats: NdviStats
-) -> bool:
+def scene_upsert(db: Session, field_id: uuid.UUID, captured_at: date, stats: NdviStats) -> bool:
     """Запись сцены ndvi; False, если (field, index, дата, источник) уже есть."""
     statement = (
         pg_insert(SatelliteScene)
@@ -302,9 +300,7 @@ def process_catalog_row(db: Session, item: SatelliteCatalogItem, contour: dict) 
     return apply_row_result(db, item, zonal_ndvi(item.assets or {}, contour))
 
 
-def run_ndvi_cycle(
-    db: Session, *, batch_limit: int = 200, max_workers: int = 4
-) -> NdviReport:
+def run_ndvi_cycle(db: Session, *, batch_limit: int = 200, max_workers: int = 4) -> NdviReport:
     """Цикл расчёта: строки каталога status='cataloged' → NDVI → сцены.
 
     Чтение COG (сеть) выполняется пулом потоков (rasterio отпускает GIL),
