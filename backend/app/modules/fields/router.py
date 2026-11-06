@@ -135,6 +135,39 @@ def get_field(field_id: uuid.UUID, db: DbSession) -> FieldDetail:
     return _detail(db, service.get_field(db, field_id))
 
 
+@router.get(
+    "/{field_id}/crop-cycles",
+    response_model=FieldCropCycleListResponse,
+    summary="API-49: история севооборота поля (годы по убыванию)",
+)
+def get_field_crop_cycles(
+    field_id: uuid.UUID,
+    db: DbSession,
+    *,
+    year_from: int | None = Query(default=None, ge=1900, le=2200),
+    year_to: int | None = Query(default=None, ge=1900, le=2200),
+) -> FieldCropCycleListResponse:
+    from app.modules.rotation.schemas import FieldCropCycleItem, FieldCropCycleListResponse
+    from app.modules.rotation.service import field_crop_cycles, get_field as get_rotation_field
+
+    get_rotation_field(db, field_id)  # 404 для несуществующего поля
+    rows, total = field_crop_cycles(db, field_id, year_from=year_from, year_to=year_to)
+    return FieldCropCycleListResponse(
+        items=[
+            FieldCropCycleItem(
+                year=cycle.year,
+                culture_id=culture.id,
+                culture_name=culture.name,
+                kind=cycle.kind,
+                status=cycle.status,
+                color_hex=culture.color_hex,
+            )
+            for cycle, culture in rows
+        ],
+        total=total,
+    )
+
+
 @router.patch(
     "/{field_id}",
     response_model=FieldDetail,
