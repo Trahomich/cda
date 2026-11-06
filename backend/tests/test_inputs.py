@@ -309,7 +309,7 @@ class TestTreatmentPlansCreate:
         assert resp.status_code == 422
         problem = resp.json()
         assert problem["rule_id"] == "RULE-AGRO-07"
-        assert "92.0 + 92.0 = 184.0" in problem["detail"]
+        assert "= 184.0 кг д.в./га" in problem["detail"]
         # 180 − 92 = 88 кг д.в. → 191 кг препарата проходят
         ok = post_plan(client, hdr, cycle, fert, dose=191, operation_type="fertilizing")
         assert ok.status_code == 201
