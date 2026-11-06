@@ -305,7 +305,6 @@ class WeatherIngest:
         )
         return report_result
 
-
     def ingest_history_gaps(self, db: Session, *, days: int = 14) -> IngestReport:
         """Докачка пропусков архива фактов по всем активным полям (v1-03).
 
