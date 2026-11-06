@@ -90,7 +90,7 @@ def json_value(value: Any) -> Any:
         try:
             parsed = json.loads(value)
             if isinstance(parsed, dict) and "type" in parsed:
-                return parsed
+                return unwrap_single_multi(parsed)
         except json.JSONDecodeError:
             pass
     return value
