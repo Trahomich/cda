@@ -189,6 +189,9 @@ watch(fieldId, load)
                 {{ d.precip_mm.toLocaleString('ru-RU') }}
               </td>
               <td class="wx__num">
+                {{ d.precip_prob_pct != null ? d.precip_prob_pct.toLocaleString('ru-RU') : '—' }}
+              </td>
+              <td class="wx__num">
                 {{ d.wind_ms.toLocaleString('ru-RU') }}
               </td>
               <td class="wx__num">
