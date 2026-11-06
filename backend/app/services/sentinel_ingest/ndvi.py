@@ -23,6 +23,7 @@ failed с причиной. Воркер не падает.
 """
 
 import logging
+import math
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
