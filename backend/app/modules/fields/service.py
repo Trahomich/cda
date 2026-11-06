@@ -288,6 +288,7 @@ def update_field(
         )
         changed = True
     if name is not None and name != field.name:
+        _check_name_free(db, name.strip(), exclude_id=field.id)
         previous_name = field.name
         field.name = name.strip()
         changed = True
