@@ -118,6 +118,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_demo.set_defaults(func=cmd_seed_demo)
 
+    p_import = sub.add_parser(
+        "import-fields",
+        help="импорт полей хозяйства из SHP-архива (zip) или GeoJSON (IF-FIELDS)",
+    )
+    p_import.add_argument("path", help="путь к zip(SHP) или .geojson (WGS84)")
+    p_import.add_argument(
+        "--replace",
+        action="store_true",
+        help="удалить прежние поля хозяйства перед импортом (с зависимостями)",
+    )
+    p_import.set_defaults(func=cmd_import_fields)
+
     args = parser.parse_args(argv)
     return args.func(args)
 
