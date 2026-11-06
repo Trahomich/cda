@@ -1534,6 +1534,7 @@ export class MockTransport implements Transport {
           temperature_min_c: d.temp_min_c,
           temperature_max_c: d.temp_max_c,
           precipitation_mm: d.precip_mm,
+          precip_prob_pct: d.precip_prob_pct ?? null,
           wind_max_ms: d.wind_ms,
           humidity_avg_pct: d.humidity_pct,
           hazard: 'none',
