@@ -272,6 +272,11 @@ class OpenMeteoAdapter:
             precipitation_mm=precip,
             wind_max_ms=wind,
             humidity_avg_pct=m["relative_humidity_2m_mean"],
+            precip_prob_pct=(
+                None
+                if m["precipitation_probability_max"] is None
+                else int(m["precipitation_probability_max"])
+            ),
             hazard=hazard,
             source_id=OpenMeteoAdapter.source_id,
         )
