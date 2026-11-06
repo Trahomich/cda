@@ -131,7 +131,7 @@ export class ApiClient {
     path: string,
     query: { limit?: number; offset?: number } & Record<string, string | number | undefined> = {},
   ): Promise<Page<T>> {
-    return this.request<T>(path, { query: { limit: 50, ...query } })
+    return this.request<Page<T>>(path, { query: { limit: 50, ...query } })
   }
 }
 
