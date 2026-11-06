@@ -1,12 +1,15 @@
 <script setup lang="ts">
 // Экран E-02 «Карта полей» (docs/07-ux §2): Leaflet-карта с контурами полей
-// из GET /fields?with_geometry=true (API-01), попап поля — имя, площадь (га),
-// культура сезона. Панель «Список» — таблица полей с фильтрами (вкладки).
-import { onMounted, onUnmounted, ref } from 'vue'
+// из GET /fields?with_geometry=true (API-01). Заливка контура — цвет культуры
+// текущего цикла (API-48 /references/cultures, color_hex; без культуры — серый),
+// в центроиде — краткий номер поля (часть имени до первого «/»), поверх карты —
+// складная легенда культур (#55, замечания пользователя №3–4). Панель «Список» —
+// таблица полей с фильтрами (вкладки).
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import type { Map as LeafletMap } from 'leaflet'
 import L from 'leaflet'
-import { getFields } from '@/api'
-import type { Field } from '@/api/types'
+import { getCultureReferences, getFields } from '@/api'
+import type { CultureReference, Field } from '@/api/types'
 import FieldsListPanel from '@/components/FieldsListPanel.vue'
 
 const mapEl = ref<HTMLElement | null>(null)
@@ -24,10 +27,43 @@ const STATUS_LABELS: Record<Field['status'], string> = {
   archived: 'в архиве',
 }
 
+/** Цвет обводки — статус поля (информация о статусе сохраняется на карте). */
 const STATUS_COLORS: Record<Field['status'], string> = {
   active: '#2e7d32',
   merged: '#f9a825',
   archived: '#757575',
+}
+
+/** Культура без цвета в справочнике / поле без посева (#55). */
+const NO_CULTURE_COLOR = '#9e9e9e'
+const NO_CULTURE_LABEL = 'Без посева'
+
+/** Зум, с которого подписи номеров полей постоянны (ниже — скрыты: сливаются). */
+const LABEL_MIN_ZOOM = 12
+
+/** Краткий номер поля: часть имени до первого «/» (пилот: «25/ЖАМ/247га» → «25»). */
+function shortFieldNumber(name: string): string {
+  const head = name.split('/')[0]?.trim()
+  return head || name
+}
+
+/** Культуры → цвет из справочника (API-48). */
+const cultureColors = ref(new Map<string, string>())
+const legendOpen = ref(true)
+
+interface LegendEntry {
+  name: string
+  color: string
+}
+
+/** Легенда: уникальные культуры на карте (по текущим циклам полей). */
+const legend = ref<LegendEntry[]>([])
+
+function cultureColorOf(field: Field): { name: string; color: string } {
+  const cycle = field.current_cycle
+  if (!cycle) return { name: NO_CULTURE_LABEL, color: NO_CULTURE_COLOR }
+  const color = cultureColors.value.get(cycle.culture_name) ?? NO_CULTURE_COLOR
+  return { name: cycle.culture_name, color }
 }
 
 function popupHtml(field: Field): string {
@@ -44,28 +80,79 @@ function popupHtml(field: Field): string {
   )
 }
 
+/** Скрытие/показ подписей номеров по зуму (класс на контейнере карты). */
+function syncLabelZoom(): void {
+  if (!map) return
+  const el = map.getContainer()
+  if (map.getZoom() >= LABEL_MIN_ZOOM) el.classList.add('map-labels-on')
+  else el.classList.remove('map-labels-on')
+}
+
+async function loadCultures(): Promise<void> {
+  try {
+    // Справочник мал и почти не меняется: ошибка загрузки не критична —
+    // поля останутся серыми, карта работает.
+    const cultures: CultureReference[] = await getCultureReferences()
+    const colors = new Map<string, string>()
+    for (const c of cultures) if (c.color_hex) colors.set(c.name, c.color_hex)
+    cultureColors.value = colors
+  } catch {
+    /* серые поля + тост от API-клиента */
+  }
+}
+
 async function loadFields(layer: L.FeatureGroup) {
   try {
     // Карта запрашивает контуры: with_geometry=true (docs/06 §5, API-01).
+    // 90 полей пилота умещаются в limit=100; на случай роста — постранично.
     const page = await getFields({ status: 'active', with_geometry: true, limit: 100 })
+    let items = [...page.items]
+    while (items.length < page.total) {
+      const next = await getFields({
+        status: 'active',
+        with_geometry: true,
+        limit: 100,
+        offset: items.length,
+      })
+      items = [...items, ...next.items]
+    }
     fieldCount.value = page.total
-    const features = page.items
+    const features = items
       .filter((field) => field.contour)
       .map((field) => ({
         type: 'Feature' as const,
         properties: field,
         geometry: field.contour,
       }))
+    const legendMap = new Map<string, string>()
     L.geoJSON(features as unknown as GeoJSON.Feature[], {
-      style: (feature) => ({
-        color: STATUS_COLORS[(feature?.properties?.status as Field['status']) ?? 'active'],
-        weight: 2,
-        fillOpacity: 0.25,
-      }),
+      style: (feature) => {
+        const field = feature?.properties as Field | undefined
+        return {
+          color: STATUS_COLORS[field?.status ?? 'active'],
+          weight: 1.5,
+          fillColor: field ? cultureColorOf(field).color : NO_CULTURE_COLOR,
+          fillOpacity: 0.45,
+        }
+      },
       onEachFeature: (feature, featureLayer) => {
-        featureLayer.bindPopup(popupHtml(feature.properties as Field))
+        const field = feature.properties as Field
+        featureLayer.bindPopup(popupHtml(field))
+        // Краткий номер поля в центроиде (#55): постоянная подпись, не ловит клики.
+        featureLayer.bindTooltip(shortFieldNumber(field.name), {
+          permanent: true,
+          direction: 'center',
+          className: 'field-label',
+          interactive: false,
+          opacity: 1,
+        })
+        const { name, color } = cultureColorOf(field)
+        legendMap.set(name, color)
       },
     }).addTo(layer)
+    legend.value = [...legendMap.entries()]
+      .map(([name, color]) => ({ name, color }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
     const bounds = layer.getBounds()
     if (bounds.isValid()) map?.fitBounds(bounds.pad(0.15))
   } catch {
@@ -75,16 +162,24 @@ async function loadFields(layer: L.FeatureGroup) {
   }
 }
 
-onMounted(() => {
+const legendTitle = computed(() =>
+  legendOpen.value ? 'Легенда: культуры' : 'Культуры',
+)
+
+onMounted(async () => {
   if (!mapEl.value) return
+  // На узких экранах легенда по умолчанию сложена (E-01: место под картой важнее).
+  legendOpen.value = window.innerWidth >= 600
   map = L.map(mapEl.value, { zoomControl: true }).setView([48.731, 42.0], 12)
   // Тайлы OSM (провайдер офлайн-тайлов выбирается до MVP, 10-mobile-pwa §7).
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; участники OpenStreetMap',
   }).addTo(map)
+  map.on('zoomend', syncLabelZoom)
   contoursLayer = L.featureGroup().addTo(map)
-  void loadFields(contoursLayer)
+  await Promise.all([loadCultures(), loadFields(contoursLayer)])
+  syncLabelZoom()
 })
 
 onUnmounted(() => {
@@ -151,6 +246,38 @@ onUnmounted(() => {
         class="map-screen__map"
         aria-label="Карта контуров полей хозяйства"
       />
+      <div
+        v-if="!loading && !failed && legend.length"
+        class="map-legend"
+        :class="{ 'map-legend--open': legendOpen }"
+      >
+        <button
+          type="button"
+          class="map-legend__toggle"
+          :aria-expanded="legendOpen"
+          @click="legendOpen = !legendOpen"
+        >
+          {{ legendTitle }}
+          <span class="map-legend__chevron">▾</span>
+        </button>
+        <ul
+          v-if="legendOpen"
+          class="map-legend__list"
+        >
+          <li
+            v-for="entry in legend"
+            :key="entry.name"
+            class="map-legend__item"
+          >
+            <span
+              class="map-legend__swatch"
+              :style="{ background: entry.color }"
+              :aria-label="`Цвет культуры ${entry.name}`"
+            />
+            <span class="map-legend__name">{{ entry.name }}</span>
+          </li>
+        </ul>
+      </div>
     </div>
     <div
       v-if="tab === 'list'"
@@ -225,6 +352,7 @@ onUnmounted(() => {
   flex: 1;
   min-height: 0;
   display: flex;
+  position: relative;
 }
 
 .map-screen__map {
@@ -238,6 +366,75 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
+/* Легенда культур (#55): оверлей поверх карты, правый верхний угол. */
+.map-legend {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 800; /* выше тайлов и контуров, ниже попапов Leaflet (1000) */
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  max-width: min(16rem, 60vw);
+}
+
+.map-legend__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1b5e20;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.map-legend__chevron {
+  transition: transform 0.15s ease;
+  font-size: 0.8em;
+}
+
+.map-legend--open .map-legend__chevron {
+  transform: rotate(180deg);
+}
+
+.map-legend__list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.75rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.map-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #212121;
+}
+
+.map-legend__swatch {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  flex: none;
+}
+
+.map-legend__name {
+  overflow-wrap: anywhere;
+}
+
 @media (min-width: 900px) {
   .map-screen__map {
     height: auto;
@@ -246,9 +443,35 @@ onUnmounted(() => {
 </style>
 
 <style>
-/* Стили попапа Leaflet — глобальные (динамический HTML попапа). */
+/* Стили попапа и подписей Leaflet — глобальные (динамический HTML). */
 .field-popup {
   font-size: 1rem;
   line-height: 1.45;
+}
+
+/* Краткий номер поля в центроиде (#55): компактная постоянная подпись. */
+.leaflet-tooltip.field-label {
+  background: none;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  color: #10200f;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-shadow:
+    0 0 3px #fff,
+    0 0 3px #fff,
+    0 0 2px #fff;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* До LABEL_MIN_ZOOM подписи скрыты (сливаются на плотной карте 90 полей). */
+.map-screen__map:not(.map-labels-on) .field-label {
+  display: none;
+}
+
+.leaflet-tooltip.field-label::before {
+  display: none; /* без хвостика: подпись в центре контура */
 }
 </style>
