@@ -43,6 +43,15 @@ class Settings(BaseSettings):
     weather_retry_base_seconds: float = 60.0  # 0 — без пауз (тесты)
     weather_request_timeout: float = 10.0
 
+    # Ingest-воркеры (ADR-09, v1; CONTRACTS.md §7): env INGEST_*
+    ingest_run_once: bool = False  # один цикл всех джоб и выход (тесты/стенд)
+    # weather-ingest: текущая — 30 мин, прогноз — 3 ч (05 §4),
+    # докачка архива — ежечасно (v1-03), окно 14 суток
+    ingest_weather_current_minutes: int = 30
+    ingest_weather_forecast_hours: int = 3
+    ingest_weather_archive_minutes: int = 60
+    ingest_weather_backfill_days: int = 14
+
     # Спутник (MVP-10, docs/05 §2 IF-SATELLITE, §4: опрос каталога раз в 6 ч)
     satellite_enabled: bool = False  # true — нужны ключи Copernicus (см. ниже)
     satellite_poll_hours: int = 6
