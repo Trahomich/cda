@@ -83,6 +83,10 @@ DSN — env `DATABASE_URL_TEST`, по умолчанию
 с явной причиной. Цепочка миграций проверяется tests/test_alembic.py
 (`alembic upgrade head` на чистой БД). В docker compose: `docker compose up -d db`.
 
+Локально без docker: миграции НЕ создают расширение postgis (его ставит
+docker/db-init); перед `alembic upgrade head` на чистой БД выполните один раз
+`CREATE EXTENSION postgis` (под суперпользователем БД).
+
 ```bash
 cd backend
 python -m venv .venv && . .venv/bin/activate
