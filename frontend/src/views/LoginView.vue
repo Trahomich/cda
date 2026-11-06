@@ -95,7 +95,7 @@ async function submit() {
       </button>
 
       <p class="login__hint">
-        Демо-доступ (мок): agronom / demo
+        {{ demoHint }}
       </p>
     </form>
   </div>
