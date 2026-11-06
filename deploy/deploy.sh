@@ -12,14 +12,13 @@ COMPOSE="docker compose -f $REMOTE_DIR/deploy/docker-compose.prod.yml --env-file
 echo "==> Проверка .env на сервере"
 ssh "$SERVER" "test -f $REMOTE_DIR/.env || { echo 'НЕТ ~/cda/.env — создайте по docs/deploy/README.md'; exit 1; }"
 
-echo "==> Синхронизация кода"
-rsync -a --delete \
-  --exclude '.venv' --exclude '__pycache__' --exclude '.pytest_cache' \
-  --exclude '.mypy_cache' --exclude '.ruff_cache' --exclude 'core.*' \
-  --exclude '.env' --exclude 'node_modules' --exclude 'test-results' \
-  backend/ "$SERVER:$REMOTE_DIR/backend/"
-rsync -a --delete frontend/dist/ "$SERVER:$REMOTE_DIR/frontend/dist/"
-rsync -a deploy/ "$SERVER:$REMOTE_DIR/deploy/"
+echo "==> Синхронизация кода (tar over ssh)"
+tar -cz \
+  --exclude='backend/.venv' --exclude='**/__pycache__' --exclude='backend/.pytest_cache' \
+  --exclude='backend/.mypy_cache' --exclude='backend/.ruff_cache' --exclude='backend/core.*' \
+  --exclude='backend/.env' --exclude='frontend/node_modules' --exclude='frontend/test-results' \
+  backend frontend/dist deploy \
+  | ssh "$SERVER" "tar -xz -C $REMOTE_DIR --strip-components=0 && find $REMOTE_DIR -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true"
 
 echo "==> Сборка и запуск стека"
 ssh "$SERVER" "$COMPOSE up -d --build"
