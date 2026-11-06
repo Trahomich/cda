@@ -207,6 +207,7 @@ class WeatherIngest:
                     precipitation_mm=item.precipitation_mm,
                     wind_max_ms=item.wind_max_ms,
                     humidity_avg_pct=item.humidity_avg_pct,
+                    precip_prob_pct=item.precip_prob_pct,
                     hazard=item.hazard,
                 )
                 for item in items
