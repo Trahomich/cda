@@ -437,8 +437,149 @@ onMounted(load)
           ожидания до уборки (RULE-AGRO-08), допустимые культуры и лимит
           обработок (RULE-AGRO-10).
         </p>
+
+        <!-- WEATHER-WINDOW (§7.2): подсказка по плану spraying после создания -->
+        <div
+          v-if="windowResult"
+          class="tp__window"
+          data-testid="tp-window"
+        >
+          <div class="tp__window-head">
+            <span
+              class="tp__badge"
+              :class="windowResult.window
+                ? (windowResult.window.ok ? 'tp__badge--approved' : 'tp__badge--badwindow')
+                : 'tp__badge--draft'"
+            >{{ windowResult.window
+              ? (windowResult.window.ok ? '✓ окно подходит' : '⚠ окно не подходит')
+              : 'окно не оценено' }}</span>
+            <span class="tp__muted">погодное окно для «{{ windowResult.input_name }}»</span>
+          </div>
+          <p
+            v-if="windowResult.window"
+            class="tp__window-detail"
+          >
+            {{ windowResult.window.detail }}
+          </p>
+          <p
+            v-else
+            class="tp__muted"
+          >
+            Прогноза на плановую дату нет — окно не оценено (weather_window: null)
+          </p>
+          <div
+            v-if="windowResult.window && windowResult.window.suggested_dates.length"
+            class="tp__chips"
+          >
+            <span class="tp__muted">Подходящие даты:</span>
+            <button
+              v-for="d in windowResult.window.suggested_dates"
+              :key="d"
+              type="button"
+              class="tp__chip"
+              :title="`Подставить ${d} в форму нового плана`"
+              @click="applySuggestedDate(d)"
+            >
+              {{ d }}
+            </button>
+          </div>
+        </div>
       </form>
     </template>
+
+    <!-- Диалог согласования (API-16): подтверждение + погодное окно -->
+    <div
+      v-if="approveTarget"
+      class="tp__dialog-backdrop"
+      @click.self="closeApprove"
+    >
+      <div
+        class="tp__dialog"
+        role="dialog"
+        aria-label="Согласование плана внесения"
+        data-testid="tp-approve-dialog"
+      >
+        <h2 class="tp__form-title">
+          Согласование плана внесения
+        </h2>
+        <p v-if="!approveDone">
+          {{ approveTarget.field_name }} · {{ approveTarget.year }} · {{ approveTarget.culture_name }}<br>
+          <strong>{{ approveTarget.input_name }}</strong> —
+          {{ approveTarget.dose.toLocaleString('ru-RU') }} {{ UNIT_LABELS[approveTarget.unit] }},
+          {{ approveTarget.planned_date }}<br>
+          <span class="tp__muted">Статус изменится: черновик → согласован.</span>
+        </p>
+        <template v-else>
+          <p>
+            План <strong>{{ approveTarget.input_name }}</strong>
+            ({{ approveTarget.field_name }}, {{ approveTarget.planned_date }}) согласован.
+          </p>
+          <div
+            v-if="approveTarget.operation_type === 'spraying'"
+            class="tp__window"
+            data-testid="tp-approve-window"
+          >
+            <div class="tp__window-head">
+              <span
+                class="tp__badge"
+                :class="approveWindow
+                  ? (approveWindow.ok ? 'tp__badge--approved' : 'tp__badge--badwindow')
+                  : 'tp__badge--draft'"
+              >{{ approveWindow
+                ? (approveWindow.ok ? '✓ окно подходит' : '⚠ окно не подходит')
+                : 'окно не оценено' }}</span>
+              <span class="tp__muted">погодное окно (WEATHER-WINDOW)</span>
+            </div>
+            <p
+              v-if="approveWindow"
+              class="tp__window-detail"
+            >
+              {{ approveWindow.detail }}
+            </p>
+            <p
+              v-else
+              class="tp__muted"
+            >
+              Прогноза на плановую дату нет — окно не оценено
+            </p>
+            <div
+              v-if="approveWindow && approveWindow.suggested_dates.length"
+              class="tp__chips"
+            >
+              <span class="tp__muted">Подходящие даты:</span>
+              <button
+                v-for="d in approveWindow.suggested_dates"
+                :key="d"
+                type="button"
+                class="tp__chip"
+                :title="`Подставить ${d} в форму нового плана`"
+                @click="applySuggestedDate(d)"
+              >
+                {{ d }}
+              </button>
+            </div>
+          </div>
+        </template>
+        <div class="tp__dialog-actions">
+          <button
+            v-if="!approveDone"
+            type="button"
+            class="tp__approve"
+            :disabled="busy"
+            @click="confirmApprove"
+          >
+            Согласовать
+          </button>
+          <button
+            type="button"
+            class="tp__dialog-close"
+            @click="closeApprove"
+          >
+            {{ approveDone ? 'Закрыть' : 'Отмена' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
