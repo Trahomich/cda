@@ -1109,48 +1109,43 @@ export class MockTransport implements Transport {
       return ok(weatherOf(FIELD_N.get(field.field_id)!, field.field_id))
     }
 
-    /* ── План севооборота (API-08) ── */
+    /* ── План севооборота (API-08): по-полевые планы с items-циклами ── */
     if (method === 'GET' && pathname === '/rotation-plans') {
-      const cells: RotationPlan['cells'] = []
-      for (const f of FIELDS) {
-        if (f.status !== 'active') continue
+      const plans = FIELDS.filter((f) => f.status === 'active').map((f) => {
         const n = FIELD_N.get(f.field_id)!
+        const items = []
         for (let year = YEAR_FROM; year <= YEAR_TO; year++) {
           const rec = cycleAt(n, year)
-          cells.push({
+          if (!rec) continue
+          const culture = cultureBySuffix(rec.cid)
+          items.push({
+            cycle_id: cycleUuid(n, year),
             field_id: f.field_id,
-            field_name: f.name,
-            area_ga: f.area_ga,
             year,
-            cycle: rec
-              ? {
-                  cycle_id: cycleUuid(n, year),
-                  culture_id: cultureBySuffix(rec.cid).culture_id,
-                  culture_name: cultureBySuffix(rec.cid).name,
-                  kind: cultureBySuffix(rec.cid).kind,
-                }
-              : null,
+            culture_id: culture.culture_id,
+            culture_name: culture.name,
+            kind: culture.kind,
+            predecessor_cycle_id: null,
+            planned_yield_c_ha: null,
+            planned_harvest_date: `${year}-${culture.harvest_md}`,
+            out_of_rotation: false,
+            reason: null,
+            status: 'planned' as const,
           })
         }
-      }
-      const plan: RotationPlan = {
-        plan_id: PLAN.plan_id,
-        farm_name: 'КФХ «Восход»',
-        year_from: YEAR_FROM,
-        year_to: YEAR_TO,
-        status: PLAN.status,
-        approved_by: PLAN.approved_by,
-        approved_at: PLAN.approved_at,
-        cultures: CULTURES.map((c) => ({
-          culture_id: c.culture_id,
-          name: c.name,
-          kind: c.kind,
-          repeat_years: c.repeat_years,
-        })),
-        cells,
-        violations: computeViolations(),
-      }
-      return ok(plan)
+        return {
+          plan_id: planUuid(n),
+          field_id: f.field_id,
+          year_from: YEAR_FROM,
+          year_to: YEAR_TO,
+          status: PLAN.status,
+          approved_by: PLAN.approved_by,
+          approved_at: PLAN.approved_at,
+          items,
+          violations: [],
+        }
+      })
+      return ok({ items: plans, total: plans.length, limit: 200, offset: 0 })
     }
 
     // POST /rotation-plans (API-09) — демо-план уже существует.
