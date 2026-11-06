@@ -134,6 +134,50 @@ class SatelliteScene(Base):
     )
 
 
+class SatelliteCatalogItem(Base):
+    """Каталогизированная сцена Sentinel-2 (v1-04, #50): метаданные STAC-поиска.
+
+    Отдельная сущность от dat_satellite_scene: каталогизируем сцену при
+    нахождении в STAC (item_id, tile, cloud, ссылки COG), статистику индексов
+    считает этап NDVI (#51) и пишет в dat_satellite_scene по правилам 05 §5.
+    Статусы: cataloged (ждёт расчёта) → processed (индексы рассчитаны) /
+    failed (ошибка расчёта, повтор в следующем цикле планировщика).
+    """
+
+    __tablename__ = "dat_satellite_catalog"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('cataloged', 'processed', 'failed')",
+            name="ck_dat_satellite_catalog_status",
+        ),
+        CheckConstraint("cloud_pct <= 60", name="ck_dat_satellite_catalog_cloud"),
+        CheckConstraint("cloud_pct >= 0", name="ck_dat_satellite_catalog_cloud_pos"),
+        UniqueConstraint("field_id", "item_id", name="uq_dat_satellite_catalog"),
+        Index("ix_dat_satellite_catalog_status", "status", "captured_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    item_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    field_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("dat_field.id", name="fk_dat_satellite_catalog_field"), nullable=False
+    )
+    captured_at: Mapped[date] = mapped_column(Date, nullable=False)
+    tile_id: Mapped[str] = mapped_column(String(20), nullable=False)
+    cloud_pct: Mapped[float] = mapped_column(Numeric(4, 1), nullable=False)
+    assets: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, server_default=text("'{}'::jsonb")
+    )
+    status: Mapped[str] = mapped_column(String(12), nullable=False, server_default="cataloged")
+    processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    error: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 class SourceJournalEntry(Base):
     """Событие состояния адаптера: ok/degraded/error + причина (REQ-F-034)."""
 
