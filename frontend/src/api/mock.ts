@@ -828,7 +828,7 @@ function windowCheck(
   } else if (type === 'fertilizing') {
     if (tAvg < 5) fails.push(`t° ${tAvg} < 5 °C`)
     if (day.wind_ms > 6) fails.push(`ветер ${day.wind_ms} > 6 м/с`)
-    if (day.precip_prob_pct >= 50 || day.precip_mm > 0)
+    if ((day.precip_prob_pct ?? 0) >= 50 || day.precip_mm > 0)
       fails.push(`осадки ожидаются (${day.precip_mm} мм, ${day.precip_prob_pct} %)`)
   } else if (type === 'seeding') {
     if (tAvg - 1 < 4) fails.push(`t° почвы ~${tAvg - 1} < 4 °C`)
