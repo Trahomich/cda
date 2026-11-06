@@ -316,10 +316,14 @@ class TestAlertEngine:
         )
         make_scene(db_session, field_id, captured_at=date.today(), index_avg=0.40)
         engine = AlertEngine(session_factory=sessionmaker(bind=db_engine, expire_on_commit=False))
-        events.publish(
-            SCENE_INGESTED_EVENT,
-            {"field_id": str(field_id), "index": "ndvi", "index_avg": 0.4},
-        )
+        engine.subscribe()
+        try:
+            events.publish(
+                SCENE_INGESTED_EVENT,
+                {"field_id": str(field_id), "index": "ndvi", "index_avg": 0.4},
+            )
+        finally:
+            engine.unsubscribe()
         types = {a.type for a in alerts(db_session)}
         assert "ndvi_anomaly" in types
 
