@@ -139,7 +139,7 @@ async function saveEdit(dropYield = false) {
         <form
           v-if="editing?.client_id === record.client_id"
           class="queue__edit"
-          @submit.prevent="saveEdit"
+          @submit.prevent="saveEdit(false)"
         >
           <label :for="`area-${record.client_id}`">Факт. площадь, га</label>
           <input
