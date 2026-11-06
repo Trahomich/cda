@@ -21,6 +21,20 @@ services:
       start_period: 10s
     restart: unless-stopped
 
+  # Воркер приёма погоды Open-Meteo (ADR-09, v1-03): тот же образ без API наружу
+  weather-ingest:
+    image: cda/backend:latest
+    build: .
+    command: python -m app.services.weather_ingest
+    environment:
+      POSTGRES_HOST: db
+      REDIS_HOST: redis
+      INGEST_RUN_ONCE: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
   # Воркер каталогизации Sentinel-2 (ADR-09, v1-04): STAC earth-search → БД
   sentinel-ingest:
     image: cda/backend:latest
