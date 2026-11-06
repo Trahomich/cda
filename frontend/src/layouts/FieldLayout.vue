@@ -24,6 +24,11 @@ function go(item: (typeof nav.value)[number]) {
   if (!item.disabled) router.push(item.route)
 }
 
+/** Выход из полевого режима → обычный кабинет (07-ux §1.1). */
+function exitFieldMode() {
+  router.push({ name: 'fields-map' })
+}
+
 function logout() {
   auth.logout()
   router.push({ name: 'login' })
