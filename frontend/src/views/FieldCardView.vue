@@ -461,6 +461,7 @@ function fmtNum(v: number, digits = 1): string {
   </section>
 </template>
 
+<style scoped>
 .card360__tabs {
   display: flex;
   gap: 0.4rem;
