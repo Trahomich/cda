@@ -24,6 +24,28 @@ class ViolationItem(BaseModel):
     rationale: str
 
 
+class PlanViolationItem(BaseModel):
+    """Нарушение в on-demand пересчёте плана (API-08, docs/06 §7.2).
+
+    Формат совпадает с violations POST /rotation-plans (rule_id/severity),
+    дополнен cycle_year и detail=rationale."""
+
+    rule_id: str
+    severity: str
+    cycle_year: int
+    detail: str
+
+
+class PlanViolationsResponse(BaseModel):
+    """GET /rotation-plans/{id}/violations: пересчёт RULE-AGRO-01/03/04."""
+
+    plan_id: uuid.UUID
+    field_id: uuid.UUID
+    checked_at: datetime
+    items: list[PlanViolationItem]
+    total: int
+
+
 class CycleItem(BaseModel):
     """ENT-CROP-CYCLE в списках и карточках (docs/03 §1.3)."""
 
