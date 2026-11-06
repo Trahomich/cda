@@ -62,7 +62,7 @@ def contour_lookup_factory(db: Session):
             ),
             {"fid": field_id},
         ).fetchone()
-        return None if row is None else row[0]
+        return None if row is None else unwrap_single_multi(row[0])
 
     return lookup
 
