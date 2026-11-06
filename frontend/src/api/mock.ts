@@ -223,6 +223,11 @@ const PLAN = {
   approved_at: null as string | null,
 }
 
+/** Идентификатор по-полевого плана в моке (суффикс — номер поля). */
+function planUuid(n: number): string {
+  return PLAN.plan_id.slice(0, -2) + String(n).padStart(2, '0')
+}
+
 function cultureBySuffix(sfx: string): MockCulture {
   const c = CULTURES.find((x) => x.culture_id.endsWith(sfx))
   if (!c) throw new Error(`нет культуры ${sfx}`)
