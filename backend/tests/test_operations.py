@@ -13,6 +13,7 @@ import uuid
 from datetime import date
 
 import pytest
+from sqlalchemy import select
 from app.models.agronomy import (
     AgroInput,
     CropCycle,
