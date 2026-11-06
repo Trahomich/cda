@@ -112,10 +112,6 @@ onMounted(load)
 function fmtNum(v: number, digits = 1): string {
   return v.toLocaleString('ru-RU', { maximumFractionDigits: digits })
 }
-
-function kindLabel(kind: string): string {
-  return kind === 'fallow' ? 'пар' : kind === 'catch' ? 'промежуточная' : ''
-}
 </script>
 
 <template>
