@@ -256,8 +256,13 @@ def seed_operations(db: Session) -> SeedOperationsReport:
                     continue
                 input_id = None
                 if "input_name" in row:
-                    input_ = inputs_by_name.get(_kind_of(row["operation_type"]), row["input_name"]) \
-                        if False else None
+                    kind = "fertilizer" if row["operation_type"] == "fertilizing" else "ppp"
+                    item = inputs_by_name.get((kind, row["input_name"]))
+                    if item is None:  # справочник неполный — операция без препарата
+                        logger.warning(
+                            "seed-operations: препарата «%s» нет в dat_agro_input", row["input_name"]
+                        )
+                    input_id = item.id if item is not None else None
                 op = FieldOperation(
                     field_id=farm_field.id,
                     cycle_id=cycle.id,
