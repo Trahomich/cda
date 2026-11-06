@@ -352,8 +352,8 @@ export interface WeatherForecastDay {
   temp_min_c: number
   temp_max_c: number
   precip_mm: number
-  /** Вероятность осадков, % (RULE-AGRO-09). */
-  precip_prob_pct: number
+  /** Вероятность осадков, % (RULE-AGRO-09); в API-29 MVP отсутствует. */
+  precip_prob_pct?: number
   wind_ms: number
   humidity_pct: number
 }
