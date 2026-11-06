@@ -150,7 +150,7 @@ def run_catalog_cycle(
         log_source(db, "error", str(exc))
         return CatalogReport(failed=[str(exc)])
 
-    db.rollback()  # сессия чистая к批量 записи (поиск мог не трогать БД)
+    db.rollback()  # чистая сессия перед批量 записью — убираем артефакты select'ов
 
     new_rows = 0
     touched: set[uuid.UUID] = set()
