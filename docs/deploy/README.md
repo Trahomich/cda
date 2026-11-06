@@ -96,11 +96,14 @@ ssh cda@192.168.99.201 'cd cda && \
 через SOCKS-прокси пользователя — 200 OK за 0.4 с; earth-search и
 sentinel-cogs доступны напрямую).
 
-Решение: httpx (адаптеры Open-Meteo) ходит через тот же SOCKS5-прокси, что и
-fragrelay: в сервисы api и weather-ingest добавлен env
-`ALL_PROXY=socks5://${SOCKS_HOST}:${SOCKS_PORT}` (SOCKS_HOST/SOCKS_PORT —
-в ~/cda/.env, default 192.168.99.45:1080), в зависимостях — `httpx[socks]`.
-httpx читает ALL_PROXY сам (trust_env); sentinel-ingest прокси не нужен.
+Решение: httpx (адаптеры Open-Meteo и STAC) ходит через тот же SOCKS5-прокси,
+что и fragrelay: во все сервисы с исходящим httpx-трафиком (api, weather-ingest,
+sentinel-ingest) добавлен env `ALL_PROXY=socks5://${SOCKS_HOST}:${SOCKS_PORT}`
+(SOCKS_HOST/SOCKS_PORT — в ~/cda/.env, default 192.168.99.45:1080), в
+зависимостях — `httpx[socks]`. httpx читает ALL_PROXY сам (trust_env).
+Позже выяснилось: и POST /search к earth-search (sentinel-ingest) напрямую
+отдаётся >60 с (DPI душит и его, GET при этом быстрый) — поэтому прокси нужен
+всем трём сервисам.
 
 ## Известная проблема: исходящие соединения cloudflared блокируются DPI (2026-11-06) — РЕШЕНО
 
