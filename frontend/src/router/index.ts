@@ -57,6 +57,14 @@ const router = createRouter({
           meta: { title: 'Погода' },
         },
         {
+          // «Календарь работ» (v2, docs/06 §7.2): месячная сетка план+факт —
+          // фронт-композиция API-18 (операции) и API-15 (планы внесения).
+          path: 'calendar',
+          name: 'work-calendar',
+          component: () => import('@/views/WorkCalendarView.vue'),
+          meta: { title: 'Календарь работ' },
+        },
+        {
           // E-13 «Журнал операций» (состав MVP 08 §1): API-18, отклонения RULE-AGRO-11.
           path: 'operations',
           name: 'operations-journal',
