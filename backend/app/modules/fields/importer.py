@@ -249,6 +249,9 @@ def import_fields(db: Session, payload_ref: str, *, replace: bool = False) -> Im
             external_id = new_id
         seen_external.add(external_id)
 
+        if isinstance(geom, Polygon):
+            # колонка dat_field.contour — geography(MULTIPOLYGON, 4326)
+            geom = MultiPolygon([geom])
         wkt = f"SRID=4326;{geom.wkt}"
         field_ = existing.get(external_id)
         if field_ is None:
