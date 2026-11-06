@@ -6,12 +6,10 @@
 сети (httpx.MockTransport, наружу тесты не ходят). БД — DATABASE_URL_TEST.
 """
 
-import json
 import uuid
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 
 import httpx
-import pytest
 from app.core.config import Settings
 from app.integrations.open_meteo import OpenMeteoAdapter
 from app.models.integrations import WeatherObservation
@@ -20,7 +18,6 @@ from app.services import weather_ingest as service
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from tests.test_weather import (
-    SQUARE_GEOJSON,
     load_fixture,
     make_field,
     make_weather_source,
