@@ -107,7 +107,7 @@ def _pick_sequence(
             if prev is not None:
                 if culture.id == prev.id:  # монокультура недопустима всегда
                     continue
-                if matrix.get((prev.culture_id := prev.id, culture.id)) == "ban":
+                if matrix.get((prev.id, culture.id)) == "ban":  # RULE-AGRO-01
                     continue
             last = last_used.get(culture.id)
             if last is not None and year - last < culture.repeat_years:
@@ -118,7 +118,7 @@ def _pick_sequence(
             # все кандидаты заблокированы (не встречается при пуле ≥ 3 и
             # repeat_years ≤ 5): берём первого, отличного от прошлого года
             chosen = next(c for c in pool if prev is None or c.id != prev.id)
-        if chosen.id == fallow.id if fallow is not None else False:
+        if fallow is not None and chosen.id == fallow.id:
             fallow_used = True
         sequence.append(chosen)
         last_used[chosen.id] = year
