@@ -1527,7 +1527,25 @@ export class MockTransport implements Transport {
       }
       // days 1..14, по умолчанию 7 (05 §6, REQ-NF-009: кэш при недоступности).
       const days = Math.min(Math.max(Number(params.get('days') ?? 7) || 7, 1), 14)
-      return ok({ field_id: fieldId, days: forecastDays(7).slice(0, days), stale: false })
+      const items = forecastDays(7)
+        .slice(0, days)
+        .map((d) => ({
+          forecast_for: d.date,
+          issued_at: new Date().toISOString(),
+          temperature_min_c: d.temp_min_c,
+          temperature_max_c: d.temp_max_c,
+          precipitation_mm: d.precip_mm,
+          wind_max_ms: d.wind_ms,
+          humidity_avg_pct: d.humidity_pct,
+          hazard: 'none',
+        }))
+      return ok({
+        items,
+        total: items.length,
+        limit: items.length,
+        offset: 0,
+        meta: { source_id: 'weather.open-meteo', status: 'ok', last_success_at: null, stale: false },
+      })
     }
 
     if (method === 'GET' && pathname === '/weather/windows') {
