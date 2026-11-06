@@ -44,6 +44,9 @@ class Culture(Base):
     forage_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     crop_group: Mapped[str] = mapped_column(String(50), nullable=False)
     repeat_years: Mapped[int] = mapped_column(Integer, nullable=False, server_default="3")
+    # стабильный цвет культуры на карте (#rrggbb, v1-08 #54);
+    # NULL — пользовательские культуры без назначенного цвета
+    color_hex: Mapped[str | None] = mapped_column(String(7), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
