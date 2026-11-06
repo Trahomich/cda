@@ -163,18 +163,14 @@ class AlertGenerators:
                     "rule_id": "RULE-AGRO-09",
                     "hazard": worst.hazard,
                     "days": day_refs,
-                    "data_refs": [
-                        {"entity": "forecast", "id": str(f.id)} for f in forecasts
-                    ],
+                    "data_refs": [{"entity": "forecast", "id": str(f.id)} for f in forecasts],
                 },
             )
             if alert is None:
                 duplicates += 1
             else:
                 created += 1
-                logger.info(
-                    "алерт weather_danger (%s) создан: поле %s", worst.hazard, field_id
-                )
+                logger.info("алерт weather_danger (%s) создан: поле %s", worst.hazard, field_id)
         return GenerationReport(created=created, duplicates=duplicates)
 
     # -- NDVI: существенное падение между сценами ------------------------------
@@ -188,9 +184,7 @@ class AlertGenerators:
         if field_id is not None:
             fields: dict[uuid.UUID, str] = {field_id: ""}
         else:
-            rows = db.execute(
-                select(Field.id).where(Field.status == "active")
-            ).fetchall()
+            rows = db.execute(select(Field.id).where(Field.status == "active")).fetchall()
             fields = {row.id: "" for row in rows}
         created = duplicates = 0
         for fid in fields:
@@ -251,9 +245,7 @@ class AlertGenerators:
         """Алерт data_source: нет свежих сцен на поле stale_days суток и дольше."""
         stale_before = datetime.now(tz=UTC) - timedelta(days=self._satellite_stale_days)
         rows = db.execute(
-            select(Field.id, Field.name)
-            .where(Field.status == "active")
-            .order_by(Field.name)
+            select(Field.id, Field.name).where(Field.status == "active").order_by(Field.name)
         ).fetchall()
         created = duplicates = 0
         for field_id, name in rows:
@@ -282,9 +274,7 @@ class AlertGenerators:
                     "rule_id": "MVP-12/satellite_gap",
                     "last_captured_at": last_str,
                     "data_refs": (
-                        [{"entity": "satellite_scene", "id": str(latest_id)}]
-                        if latest_id
-                        else []
+                        [{"entity": "satellite_scene", "id": str(latest_id)}] if latest_id else []
                     ),
                 },
             )

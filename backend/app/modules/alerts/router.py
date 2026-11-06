@@ -31,8 +31,8 @@ from app.modules.alerts.schemas import (
     AlertPatch,
     AlertsListResponse,
     JournalEventItem,
-    SourceStatusItem,
     SourcesStatusResponse,
+    SourceStatusItem,
 )
 
 DbSession = Annotated[Session, Depends(get_db)]
@@ -45,9 +45,7 @@ ALLOWED_TRANSITIONS: dict[str, frozenset[str]] = {
 }
 
 router = APIRouter(tags=["alerts"], dependencies=[Depends(group_checker("alerts"))])
-sources_router = APIRouter(
-    tags=["sources"], dependencies=[Depends(group_checker("sources"))]
-)
+sources_router = APIRouter(tags=["sources"], dependencies=[Depends(group_checker("sources"))])
 
 
 def _to_item(alert: Alert) -> AlertItem:
@@ -199,14 +197,10 @@ def sources_status(
         )
     ).fetchall()
     for row in rows:
-        last_events[row[0]] = JournalEventItem(
-            at=_aware(row[1]), status=row[2], reason=row[3]
-        )
+        last_events[row[0]] = JournalEventItem(at=_aware(row[1]), status=row[2], reason=row[3])
     total = db.scalar(select(func.count()).select_from(Source)) or 0
     sources = list(
-        db.scalars(
-            select(Source).order_by(Source.source_id).limit(limit).offset(offset)
-        )
+        db.scalars(select(Source).order_by(Source.source_id).limit(limit).offset(offset))
     )
     items = [
         SourceStatusItem(
@@ -214,9 +208,7 @@ def sources_status(
             kind=s.kind,
             enabled=s.enabled,
             last_status=s.last_status,
-            last_success_at=_aware(s.last_success_at)
-            if s.last_success_at is not None
-            else None,
+            last_success_at=_aware(s.last_success_at) if s.last_success_at is not None else None,
             last_event=last_events.get(s.source_id),
         )
         for s in sources
