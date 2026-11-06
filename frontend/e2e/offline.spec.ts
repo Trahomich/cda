@@ -80,9 +80,15 @@ test('422 не теряет запись: причина из problem+json по�
   await expect
     .poll(async () => page.locator('#field option').count(), { timeout: 15_000 })
     .toBeGreaterThan(1)
-  // Первое поле демо-хозяйства — «Степное-1», 84.5 га; RULE-AGRO-12: лимит 1.05×.
+  // Реальный 422 из backend #27: урожайность принята только операцией уборки
+  // (code=yield_requires_harvesting). Сценарий пользователя: выбрал «Уборку»,
+  // ввёл урожайность, затем сменил тип на «Обработка СЗР» — урожайность
+  // осталась в форме и ушла в payload (типичная ошибка на мобильном).
   await page.selectOption('#field', { index: 1 })
-  await page.fill('#area', '999') // заведомо больше 1,05 × площади
+  await page.selectOption('#type', { label: 'Уборка' })
+  await page.fill('#yield', '45')
+  await page.selectOption('#type', { label: 'Обработка СЗР' })
+  await page.fill('#area', '10')
   await page.context().setOffline(true)
   await page.getByRole('button', { name: /ЗАПИСАТЬ/ }).click()
   await expect(page.locator('.op-entry__queue-btn')).toContainText('⛁ 1')
@@ -92,12 +98,11 @@ test('422 не теряет запись: причина из problem+json по�
   await page.goto('/f/queue')
   const item = page.locator('.queue__item').first()
   await expect(item).toContainText('отклонено сервером', { timeout: 30_000 })
-  await expect(page.locator('.queue__error').first()).toContainText('RULE-AGRO-12')
+  await expect(page.locator('.queue__error').first()).toContainText('harvesting')
 
-  // Правка площади → снова в очередь (pending) → повторная синхронизация.
+  // Правка: убрать урожайность → снова в очередь (pending) → повторная синхронизация.
   await page.getByRole('button', { name: 'Править' }).click()
-  await page.locator('.queue__edit input').fill('10')
-  await page.getByRole('button', { name: 'Сохранить и в очередь' }).click()
+  await page.getByRole('button', { name: 'Убрать урожайность и в очередь' }).click()
   await expect(item).toContainText('ждёт сети')
 
   await page.getByRole('button', { name: 'Синхронизировать' }).click()
