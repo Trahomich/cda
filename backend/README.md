@@ -135,6 +135,38 @@ pre-commit install && pre-commit run --all-files
 `rationale`, `entity` по примеру docs/06 §5). Права: группа `rotation`
 (агроном/руководитель/админ) на чтение; создание — agronomist/admin.
 
+## Удобрения и СЗР (MVP-11, API-14..16)
+
+`app/modules/inputs/` (`rules.py` — чистые проверки, `service.py`, `router.py`)
+— справочник препаратов и планы внесения по docs/03 §1.4–1.5, §3.2–3.3:
+
+- `GET /agro-inputs` (фильтры `kind`, подстрока имени `q`, пагинация);
+  `POST /agro-inputs` (201 + Location) — ограничения ENT-AGRO-INPUT
+  (npk_content — только удобрения, active_substance/waiting_days — только
+  СЗР → 400 `invalid_kind_fields`; дубликат kind+name → 409 `duplicate_input`);
+- `GET /treatment-plans` (фильтры `status`, `cycle_id`, `field_id`, пагинация;
+  развёрнутые имена поля/цикла/препарата для экрана E-05);
+  `POST /treatment-plans` (201 + Location, статус `draft`) — проверки
+  RULE-AGRO-07/08/10 при создании;
+- `POST /treatment-plans/{id}/approve` (manager/admin) — `draft → approved`
+  с перепроверкой правил (за время жизни черновика лимиты могли занять другие
+  планы; аудит `status_change`); не-черновик — 409 `invalid_state`.
+
+Правила (422 `rule_violation` + extra `rule_id`/`severity`/`rationale`/`entity`):
+
+- RULE-AGRO-07: доза ≥ 0; суммарный N за сезон на поле ≤ 180 кг д.в./га
+  (default; расчёт: `kg_dv_ha` — доза уже в д.в., `kg_ha`/`l_ha` — `доза ×
+  n_pct / 100`; доля «≤ 1,3 × выноса» — post-MVP, требует RULE-AGRO-05/06);
+- RULE-AGRO-08: только `spraying` — `planned_harvest_date(цикла) −
+  planned_date < waiting_days(W)` блокирует; без даты уборки у цикла не
+  применяется;
+- RULE-AGRO-10: `approved_crops(W)` пусто или содержит культуру цикла;
+  обработок за сезон одним действующим веществом (по всем не отменённым
+  планам циклов поля за год) ≤ `max_treatments_per_season` (default 2).
+
+Права: группа `inputs` (агроном/руководитель/админ) на чтение; создание —
+agronomist/admin; согласование — manager/admin.
+
 ## Модуль полей (MVP-5, API-01..05)
 
 `app/modules/fields/` — контуры, версии и статусы полей по docs/03 §1.1 и 06 §5:
