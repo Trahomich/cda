@@ -170,9 +170,6 @@ onMounted(load)
                 Машина
               </th>
               <th scope="col">
-                Поле
-              </th>
-              <th scope="col">
                 Площадь, га
               </th>
               <th scope="col">
