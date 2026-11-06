@@ -261,7 +261,8 @@ def seed_operations(db: Session) -> SeedOperationsReport:
                     item = inputs_by_name.get((kind, row["input_name"]))
                     if item is None:  # справочник неполный — операция без препарата
                         logger.warning(
-                            "seed-operations: препарата «%s» нет в dat_agro_input", row["input_name"]
+                            "seed-operations: препарата «%s» нет в dat_agro_input",
+                            row["input_name"],
                         )
                     input_id = item.id if item is not None else None
                 op = FieldOperation(
