@@ -394,7 +394,61 @@ function fmtNum(v: number, digits = 1): string {
           </li>
         </ul>
       </div>
-    </div>
+      </div>
+
+      <!-- Работы: планы (API-15 field_id) + журнал (API-18 field_id) одной
+           хронологией, свежие сверху (v2, docs/06 §7.2). -->
+      <div
+        v-if="activeTab === 'works'"
+        class="card360__works"
+      >
+        <h2 class="card360__block-title">
+          Работы по полю (план и факт)
+        </h2>
+        <ul class="card360__works-list">
+          <li
+            v-for="entry in works"
+            :key="entry.key"
+            class="card360__works-item"
+            :class="entry.kind === 'plan' ? 'card360__works-item--plan' : 'card360__works-item--fact'"
+          >
+            <span
+              class="card360__works-chip"
+              :class="entry.kind === 'plan' ? 'card360__works-chip--plan' : 'card360__works-chip--fact'"
+            >{{ entry.kind === 'plan' ? 'план' : 'факт' }}</span>
+            <span class="card360__works-date">{{ entry.date }}</span>
+            <template v-if="entry.kind === 'plan' && entry.plan">
+              <span>
+                {{ entry.plan.operation_type === 'spraying'
+                  ? 'опрыскивание' : entry.plan.operation_type === 'fertilizing'
+                    ? 'внесение удобрений' : 'протравливание семян' }} ·
+                {{ entry.plan.input_name }} ·
+                {{ fmtNum(entry.plan.dose, 2) }}
+                {{ entry.plan.unit === 'l_ha' ? 'л/га' : entry.plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }}
+              </span>
+              <span class="card360__works-status">{{ PLAN_STATUS_LABELS[entry.plan.status] ?? entry.plan.status }}</span>
+            </template>
+            <template v-else-if="entry.op">
+              <span>
+                {{ OP_LABELS[entry.op.operation_type] }} ·
+                {{ fmtNum(entry.op.actual_area_ga, 2) }} га<span v-if="entry.op.actual_dose != null"> ·
+                  доза {{ fmtNum(entry.op.actual_dose, 2) }}</span>
+              </span>
+              <span
+                v-if="entry.op.performer"
+                class="card360__works-status"
+              >{{ entry.op.performer }}</span>
+            </template>
+          </li>
+          <li
+            v-if="works.length === 0"
+            class="card360__muted"
+          >
+            Работ по полю пока нет
+          </li>
+        </ul>
+      </div>
+    </template>
   </section>
 </template>
 
