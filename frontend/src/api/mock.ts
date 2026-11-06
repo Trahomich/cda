@@ -1043,24 +1043,46 @@ export class MockTransport implements Transport {
       return ok(detail)
     }
 
-    /* ── NDVI-таймлайн (API-06) ── */
+    /* ── NDVI-таймлайн (API-06): пагинация + мета источника, как backend ── */
     const ndviMatch = /^\/fields\/([\w-]+)\/ndvi$/.exec(pathname)
     if (method === 'GET' && ndviMatch) {
       const field = FIELDS.find((f) => f.field_id === ndviMatch[1])
       if (!field) {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${ndviMatch[1]} не найдено`)
       }
-      return ok(ndviOf(FIELD_N.get(field.field_id)!))
+      const scenes = ndviOf(FIELD_N.get(field.field_id)!).map((p) => ({
+        scene_id: `scene-${p.date}-${field.field_id.slice(-4)}`,
+        field_id: field.field_id,
+        index: 'ndvi',
+        captured_at: p.date,
+        resolution_m: 10,
+        index_avg: p.ndvi,
+        index_min: Math.round((p.ndvi - 0.06) * 100) / 100,
+        index_max: Math.round((p.ndvi + 0.06) * 100) / 100,
+        cloud_pct: p.cloud_pct,
+        composite_days: 1,
+        source_id: 'satellite.sentinel2-l2a',
+        trust: 0.9,
+        anomaly_zones_ref: null,
+      }))
+      return ok({
+        items: scenes,
+        total: scenes.length,
+        limit: 50,
+        offset: 0,
+        index: 'ndvi',
+        meta: { source_id: 'satellite.sentinel2-l2a', status: 'ok', last_success_at: null, stale: false },
+      })
     }
 
-    /* ── Погода (API-07) ── */
+    /* ── Погода (API-07): факты + прогноз + мета, как backend ── */
     const weatherMatch = /^\/fields\/([\w-]+)\/weather$/.exec(pathname)
     if (method === 'GET' && weatherMatch) {
       const field = FIELDS.find((f) => f.field_id === weatherMatch[1])
       if (!field) {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${weatherMatch[1]} не найдено`)
       }
-      return ok(weatherOf(FIELD_N.get(field.field_id)!))
+      return ok(weatherOf(FIELD_N.get(field.field_id)!, field.field_id))
     }
 
     /* ── План севооборота (API-08) ── */
