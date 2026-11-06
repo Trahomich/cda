@@ -92,6 +92,9 @@ def _audit(
 
 def input_npk(item: AgroInput) -> list[float] | None:
     """[% N, P2O5, K2O] из колонок БД; None, если состав не задан."""
+    if item.n_pct is None and item.p2o5_pct is None and item.k2o_pct is None:
+        return None
+    return [float(item.n_pct or 0), float(item.p2o5_pct or 0), float(item.k2o_pct or 0)]
 
 
 
