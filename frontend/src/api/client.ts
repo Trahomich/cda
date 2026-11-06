@@ -40,8 +40,7 @@ type ErrorHandler = (error: ApiError) => void
 /** Обработчик 401 — сброс сессии и переход на /login (подключает приложение). */
 type UnauthorizedHandler = () => void
 
-const useMock =
-  import.meta.env.DEV && import.meta.env.VITE_USE_MOCK !== 'false'
+const useMock = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK !== 'false'
 
 /** Пути аутентификации: их 401 («неверный логин/пароль») — не конец сессии. */
 const AUTH_PATHS = ['/auth/login']
@@ -56,9 +55,7 @@ export class ApiClient {
 
   constructor() {
     const baseUrl = import.meta.env.VITE_API_BASE ?? '/api/v1'
-    this.transport = useMock
-      ? new MockTransport()
-      : new FetchTransport(baseUrl, () => this.token)
+    this.transport = useMock ? new MockTransport() : new FetchTransport(baseUrl, () => this.token)
   }
 
   setErrorHandler(handler: ErrorHandler): void {
@@ -91,11 +88,7 @@ export class ApiClient {
     try {
       response = await this.transport.request(method, fullPath, options.body)
     } catch {
-      const error = new ApiError(
-        'Нет связи с сервером. Проверьте подключение к сети.',
-        0,
-        null,
-      )
+      const error = new ApiError('Нет связи с сервером. Проверьте подключение к сети.', 0, null)
       this.onError?.(error)
       throw error
     }
