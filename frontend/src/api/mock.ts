@@ -585,13 +585,13 @@ function weatherOf(n: number, fieldId: string): unknown {
   const day = 24 * 3600 * 1000
   const iso = (offset: number) => new Date(Date.now() + offset * day).toISOString().slice(0, 10)
   const pattern = [
-    { min: 8 + (n % 3), max: 19, precip: 0 },
-    { min: 9 + (n % 3), max: 21, precip: 0 },
-    { min: 10, max: 23, precip: 2.5 },
-    { min: 11, max: 20, precip: 7.8 },
-    { min: 10, max: 17, precip: 4.1 },
-    { min: 7, max: 15, precip: 0.5 },
-    { min: 6, max: 16, precip: 0 },
+    { min: 8 + (n % 3), max: 19, precip: 0, prob: 10 },
+    { min: 9 + (n % 3), max: 21, precip: 0, prob: 15 },
+    { min: 10, max: 23, precip: 2.5, prob: 60 },
+    { min: 11, max: 20, precip: 7.8, prob: 90 },
+    { min: 10, max: 17, precip: 4.1, prob: 70 },
+    { min: 7, max: 15, precip: 0.5, prob: 30 },
+    { min: 6, max: 16, precip: 0, prob: 5 },
   ]
   const fact = (d: { min: number; max: number; precip: number }, i: number, offset: number) => {
     const avg = Math.round(((d.min + d.max) / 2) * 10) / 10
