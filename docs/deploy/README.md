@@ -62,10 +62,14 @@ demo_manager/demo123 из #46; сид идемпотентен — пользо�
 `... exec api python -m app.cli create-admin --login <логин> --password <пароль>`.
 Пароли/логины демо-входа — только в итоге задачи, не в коде.
 
-Импорт реального хозяйства (v1-02, IF-FIELDS): положить SHP-архив (zip, WGS84)
-или GeoJSON в `~/cda` на сервере (например docs/examples/agronet.fields.zip)
-и выполнить:
-`... exec api python -m app.cli import-fields /app/../agronet.fields.zip --replace`
+Импорт реального хозяйства (v1-02, IF-FIELDS): SHP-архив (zip, WGS84) или
+GeoJSON кладётся на сервер, копируется в контейнер api и импортируется:
+
+```
+docker cp ~/cda/agronet.fields.zip $(ssh cda@192.168.99.201 'cd cda && docker compose -f deploy/docker-compose.prod.yml --env-file .env ps -q api'):/tmp/fields.zip
+ssh cda@192.168.99.201 'cd cda && docker compose -f deploy/docker-compose.prod.yml --env-file .env exec api python -m app.cli import-fields /tmp/fields.zip --replace'
+```
+
 (`--replace` удаляет прежние поля с зависимостями — демо-поля заменяются
 реальными; пользователи и справочники сохраняются).
 
