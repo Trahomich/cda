@@ -151,6 +151,15 @@ class SourceAdapter(Protocol):
 не ошибка), `DataQualityError` (данные пришли, но не прошли валидацию).
 Семантика ошибок и поведение системы при каждой — обязательно в 05.
 
+Физическое исполнение (ADR-09, v1): живые адаптеры работают в отдельных
+ingest-сервисах стека — weather-ingest (IF-WEATHER, Open-Meteo) и
+sentinel-ingest (IF-SATELLITE, earth-search STAC + NDVI по COG). Форма адаптера,
+нормализованные структуры и семантика ошибок не меняются. Переменные окружения
+ингеста: `OPEN_METEO_BASE_URL` (default `https://api.open-meteo.com/v1`),
+`STAC_API_URL` (default `https://earth-search.aws.element84.com/v1`),
+`INGEST_WEATHER_*` / `INGEST_SATELLITE_*` — интервалы (default по 05 §4).
+Fake-адаптеры остаются в тестах и dev-режиме.
+
 ## 8. Конвенции API (для 06-data-api.md)
 
 - REST, базовый префикс `/api/v1`, JSON (§5), идемпотентные PUT/PATCH.
