@@ -26,10 +26,10 @@ import logging
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
 import numpy as np
-from app.integrations import DataGapError
+from app.integrations import DataGapError, DataQualityError, SourceUnavailableError
 from app.integrations.raster import (
     compute_index_array,
     contour_mask,
@@ -38,6 +38,7 @@ from app.integrations.raster import (
 )
 from app.integrations.stac import SATELLITE_SOURCE_ID
 from app.models.integrations import SatelliteCatalogItem, SatelliteScene
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -48,7 +49,7 @@ logger = logging.getLogger(__name__)
 #: SCL-метки облаков и снега (docs/05 §2 v1: 8=cloud medium, 9=cloud high, 10=cirrus)
 CLOUD_SCL_VALUES = (8, 9, 10)
 
-#: индексы растра Sentinel-2 L2A (docs/03, ENT-SATELLITE-SCENE)
+#: индекс и разрешение растра Sentinel-2 L2A (docs/03, ENT-SATELLITE-SCENE)
 INDEX = "ndvi"
 RESOLUTION_M = 10
 
@@ -74,7 +75,7 @@ class NdviStats:
 class NdviReport:
     """Итог цикла расчёта NDVI (для журналов и тестов)."""
 
-    rows: int = 0  # обработано строк каталога (processed + failed)
+    rows: int = 0  # обработано строк каталога
     scenes: int = 0  # записано сцен dat_satellite_scene
     cloud_skipped: int = 0  # честная облачность > 60 — не сохранена (05 §5 п.2)
     gaps: int = 0  # DataGap — строка failed (данных нет, повтор бессмыслен)
@@ -95,22 +96,28 @@ class NdviReport:
         return "ok"
 
 
-def _read_band_window(href: str, contour_geojson: dict) -> tuple[np.ndarray, object]:
-    """Окно растра под контуром (в CRS растра, windowed read; 05 §2 v1).
-
-    Контур WGS84 перепроецируется в CRS канала; чтение — только окно bounds
-    контура (сцена не скачивается). Вне плашки — fill 0 (для отражений
-    даёт NaN-индекс, исключается из статистики; для SCL 0 = nodata).
-    """
+def _open_cog(href: str):
+    """Открытие COG по HTTP (или пути); недоступность → SourceUnavailableError."""
     import rasterio
+
+    try:
+        return rasterio.open(href)
+    except Exception as exc:  # RasterioIOError: 5xx/сеть/битая ссылка
+        raise SourceUnavailableError(f"COG недоступен: {href}: {exc}"[:300]) from exc
+
+
+def _read_band_window(href: str, contour_geojson: dict) -> tuple[np.ndarray, object, object]:
+    """(массив, transform, crs) окна растра под контуром (windowed read).
+
+    Контур WGS84 перепроцируется в CRS канала; читается только окно bounds
+    контура (сцена не скачивается). Вне плашки — fill 0: для отражений он
+    даёт NaN-индекс (исключается из статистики), для SCL 0 = nodata.
+    """
     from rasterio.windows import from_bounds
     from rasterio.warp import transform_geom
     from shapely.geometry import shape
 
-    try:
-        ds = rasterio.open(href)
-    except Exception as exc:  # RasterioIOError: 5xx/сеть/битая ссылка
-        raise _unavailable(href, exc) from exc
+    ds = _open_cog(href)
     try:
         geom_raster = transform_geom("EPSG:4326", ds.crs, contour_geojson)
         bounds = shape(geom_raster).bounds
@@ -124,51 +131,38 @@ def _read_band_window(href: str, contour_geojson: dict) -> tuple[np.ndarray, obj
             or window.row_off + window.height <= 0
         ):
             raise DataGapError(f"поле вне плашки канала: {href}")
-        arr = ds.read(
-            1,
-            window=window,
-            boundless=True,
-            fill_value=0,
-        )
-        return arr, ds.window_transform(window)
+        arr = ds.read(1, window=window, boundless=True, fill_value=0)
+        return arr, ds.window_transform(window), ds.crs
     finally:
         ds.close()
-
-
-def _unavailable(href: str, exc: Exception) -> Exception:
-    """Ошибка чтения COG → SourceUnavailableError (ретраи планировщиком)."""
-    from app.integrations import SourceUnavailableError
-
-    return SourceUnavailableError(f"COG недоступен: {href}: {exc}"[:300])
 
 
 def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     """Зональная статистика NDVI поля по COG-активам сцены (b04/b08/scl).
 
-    B04/B08 — сетка 10 м; SCL (20 м) читается в сетку B08 (nearest). Облачность
+    B04/B08 — сетка 10 м; SCL (20 м) читается в сетку B08 (nearest).
     cloud_pct — доля пикселей SCL ∈ {8,9,10} полезной площади (пиксели внутри
-    контура с данными каналов), 05 §2 v1.
+    контура с данными каналов), docs/05 §2 v1. При облачности > 60 статистика
+    не считается (сцене всё равно не сохраняться, 05 §5 п.2).
     """
-    import rasterio
     from rasterio.enums import Resampling
-    from rasterio.windows import from_bounds
     from rasterio.warp import transform_geom
-    from shapely.geometry import shape
 
     missing = [band for band in BAND_ASSETS if not assets.get(band)]
     if missing:
         raise DataGapError(f"в активах сцены нет каналов: {', '.join(missing)}")
 
-    red_arr, red_transform = _read_band_window(assets["b04"], contour_geojson)
-    nir_arr, nir_transform = _read_band_window(assets["b08"], contour_geojson)
+    red_arr, red_transform, red_crs = _read_band_window(assets["b04"], contour_geojson)
+    nir_arr, nir_transform, nir_crs = _read_band_window(assets["b08"], contour_geojson)
     if red_arr.shape != nir_arr.shape or red_transform != nir_transform:
         raise DataGapError("каналы b04/b08 на разных сетках — окно не совпадает")
 
     # SCL → сетка NIR (10 м, nearest), вне плашки — 0 (nodata, не облако)
-    try:
-        scl_ds = rasterio.open(assets["scl"])
-    except Exception as exc:
-        raise _unavailable(assets["scl"], exc) from exc
+    import rasterio
+    from rasterio.windows import from_bounds
+    from shapely.geometry import shape
+
+    scl_ds = _open_cog(assets["scl"])
     try:
         geom_scl = transform_geom("EPSG:4326", scl_ds.crs, contour_geojson)
         window = from_bounds(*shape(geom_scl).bounds, transform=scl_ds.transform)
@@ -183,28 +177,19 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     finally:
         scl_ds.close()
 
-    ndvi = compute_index_array(
-        INDEX, nir_arr.astype("float32"), red_arr.astype("float32")
-    )
-    from rasterio.warp import transform_geom as _tg  # noqa: F401 — единый импорт выше
+    ndvi = compute_index_array(INDEX, nir_arr.astype("float32"), red_arr.astype("float32"))
 
-    inside = contour_mask(
-        _window_geom(contour_geojson, nir_transform), nir_transform, nir_arr.shape
-    )
+    # маска контура — в CRS каналов (Sentinel-2 — UTM, поле — WGS84)
+    geom_nir = transform_geom("EPSG:4326", nir_crs, contour_geojson)
+    inside = contour_mask(geom_nir, nir_transform, nir_arr.shape)
     useful = inside & np.isfinite(ndvi)
     if not useful.any():
         raise DataGapError("внутри контура нет пикселей с данными каналов")
 
     cloud = np.isin(scl, CLOUD_SCL_VALUES)
-    cloud_pct = round(
-        100.0 * float((cloud & useful).sum()) / float(useful.sum()), 1
-    )
+    cloud_pct = round(100.0 * float((cloud & useful).sum()) / float(useful.sum()), 1)
     if cloud_pct > MAX_SCENE_CLOUD_PCT:
-        # честная облачность > 60 — сцена не сохраняется (05 §5 п.2);
-        # статистика по облаку не считается
-        return NdviStats(
-            index_min=0.0, index_avg=0.0, index_max=0.0, std=0.0, cloud_pct=cloud_pct
-        )
+        return NdviStats(0.0, 0.0, 0.0, 0.0, cloud_pct)
 
     valid = useful & ~cloud
     if not valid.any():
@@ -212,32 +197,10 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     validate_index_values(INDEX, ndvi[valid])
     index_min, index_avg, index_max = stats_over_mask(ndvi, valid)
     std = round(float(np.std(ndvi[valid])), 3)
-    return NdviStats(
-        index_min=index_min,
-        index_avg=index_avg,
-        index_max=index_max,
-        std=std,
-        cloud_pct=cloud_pct,
-    )
+    return NdviStats(index_min, index_avg, index_max, std, cloud_pct)
 
 
-def _window_geom(contour_geojson: dict, transform: object) -> dict:
-    """Контур в CRS растра: пиксельная сетка COG Sentinel-2 — UTM, поле — WGS84."""
-    from rasterio.crs import CRS
-    from rasterio.warp import transform_geom
-
-    crs = getattr(transform, "crs", None) or CRS.from_epsg(32637)
-    # window_transform не несёт CRS — проекция выполняется по CRS источника,
-    # переданному в _read_band_window; здесь только маска по готовой сетке
-    return transform_geom("EPSG:4326", crs, contour_geojson) if crs else contour_geojson
-
-
-def scene_upsert(
-    db: Session,
-    field_id: uuid.UUID,
-    captured_at: date,
-    stats: NdviStats,
-) -> bool:
+def scene_upsert(db: Session, field_id: uuid.UUID, captured_at, stats: NdviStats) -> bool:
     """Запись сцены ndvi; False, если (field, index, дата, источник) уже есть."""
     statement = (
         pg_insert(SatelliteScene)
@@ -260,36 +223,28 @@ def scene_upsert(
     return db.execute(statement).first() is not None
 
 
-def process_catalog_row(
-    db: Session, item: SatelliteCatalogItem, contour_geojson: dict | None
-) -> str:
-    """Обработка одной строки каталога → 'scene' | 'cloud' | 'gap' | 'failed'.
+def _finish(item: SatelliteCatalogItem, status: str, error: str | None) -> None:
+    item.status = status
+    item.error = error[:500] if error else None
+    item.processed_at = datetime.now(tz=UTC)
 
-    DataGap/DataQuality — перманентные проблемы строки: статус failed с
-    причиной. SourceUnavailable пробрасывается наверх: строка остаётся
-    cataloged, повтор — следующим циклом планировщика.
+
+def apply_row_result(db: Session, item: SatelliteCatalogItem, result) -> str:
+    """Готовый результат zonal_ndvi (или исключение) → запись БД, исход.
+
+    'scene' — сцена записана; 'cloud' — >60 %, не сохранена; 'gap'/'failed' —
+    строка каталога failed с причиной. SourceUnavailableError пробрасывается
+    (строка остаётся cataloged — повтор следующим циклом).
     """
-    from app.integrations import DataQualityError, SourceUnavailableError
+    if isinstance(result, BaseException):
+        if isinstance(result, SourceUnavailableError):
+            raise result
+        _finish(item, "failed", str(result))
+        return "gap" if isinstance(result, DataGapError) else "failed"
 
-    try:
-        stats = zonal_ndvi(item.assets or {}, contour_geojson or {})
-    except DataGapError as exc:
-        item.status = "failed"
-        item.error = str(exc)[:500]
-        item.processed_at = datetime.now(tz=UTC)
-        return "gap"
-    except DataQualityError as exc:
-        item.status = "failed"
-        item.error = str(exc)[:500]
-        item.processed_at = datetime.now(tz=UTC)
-        return "failed"
-    except SourceUnavailableError:
-        raise
-
+    stats: NdviStats = result
     if stats.cloud_pct > MAX_SCENE_CLOUD_PCT:
-        item.status = "processed"
-        item.error = None
-        item.processed_at = datetime.now(tz=UTC)
+        _finish(item, "processed", None)
         logger.info(
             "sentinel-ndvi: %s поле %s — облачность %.1f%% > %.0f, сцена не сохранена",
             item.item_id,
@@ -300,9 +255,7 @@ def process_catalog_row(
         return "cloud"
 
     inserted = scene_upsert(db, item.field_id, item.captured_at, stats)
-    item.status = "processed"
-    item.error = None
-    item.processed_at = datetime.now(tz=UTC)
+    _finish(item, "processed", None)
     logger.info(
         "sentinel-ndvi: %s поле %s — ndvi avg %.3f (min %.3f, max %.3f, std %.3f), "
         "cloud %.1f%%, trust %.2f%s",
@@ -319,20 +272,20 @@ def process_catalog_row(
     return "scene"
 
 
+def process_catalog_row(db: Session, item: SatelliteCatalogItem, contour: dict) -> str:
+    """Полный путь одной строки каталога: расчёт + запись (без учёта пулов)."""
+    return apply_row_result(db, item, zonal_ndvi(item.assets or {}, contour))
+
+
 def run_ndvi_cycle(
-    db: Session,
-    *,
-    batch_limit: int = 200,
-    max_workers: int = 4,
+    db: Session, *, batch_limit: int = 200, max_workers: int = 4
 ) -> NdviReport:
-    """Цикл расчёта: все строки каталога status='cataloged' → NDVI → сцены.
+    """Цикл расчёта: строки каталога status='cataloged' → NDVI → сцены.
 
     Чтение COG (сеть) выполняется пулом потоков (rasterio отпускает GIL),
     запись в БД — в основном потоке сессией. Прогресс — в логах; воркер
     не падает: недоступность COG — журнал error, строка ждёт повтора.
     """
-    from sqlalchemy import select
-
     from app.modules.satellite.ingest import contour_lookup_factory
 
     rows = (
@@ -346,14 +299,14 @@ def run_ndvi_cycle(
         .all()
     )
     if not rows:
-        report = NdviReport(skipped="нет сцен со статусом cataloged")
-        return report
+        return NdviReport(skipped="нет сцен со статусом cataloged")
 
     lookup = contour_lookup_factory(db)
     contours: dict[uuid.UUID, dict | None] = {}
     for row in rows:
         if row.field_id not in contours:
             contours[row.field_id] = lookup(str(row.field_id))
+    db.rollback()  # закрыть неявную транзакцию select'ов перед записями
 
     def compute(item: SatelliteCatalogItem) -> tuple[SatelliteCatalogItem, object]:
         contour = contours.get(item.field_id)
@@ -361,49 +314,36 @@ def run_ndvi_cycle(
             return item, DataGapError(f"поле {item.field_id} неактивно или без контура")
         try:
             return item, zonal_ndvi(item.assets or {}, contour)
-        except Exception as exc:  # SourceUnavailable/DataGap/DataQuality — разбор ниже
+        except (DataGapError, DataQualityError, SourceUnavailableError) as exc:
             return item, exc
 
     report = NdviReport(rows=len(rows))
-    db.rollback()  # закрыть неявную транзакцию select'ов перед записями
-
     with ThreadPoolExecutor(max_workers=max(1, max_workers)) as pool:
         for item, result in pool.map(compute, rows):
-            from app.integrations import DataGapError, DataQualityError, SourceUnavailableError
-
-            if isinstance(result, SourceUnavailableError):
-                report.unavailable.append(f"{item.item_id}: {result}")
-                continue  # строка остаётся cataloged — повтор в следующем цикле
-            if isinstance(result, DataGapError):
-                outcome = process_catalog_row(db, item, None)  # gap-ветка: причина в result
-                item.error = str(result)[:500]
-                if outcome == "gap":
-                    report.gaps += 1
-                else:
-                    report.failed += 1
-            elif isinstance(result, DataQualityError):
-                item.status = "failed"
-                item.error = str(result)[:500]
-                item.processed_at = datetime.now(tz=UTC)
-                report.failed += 1
-            else:
-                stats: NdviStats = result  # type: ignore[assignment]
-                if stats.cloud_pct > MAX_SCENE_CLOUD_PCT:
-                    outcome = process_catalog_row(db, item, contours.get(item.field_id))
-                    if outcome == "cloud":
-                        report.cloud_skipped += 1
-                else:
-                    process_catalog_row(db, item, contours.get(item.field_id))
-                    report.scenes += 1
+            try:
+                outcome = apply_row_result(db, item, result)
+            except SourceUnavailableError as exc:
+                report.unavailable.append(f"{item.item_id}: {exc}")
+                db.rollback()
+                continue
             db.commit()
+            if outcome == "scene":
+                report.scenes += 1
+            elif outcome == "cloud":
+                report.cloud_skipped += 1
+            elif outcome == "gap":
+                report.gaps += 1
+            else:
+                report.failed += 1
 
-    status = report.status
     if report.unavailable:
         reason = "; ".join(report.unavailable)[:500]
-        logger.error("sentinel-ndvi: недоступны COG: %s", reason)
+        logger.error("sentinel-ndvi: недоступны COG (%d строк): %s", len(report.unavailable), reason)
         log_source(db, "error", reason)
-    elif status in ("ok", "degraded"):
-        log_source(db, "ok" if status == "ok" else "degraded", None if status == "ok" else "ни одной сцены не записано")
+    elif report.status == "ok":
+        log_source(db, "ok", None)
+    elif report.status == "degraded":
+        log_source(db, "degraded", "ни одной сцены не записано")
     logger.info(
         "sentinel-ingest [ndvi]: строк=%d сцен=%d облако>60=%d гэпов=%d ошибок=%d "
         "недоступно=%d status=%s",
@@ -413,7 +353,7 @@ def run_ndvi_cycle(
         report.gaps,
         report.failed,
         len(report.unavailable),
-        status,
+        report.status,
     )
     return report
 
@@ -426,6 +366,7 @@ __all__ = [
     "NdviReport",
     "NdviStats",
     "RESOLUTION_M",
+    "apply_row_result",
     "process_catalog_row",
     "run_ndvi_cycle",
     "scene_upsert",
