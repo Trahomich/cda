@@ -13,6 +13,9 @@ services:
       REDIS_HOST: redis
       ENV: prod
       WEATHER_POLL_ENABLED: "false" # опрос погоды перенесён в воркер weather-ingest (ADR-09)
+      # api.open-meteo.com (157.90.83.168) блокируется DPI периметра — исходящие
+      # запросы httpx ( прогноз по требованию) идут через SOCKS-прокси пользователя
+      ALL_PROXY: socks5://${SOCKS_HOST:-192.168.99.45}:${SOCKS_PORT:-1080}
     ports:
       - "127.0.0.1:8000:8000" # только локально для проверок; наружу — через туннель
     depends_on:
