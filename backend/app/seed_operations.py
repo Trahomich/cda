@@ -333,7 +333,6 @@ def seed_operations(db: Session) -> SeedOperationsReport:
                     f"{farm_field.name} ({culture.name}) {item.name} {planned}: {exc.detail}"
                 )
                 continue
-            approved = rng.random() < APPROVED_SHARE
             db.add(
                 TreatmentPlan(
                     cycle_id=plan_cycle.id,
