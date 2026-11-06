@@ -29,7 +29,6 @@ from app.models.integrations import SatelliteCatalogItem, SourceJournalEntry
 from app.models.references import Source
 from app.services.sentinel_ingest.catalog import (
     BBOX_PAD_DEG,
-    CatalogReport,
     farm_bbox,
     intersecting_field_ids,
     run_catalog_cycle,
