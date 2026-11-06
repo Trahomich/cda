@@ -61,6 +61,7 @@ class ForecastItem:
     precipitation_mm: float | None
     wind_max_ms: float | None
     humidity_avg_pct: float | None
+    precip_prob_pct: int | None = None  # вероятность осадков, % (может не отдаваться)
     hazard: str = "none"  # none | frost | heavy_rain | hail | wind
     source_id: str = ""
 
