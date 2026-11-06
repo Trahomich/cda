@@ -416,8 +416,15 @@ class TestTreatmentPlansList:
         assert row["input_kind"] == "ppp"
         # фильтры
         assert client.get(API_PLANS, params={"status": "draft"}, headers=hdr).json()["total"] == 1
-        assert client.get(API_PLANS, params={"status": "approved"}, headers=hdr).json()["total"] == 0
-        assert client.get(API_PLANS, params={"field_id": field["field_id"]}, headers=hdr).json()["total"] == 1
+        assert (
+            client.get(API_PLANS, params={"status": "approved"}, headers=hdr).json()["total"] == 0
+        )
+        assert (
+            client.get(API_PLANS, params={"field_id": field["field_id"]}, headers=hdr).json()[
+                "total"
+            ]
+            == 1
+        )
         assert client.get(API_PLANS, params={"status": "нет"}, headers=hdr).status_code == 400
 
 
