@@ -71,6 +71,15 @@ const PLAN_STATUS_LABELS: Record<string, string> = {
   cancelled: 'отменён',
 }
 
+const OP_LABELS: Record<string, string> = {
+  spraying: 'опрыскивание',
+  fertilizing: 'внесение удобрений',
+  seeding: 'посев',
+  harvesting: 'уборка',
+  tillage: 'обработка почвы',
+  other: 'прочее',
+}
+
 const currentCycle = computed(() => {
   const year = new Date().getFullYear()
   return card.value?.cycles.find((c) => c.year === year) ?? card.value?.cycles[0] ?? null
