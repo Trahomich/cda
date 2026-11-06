@@ -323,7 +323,9 @@ def seed_operations(db: Session) -> SeedOperationsReport:
                     planned_date=planned,
                 )
             except AppError as exc:  # сид не создаёт планов, отвергаемых API (422)
-                db.rollback()
+                # validate_treatment_plan только читает БД — транзакция не
+                # испорчена, rollback не нужен (он потерял бы несохранённые
+                # строки этого поля); план просто не добавляем
                 report.violations.append(
                     f"{farm_field.name} ({culture.name}) {item.name} {planned}: {exc.detail}"
                 )
