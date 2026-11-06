@@ -20,7 +20,9 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.rbac import group_checker, role_checker
+from app.models.agronomy import AgroInput, CropCycle, Field, TreatmentPlan
 from app.models.auth import User, UserRole
+from app.models.references import Culture
 from app.modules.inputs import service
 from app.modules.inputs.schemas import (
     InputCreate,
@@ -38,8 +40,8 @@ ApproveAccess = Annotated[User, Depends(role_checker(UserRole.MANAGER, UserRole.
 router = APIRouter(tags=["inputs"], dependencies=[Depends(group_checker("inputs"))])
 
 
-def _input_item(item) -> InputItem:
-    npk = service._npk(item)  # noqa: SLF001 — тот же пакет, приведение колонок БД
+def _input_item(item: AgroInput) -> InputItem:
+    npk = service.input_npk(item)
     return InputItem(
         input_id=item.id,
         kind=item.kind,
@@ -52,6 +54,18 @@ def _input_item(item) -> InputItem:
         approved_crops=list(item.approved_crops or []),
         max_treatments_per_season=item.max_treatments_per_season,
         restrictions=item.restrictions,
+    )
+
+
+def _plan_row(db: Session, plan: TreatmentPlan) -> tuple:
+    """(план, цикл, поле, культура, препарат) — как строки list_treatment_plans."""
+    cycle = db.get_one(CropCycle, plan.cycle_id)
+    return (
+        plan,
+        cycle,
+        db.get_one(Field, cycle.field_id),
+        db.get_one(Culture, cycle.culture_id),
+        db.get_one(AgroInput, plan.input_id),
     )
 
 
@@ -76,7 +90,9 @@ def _plan_item(row: tuple) -> TreatmentPlanItem:
     )
 
 
-@router.get("/agro-inputs", response_model=InputListResponse, summary="API-14: справочник препаратов")
+@router.get(
+    "/agro-inputs", response_model=InputListResponse, summary="API-14: справочник препаратов"
+)
 def list_inputs(
     db: DbSession,
     *,
@@ -97,7 +113,9 @@ def list_inputs(
     status_code=201,
     summary="API-14: добавить препарат/удобрение в справочник",
 )
-def create_input(body: InputCreate, response: Response, user: WriteAccess, db: DbSession) -> InputItem:
+def create_input(
+    body: InputCreate, response: Response, user: WriteAccess, db: DbSession
+) -> InputItem:
     item = service.create_input(
         db,
         user=user,
@@ -131,12 +149,7 @@ def list_treatment_plans(
     offset: int = Query(default=0, ge=0),
 ) -> TreatmentPlanListResponse:
     rows, total = service.list_treatment_plans(
-        db,
-        status=status,
-        cycle_id=cycle_id,
-        field_id=field_id,
-        limit=limit,
-        offset=offset,
+        db, status=status, cycle_id=cycle_id, field_id=field_id, limit=limit, offset=offset
     )
     return TreatmentPlanListResponse(
         items=[_plan_item(r) for r in rows], total=total, limit=limit, offset=offset
@@ -163,13 +176,16 @@ def create_treatment_plan(
         planned_phase=body.planned_phase,
         basis_recommendation_id=body.basis_recommendation_id,
     )
-    cycle = service.get_cycle(db, plan.cycle_id)
-    row = (
-        plan,
-        cycle,
-        db.get_one(type(cycle).__mro__[0], cycle.field_id),  # Field
-        db.get_one(service.Culture, cycle.culture_id),
-        service.get_input(db, plan.input_id),
-    )
     response.headers["Location"] = f"{get_settings().api_v1_prefix}/treatment-plans/{plan.id}"
-    return _plan_item(row)
+    return _plan_item(_plan_row(db, plan))
+
+
+@router.post(
+    "/treatment-plans/{plan_id}/approve",
+    response_model=TreatmentPlanItem,
+    summary="API-16: согласование руководителем (draft → approved)",
+)
+def approve_treatment_plan(plan_id: uuid.UUID, user: ApproveAccess, db: DbSession) -> TreatmentPlanItem:
+    plan = service.get_treatment_plan(db, plan_id)
+    plan = service.approve_treatment_plan(db, user=user, plan=plan)
+    return _plan_item(_plan_row(db, plan))
