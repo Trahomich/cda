@@ -46,6 +46,7 @@ _DAILY_METRICS = (
     "precipitation_sum",
     "wind_speed_10m_max",
     "relative_humidity_2m_mean",
+    "precipitation_probability_max",
 )
 
 CentroidLookup = Callable[[str], tuple[float, float] | None]
