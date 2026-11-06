@@ -166,6 +166,9 @@ watch(fieldId, load)
                 Осадки, мм
               </th>
               <th scope="col">
+                Вероятность, %
+              </th>
+              <th scope="col">
                 Ветер, м/с
               </th>
               <th scope="col">
