@@ -36,7 +36,6 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.models.agronomy import (
-    Agrochem,
     Alert,
     CropCycle,
     Field,
@@ -49,6 +48,7 @@ from app.models.agronomy import (
 from app.models.auth import AuditRecord
 from app.models.integrations import Forecast, SatelliteScene, WeatherObservation
 from app.models.machinery import MachineJob
+from app.models.references import Agrochem
 
 logger = logging.getLogger(__name__)
 
