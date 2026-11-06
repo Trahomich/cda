@@ -684,6 +684,97 @@ onMounted(load)
   color: #b00020;
 }
 
+.tp__badge--badwindow {
+  background: #fff3e0;
+  color: #a15c00;
+}
+
+/* WEATHER-WINDOW (§7.2): панель подсказки после создания/согласования */
+.tp__window {
+  border: 1px dashed #a5d6a7;
+  border-radius: 8px;
+  background: #f9fbe7;
+  padding: 0.55rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.tp__window-head {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tp__window-detail {
+  margin: 0;
+  color: #424242;
+  font-size: 0.95rem;
+}
+
+.tp__chips {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.tp__chip {
+  border: 1.5px solid #2e7d32;
+  background: #fff;
+  color: #1b5e20;
+  border-radius: 999px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.tp__chip:hover {
+  background: #e8f5e9;
+}
+
+/* Диалог согласования (API-16) */
+.tp__dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 40%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.tp__dialog {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  max-width: 34rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.tp__dialog-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+}
+
+.tp__dialog-close {
+  background: #fff;
+  color: #424242;
+  border: 2px solid #9e9e9e;
+  border-radius: 8px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+
 .tp__approve {
   background: #2e7d32;
   color: #fff;
