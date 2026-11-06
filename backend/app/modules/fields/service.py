@@ -398,7 +398,7 @@ def current_cycles(db: Session, field_ids: list[uuid.UUID]) -> dict[uuid.UUID, d
     return result
 
 
-def _unwrap_multi(geo: dict | None) -> dict | None:
+def _unwrap_multi(geo: Any) -> Any:
     """MultiPolygon из одного полигона → Polygon.
 
     Колонка contour — geography(MULTIPOLYGON,4326) (v1-02: составные
