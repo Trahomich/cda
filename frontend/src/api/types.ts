@@ -369,6 +369,17 @@ export interface TreatmentPlan {
   status: TreatmentPlanStatus
 }
 
+/** WEATHER-WINDOW (docs/06 §7.2): погодное окно для планов spraying.
+ *  Не блокирующая подсказка: ok=false + detail («2026-06-10: ветер 6.2 м/с
+ *  (>4), осадки 70 % (≥50)»), suggested_dates — до 5 подходящих дат из
+ *  ближайших 7 суток. В GET-списке (API-15) поле null; объект приходит в
+ *  ответах POST /treatment-plans и approve (API-16); null — нет прогноза. */
+export interface PlanWeatherWindow {
+  ok: boolean
+  detail: string
+  suggested_dates: string[]
+}
+
 /** Создание плана внесения — POST /treatment-plans (API-15). */
 export interface TreatmentPlanRequest {
   cycle_id: string
