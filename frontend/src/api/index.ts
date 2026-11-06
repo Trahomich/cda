@@ -97,7 +97,7 @@ export function getAuthMe(): Promise<AuthMe> {
 
 const CYCLE_LIST_LIMIT = 200
 
-function toFieldCycle(c: CropCycleDetail): FieldCycle {
+function toFieldCycle(c: RotationCycleItem): FieldCycle {
   return {
     cycle_id: c.cycle_id,
     year: c.year,
