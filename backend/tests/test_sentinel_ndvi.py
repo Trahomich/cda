@@ -58,12 +58,15 @@ def _write_tif(path, arr, transform, crs):
 
 @pytest.fixture()
 def scene_rasters(tmp_path):
-    """Синтетическая сцена: b04/b08 (10 м), scl (20 м); верхняя половина — облако."""
+    """Синтетическая сцена: b04/b08 (10 м, 200×200), scl (20 м, 100×200).
+
+    Верхняя половина плашки — облако (SCL 9), нижняя — растительность (4).
+    """
     rng = np.random.default_rng(7)
     nir = rng.uniform(1500, 4000, (N, N)).astype("uint16")
     red = rng.uniform(500, 1500, (N, N)).astype("uint16")
     scl = np.full((N // 2, N), 4, dtype="uint8")  # растительность
-    scl = np.vstack([np.full((N // 2, N), 9, dtype="uint8"), scl])
+    scl[: N // 4, :] = 9  # северная половина (1000 м) — облако
 
     t10 = Affine(10.0, 0.0, X0, 0.0, -10.0, Y1)
     t20 = Affine(20.0, 0.0, X0, 0.0, -20.0, Y1)
