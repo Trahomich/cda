@@ -148,6 +148,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_import.set_defaults(func=cmd_import_fields)
 
+    p_rot = sub.add_parser(
+        "seed-rotation",
+        help="распределить севооборот по полям без плана/циклов (v1-10, RULE-AGRO-01/02)",
+    )
+    p_rot.add_argument("--years-back", type=int, default=4, help="лет истории (по умолчанию 4)")
+    p_rot.add_argument(
+        "--years-forward", type=int, default=4, help="лет плана вперёд (по умолчанию 4)"
+    )
+    p_rot.set_defaults(func=cmd_seed_rotation)
+
     args = parser.parse_args(argv)
     return args.func(args)
 
