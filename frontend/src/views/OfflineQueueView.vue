@@ -229,6 +229,19 @@ async function saveEdit(dropYield = false) {
   color: #424242;
 }
 
+.queue__exit {
+  align-self: flex-start;
+  background: #fff;
+  color: #1b5e20;
+  border: 2px solid #2e7d32;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  min-height: 48px;
+  cursor: pointer;
+}
+
 .queue__list {
   list-style: none;
   margin: 0;
