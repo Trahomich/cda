@@ -1,5 +1,6 @@
 <script setup lang="ts">
-// Экран входа: POST /auth (мок в dev: agronom / demo). Ошибки — тост problem+json.
+// Экран входа: POST /auth. Демо-креды: мок — agronom/demo,
+// реальный API (VITE_USE_MOCK=false) — demo_agronomist/demo123.
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -9,8 +10,9 @@ const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
-const loginName = ref('agronom')
-const password = ref('demo')
+const useMock = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK !== 'false'
+const loginName = ref(useMock ? 'agronom' : 'demo_agronomist')
+const password = ref(useMock ? 'demo' : 'demo123')
 const errorMessage = ref('')
 
 async function submit() {
