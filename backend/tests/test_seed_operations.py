@@ -47,7 +47,10 @@ def _operation_facts(db_session) -> list[tuple]:
             FieldOperation.cycle_id,
         )
     ).fetchall()
-    return sorted((str(f), d, t, str(i), float(dos or 0), p, str(c)) for f, d, t, i, dos, p, c in rows)
+    return sorted(
+        (str(f), d, t, str(i), float(dos or 0), p, str(c))
+        for f, d, t, i, dos, p, c in rows
+    )
 
 
 def _plan_facts(db_session) -> list[tuple]:
