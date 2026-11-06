@@ -73,8 +73,17 @@ export interface AuthResponse {
 /** Тип операции на поле (ENT-FIELD-OPERATION, 03 §1.6). */
 export type OperationType = 'spraying' | 'fertilizing' | 'seeding' | 'harvesting' | 'tillage' | 'other'
 
+/** Запись урожайности внутри операции уборки (ENT-YIELD-RECORD, 03 §1.7). */
+export interface YieldRecordRequest {
+  /** Урожайность, ц/га (CONTRACTS §5). */
+  yield_c_ha: number
+  gross_t?: number | null
+  source: 'scales' | 'combine_sensor' | 'estimate'
+}
+
 /** Запись факта операции: POST /operations (API-17).
- *  client_id — ключ идемпотентности офлайн-очереди (10-mobile-pwa §3). */
+ *  client_id — ключ идемпотентности офлайн-очереди (10-mobile-pwa §3).
+ *  yield_record — только для operation_type=harvesting (03 §1.6, 422 иначе). */
 export interface OperationRequest {
   client_id: string
   field_id: string
@@ -86,12 +95,16 @@ export interface OperationRequest {
   actual_area_ga: number
   performer?: string | null
   source: 'manual' | 'telemetry_import' | 'plan_execution'
+  yield_record?: YieldRecordRequest | null
 }
 
-/** Операция — ответ API-17/18 (06 §5, пример создания). */
+/** Операция — ответ API-17/18 (06 §5, пример создания).
+ *  needs_review=true — RULE-AGRO-12: площадь > 1,05 × поля, сохранено,
+ *  требует проверки агрономом («факт важнее плана», не 422). */
 export interface FieldOperation extends OperationRequest {
   operation_id: string
   deviation_flag: boolean
+  needs_review: boolean
   status: string
 }
 
