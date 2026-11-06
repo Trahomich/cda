@@ -13,7 +13,6 @@ import uuid
 from datetime import date
 
 import pytest
-from sqlalchemy import select
 from app.models.agronomy import (
     AgroInput,
     CropCycle,
@@ -24,6 +23,7 @@ from app.models.agronomy import (
 from app.models.auth import UserRole
 from app.models.references import Culture
 from geoalchemy2 import WKTElement
+from sqlalchemy import select
 from tests.test_auth import auth_header, make_user
 
 API = "/api/v1/operations"
