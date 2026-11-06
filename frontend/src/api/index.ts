@@ -10,6 +10,7 @@ import type {
   Api05FieldDetail,
   AuthMe,
   AuthResponse,
+  CropCycleHistoryItem,
   CultureReference,
   CropCycle,
   CropCycleDetail,
