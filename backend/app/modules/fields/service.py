@@ -419,14 +419,14 @@ def _unwrap_multi(geo: Any) -> Any:
 def contour_geojson(db: Session, field: Field) -> dict:
     """Текущий контур поля как GeoJSON (ST_AsGeoJSON)."""
     raw = db.scalar(select(func.ST_AsGeoJSON(Field.contour)).where(Field.id == field.id))
-    return _unwrap_multi(json.loads(raw or "null"))
+    return parse_geojson(raw)
 
 
 def version_geojson(db: Session, version: FieldVersion) -> dict:
     raw = db.scalar(
         select(func.ST_AsGeoJSON(FieldVersion.contour)).where(FieldVersion.id == version.id)
     )
-    return _unwrap_multi(json.loads(raw or "null"))
+    return parse_geojson(raw)
 
 
 def list_versions(db: Session, field: Field) -> list[FieldVersion]:
