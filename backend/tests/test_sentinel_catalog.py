@@ -243,25 +243,25 @@ class TestFakeClient:
 
 class TestGeoMatching:
     def test_farm_bbox_pads_active_fields(self, db_session):
-        make_stac_field(db)
-        bbox = farm_bbox(db)
+        make_stac_field(db_session)
+        bbox = farm_bbox(db_session)
         assert bbox is not None
         assert bbox[0] == pytest.approx(41.25 - BBOX_PAD_DEG, abs=1e-6)
         assert bbox[3] == pytest.approx(52.08 + BBOX_PAD_DEG, abs=1e-6)
 
     def test_farm_bbox_none_without_fields(self, db_session):
-        assert farm_bbox(db) is None  # только неактивные/нет полей
+        assert farm_bbox(db_session) is None  # только неактивные/нет полей
 
     def test_intersecting_fields(self, db_session):
-        inside = make_stac_field(db, "Овражное-1")
-        make_stac_field(db, "Далёкое-2", status="archived")
+        inside = make_stac_field(db_session, "Овражное-1")
+        make_stac_field(db_session, "Далёкое-2", status="archived")
         geometry = stac_feature("x", lon=41.30, lat=52.05)["geometry"]
-        assert intersecting_field_ids(db, geometry) == [inside]
+        assert intersecting_field_ids(db_session, geometry) == [inside]
 
     def test_far_scene_intersects_nothing(self, db_session):
-        make_stac_field(db)
+        make_stac_field(db_session)
         geometry = stac_feature("x", lon=39.0, lat=50.0)["geometry"]
-        assert intersecting_field_ids(db, geometry) == []
+        assert intersecting_field_ids(db_session, geometry) == []
 
 
 # =============================================================================
@@ -277,8 +277,8 @@ def last_source_state(db):
 
 class TestCatalogCycle:
     def test_catalog_scenes_for_intersecting_field(self, db_session):
-        field_id = make_stac_field(db)
-        make_satellite_source(db)
+        field_id = make_stac_field(db_session)
+        make_satellite_source(db_session)
         client = FakeStacClient(
             [
                 StacItem(
@@ -291,7 +291,7 @@ class TestCatalogCycle:
                 )
             ]
         )
-        report = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
+        report = run_catalog_cycle(db_session, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert report.status == "ok"
         assert report.scenes == 1 and report.fields == 1 and report.new_rows == 1
 
@@ -302,25 +302,25 @@ class TestCatalogCycle:
         assert row.cloud_pct == pytest.approx(3.6)
         assert row.assets == {"b04": "s3://b04", "b08": "s3://b08", "scl": "s3://scl"}
 
-        source, journal = last_source_state(db)
+        source, journal = last_source_state(db_session)
         assert source.last_status == "ok" and source.last_success_at is not None
         assert journal[-1].status == "ok"
 
     def test_dedup_second_cycle_no_new_rows(self, db_session):
-        make_stac_field(db)
-        make_satellite_source(db)
+        make_stac_field(db_session)
+        make_satellite_source(db_session)
         item = StacItem("dup", date(2026, 10, 31), 5.0, "37UFT", stac_feature("x")["geometry"])
         client = FakeStacClient([item])
-        first = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
-        second = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
+        first = run_catalog_cycle(db_session, client, date_from=WINDOW[0], date_to=WINDOW[1])
+        second = run_catalog_cycle(db_session, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert first.new_rows == 1 and second.new_rows == 0
         assert second.status == "ok"
         rows = db.scalars(select(SatelliteCatalogItem)).all()
         assert len(rows) == 1  # UQ (field_id, item_id) защищает от дублей
 
     def test_scene_away_from_fields_not_cataloged(self, db_session):
-        make_stac_field(db)
-        make_satellite_source(db)
+        make_stac_field(db_session)
+        make_satellite_source(db_session)
         client = FakeStacClient(
             [
                 StacItem(
@@ -332,39 +332,39 @@ class TestCatalogCycle:
                 )
             ]
         )
-        report = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
+        report = run_catalog_cycle(db_session, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert report.new_rows == 0
         assert db.scalars(select(SatelliteCatalogItem)).all() == []
 
     def test_unavailable_source_journal_error_no_exception(self, db_session):
-        make_stac_field(db)
-        make_satellite_source(db)
+        make_stac_field(db_session)
+        make_satellite_source(db_session)
 
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(503, text="недоступен")
 
         client = mock_client(handler)
-        report = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
+        report = run_catalog_cycle(db_session, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert report.status == "error" and report.scenes == 0
 
-        source, journal = last_source_state(db)
+        source, journal = last_source_state(db_session)
         assert source.last_status == "error" and source.last_success_at is None
         assert journal[-1].status == "error" and "503" in journal[-1].reason
 
     def test_empty_catalog_degraded(self, db_session):
-        make_stac_field(db)
-        make_satellite_source(db)
+        make_stac_field(db_session)
+        make_satellite_source(db_session)
         client = FakeStacClient([])
-        report = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
+        report = run_catalog_cycle(db_session, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert report.status == "degraded"
-        source, _ = last_source_state(db)
+        source, _ = last_source_state(db_session)
         assert source.last_status == "degraded"
 
     def test_no_fields_cycle_skipped(self, db_session):
-        make_satellite_source(db)
-        report = run_catalog_cycle(db, FakeStacClient([]), date_from=WINDOW[0], date_to=WINDOW[1])
+        make_satellite_source(db_session)
+        report = run_catalog_cycle(db_session, FakeStacClient([]), date_from=WINDOW[0], date_to=WINDOW[1])
         assert report.status == "skipped" and report.skipped
-        source, _ = last_source_state(db)
+        source, _ = last_source_state(db_session)
         assert source.last_status == "degraded"
 
 
