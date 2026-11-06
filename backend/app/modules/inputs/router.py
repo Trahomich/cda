@@ -196,7 +196,10 @@ def create_treatment_plan(
         basis_recommendation_id=body.basis_recommendation_id,
     )
     response.headers["Location"] = f"{get_settings().api_v1_prefix}/treatment-plans/{plan.id}"
-    return _plan_item(_plan_row(db, plan))
+    row = _plan_row(db, plan)
+    item = _plan_item(row)
+    item.weather_window = _plan_window(db, row[1], plan)  # WEATHER-WINDOW, §7.2
+    return item
 
 
 @router.post(
