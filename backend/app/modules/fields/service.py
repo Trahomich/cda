@@ -399,23 +399,6 @@ def current_cycles(db: Session, field_ids: list[uuid.UUID]) -> dict[uuid.UUID, d
     return result
 
 
-def _unwrap_multi(geo: Any) -> Any:
-    """MultiPolygon из одного полигона → Polygon.
-
-    Колонка contour — geography(MULTIPOLYGON,4326) (v1-02: составные
-    контуры), но контракт API-02 отдаёт одиночный контур как Polygon —
-    иначе ломается фронт и старые клиенты.
-    """
-    if (
-        isinstance(geo, dict)
-        and geo.get("type") == "MultiPolygon"
-        and isinstance(geo.get("coordinates"), list)
-        and len(geo["coordinates"]) == 1
-    ):
-        return {"type": "Polygon", "coordinates": geo["coordinates"][0]}
-    return geo
-
-
 def contour_geojson(db: Session, field: Field) -> dict:
     """Текущий контур поля как GeoJSON (ST_AsGeoJSON)."""
     raw = db.scalar(select(func.ST_AsGeoJSON(Field.contour)).where(Field.id == field.id))
