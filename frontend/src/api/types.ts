@@ -473,3 +473,155 @@ export interface MachineJob {
   status: MachineJobStatus
   source: 'manual' | 'telemetry'
 }
+
+/* ─── «Сырые» ответы backend (docs/06 §5) ───
+ * Форматы отличаются от экранных моделей; приведение — в api/index.ts.
+ * Мок-транспорт (mock.ts) отдаёт те же сырые формы, что и реальный API. */
+
+/** Ответ GET /fields/{id} (API-05): поле целиком + версии, журнал, спутник/погода. */
+export interface Api05FieldDetail extends Field {
+  contour: GeoJsonPolygon
+  versions: Array<{
+    version_no: number
+    area_ga: number
+    valid_from: string
+    reason: string | null
+    contour: GeoJsonPolygon
+  }>
+  operations: Array<{
+    date: string
+    operation_type: string
+    status: string
+    performer: string | null
+  }>
+  ndvi: unknown
+  weather: unknown
+}
+
+/** Сцена спутника — элемент таймлайна API-06 (ENT-SATELLITE-SCENE, 05 §3). */
+export interface SceneItem {
+  scene_id: string
+  field_id: string
+  index: string
+  captured_at: string
+  resolution_m: number
+  index_avg: number
+  index_min: number
+  index_max: number
+  cloud_pct: number
+  composite_days: number
+  source_id: string
+  trust: number
+  anomaly_zones_ref: string | null
+}
+
+/** Ответ API-06: пагинация + мета источника сцен. */
+export interface NdviTimelinePage extends Page<SceneItem> {
+  index: string
+  meta: { source_id: string; status: string | null; last_success_at: string | null; stale: boolean }
+}
+
+/** Факт погоды — элемент facts[] API-07. */
+export interface WeatherFactItem {
+  observed_at: string
+  temperature_avg_c: number
+  temperature_min_c: number
+  temperature_max_c: number
+  precipitation_mm: number
+  wind_max_ms: number
+  humidity_avg_pct: number
+  source_id: string
+}
+
+/** Сутки прогноза — элемент forecast[] API-07 и items[] API-29. */
+export interface WeatherForecastItem {
+  forecast_for?: string
+  issued_at?: string
+  temperature_min_c: number
+  temperature_max_c: number
+  precipitation_mm: number
+  wind_max_ms: number
+  humidity_avg_pct: number
+  hazard?: string | null
+}
+
+/** Ответ API-07: факты + прогноз + мета источника. */
+export interface FieldWeatherDetail {
+  field_id: string
+  facts: WeatherFactItem[]
+  forecast: WeatherForecastItem[]
+  meta: { source_id: string; status: string | null; last_success_at: string | null; stale: boolean }
+}
+
+/** Ответ API-29: пагинация суток прогноза + мета источника. */
+export interface ForecastPage extends Page<WeatherForecastItem> {
+  meta: { source_id: string; status: string | null; last_success_at: string | null; stale: boolean }
+}
+
+/** Сутки горизонта в ответе /weather/windows. */
+export interface WindowsDayItem {
+  day: string
+  ok: boolean
+  reasons: string[]
+}
+
+/** Ответ GET /weather/windows (RULE-AGRO-09). */
+export interface WindowsResponse {
+  operation_type: string
+  field_id: string
+  rule_text: string
+  window_open: boolean
+  days: WindowsDayItem[]
+  alert: string | null
+}
+
+/** Цикл культуры в items[] плана севооборота (API-08) или ответе API-11. */
+export interface RotationCycleItem {
+  cycle_id: string
+  field_id: string
+  year: number
+  culture_id: string
+  culture_name: string
+  kind: 'main' | 'catch' | 'fallow'
+  predecessor_cycle_id: string | null
+  planned_yield_c_ha: number | null
+  planned_harvest_date: string | null
+  out_of_rotation: boolean
+  reason: string | null
+  status: 'planned' | 'in_progress' | 'completed'
+}
+
+/** Нарушение RULE-AGRO-* (rule_id/severity/rationale). */
+export interface RotationViolationItem {
+  rule_id: string
+  severity: 'ban' | 'warn' | string
+  rationale: string
+}
+
+/** План севооборота одного поля — элемент API-08 (PlanDetail). */
+export interface RotationPlanDetail {
+  plan_id: string
+  field_id: string
+  year_from: number
+  year_to: number
+  status: 'draft' | 'approved' | 'archived'
+  approved_by: string | null
+  approved_at: string | null
+  items: RotationCycleItem[]
+  violations: RotationViolationItem[]
+}
+
+/** Ответ API-11 (CycleDetail): цикл + предупреждения (warn). */
+export interface CropCycleDetail extends RotationCycleItem {
+  warnings: RotationViolationItem[]
+}
+
+/** Элемент API-28: состояние адаптера источника. */
+export interface SourceStatusItem {
+  source_id: string
+  kind: string
+  enabled: boolean
+  last_status: string | null
+  last_success_at: string | null
+  last_event: { at: string; status: string; reason: string | null } | null
+}
