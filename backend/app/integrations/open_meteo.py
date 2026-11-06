@@ -156,6 +156,9 @@ class OpenMeteoAdapter:
         humidity = metrics.get("relative_humidity_2m_mean")
         if humidity is not None and not 0 <= humidity <= 100:
             raise DataQualityError(f"{day}: влажность {humidity} вне 0–100 %")
+        prob = metrics.get("precipitation_probability_max")
+        if prob is not None and not 0 <= prob <= 100:
+            raise DataQualityError(f"{day}: вероятность осадков {prob} вне 0–100 %")
 
     # -- публичные методы контракта IF-WEATHER (05 §2) -----------------------
 
