@@ -103,6 +103,7 @@ async function submit() {
     }
     form.actual_area_ga = ''
     form.actual_dose = ''
+    form.yield_c_ha = ''
     await loadJournal()
   } catch (e) {
     if (e instanceof ApiError && e.status === 0 && offline.online) {
