@@ -354,15 +354,73 @@ def field_crop_cycles(
     return [(cycle, culture) for cycle, culture in rows], int(total or 0)
 
 
-def _validate_plan_items(
-    db: Session, field_id: uuid.UUID, items: list[PlanItemDraft]
-) -> list[Violation]:
+def _validate_chain(
+    db: Session,
+    chain: list[tuple[int, Culture, PlanItemDraft | None]],
+    *,
+    rules_filter: frozenset[str] | set[str] | None = None,
+) -> list[tuple[int, Violation]]:
+    """Прогнать RULE-AGRO-01..04 по цепочке (год, культура, черновик|None).
+
+    Проверяются только позиции с черновиком (draft != None); существующие
+    циклы — контекст (предшественники, история возврата культур).
+    rules_filter ограничивает набор правил (on-demand API-08: 01/03/04, §7.2).
+    Возвращает [(cycle_year, Violation)].
+    """
+    violations: list[tuple[int, Violation]] = []
+    main_years: set[int] = {year for year, _, draft in chain if draft is None}
+    for pos, (year, culture, draft_item) in enumerate(chain):
+        if draft_item is None:
+            continue
+        if year in main_years:
+            v = rules.check_main_cycle_unique(year=year, existing_main_year=year)
+            if v:
+                violations.append((year, v))
+        main_years.add(year)
+        candidates = [
+            rules.check_kind_culture(
+                kind=draft_item.kind, culture_kind=culture.kind, culture_name=culture.name
+            ),
+            rules.check_out_of_rotation(
+                out_of_rotation=draft_item.out_of_rotation, reason=draft_item.reason
+            ),
+        ]
+        # предшественник — предыдущий цикл цепочки (RULE-AGRO-01/03)
+        if pos > 0:
+            prev_year, prev_culture, _ = chain[pos - 1]
+            verdict, comment = _matrix_verdict(db, culture.id, prev_culture.id)
+            candidates.append(
+                rules.check_predecessor(
+                    verdict,
+                    culture_name=culture.name,
+                    predecessor_name=prev_culture.name,
+                    year=year,
+                    comment=comment,
+                )
+            )
+            # RULE-AGRO-02: возврат той же культуры в цепочке
+            same_years = [y for y, c, _ in chain[:pos] if c.id == culture.id]
+            if same_years:
+                candidates.append(
+                    rules.check_repeat_years(
+                        year=year,
+                        last_year=max(same_years),
+                        repeat_years=culture.repeat_years,
+                        culture_name=culture.name,
+                    )
+                )
+        for v in candidates:
+            if v is not None and (rules_filter is None or v.rule_id in rules_filter):
+                violations.append((year, v))
+    return violations
+
+
+def _validate_plan_items(db: Session, field_id: uuid.UUID, items: list[PlanItemDraft]) -> list[Violation]:
     """Dry-run черновика items[]: цепочка проверяется по RULE-AGRO-01..04.
 
     Проверяется вся последовательность (включая уже существующие циклы поля
     как историю), записи не создаются; нарушения возвращаются списком.
     """
-    violations: list[Violation] = []
     existing = {
         c.year: c
         for c in db.scalars(
@@ -376,7 +434,6 @@ def _validate_plan_items(
     chain: list[tuple[int, Culture, PlanItemDraft | None]] = [
         (c.year, db.get_one(Culture, c.culture_id), None) for c in existing.values()
     ]
-    main_years: set[int] = set(existing)
     for draft in drafts:
         culture = db.get(Culture, draft.culture_id)
         if culture is None:
@@ -387,46 +444,49 @@ def _validate_plan_items(
                 status_code=404,
             )
         chain.append((draft.year, culture, draft))
-    for pos, (year, culture, draft_item) in enumerate(chain):
-        if draft_item is None:
-            continue
-        if year in main_years:
-            v = rules.check_main_cycle_unique(year=year, existing_main_year=year)
-            if v:
-                violations.append(v)
-        main_years.add(year)
-        if v := rules.check_kind_culture(
-            kind=draft_item.kind, culture_kind=culture.kind, culture_name=culture.name
-        ):
-            violations.append(v)
-        if v := rules.check_out_of_rotation(
-            out_of_rotation=draft_item.out_of_rotation, reason=draft_item.reason
-        ):
-            violations.append(v)
-        # предшественник — предыдущий цикл цепочки (RULE-AGRO-01/03)
-        if pos > 0:
-            prev_year, prev_culture, _ = chain[pos - 1]
-            verdict, comment = _matrix_verdict(db, culture.id, prev_culture.id)
-            if v := rules.check_predecessor(
-                verdict,
-                culture_name=culture.name,
-                predecessor_name=prev_culture.name,
-                year=year,
-                comment=comment,
-            ):
-                violations.append(v)
-        # RULE-AGRO-02: возврат той же культуры в цепочке
-        same_years = [y for y, c, _ in chain[:pos] if c.id == culture.id]
-        if same_years:
-            last_year = max(same_years)
-            if v := rules.check_repeat_years(
-                year=year,
-                last_year=last_year,
-                repeat_years=culture.repeat_years,
-                culture_name=culture.name,
-            ):
-                violations.append(v)
-    return violations
+    return [v for _, v in _validate_chain(db, chain)]
+
+
+def plan_violations(db: Session, plan: RotationPlan) -> list[tuple[int, Violation]]:
+    """API-08 on-demand: пересчёт нарушений циклов плана RULE-AGRO-01/03/04.
+
+    Цепочка — все main-циклы поля по годам (контекст предшественников и
+    истории до начала плана); проверяются циклы диапазона [year_from,
+    year_to] (items плана, 03 §1.2). Без записи в БД (docs/06 §7.2).
+    Возвращает [(cycle_year, Violation)].
+    """
+    cycles = (
+        db.scalars(
+            select(CropCycle)
+            .where(CropCycle.field_id == plan.field_id, CropCycle.kind == "main")
+            .order_by(CropCycle.year)
+        )
+        .all()
+    )
+    chain: list[tuple[int, Culture, PlanItemDraft | None]] = []
+    for cycle in cycles:
+        culture = db.get_one(Culture, cycle.culture_id)
+        checked = plan.year_from <= cycle.year <= plan.year_to
+        # существующие циклы проверяются как черновик, но без RULE-AGRO-04
+        # (год не конфликтует сам с собой) — конфликтов быть не может: один
+        # main-цикл на поле+год гарантирует partial UQ dat_crop_cycle
+        chain.append(
+            (
+                cycle.year,
+                culture,
+                PlanItemDraft(
+                    year=cycle.year,
+                    culture_id=cycle.culture_id,
+                    kind=cycle.kind,
+                    out_of_rotation=cycle.out_of_rotation,
+                    reason=cycle.reason,
+                )
+                if checked
+                else None,
+            )
+        )
+    on_demand_rules = {rules.RULE_01, rules.RULE_03, rules.RULE_04}
+    return _validate_chain(db, chain, rules_filter=on_demand_rules)
 
 
 def create_plan(
