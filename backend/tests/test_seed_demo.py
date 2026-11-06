@@ -112,7 +112,8 @@ def test_seed_creates_demo_farm(db_session):
     assert demo_manager.is_active is True
 
     # демо-препараты и планы внесения (задача #46)
-    from app.models.agronomy import AgroInput, TreatmentPlan as TreatmentPlanModel
+    from app.models.agronomy import AgroInput
+    from app.models.agronomy import TreatmentPlan as TreatmentPlanModel
     from app.models.references import PredecessorRule
 
     inputs = db_session.scalars(select(AgroInput)).all()
