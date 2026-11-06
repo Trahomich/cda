@@ -308,11 +308,14 @@ def seed_operations(db: Session) -> SeedOperationsReport:
             planned = date(
                 report.plan_year, month, max(1, min(28, rng.randint(day, min(27, day + 14))))
             )
+            dose = round(rng.uniform(*tpl["dose"]), 2)
+            approved = rng.random() < APPROVED_SHARE
+            # все вызовы rng — до проверки идемпотентности: при skip поток
+            # не смещается и повторный прогон выбирает те же значения
             key = (plan_cycle.id, item.id, planned)
             if key in plan_keys:
                 report.plans_skipped += 1
                 continue
-            dose = round(rng.uniform(*tpl["dose"]), 2)
             try:
                 validate_treatment_plan(
                     db,
