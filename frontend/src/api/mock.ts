@@ -1163,10 +1163,11 @@ export class MockTransport implements Transport {
       )
     }
 
-    /* ── Согласование плана (API-10) ── */
+    /* ── Согласование плана (API-10): ответ PlanDetail, как backend ── */
     const approvePlanMatch = /^\/rotation-plans\/([\w-]+)\/approve$/.exec(pathname)
     if (method === 'POST' && approvePlanMatch) {
-      if (approvePlanMatch[1] !== PLAN.plan_id) {
+      const n = Number(approvePlanMatch[1].slice(-2))
+      if (approvePlanMatch[1] !== PLAN.plan_id && !FIELDS.some((f) => FIELD_N.get(f.field_id) === n)) {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `План ${approvePlanMatch[1]} не найден`)
       }
       if (PLAN.status === 'approved') {
@@ -1178,7 +1179,18 @@ export class MockTransport implements Transport {
       PLAN.status = 'approved'
       PLAN.approved_by = 'Руководитель'
       PLAN.approved_at = new Date().toISOString()
-      return ok({ plan_id: PLAN.plan_id, status: PLAN.status, approved_by: PLAN.approved_by, approved_at: PLAN.approved_at })
+      const field = FIELDS.find((f) => FIELD_N.get(f.field_id) === n)!
+      return ok({
+        plan_id: approvePlanMatch[1],
+        field_id: field.field_id,
+        year_from: YEAR_FROM,
+        year_to: YEAR_TO,
+        status: PLAN.status,
+        approved_by: PLAN.approved_by,
+        approved_at: PLAN.approved_at,
+        items: [],
+        violations: [],
+      })
     }
 
     /* ── Добавление/правка цикла в плане (API-11) ── */
