@@ -32,7 +32,8 @@ tillage → посев → 1–3 внесения удобрений → 0–2 �
 import logging
 import random
 import uuid
-from dataclasses import asdict, dataclass, field as dc_field
+from dataclasses import asdict, dataclass
+from dataclasses import field as dc_field
 from datetime import date, timedelta
 
 from sqlalchemy import select

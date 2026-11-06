@@ -8,17 +8,15 @@ seed_operations: по каждому активному полю с циклам
 календарного года цикла.
 """
 
-import uuid
 from datetime import date
 
 import pytest
-from sqlalchemy import delete, select
-
 from app.models.agronomy import AgroInput, CropCycle, Field, FieldOperation, TreatmentPlan
 from app.seed import seed_references
 from app.seed_inputs import seed_inputs
 from app.seed_operations import seed_operations
 from app.seed_rotation import seed_rotation
+from sqlalchemy import delete, select
 from tests.test_seed_rotation import make_field
 
 CURRENT_YEAR = date.today().year
@@ -146,7 +144,7 @@ def test_seed_operations_spraying_respects_approved_crops(db_session) -> None:
 
     _prepare(db_session)
     seed_operations(db_session)
-    cultures = {c.id: c for c in db_session.scalars(select(Culture)).all()}
+    {c.id: c for c in db_session.scalars(select(Culture)).all()}
     inputs = {i.id: i for i in db_session.scalars(select(AgroInput)).all()}
     for plan in db_session.scalars(select(TreatmentPlan)).all():
         if plan.operation_type != "spraying":
