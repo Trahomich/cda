@@ -25,6 +25,7 @@ from app.models.agronomy import (
     CropCycle,
     Field,
     FieldOperation,
+    FieldVersion,
     TreatmentPlan,
     YieldRecord,
 )
