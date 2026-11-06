@@ -306,6 +306,70 @@ class WeatherIngest:
         return report_result
 
 
+    def ingest_history_gaps(self, db: Session, *, days: int = 14) -> IngestReport:
+        """Докачка пропусков архива фактов по всем активным полям (v1-03).
+
+        Окно — последние ``days`` суток до вчера включительно (сегодня пишет
+        джоба current). По каждому полю: какие сутки окна уже есть в
+        dat_weather_observation по данному источнику; если пропусков нет —
+        поле пропускается без запроса к источнику, иначе один запрос
+        fetch_history на всё окно и upsert по UQ (существующие не меняются).
+        """
+        report = IngestReportBuilder()
+        date_to = date.today() - timedelta(days=1)
+        date_from = date_to - timedelta(days=days - 1)
+        for field_id, name in self.active_fields(db):
+            present = {
+                row[0]
+                for row in db.execute(
+                    select(WeatherObservation.observed_at).where(
+                        WeatherObservation.field_id == field_id,
+                        WeatherObservation.source_id == self._adapter.source_id,
+                        WeatherObservation.observed_at >= date_from,
+                        WeatherObservation.observed_at <= date_to,
+                    )
+                ).fetchall()
+            }
+            expected = {date_from + timedelta(days=i) for i in range(days)}
+            missing = sorted(expected - present)
+            if not missing:
+                report.skip(name, "пропусков в архиве нет")
+                continue
+            logger.info(
+                "погода: докачка архива %s: %d пропущенных суток (с %s по %s)",
+                name,
+                len(missing),
+                missing[0],
+                missing[-1],
+            )
+            try:
+                items, error = self._fetch_with_retries(
+                    lambda fid=field_id: self._adapter.fetch_history(fid, date_from, date_to)
+                )
+            except DataGapError as exc:
+                # свежие сутки в archive-api появляются с задержкой — это норма
+                report.skip(name, str(exc))
+                continue
+            except DataQualityError as exc:
+                report.fail(name, f"качество данных: {exc}")
+                continue
+            if error is not None:
+                report.fail(name, error)
+                continue
+            saved = self.save_observations(db, items)
+            db.commit()
+            logger.info("погода: %s — upsert %d фактов архива", name, saved)
+            report.ok()
+        report_result = report.build()
+        self.log_source(
+            db,
+            self._adapter.source_id,
+            report_result.status,
+            "; ".join(report_result.failed) or None,
+        )
+        return report_result
+
+
 class IngestReportBuilder:
     """Накопитель итога прогона (внутренний для WeatherIngest)."""
 
