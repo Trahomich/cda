@@ -14,12 +14,19 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Старт/остановка фоновых подсистем (опрос погоды и каталога Sentinel-2)."""
+    """Старт/остановка фоновых подсистем (погода, спутник, алерты)."""
     schedulers = []
+    alert_engine = None
     try:
         # импорт внутри lifespan: не тянуть APScheduler в тесты без необходимости
+        from app.modules.alerts.engine import AlertEngine
+        from app.modules.alerts.scheduler import create_alerts_scheduler
         from app.modules.satellite.scheduler import create_satellite_scheduler
         from app.modules.weather.scheduler import create_scheduler
+
+        # генераторы алертов слушают события приёма данных (ADR-01)
+        alert_engine = AlertEngine()
+        alert_engine.subscribe()
 
         weather = create_scheduler(get_settings())
         if weather is not None:
@@ -27,6 +34,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         satellite = create_satellite_scheduler(get_settings())
         if satellite is not None:
             schedulers.append(satellite)
+        alerts = create_alerts_scheduler(get_settings())
+        if alerts is not None:
+            schedulers.append(alerts)
         for scheduler in schedulers:
             scheduler.start()
     except Exception as exc:  # noqa: BLE001 — сбой планировщика не должен ронять API
@@ -34,6 +44,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
         logging.getLogger(__name__).warning("планировщики не запущены: %s", exc)
     yield
+    if alert_engine is not None:
+        alert_engine.unsubscribe()
     for scheduler in schedulers:
         scheduler.shutdown(wait=False)
 
