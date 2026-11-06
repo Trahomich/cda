@@ -151,7 +151,7 @@ onMounted(load)
   <section class="rotation">
     <header class="rotation__header">
       <h1 class="rotation__title">
-        План севооборота · {{ plan?.farm_name }} ·
+        План севооборота · {{ plan?.farm_name || 'демо-хозяйство' }} ·
         горизонт {{ plan?.year_from }}–{{ plan?.year_to }}
         <span
           v-if="plan"
