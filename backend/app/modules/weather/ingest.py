@@ -21,6 +21,7 @@ from sqlalchemy import delete, select, text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
+from app.core import events
 from app.integrations import (
     DataGapError,
     DataQualityError,
@@ -37,6 +38,9 @@ logger = logging.getLogger(__name__)
 
 STALE_FORECAST_HOURS = 12
 """Прогноз старше 12 ч помечается stale (docs/05 §5)."""
+
+FORECAST_INGESTED_EVENT = "forecast.ingested"
+"""Событие шины: принят свежий прогноз (подписчики — генераторы алертов)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -269,6 +273,12 @@ class WeatherIngest:
             report_result.status,
             "; ".join(report_result.failed) or None,
         )
+        if report_result.ok:
+            # событие после commit: прогноз консистентен в БД (ADR-01)
+            events.publish(
+                FORECAST_INGESTED_EVENT,
+                {"fields": report_result.ok, "source_id": self._adapter.source_id},
+            )
         return report_result
 
     def ingest_history_for(
