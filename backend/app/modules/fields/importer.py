@@ -292,14 +292,7 @@ def import_fields(db: Session, payload_ref: str, *, replace: bool = False) -> Im
 
     # расхождения площадей: атрибут area_ha vs геодезическая (area_ga из БД)
     db.expire_all()  # перечитать вычисленную area_ga
-    for field_ in touched:
-        attr_ha = rec_area = None
-        raise_not_found = False
-        for rec in records:
-            if rec["geom"] is not None and rec["name"] == field_.name:
-                rec_area = rec["area_ha"]
-                break
-        attr_ha = rec_area
+    for field_, attr_ha in touched:
         if attr_ha is None:
             continue
         attr_ha = float(attr_ha)
