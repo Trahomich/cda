@@ -165,7 +165,7 @@ export async function getFieldNdvi(fieldId: string): Promise<NdviPoint[]> {
 export async function getFieldWeather(fieldId: string): Promise<FieldWeather | null> {
   const detail = await apiClient.request<FieldWeatherDetail>(`/fields/${fieldId}/weather`)
   const facts = [...detail.facts].sort((a, b) => a.observed_at.localeCompare(b.observed_at))
-  const last = facts.at(-1)
+  const last = facts.length ? facts[facts.length - 1] : undefined
   if (!last) return null
   const week = facts.slice(-7)
   const precip7 = Math.round(week.reduce((s, f) => s + f.precipitation_mm, 0) * 10) / 10
