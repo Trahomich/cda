@@ -1,18 +1,17 @@
 """Временный отладочный тест (удалить)."""
 
 from app.main import create_app
+from fastapi.testclient import TestClient
 
 
 def test_dbg_routes():
     app = create_app()
-    routes = [
-        r
-        for r in app.router.routes
-        if "sources" in getattr(getattr(r, "route", None), "path", "")
-        or "sources" in getattr(r, "path", "")
-    ]
-    for r in routes:
+    c = TestClient(app)
+    c.get("/api/v1/alerts")  # форсируем сборку маршрутов
+    for r in app.router.routes:
         route = getattr(r, "route", r)
-        print("PATH:", getattr(route, "path", None), getattr(route, "name", None))
-        print("DEPS:", route.dependencies)
-        print("APP_DEPS:", getattr(route, "app", None))
+        path = getattr(route, "path", None) or getattr(r, "path", "")
+        if "sources" in str(path) or "alerts" in str(path):
+            deps = getattr(route, "dependencies", None)
+            print("PATH:", path, "| name:", getattr(route, "name", None))
+            print("DEPS:", deps)
