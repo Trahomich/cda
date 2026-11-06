@@ -29,6 +29,7 @@ import type {
   NdviTimelinePage,
   OperationRequest,
   RotationCell,
+  RotationCycleItem,
   RotationPlan,
   RotationPlanDetail,
   SceneItem,
