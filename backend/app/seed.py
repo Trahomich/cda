@@ -299,7 +299,13 @@ def seed_references(db: Session) -> dict[str, int]:
         pg_insert(Culture)
         .values(rows)
         .on_conflict_do_update(
-            index_elements=["name"], set_={"color_hex": pg_insert(Culture).excluded.color_hex}
+            index_elements=["name"],
+            set_={
+                "color_hex": pg_insert(Culture).excluded.color_hex,
+                # актуализация норматива возврата лет (RULE-AGRO-02): сид —
+                # источник правды справочника; рапс 4, картофель 5 (03 §3.1)
+                "repeat_years": pg_insert(Culture).excluded.repeat_years,
+            },
         )
     )
     after = db.scalar(select(func.count()).select_from(Culture)) or 0
