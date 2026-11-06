@@ -157,9 +157,20 @@ class EarthSearchStacClient:
                     tile_id=tile,
                     geometry=feature.get("geometry") or {},
                     assets={
-                        band: asset["href"]
-                        for band, asset in (feature.get("assets") or {}).items()
-                        if band in CATALOG_ASSETS and isinstance(asset, dict)
+                        band: href
+                        for band, names in CATALOG_ASSETS.items()
+                        if (
+                            href := next(
+                                (
+                                    asset["href"]
+                                    for name in names
+                                    for asset in [(feature.get("assets") or {}).get(name)]
+                                    if isinstance(asset, dict) and "href" in asset
+                                ),
+                                None,
+                            )
+                        )
+                        is not None
                     },
                 )
             )
