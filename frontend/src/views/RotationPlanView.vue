@@ -293,23 +293,24 @@ onMounted(load)
                 </button>
               </td>
             </tr>
-            <tr
-              v-if="historyField === field.field_id"
-              class="rotation__history-row"
-            >
-              <td :colspan="years.length + 1">
-                <p
-                  v-if="historyLoading"
-                  class="rotation__state"
-                >
-                  Загрузка истории севооборота…
-                </p>
-                <CropHistoryStrip
-                  v-else
-                  :items="historyItems"
-                />
-              </td>
-            </tr>
+              <tr
+                v-if="historyField === field.field_id"
+                class="rotation__history-row"
+              >
+                <td :colspan="years.length + 1">
+                  <p
+                    v-if="historyLoading"
+                    class="rotation__state"
+                  >
+                    Загрузка истории севооборота…
+                  </p>
+                  <CropHistoryStrip
+                    v-else
+                    :items="historyItems"
+                  />
+                </td>
+              </tr>
+            </template>
           </tbody>
         </table>
       </div>
