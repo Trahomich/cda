@@ -11,13 +11,12 @@ year_from/year_to, color_hex, 404/401.
 import uuid
 from datetime import UTC, datetime
 
-from geoalchemy2 import Geography
-from sqlalchemy import select
-
 from app.models.agronomy import CropCycle, Field, RotationPlan
 from app.models.references import Culture, PredecessorRule
 from app.seed import seed_references
 from app.seed_rotation import seed_rotation
+from geoalchemy2 import Geography
+from sqlalchemy import select
 from tests.test_auth import auth_header, make_user
 from tests.test_fields import square
 
@@ -86,8 +85,10 @@ def test_seed_rotation_creates_plan_and_cycles(db_session) -> None:
         assert [c.year for c in cycles] == list(range(CURRENT_YEAR - 2, CURRENT_YEAR + 3))
         for cycle in cycles:
             expected = (
-                "completed" if cycle.year < CURRENT_YEAR
-                else "in_progress" if cycle.year == CURRENT_YEAR
+                "completed"
+                if cycle.year < CURRENT_YEAR
+                else "in_progress"
+                if cycle.year == CURRENT_YEAR
                 else "planned"
             )
             assert cycle.status == expected
@@ -98,7 +99,9 @@ def test_seed_rotation_creates_plan_and_cycles(db_session) -> None:
 
 def test_seed_rotation_respects_agronomy_rules(db_session) -> None:
     seed_references(db_session)
-    fields = [make_field(db_session, name=f"Ротация-{i}", external_id=f"R-{i:03d}") for i in range(8)]
+    fields = [
+        make_field(db_session, name=f"Ротация-{i}", external_id=f"R-{i:03d}") for i in range(8)
+    ]
     seed_rotation(db_session, years_back=4, years_forward=4)
 
     matrix = {
@@ -142,21 +145,27 @@ def test_seed_rotation_idempotent_and_deterministic(db_session) -> None:
     fields = [make_field(db_session, name=f"Идем-{i}", external_id=f"I-{i:03d}") for i in range(4)]
     seed_rotation(db_session, years_back=1, years_forward=1)
     first = {
-        f.id: [c.culture_id for c in db_session.scalars(
-            select(CropCycle)
-            .where(CropCycle.field_id == f.id, CropCycle.kind == "main")
-            .order_by(CropCycle.year)
-        )]
+        f.id: [
+            c.culture_id
+            for c in db_session.scalars(
+                select(CropCycle)
+                .where(CropCycle.field_id == f.id, CropCycle.kind == "main")
+                .order_by(CropCycle.year)
+            )
+        ]
         for f in fields
     }
     report = seed_rotation(db_session, years_back=1, years_forward=1)
     assert report.fields_processed == 0  # ничего не изменилось
     second = {
-        f.id: [c.culture_id for c in db_session.scalars(
-            select(CropCycle)
-            .where(CropCycle.field_id == f.id, CropCycle.kind == "main")
-            .order_by(CropCycle.year)
-        )]
+        f.id: [
+            c.culture_id
+            for c in db_session.scalars(
+                select(CropCycle)
+                .where(CropCycle.field_id == f.id, CropCycle.kind == "main")
+                .order_by(CropCycle.year)
+            )
+        ]
         for f in fields
     }
     assert first == second  # и те же культуры (пропуск, не перегенерация)
@@ -164,35 +173,41 @@ def test_seed_rotation_idempotent_and_deterministic(db_session) -> None:
 
 def test_seed_rotation_skips_fields_with_existing_data(db_session) -> None:
     seed_references(db_session)
-    empty = make_field(db_session, name="Пустое", external_id="E-1")
+    make_field(db_session, name="Пустое", external_id="E-1")
     with_cycle = make_field(db_session, name="С-циклом", external_id="E-2")
-    db_session.add(CropCycle(
-        field_id=with_cycle.id,
-        year=CURRENT_YEAR,
-        culture_id=db_session.scalar(select(Culture.id).where(Culture.name == "Озимая пшеница")),
-        kind="main",
-        status="in_progress",
-    ))
+    db_session.add(
+        CropCycle(
+            field_id=with_cycle.id,
+            year=CURRENT_YEAR,
+            culture_id=db_session.scalar(
+                select(Culture.id).where(Culture.name == "Озимая пшеница")
+            ),
+            kind="main",
+            status="in_progress",
+        )
+    )
     with_plan = make_field(db_session, name="С-планом", external_id="E-3")
-    db_session.add(RotationPlan(
-        field_id=with_plan.id, year_from=CURRENT_YEAR, year_to=CURRENT_YEAR + 4, status="draft"
-    ))
+    db_session.add(
+        RotationPlan(
+            field_id=with_plan.id, year_from=CURRENT_YEAR, year_to=CURRENT_YEAR + 4, status="draft"
+        )
+    )
     archived_plan_field = make_field(db_session, name="Архив", external_id="E-4")
-    db_session.add(RotationPlan(
-        field_id=archived_plan_field.id,
-        year_from=CURRENT_YEAR,
-        year_to=CURRENT_YEAR + 4,
-        status="archived",
-    ))
+    db_session.add(
+        RotationPlan(
+            field_id=archived_plan_field.id,
+            year_from=CURRENT_YEAR,
+            year_to=CURRENT_YEAR + 4,
+            status="archived",
+        )
+    )
     db_session.commit()
 
     report = seed_rotation(db_session, years_back=1, years_forward=1)
     # обработаны только поле без данных и поле с архивным планом
     assert report.fields_processed == 2
     for field in (with_cycle, with_plan):
-        cycles = db_session.scalars(
-            select(CropCycle).where(CropCycle.field_id == field.id)
-        ).all()
+        cycles = db_session.scalars(select(CropCycle).where(CropCycle.field_id == field.id)).all()
         plans = db_session.scalars(
             select(RotationPlan).where(RotationPlan.field_id == field.id)
         ).all()
