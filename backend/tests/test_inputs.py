@@ -57,7 +57,7 @@ def make_cycle(
     db_session,
     *,
     field: dict,
-    culture: Culture,
+    culture: Culture | None = None,
     year: int = 2027,
     harvest: date | None = date(2027, 7, 20),
 ) -> CropCycle:
@@ -268,11 +268,11 @@ class TestAgroInputs:
             json={"kind": "ppp", "name": "Логран", "unit": "kg_ha"},
             headers=hdr,
         )
-        resp = client.get(API_INPUTS, params={"kind": "ppp"})
+        resp = client.get(API_INPUTS, params={"kind": "ppp"}, headers=hdr)
         assert resp.status_code == 200
         body = resp.json()
         assert body["total"] == 1 and body["items"][0]["name"] == "Логран"
-        resp = client.get(API_INPUTS, params={"q": "мочев"})
+        resp = client.get(API_INPUTS, params={"q": "мочев"}, headers=hdr)
         assert resp.json()["total"] == 1
         # machine_operator не входит в группу inputs (07-ux §5: E-05 — А, Р, Д)
         make_user(db_session, login="op_i", role=UserRole.MACHINE_OPERATOR)
@@ -407,7 +407,7 @@ class TestTreatmentPlansList:
         cycle = make_cycle(db_session, field=field)
         item = make_ppp(db_session)
         post_plan(client, hdr, cycle, item)
-        resp = client.get(API_PLANS)
+        resp = client.get(API_PLANS, headers=hdr)
         assert resp.status_code == 200
         body = resp.json()
         assert body["total"] == 1
@@ -415,10 +415,10 @@ class TestTreatmentPlansList:
         assert row["cycle_id"] == str(cycle.id)
         assert row["input_kind"] == "ppp"
         # фильтры
-        assert client.get(API_PLANS, params={"status": "draft"}).json()["total"] == 1
-        assert client.get(API_PLANS, params={"status": "approved"}).json()["total"] == 0
-        assert client.get(API_PLANS, params={"field_id": str(field.id)}).json()["total"] == 1
-        assert client.get(API_PLANS, params={"status": "нет"}).status_code == 400
+        assert client.get(API_PLANS, params={"status": "draft"}, headers=hdr).json()["total"] == 1
+        assert client.get(API_PLANS, params={"status": "approved"}, headers=hdr).json()["total"] == 0
+        assert client.get(API_PLANS, params={"field_id": field["field_id"]}, headers=hdr).json()["total"] == 1
+        assert client.get(API_PLANS, params={"status": "нет"}, headers=hdr).status_code == 400
 
 
 # ---------- API-16: согласование ----------
