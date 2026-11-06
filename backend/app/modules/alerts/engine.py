@@ -106,12 +106,10 @@ class AlertEngine:
             db.close()
 
 
-def _as_uuid(value: str | None):
+def _as_uuid(value: str | None) -> uuid.UUID | None:
     """field_id из payload события (str) → UUID; некорректное → None."""
     if not value:
         return None
-    import uuid
-
     try:
         return uuid.UUID(value)
     except ValueError:
