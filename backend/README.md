@@ -295,7 +295,14 @@ docs/05-integrations.md (IF-WEATHER):
 - пороги окон — `ref_weather_rule` (params JSONB по operation_type, редактируемые
   руководителем), сид: `python -m app.cli seed-weather-rules` (идемпотентно);
   маппинги суточных прогнозов к формулировкам правил — в `app/modules/weather/rules.py`;
-- фоновый опрос (05 §4): APScheduler, текущая — `WEATHER_POLL_CURRENT_MINUTES`
-  (30 мин), прогноз — `WEATHER_POLL_FORECAST_HOURS` (3 ч), джобы в Redis
-  (недоступен → in-memory). В local выключен (`WEATHER_POLL_ENABLED=false`),
-  в docker-compose api включён.
+- фоновый опрос (05 §4, ADR-09): выделенный воркер `weather-ingest` — точка входа
+  `python -m app.services.weather_ingest` (контейнер из того же образа api, но без
+  веб-сервера; api только читает). APScheduler: текущая —
+  `INGEST_WEATHER_CURRENT_MINUTES` (30 мин), прогноз — `INGEST_WEATHER_FORECAST_HOURS`
+  (3 ч), докачка архива пропусков — `INGEST_WEATHER_ARCHIVE_MINUTES` (60 мин) с окном
+  `INGEST_WEATHER_BACKFILL_DAYS` (14 сут) — `WeatherIngest.ingest_history_gaps`
+  (поле без пропусков не запрашивается; свежие сутки, которых ещё нет в archive-api,
+  дают DataGap → поле пропускается, журнал degraded — норма). Разовый прогон
+  `INGEST_RUN_ONCE=true`: цикл archive→current→forecast и выход (без планировщика).
+  В local/api опрос выключен (`WEATHER_POLL_ENABLED=false`), воркер включён в
+  backend/docker-compose.yml и deploy/docker-compose.prod.yml; env — CONTRACTS.md §7.
