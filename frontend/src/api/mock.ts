@@ -114,7 +114,7 @@ function makeField(
 ): MockField {
   return {
     field_id: `0000000a-0000-4000-8000-0000000000${String(n).padStart(2, '0')}`,
-    name: `Степное-${n}`,
+    name: `${n}/ВОСХОД/${Math.round(areaHa)}га`,
     contour: { type: 'Polygon', coordinates: [rectContour(lon, lat, wDeg, hDeg)] },
     area_ga: areaHa,
     status,
