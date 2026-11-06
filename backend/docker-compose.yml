@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_HOST: db
       REDIS_HOST: redis
-      WEATHER_POLL_ENABLED: "true"
+      WEATHER_POLL_ENABLED: "false" # опрос погоды — в воркере weather-ingest (ADR-09)
     ports:
       - "8000:8000"
     depends_on:
@@ -19,6 +19,21 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+
+  # Воркер приёма погоды Open-Meteo (ADR-09, v1-03): тот же образ без API наружу
+  weather-ingest:
+    image: ${CDA_API_IMAGE:-backend-api:latest}
+    build: .
+    command: python -m app.services.weather_ingest
+    environment:
+      POSTGRES_HOST: db
+      REDIS_HOST: redis
+      INGEST_RUN_ONCE: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
 
   db:
     image: postgis/postgis:18-3.6 # тега 18-3.5 в Docker Hub нет; 3.6 — актуальный PostGIS для PG18
