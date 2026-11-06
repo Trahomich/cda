@@ -186,7 +186,7 @@ flowchart TB
 | БД | PostgreSQL 18 + PostGIS | транзакционность, гео-типы для контуров (REQ-F-001), один источник правды |
 | Кэш/очередь | Redis + встроенная очередь задач (например, APScheduler/Celery) | расписания опроса источников, ретраи, кэш с TTL |
 | Клиенты | Веб/PWA: Vue 3 + Vite + TypeScript (ADR-06); Leaflet; Pinia; vite-plugin-pwa | один код веба и PWA, офлайн-очередь (REQ-NF-003) без нативных баз |
-| Инфраструктура | Docker Compose на сервере хозяйства (контейнеры: приложение, PostgreSQL+PostGIS, Redis, Ollama); HTTPS через reverse-proxy (Caddy/Traefik) | масштаб задачи (REQ-NF-001): один сервер хозяйства; kubernetes избыточен |
+| Инфраструктура | Docker Compose на сервере хозяйства (контейнеры: приложение, PostgreSQL+PostGIS, Redis); инференс LLM — внешний Ollama-сервер (ADR-08); HTTPS через reverse-proxy (Caddy/Traefik) | масштаб задачи (REQ-NF-001): один сервер хозяйства; kubernetes избыточен |
 
 Финальный выбор SPA-фреймворка и брокера — ADR при старте реализации; критерии
 перечислены в ADR-02/ADR-03.
