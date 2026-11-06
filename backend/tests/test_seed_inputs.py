@@ -7,12 +7,11 @@ waiting_days NULL (RULE-AGRO-08), у СЗР — действующее веще�
 не ошибка.
 """
 
-from sqlalchemy import select
-
 from app.models.agronomy import AgroInput
 from app.models.references import Culture
 from app.seed import seed_references
 from app.seed_inputs import seed_inputs
+from sqlalchemy import select
 
 
 def make_cultures(db_session) -> None:
