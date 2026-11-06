@@ -260,12 +260,17 @@ export interface RotationPlan {
   violations: RotationViolation[]
 }
 
-/** Создание/правка цикла — POST /crop-cycles (API-11). */
+/** Создание/правка цикла — POST /crop-cycles (API-11). kind обязателен
+ *  (согласуется с видом культуры, RULE-AGRO-03); reason — при warn-нарушениях. */
 export interface CropCycleRequest {
   field_id: string
   year: number
   culture_id: string
+  kind: 'main' | 'catch' | 'fallow'
   planned_yield_c_ha?: number | null
+  planned_harvest_date?: string | null
+  out_of_rotation?: boolean
+  reason?: string | null
 }
 
 /** Цикл культуры — ответ API-11 (ENT-CROP-CYCLE). */
