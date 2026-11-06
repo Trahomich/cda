@@ -51,9 +51,10 @@ function startEdit(record: QueueRecord) {
   editArea.value = String(record.payload.actual_area_ga)
 }
 
-async function saveEdit() {
+async function saveEdit(dropYield = false) {
   if (!editing.value) return
   const payload = { ...editing.value.payload, actual_area_ga: Number(editArea.value) }
+  if (dropYield) payload.yield_record = null
   await updateQueuePayload(editing.value.client_id, payload)
   editing.value = null
   await offline.refresh()
