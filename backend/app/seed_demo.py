@@ -590,20 +590,4 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
     report.alerts += 2
     db.commit()
 
-    # демо-агроном для входа в UI (если ещё нет)
-    if db.scalar(select(User).where(User.login == "demo_agronomist")) is None:
-        from app.core.security import hash_password
-
-        db.add(
-            User(
-                fio="Демо Агроном",
-                login="demo_agronomist",
-                password_hash=hash_password("demo123"),
-                role=UserRole.AGRONOMIST,
-                is_active=True,
-            )
-        )
-        db.commit()
-        report.extra.append("создан демо-агроном: demo_agronomist / demo123")
-
     return report
