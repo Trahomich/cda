@@ -26,6 +26,9 @@ STAC (5xx/сеть) — error, повтор по расписанию (05 §4/§
 Джобы (env, CONTRACTS.md §7):
 - catalog — INGEST_SATELLITE_CATALOG_HOURS (default 6, 05 §4): поиск и
   каталогизация сцен за окно INGEST_SATELLITE_BACKFILL_DAYS (default 14);
+- ndvi — сразу после каталога в том же цикле (05 §2 v1: «при появлении новой
+  сцены — вычисление индексов»): расчёт по строкам cataloged, пул
+  INGEST_SATELLITE_NDVI_WORKERS потоков, батч INGEST_SATELLITE_NDVI_BATCH;
 - ретраи при недоступности — INGEST_SATELLITE_RETRY_ATTEMPTS×
   INGEST_SATELLITE_RETRY_BASE_SECONDS внутри цикла, далее — планировщик.
 
