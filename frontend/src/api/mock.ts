@@ -1245,11 +1245,17 @@ export class MockTransport implements Transport {
       return ok({ items, total: items.length, limit: 100, offset: 0 })
     }
 
-    /* ── Планы внесения (API-15) ── */
+    /* ── Планы внесения (API-15; фильтры status, field_id, cycle_id) ── */
     if (method === 'GET' && pathname === '/treatment-plans') {
       const status = params.get('status')
+      const fieldId = params.get('field_id')
+      const cycleId = params.get('cycle_id')
       let items = TREATMENTS
       if (status) items = items.filter((t) => t.status === status)
+      if (cycleId) items = items.filter((t) => t.cycle_id === cycleId)
+      if (fieldId) {
+        items = items.filter((t) => fieldOfCycle(t.cycle_id)?.field.field_id === fieldId)
+      }
       const limit = Number(params.get('limit') ?? 50) || 50
       const offset = Number(params.get('offset') ?? 0) || 0
       const views = items.map(treatmentView)
