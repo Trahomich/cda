@@ -897,6 +897,26 @@ export class MockTransport implements Transport {
       })
     }
 
+    /* ── Справочники (API-48) ── */
+    if (method === 'GET' && pathname === '/references/cultures') {
+      const cropGroup = params.get('crop_group')
+      const q = (params.get('q') ?? '').trim().toLowerCase()
+      let items = CULTURES.map((c) => ({
+        culture_id: c.culture_id,
+        name: c.name,
+        kind: c.kind,
+        forage_flag: false,
+        crop_group: c.crop_group,
+        repeat_years: c.repeat_years,
+        color_hex: c.color_hex,
+      }))
+      if (cropGroup) items = items.filter((c) => c.crop_group === cropGroup)
+      if (q) items = items.filter((c) => c.name.toLowerCase().includes(q))
+      const limit = Math.min(Number(params.get('limit') ?? 50), 100)
+      const offset = Number(params.get('offset') ?? 0)
+      return ok({ items: items.slice(offset, offset + limit), total: items.length, limit, offset })
+    }
+
     /* ── Поля (API-01) ── */
     if (method === 'GET' && pathname === '/fields') {
       const q = (params.get('q') ?? '').trim().toLowerCase()
