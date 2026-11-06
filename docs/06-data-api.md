@@ -102,7 +102,7 @@ erDiagram
 
 | Таблица | Содержание | Связь с требованиями |
 |---|---|---|
-| ref_culture | культуры: name, kind (main/forage/catch), forage_flag, crop_group | севооборот; кормовой баланс SC-05 |
+| ref_culture | культуры: name, kind (main/forage/catch), forage_flag, crop_group, repeat_years, color_hex (varchar(7), CSS-цвет для карты) | севооборот; кормовой баланс SC-05; карта v1 #55 |
 | ref_predecessor_matrix | совместимость пар культур (RULE-AGRO-01): culture_id, predecessor_id, verdict (ok/warn/ban) | REQ-F-006 |
 | ref_nutrient_norm | вынос N-P-K культурой (кг д.в./ц), возврат лет по культуре, лимиты доз — редактируемый справочник с полем source (REC-19) | REQ-F-011 |
 | ref_agrochem | результаты агрохимии: field_id, sample_date, ph, humus_pct, n_mg100, p2o5_mg100, k2o_mg100 | REQ-F-004, 031 |
