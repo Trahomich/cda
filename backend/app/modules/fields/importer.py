@@ -21,6 +21,7 @@
 
 import json
 import logging
+import tempfile
 import uuid
 import zipfile
 from dataclasses import dataclass, field as dc_field
