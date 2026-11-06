@@ -11,6 +11,7 @@ commit модуля-автора); ошибка обработчика логи�
 """
 
 import logging
+import uuid
 
 from sqlalchemy.orm import Session, sessionmaker
 
