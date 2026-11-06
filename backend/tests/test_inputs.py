@@ -130,7 +130,9 @@ class TestRulesUnit:
         assert rules.nitrogen_kg_dv_ha(-5, "kg_ha", 34.0) == 0.0
 
     def test_check_n_season(self):
-        assert rules.check_n_season(current_n=100, new_n=80, input_name="X") is None  # ровно 180 — граница
+        assert (
+            rules.check_n_season(current_n=100, new_n=80, input_name="X") is None
+        )  # ровно 180 — граница
         assert rules.check_n_season(current_n=100, new_n=81, input_name="X") is not None
         assert rules.check_n_season(current_n=100, new_n=80, limit=200, input_name="X") is None
         v = rules.check_n_season(current_n=0, new_n=181, input_name="X")
