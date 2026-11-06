@@ -23,7 +23,7 @@ services:
 
   # Воркер приёма погоды Open-Meteo (ADR-09, v1-03): тот же образ без API наружу
   weather-ingest:
-    image: ${CDA_API_IMAGE:-backend-api:latest}
+    image: cda/backend:latest
     build: .
     command: python -m app.services.weather_ingest
     environment:
