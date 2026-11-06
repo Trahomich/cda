@@ -1573,7 +1573,17 @@ export class MockTransport implements Transport {
 
     /* ── Источники данных (E-14, API-28) ── */
     if (method === 'GET' && pathname === '/sources/status') {
-      return ok({ items: SOURCES })
+      const items = SOURCES.map((s) => ({
+        source_id: s.source_id,
+        kind: s.kind,
+        enabled: true,
+        last_status: s.last_status,
+        last_success_at: s.last_success_at,
+        last_event: s.events[0]
+          ? { at: s.events[0].at, status: s.events[0].status, reason: s.events[0].reason }
+          : null,
+      }))
+      return ok({ items, total: items.length, limit: 50, offset: 0 })
     }
 
     /* ── Техника и задания (E-18, API-19/20) ── */
