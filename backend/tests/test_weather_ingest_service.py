@@ -86,7 +86,6 @@ class TestIngestHistoryGaps:
         """Все сутки окна отсутствуют — один запрос архива, upsert всех суток."""
         make_weather_source(db_session)
         field_id = make_field(db_session, name="Долина")
-        today = date.today()
         offsets = list(range(-15, 1))  # окно 14 суток до вчера + сегодня
         ingest = make_service_ingest(db_session, {"/archive": archive_fixture(offsets)})
 
