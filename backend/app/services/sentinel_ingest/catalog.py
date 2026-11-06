@@ -65,9 +65,7 @@ def farm_bbox(db: Session) -> list[float] | None:
 
 def active_fields_count(db: Session) -> int:
     return int(
-        db.execute(
-            text("SELECT count(*) FROM dat_field WHERE status = 'active'")
-        ).scalar_one()
+        db.execute(text("SELECT count(*) FROM dat_field WHERE status = 'active'")).scalar_one()
     )
 
 
@@ -111,8 +109,12 @@ def log_source(db: Session, status: str, reason: str | None) -> None:
 
     at = datetime.now(tz=UTC)
     db.add(
-        SourceJournalEntry(source_id=SATELLITE_SOURCE_ID, at=at, status=status,
-                           reason=reason[:500] if reason else None)
+        SourceJournalEntry(
+            source_id=SATELLITE_SOURCE_ID,
+            at=at,
+            status=status,
+            reason=reason[:500] if reason else None,
+        )
     )
     db.execute(
         update(Source)
@@ -161,14 +163,18 @@ def run_catalog_cycle(
                 new_rows += 1
     db.commit()
 
-    report = CatalogReport(
-        scenes=len(items), fields=len(touched), new_rows=new_rows
+    report = CatalogReport(scenes=len(items), fields=len(touched), new_rows=new_rows)
+    log_source(
+        db,
+        report.status,
+        None if report.status == "ok" else f"сцен за окно {date_from}..{date_to}: {report.scenes}",
     )
-    log_source(db, report.status, None if report.status == "ok" else
-               f"сцен за окно {date_from}..{date_to}: {report.scenes}")
     logger.info(
         "sentinel-ingest: каталог %d сцен, полей %d, новых записей %d (%s)",
-        report.scenes, report.fields, report.new_rows, report.status,
+        report.scenes,
+        report.fields,
+        report.new_rows,
+        report.status,
     )
     return report
 

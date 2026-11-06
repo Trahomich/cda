@@ -78,9 +78,7 @@ def test_import_idempotent_by_external_id(db_session):
     assert db_session.scalar(select(func.count()).select_from(Field)) == 90
     # повторный импорт добавил по одной версии контура каждому полю
     assert db_session.scalar(select(func.count()).select_from(FieldVersion)) == 180
-    max_no = db_session.execute(
-        text("SELECT max(version_no) FROM dat_field_version")
-    ).scalar_one()
+    max_no = db_session.execute(text("SELECT max(version_no) FROM dat_field_version")).scalar_one()
     assert max_no == 2
 
 

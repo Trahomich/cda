@@ -37,12 +37,8 @@ def upgrade() -> None:
         sa.Column("captured_at", sa.Date(), nullable=False),
         sa.Column("tile_id", sa.String(length=20), nullable=False),
         sa.Column("cloud_pct", sa.Numeric(4, 1), nullable=False),
-        sa.Column(
-            "assets", JSONB(), server_default=sa.text("'{}'::jsonb"), nullable=False
-        ),
-        sa.Column(
-            "status", sa.String(length=12), server_default="cataloged", nullable=False
-        ),
+        sa.Column("assets", JSONB(), server_default=sa.text("'{}'::jsonb"), nullable=False),
+        sa.Column("status", sa.String(length=12), server_default="cataloged", nullable=False),
         sa.Column("processed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("error", sa.String(length=500), nullable=True),
         sa.Column(

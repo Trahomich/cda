@@ -106,8 +106,7 @@ class EarthSearchStacClient:
         params: dict[str, object] = {
             "collections": [COLLECTION],
             "bbox": list(bbox),
-            "datetime": f"{date_from.isoformat()}T00:00:00Z/{date_to.isoformat()}"
-            "T23:59:59Z",
+            "datetime": f"{date_from.isoformat()}T00:00:00Z/{date_to.isoformat()}T23:59:59Z",
             "query": {"eo:cloud_cover": {"lte": threshold}},
             "limit": PAGE_LIMIT,
         }
@@ -127,11 +126,7 @@ class EarthSearchStacClient:
             items.extend(self._parse(payload))
             pages += 1
             url = next(
-                (
-                    link["href"]
-                    for link in payload.get("links", [])
-                    if link.get("rel") == "next"
-                ),
+                (link["href"] for link in payload.get("links", []) if link.get("rel") == "next"),
                 None,
             )
             params = {}  # next-ссылка уже содержит query (GET-форма от каталога)
@@ -147,11 +142,7 @@ class EarthSearchStacClient:
             if not captured_raw or cloud is None:
                 continue  # без даты/облачности item бесполезен (05 §2)
             year, month, day = (int(part) for part in captured_raw.split("-"))
-            tile = (
-                (props.get("s2:mgrs_tile") or props.get("grid:code") or "").replace(
-                    "MGRS-", ""
-                )
-            )
+            tile = (props.get("s2:mgrs_tile") or props.get("grid:code") or "").replace("MGRS-", "")
             parsed.append(
                 StacItem(
                     item_id=str(feature.get("id", "")),

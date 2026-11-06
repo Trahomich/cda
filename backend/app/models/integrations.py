@@ -166,9 +166,7 @@ class SatelliteCatalogItem(Base):
     captured_at: Mapped[date] = mapped_column(Date, nullable=False)
     tile_id: Mapped[str] = mapped_column(String(20), nullable=False)
     cloud_pct: Mapped[float] = mapped_column(Numeric(4, 1), nullable=False)
-    assets: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default=text("'{}'::jsonb")
-    )
+    assets: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
     status: Mapped[str] = mapped_column(String(12), nullable=False, server_default="cataloged")
     processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error: Mapped[str | None] = mapped_column(String(500), nullable=True)

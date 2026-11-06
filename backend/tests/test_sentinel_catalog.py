@@ -101,8 +101,7 @@ def stac_feature(
             mgrs_prop: tile,
         },
         "assets": {
-            band: {"href": f"https://sentinel-cogs.s3.us-west-2.amazonaws.com/"
-                           f"{item_id}/{band}.tif"}
+            band: {"href": f"https://sentinel-cogs.s3.us-west-2.amazonaws.com/{item_id}/{band}.tif"}
             for band in CATALOG_ASSETS
         },
     }
@@ -110,9 +109,7 @@ def stac_feature(
 
 def mock_client(handler) -> EarthSearchStacClient:
     """Клиент на MockTransport: наружу тесты не ходят."""
-    return EarthSearchStacClient(
-        http=httpx.Client(transport=httpx.MockTransport(handler))
-    )
+    return EarthSearchStacClient(http=httpx.Client(transport=httpx.MockTransport(handler)))
 
 
 WINDOW = (date(2026, 10, 17), date(2026, 10, 31))
@@ -134,9 +131,7 @@ class TestStacClient:
                 200, json={"features": [stac_feature("S2A_37UFT_20261031_0_L2A")]}
             )
 
-        items = mock_client(handler).search(
-            [41.24, 52.02, 41.36, 52.08], *WINDOW
-        )
+        items = mock_client(handler).search([41.24, 52.02, 41.36, 52.08], *WINDOW)
         assert len(items) == 1
         body = bodies[0]
         assert body["collections"] == [COLLECTION]
@@ -160,8 +155,9 @@ class TestStacClient:
         def handler(request: httpx.Request) -> httpx.Response:
             return httpx.Response(
                 200,
-                json={"features": [stac_feature("S2B_37UFT_20261029_0_L2A",
-                                                mgrs_prop="grid:code")]},
+                json={
+                    "features": [stac_feature("S2B_37UFT_20261029_0_L2A", mgrs_prop="grid:code")]
+                },
             )
 
         items = mock_client(handler).search([0, 0, 1, 1], *WINDOW)
@@ -275,9 +271,7 @@ class TestGeoMatching:
 
 def last_source_state(db):
     source = db.scalar(select(Source).where(Source.source_id == SATELLITE_SOURCE_ID))
-    journal = db.scalars(
-        select(SourceJournalEntry).order_by(SourceJournalEntry.at)
-    ).all()
+    journal = db.scalars(select(SourceJournalEntry).order_by(SourceJournalEntry.at)).all()
     return source, journal
 
 
@@ -285,16 +279,18 @@ class TestCatalogCycle:
     def test_catalog_scenes_for_intersecting_field(self, db):
         field_id = make_stac_field(db)
         make_satellite_source(db)
-        client = FakeStacClient([
-            StacItem(
-                item_id="S2C_37UFT_20261031_0_L2A",
-                captured_at=date(2026, 10, 31),
-                cloud_pct=3.6,
-                tile_id="37UFT",
-                geometry=stac_feature("x")["geometry"],
-                assets={"b04": "s3://b04", "b08": "s3://b08", "scl": "s3://scl"},
-            )
-        ])
+        client = FakeStacClient(
+            [
+                StacItem(
+                    item_id="S2C_37UFT_20261031_0_L2A",
+                    captured_at=date(2026, 10, 31),
+                    cloud_pct=3.6,
+                    tile_id="37UFT",
+                    geometry=stac_feature("x")["geometry"],
+                    assets={"b04": "s3://b04", "b08": "s3://b08", "scl": "s3://scl"},
+                )
+            ]
+        )
         report = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert report.status == "ok"
         assert report.scenes == 1 and report.fields == 1 and report.new_rows == 1
@@ -313,8 +309,7 @@ class TestCatalogCycle:
     def test_dedup_second_cycle_no_new_rows(self, db):
         make_stac_field(db)
         make_satellite_source(db)
-        item = StacItem("dup", date(2026, 10, 31), 5.0, "37UFT",
-                        stac_feature("x")["geometry"])
+        item = StacItem("dup", date(2026, 10, 31), 5.0, "37UFT", stac_feature("x")["geometry"])
         client = FakeStacClient([item])
         first = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
         second = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
@@ -326,10 +321,17 @@ class TestCatalogCycle:
     def test_scene_away_from_fields_not_cataloged(self, db):
         make_stac_field(db)
         make_satellite_source(db)
-        client = FakeStacClient([
-            StacItem("far", date(2026, 10, 30), 5.0, "37UFT",
-                     stac_feature("x", lon=39.0, lat=50.0)["geometry"])
-        ])
+        client = FakeStacClient(
+            [
+                StacItem(
+                    "far",
+                    date(2026, 10, 30),
+                    5.0,
+                    "37UFT",
+                    stac_feature("x", lon=39.0, lat=50.0)["geometry"],
+                )
+            ]
+        )
         report = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert report.new_rows == 0
         assert db.scalars(select(SatelliteCatalogItem)).all() == []
@@ -360,9 +362,7 @@ class TestCatalogCycle:
 
     def test_no_fields_cycle_skipped(self, db):
         make_satellite_source(db)
-        report = run_catalog_cycle(
-            db, FakeStacClient([]), date_from=WINDOW[0], date_to=WINDOW[1]
-        )
+        report = run_catalog_cycle(db, FakeStacClient([]), date_from=WINDOW[0], date_to=WINDOW[1])
         assert report.status == "skipped" and report.skipped
         source, _ = last_source_state(db)
         assert source.last_status == "degraded"

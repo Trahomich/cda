@@ -68,12 +68,9 @@ def run_once(settings: Settings) -> None:
                 base_url=settings.stac_api_url,
                 request_timeout=settings.ingest_satellite_request_timeout,
             )
-            report = run_catalog_cycle(
-                db, client, date_from=date_from, date_to=date_to
-            )
+            report = run_catalog_cycle(db, client, date_from=date_from, date_to=date_to)
             logger.info(
-                "sentinel-ingest [catalog]: сцен=%d полей=%d новых=%d "
-                "status=%s",
+                "sentinel-ingest [catalog]: сцен=%d полей=%d новых=%d status=%s",
                 report.scenes,
                 report.fields,
                 report.new_rows,
@@ -89,8 +86,7 @@ def run_once(settings: Settings) -> None:
             pause = settings.ingest_satellite_retry_base_seconds * 2 ** (attempt - 1)
             if pause > 0:
                 logger.warning(
-                    "sentinel-ingest [catalog]: попытка %d/%d не удалась, "
-                    "пауза %.0f с",
+                    "sentinel-ingest [catalog]: попытка %d/%d не удалась, пауза %.0f с",
                     attempt,
                     attempts,
                     pause,
@@ -124,8 +120,7 @@ def main() -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
     logger.info(
-        "sentinel-ingest: старт (catalog=%d ч, backfill=%d сут, "
-        "stac=%s, run_once=%s)",
+        "sentinel-ingest: старт (catalog=%d ч, backfill=%d сут, stac=%s, run_once=%s)",
         settings.ingest_satellite_catalog_hours,
         settings.ingest_satellite_backfill_days,
         settings.stac_api_url,
