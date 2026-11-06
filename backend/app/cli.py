@@ -189,6 +189,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_inputs.set_defaults(func=cmd_seed_inputs)
 
+    p_ops = sub.add_parser(
+        "seed-operations",
+        help="история работ 2022–2025 и планы внесения 2026 по полям (v2-02, docs/06 §7.2)",
+    )
+    p_ops.set_defaults(func=cmd_seed_operations)
+
     p_rot = sub.add_parser(
         "seed-rotation",
         help="распределить севооборот по полям без плана/циклов (v1-10, RULE-AGRO-01/02)",
