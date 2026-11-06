@@ -91,14 +91,6 @@ async function saveEdit(dropYield = false) {
       Очередь пуста — всё синхронизировано.
     </p>
 
-    <button
-      type="button"
-      class="queue__exit"
-      @click="$router.push({ name: 'fields-map' })"
-    >
-      ← Выйти из полевого режима (в кабинет)
-    </button>
-
     <ul
       v-else
       class="queue__list"
