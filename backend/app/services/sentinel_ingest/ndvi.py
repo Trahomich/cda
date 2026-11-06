@@ -303,17 +303,23 @@ def run_ndvi_cycle(
 
     lookup = contour_lookup_factory(db)
     contours: dict[uuid.UUID, dict | None] = {}
+    # Данные строк — плоскими значениями ДО rollback: он экспирит ORM-объекты,
+    # и ленивая перезагрузка атрибутов в рабочих потоках била бы по сессии
+    # из нескольких потоков сразу (InvalidRequestError: concurrent operations).
+    payload: dict[int, tuple[uuid.UUID, dict]] = {}
     for row in rows:
         if row.field_id not in contours:
             contours[row.field_id] = lookup(str(row.field_id))
+        payload[id(row)] = (row.field_id, dict(row.assets or {}))
     db.rollback()  # закрыть неявную транзакцию select'ов перед записями
 
     def compute(item: SatelliteCatalogItem) -> tuple[SatelliteCatalogItem, object]:
-        contour = contours.get(item.field_id)
+        field_id, assets = payload[id(item)]
+        contour = contours.get(field_id)
         if contour is None:
-            return item, DataGapError(f"поле {item.field_id} неактивно или без контура")
+            return item, DataGapError(f"поле {field_id} неактивно или без контура")
         try:
-            return item, zonal_ndvi(item.assets or {}, contour)
+            return item, zonal_ndvi(assets, contour)
         except (DataGapError, DataQualityError, SourceUnavailableError) as exc:
             return item, exc
 
