@@ -8,7 +8,11 @@
                      (MVP-6, идемпотентный upsert по operation_type);
   seed-demo        — демо-хозяйство целиком (MVP-13: поля, циклы, операции,
                      техника, задания, алерты, демо-погода; идемпотентно,
-                     --reset пересоздаёт; включает справочники и правила).
+                     --reset пересоздаёт; включает справочники и правила);
+  import-fields    — импорт реальных полей хозяйства из SHP-архива (zip)
+                     или GeoJSON (v1-02, IF-FIELDS); идемпотентен по
+                     external_id, --replace удаляет прежние поля; печатает
+                     отчёт JSON (created/updated/skipped/area_mismatch).
 """
 
 import argparse
