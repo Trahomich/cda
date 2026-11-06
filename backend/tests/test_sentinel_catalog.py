@@ -321,7 +321,6 @@ class TestCatalogCycle:
         second = run_catalog_cycle(db, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert first.new_rows == 1 and second.new_rows == 0
         assert second.status == "ok"
-        assert db.scalar(select(SatelliteCatalogItem.item_id)).count() is None or True
         rows = db.scalars(select(SatelliteCatalogItem)).all()
         assert len(rows) == 1  # UQ (field_id, item_id) защищает от дублей
 
