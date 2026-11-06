@@ -114,9 +114,11 @@ def make_scene(
     index: str = "ndvi",
 ) -> SatelliteScene:
     db.execute(
-        db_text("INSERT INTO ref_source (source_id, kind) VALUES (:s, 'satellite')").bindparams(
-            s=SATELLITE_SOURCE_ID
-        )
+        db_text(
+            "INSERT INTO ref_source (id, source_id, kind) "
+            "VALUES (gen_random_uuid(), :s, 'satellite') "
+            "ON CONFLICT (source_id) DO NOTHING"
+        ).bindparams(s=SATELLITE_SOURCE_ID)
     )
     scene = SatelliteScene(
         field_id=field_id,
