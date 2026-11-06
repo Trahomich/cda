@@ -81,6 +81,17 @@ def cmd_seed_demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_import_fields(args: argparse.Namespace) -> int:
+    import json
+
+    from app.modules.fields.importer import import_fields
+
+    with SessionLocal() as db:
+        report = import_fields(db, args.path, replace=args.replace)
+    print(json.dumps(report.as_dict(), ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="CLI ИС ЦДА")
     sub = parser.add_subparsers(dest="command", required=True)
