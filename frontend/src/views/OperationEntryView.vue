@@ -296,6 +296,10 @@ function goQueue() {
           {{ op.date }} · {{ fields.find((f) => f.field_id === op.field_id)?.name ?? op.field_id }} ·
           {{ OPERATION_TYPES.find((t) => t.value === op.operation_type)?.label ?? op.operation_type }} ·
           {{ op.actual_area_ga }} га · {{ op.performer ?? '—' }}
+          <strong
+            v-if="op.needs_review"
+            class="op-entry__review"
+          >⚠ требует проверки (RULE-AGRO-12)</strong>
         </li>
       </ul>
       <p
