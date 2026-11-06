@@ -119,10 +119,13 @@ async function saveEdit(fieldId: string, year: number) {
 }
 
 async function approve() {
-  if (!plan.value) return
+  if (!plan.value || !plan.value.draft_plan_ids.length) return
   saving.value = true
   try {
-    await approveRotationPlan(plan.value.plan_id)
+    // API-08 отдаёт по-полевые планы: согласуем каждый черновик (API-10).
+    for (const planId of plan.value.draft_plan_ids) {
+      await approveRotationPlan(planId)
+    }
     await load()
   } catch {
     // тост уже показан
