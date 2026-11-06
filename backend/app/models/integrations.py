@@ -84,6 +84,7 @@ class Forecast(Base):
     precipitation_mm: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
     wind_max_ms: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
     humidity_avg_pct: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
+    precip_prob_pct: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     hazard: Mapped[str] = mapped_column(String(15), nullable=False, server_default="none")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
