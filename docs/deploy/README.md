@@ -34,7 +34,9 @@ TUNNEL_TOKEN=<JSON-токен туннеля Cloudflare>
 Из корня workspace: `bash deploy/deploy.sh` — rsync кода, `compose up -d --build`,
 ожидание `healthz`. Затем (сидируется один раз и после изменений сидов):
 `ssh cda@192.168.99.201 'cd cda && docker compose -f deploy/docker-compose.prod.yml --env-file .env exec api python -m app.cli seed-demo'`
-(демо-хозяйство #31 + демо-агроном demo_agronomist/demo123) и при необходимости
+(демо-хозяйство #31, демо-агроном demo_agronomist/demo123 и демо-руководитель
+demo_manager/demo123 из #46; сид идемпотентен — пользователи, справочники,
+матрица предшественников и демо-препараты добавляются при каждом запуске) и при необходимости
 `... exec api python -m app.cli create-admin --login <логин> --password <пароль>`.
 Пароли/логины демо-входа — только в итоге задачи, не в коде.
 
