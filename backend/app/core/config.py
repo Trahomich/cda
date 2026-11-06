@@ -51,6 +51,13 @@ class Settings(BaseSettings):
     ingest_weather_forecast_hours: int = 3
     ingest_weather_archive_minutes: int = 60
     ingest_weather_backfill_days: int = 14
+    # sentinel-ingest (v1-04, docs/05 §2/§4): STAC earth-search, анонимно
+    stac_api_url: str = "https://earth-search.aws.element84.com/v1"
+    ingest_satellite_catalog_hours: int = 6  # опрос каталога (05 §4)
+    ingest_satellite_backfill_days: int = 14  # окно поиска сцен, backfill
+    ingest_satellite_request_timeout: float = 30.0
+    ingest_satellite_retry_attempts: int = 3  # в пределах цикла; далее — планировщик
+    ingest_satellite_retry_base_seconds: float = 60.0  # 0 — без пауз (тесты)
 
     # Спутник (MVP-10, docs/05 §2 IF-SATELLITE, §4: опрос каталога раз в 6 ч)
     satellite_enabled: bool = False  # true — нужны ключи Copernicus (см. ниже)
