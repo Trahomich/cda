@@ -1,0 +1,26 @@
+# Caddy: отдаёт статику PWA (frontend/dist) и проксирует API.
+# Публичный вход — Cloudflare Tunnel (cloudflared в том же compose-сети) -> caddy:8080.
+
+:8080 {
+	encode zstd gzip
+
+	# API и healthz — в backend (FastAPI, порт 8000)
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle /healthz {
+		reverse_proxy api:8000
+	}
+
+	# SPA-статика PWA; History-роутинг — fallback на index.html
+	handle {
+		root * /srv/frontend
+		try_files {path} /index.html
+		file_server
+
+		# PWA: service worker и manifest всегда свежие
+		header /sw.js Cache-Control "no-cache, max-age=0"
+		header /manifest.webmanifest Cache-Control "no-cache, max-age=0"
+		header /index.html Cache-Control "no-cache"
+	}
+}
