@@ -61,6 +61,8 @@ def make_cycle(
     year: int = 2027,
     harvest: date | None = date(2027, 7, 20),
 ) -> CropCycle:
+    if culture is None:
+        culture = make_culture(db_session)
     cycle = CropCycle(
         field_id=uuid.UUID(field["field_id"]),
         year=year,
