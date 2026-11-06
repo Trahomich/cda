@@ -70,13 +70,26 @@ services:
       - api
     restart: unless-stopped
 
+  # Обход DPI (задача #37): cloudflared ходит к edge через фрагментирующий
+  # SOCKS5-релей, который дробит ClientHello (DPI режет его TLS-сигнатуру).
+  fragrelay:
+    image: python:3.12-alpine
+    command: python /app/fragrelay.py
+    volumes:
+      - ./fragrelay.py:/app/fragrelay.py:ro
+    environment:
+      SOCKS_HOST: ${SOCKS_HOST:-192.168.99.45}
+      SOCKS_PORT: ${SOCKS_PORT:-1080}
+    restart: unless-stopped
+
   cloudflared:
     image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --protocol http2 run
+    command: tunnel --no-autoupdate --protocol http2 --edge fragrelay:7844 run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN обязателен в .env}
     depends_on:
       - caddy
+      - fragrelay
     restart: unless-stopped
 
 volumes:
