@@ -4,7 +4,7 @@
 вручную на PostgreSQL 17 + PostGIS 3.5 (см. итог задачи #20).
 """
 
-from app.seed import CULTURES, SOURCES
+from app.seed import CULTURES, PREDECESSOR_RULES, SOURCES
 
 
 def test_cultures_count_in_mvp_range() -> None:
