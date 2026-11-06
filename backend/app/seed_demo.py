@@ -427,6 +427,9 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
         report.cycles += 1
     db.commit()
 
+    # --- планы внесения удобрений/СЗР (задача #46) ------------------------
+    _seed_treatment_plans(db, report, cycle_by_field)
+
     # --- планы севооборота: один approved, один draft «на согласовании» ----
     db.add(
         RotationPlan(
