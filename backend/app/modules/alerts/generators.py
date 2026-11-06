@@ -119,7 +119,7 @@ class AlertGenerators:
         if not fields:
             return GenerationReport(created=0, duplicates=0)
         today = date.today()
-        rows = db.execute(
+        rows = db.scalars(
             select(Forecast)
             .where(
                 Forecast.field_id.in_(fields),
@@ -130,8 +130,8 @@ class AlertGenerators:
             .order_by(Forecast.field_id, Forecast.forecast_for)
         ).fetchall()
         by_field: dict[uuid.UUID, list[Forecast]] = {}
-        for row in rows:
-            by_field.setdefault(row.field_id, []).append(row)
+        for forecast in rows:
+            by_field.setdefault(forecast.field_id, []).append(forecast)
         created = duplicates = 0
         for field_id, forecasts in by_field.items():
             worst = max(forecasts, key=lambda f: (f.hazard == "frost", f.hazard == "hail"))
