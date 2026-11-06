@@ -188,10 +188,39 @@ function fmtNum(v: number, digits = 1): string {
       Не удалось загрузить карточку поля
     </p>
 
-    <div
-      v-else
-      class="card360__grid"
-    >
+    <template v-else>
+      <div
+        class="card360__tabs"
+        role="tablist"
+        aria-label="Разделы карточки поля"
+      >
+        <button
+          type="button"
+          class="card360__tab"
+          :class="{ 'card360__tab--active': activeTab === 'overview' }"
+          role="tab"
+          :aria-selected="activeTab === 'overview'"
+          @click="activeTab = 'overview'"
+        >
+          Обзор
+        </button>
+        <button
+          type="button"
+          class="card360__tab card360__tab--works"
+          :class="{ 'card360__tab--active': activeTab === 'works' }"
+          role="tab"
+          :aria-selected="activeTab === 'works'"
+          @click="activeTab = 'works'"
+        >
+          Работы
+        </button>
+      </div>
+
+      <!-- Обзор: блоки «Поле 360°» -->
+      <div
+        v-show="activeTab === 'overview'"
+        class="card360__grid"
+      >
       <!-- Контур + история культур -->
       <div class="card360__block card360__block--map">
         <h2 class="card360__block-title">
