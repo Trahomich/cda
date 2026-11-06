@@ -159,7 +159,8 @@ class TestWorker:
 
     def test_run_once_cycle_no_fields(self, db_session, monkeypatch):
         """run_once по всем трём джобам на пустой БД: не падает, пишет журнал."""
-        from app.core.db import SessionLocal
+        make_weather_source(db_session)
+        from app.core.db import SessionLocal  # noqa: F401 — патчится ниже
 
         monkeypatch.setattr(service, "SessionLocal", lambda: db_session)
         settings = Settings(weather_retry_attempts=1, weather_retry_base_seconds=0)
