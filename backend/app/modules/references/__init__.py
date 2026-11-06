@@ -7,4 +7,3 @@ GET /references/cultures — справочник культур с color_hex: �
 from app.modules.references.router import router
 
 __all__ = ["router"]
-
