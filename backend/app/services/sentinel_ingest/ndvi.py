@@ -174,7 +174,13 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     scl_ds = _open_cog(assets["scl"])
     try:
         geom_scl = transform_geom("EPSG:4326", scl_ds.crs, contour_geojson)
-        window = from_bounds(*shape(geom_scl).bounds, transform=scl_ds.transform)
+        w = from_bounds(*shape(geom_scl).bounds, transform=scl_ds.transform)
+        window = Window(
+            col_off=math.floor(w.col_off),
+            row_off=math.floor(w.row_off),
+            width=math.ceil(w.col_off + w.width) - math.floor(w.col_off),
+            height=math.ceil(w.row_off + w.height) - math.floor(w.row_off),
+        )
         scl = scl_ds.read(
             1,
             window=window,
