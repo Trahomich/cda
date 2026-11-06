@@ -105,7 +105,7 @@ function cultureOf(field: Field): string {
         v-model="search"
         class="fields-list__input"
         type="search"
-        placeholder="Например, Степное-1"
+        placeholder="Например, 1/ВОСХОД/85га"
       >
       <label
         class="fields-list__label"
