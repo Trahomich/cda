@@ -7,17 +7,26 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   getFieldCard,
+  getFieldCropCycles,
   getFieldNdvi,
   getFieldWeather,
   getOperations,
 } from '@/api'
-import type { FieldCard, FieldOperation, FieldWeather, NdviPoint } from '@/api/types'
+import type {
+  CropCycleHistoryItem,
+  FieldCard,
+  FieldOperation,
+  FieldWeather,
+  NdviPoint,
+} from '@/api/types'
+import CropHistoryStrip from '@/components/CropHistoryStrip.vue'
 import NdviTimeline from '@/components/NdviTimeline.vue'
 
 const route = useRoute()
 const fieldId = route.params.fieldId as string
 
 const card = ref<FieldCard | null>(null)
+const cropHistory = ref<CropCycleHistoryItem[]>([])
 const ndvi = ref<NdviPoint[]>([])
 const weather = ref<FieldWeather | null>(null)
 const operations = ref<FieldOperation[]>([])
