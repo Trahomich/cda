@@ -355,6 +355,9 @@ class FieldOperation(Base):
     deviation_flag: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     # Обоснование отклонения (RULE-AGRO-11): факт vs план.
     deviation_rationale: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    # RULE-AGRO-12: площадь > 1,05 × площади поля — сохраняем, но помечаем
+    # «требует проверки» (422 не возвращаем: факт важнее плана, 03 §3.4).
+    needs_review: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     status: Mapped[str] = mapped_column(String(15), nullable=False, server_default="draft")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
