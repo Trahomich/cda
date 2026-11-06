@@ -381,6 +381,10 @@ function goQueue() {
   border-color: #2e7d32;
 }
 
+.op-entry__review {
+  color: #b26a00;
+}
+
 .op-entry__hint {
   font-size: 0.95rem;
   color: #616161;
