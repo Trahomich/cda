@@ -7,8 +7,9 @@ auth, fields, rotation, inputs, weather, satellite, machinery.
 from fastapi import APIRouter
 
 from app.core.config import get_settings
+from app.modules.alerts import router as alerts_router
+from app.modules.alerts import sources_router
 from app.modules.auth import router as auth_router
-from app.modules.alerts import router as alerts_router, sources_router
 from app.modules.export import router as export_router
 from app.modules.fields import router as fields_router
 from app.modules.inputs import router as inputs_router
