@@ -28,6 +28,7 @@ from dataclasses import dataclass
 from dataclasses import field as dc_field
 from datetime import date
 from pathlib import Path
+from typing import Any
 
 import shapefile
 from shapely.geometry import MultiPolygon, Polygon, shape
