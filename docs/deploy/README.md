@@ -24,10 +24,9 @@ TUNNEL_TOKEN=<JSON-токен туннеля Cloudflare>
 
 ## Публикация наружу (Cloudflare Tunnel)
 
-Туннель запускается по токену (remotely-managed): ingress настраивается
-в Cloudflare Zero Trust → Networks → Tunnels → <туннель> → Public Hostname.
-Добавить hostname (например `cda.<домен>`) со службой `http://caddy:8080`.
-После этого приложение доступно по `https://cda.<домен>`.
+Публичный URL: `https://cda.oblaka.pw` (Public Hostname в Cloudflare Zero Trust,
+службу указать `http://caddy:8080`). Приложение доступно по этому адресу,
+когда стек запущен (см. ниже про обход DPI через fragrelay).
 
 ## Обновление развёртывания
 
