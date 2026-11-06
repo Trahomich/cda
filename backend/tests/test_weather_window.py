@@ -9,6 +9,7 @@ POST /treatment-plans (API-15) и POST /treatment-plans/{id}/approve (API-16)
 import uuid
 from datetime import UTC, date, datetime
 
+from app.models.auth import UserRole
 from app.models.integrations import Forecast
 from tests.test_inputs import (
     headers,
