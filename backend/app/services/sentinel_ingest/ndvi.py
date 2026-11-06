@@ -146,7 +146,9 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     не считается (сцене всё равно не сохраняться, 05 §5 п.2).
     """
     from rasterio.enums import Resampling
+    from rasterio.windows import from_bounds
     from rasterio.warp import transform_geom
+    from shapely.geometry import shape
 
     missing = [band for band in BAND_ASSETS if not assets.get(band)]
     if missing:
@@ -158,10 +160,6 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
         raise DataGapError("каналы b04/b08 на разных сетках — окно не совпадает")
 
     # SCL → сетка NIR (10 м, nearest), вне плашки — 0 (nodata, не облако)
-    import rasterio
-    from rasterio.windows import from_bounds
-    from shapely.geometry import shape
-
     scl_ds = _open_cog(assets["scl"])
     try:
         geom_scl = transform_geom("EPSG:4326", scl_ds.crs, contour_geojson)
