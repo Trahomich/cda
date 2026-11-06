@@ -85,6 +85,9 @@ async function submit() {
     input_id: null,
     performer: auth.user?.name ?? null,
     source: 'manual',
+    yield_record: form.yield_c_ha
+      ? { yield_c_ha: Number(form.yield_c_ha), gross_t: null, source: 'scales' }
+      : null,
   }
   submitting.value = true
   try {
