@@ -1005,12 +1005,13 @@ export class MockTransport implements Transport {
       const n = FIELD_N.get(field.field_id)!
 
       // Журнал поля — последние операции мока (API-18), как в агрегате API-05.
-      const ops = JOURNAL.filter((o) => o.field_id === field.field_id)
+      const ops = [...OPERATIONS]
+        .filter((o) => o.field_id === field.field_id)
         .slice(-3)
         .map((o) => ({
           date: o.date,
           operation_type: o.operation_type,
-          status: o.status ?? 'done',
+          status: o.status,
           performer: o.performer ?? null,
         }))
 
