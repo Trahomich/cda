@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { label: 'Севооборот', to: { name: 'rotation-plan' } },
   { label: 'Планы СЗР', to: { name: 'treatment-plans' } },
   { label: 'Погода', to: { name: 'weather' } },
+  { label: 'Календарь', to: { name: 'work-calendar' } },
   { label: 'Журнал', to: { name: 'operations-journal' } },
   { label: 'Техника', to: { name: 'machinery' } },
   { label: 'Справочники', to: { name: 'references' } },
