@@ -197,7 +197,6 @@ onMounted(load)
             >
               <td>{{ j.performed_at }}</td>
               <td>{{ j.machine_model }}</td>
-              <td>{{ j.field_name ?? 'внеполевая' }}</td>
               <td class="mch__num">
                 {{ j.area_ha.toLocaleString('ru-RU') }}
               </td>
