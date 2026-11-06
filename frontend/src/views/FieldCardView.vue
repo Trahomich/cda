@@ -35,6 +35,34 @@ const operations = ref<FieldOperation[]>([])
 const loading = ref(true)
 const failed = ref(false)
 
+/** Вкладки карточки (v2): «Обзор» — блоки 360°, «Работы» — план+факт поля. */
+const activeTab = ref<'overview' | 'works'>('overview')
+/** Вкладка «Работы»: планы API-15 (field_id) + журнал API-18 (field_id). */
+const fieldPlans = ref<TreatmentPlan[]>([])
+const fieldOperations = ref<FieldOperation[]>([])
+
+/** Лента «Работы»: план и факт одной хронологией, свежие сверху. */
+const works = computed(() => {
+  const entries: Array<{
+    key: string
+    kind: 'plan' | 'fact'
+    date: string
+    plan?: TreatmentPlan
+    op?: FieldOperation
+  }> = [
+    ...fieldPlans.value
+      .filter((p) => p.status !== 'cancelled')
+      .map((p) => ({ key: `plan-${p.plan_id}`, kind: 'plan' as const, date: p.planned_date, plan: p })),
+    ...fieldOperations.value.map((o) => ({
+      key: `fact-${o.operation_id}`,
+      kind: 'fact' as const,
+      date: o.date,
+      op: o,
+    })),
+  ]
+  return entries.sort((a, b) => b.date.localeCompare(a.date))
+})
+
 const PLAN_STATUS_LABELS: Record<string, string> = {
   draft: 'черновик',
   approved: 'согласован',
