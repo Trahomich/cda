@@ -20,9 +20,9 @@ from app.integrations import SourceUnavailableError
 from app.integrations.stac import (
     CATALOG_ASSETS,
     COLLECTION,
+    SATELLITE_SOURCE_ID,
     EarthSearchStacClient,
     FakeStacClient,
-    SATELLITE_SOURCE_ID,
     StacItem,
 )
 from app.models.integrations import SatelliteCatalogItem, SourceJournalEntry
@@ -37,7 +37,7 @@ from app.services.sentinel_ingest.worker import JOB_CATALOG, catalog_window, cre
 from sqlalchemy import select
 from sqlalchemy import text as db_text
 from sqlalchemy.orm import Session
-from tests.test_satellite import make_field, make_satellite_source
+from tests.test_satellite import make_satellite_source
 
 # Контур в координатах тайла 37UFT (Воронежская обл., как демо-данные)
 FIELD_GEO = json.dumps(

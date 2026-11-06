@@ -11,8 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.integrations import SourceUnavailableError
 from app.integrations.stac import (
-    EarthSearchStacClient,
     SATELLITE_SOURCE_ID,
+    EarthSearchStacClient,
     StacItem,
 )
 from app.models.integrations import SatelliteCatalogItem, SourceJournalEntry
