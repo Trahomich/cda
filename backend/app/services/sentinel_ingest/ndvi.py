@@ -115,7 +115,7 @@ def _read_band_window(href: str, contour_geojson: dict) -> tuple[np.ndarray, obj
     даёт NaN-индекс (исключается из статистики), для SCL 0 = nodata.
     """
     from rasterio.warp import transform_geom
-    from rasterio.windows import from_bounds
+    from rasterio.windows import Window, from_bounds
     from shapely.geometry import shape
 
     ds = _open_cog(href)
