@@ -67,6 +67,28 @@ def yield_of(db: Session, operation: FieldOperation) -> YieldRecord | None:
     ).first()
 
 
+# RULE-AGRO-12: фактическая площадь не больше 1,05 × площади поля
+AREA_FACTOR = Decimal("1.05")
+
+
+def field_area_on(db: Session, field: Field, on_date: date) -> Decimal:
+    """Площадь поля по последней версии контура на дату операции;
+    если версий на эту дату нет — текущая площадь контура (03 §1.2)."""
+    version = db.scalars(
+        select(FieldVersion)
+        .where(FieldVersion.field_id == field.id, FieldVersion.valid_from <= on_date)
+        .order_by(FieldVersion.valid_from.desc(), FieldVersion.version_no.desc())
+        .limit(1)
+    ).first()
+    return Decimal(str(version.area_ga if version is not None else field.area_ga))
+
+
+def _needs_review(db: Session, field: Field, data: OperationCreate) -> bool:
+    """RULE-AGRO-12: actual_area_ga > 1,05 × площади поля на дату операции."""
+    area = field_area_on(db, field, data.date)
+    return Decimal(str(data.actual_area_ga)) > AREA_FACTOR * area
+
+
 def _deviation_rationale(actual: float, planned: float) -> str:
     """Текст обоснования отклонения (RULE-AGRO-11, 03 §3.4)."""
     percent = (actual - planned) / planned * 100
