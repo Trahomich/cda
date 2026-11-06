@@ -176,7 +176,7 @@ class TestNdviCycle:
 
         make_satellite_source(db_session)
         field_id = make_ndvi_field(db_session)
-        item = make_catalog_row(db_session, field_id, scene_rasters)
+        item = make_catalog_row(db_session, field_id, scene_rasters["assets"])
 
         report = run_ndvi_cycle(db_session)
 
@@ -201,7 +201,7 @@ class TestNdviCycle:
         """Повторный цикл: processed-строки не обрабатываются, дублей сцен нет."""
         make_satellite_source(db_session)
         field_id = make_ndvi_field(db_session)
-        make_catalog_row(db_session, field_id, scene_rasters)
+        make_catalog_row(db_session, field_id, scene_rasters["assets"])
         run_ndvi_cycle(db_session)
 
         report = run_ndvi_cycle(db_session)
@@ -227,7 +227,7 @@ class TestNdviCycle:
             {"id": str(field_id), "geo": json.dumps(wgs_box(300100, 5761100, 301900, 5761900))},
         )
         db_session.commit()
-        item = make_catalog_row(db_session, field_id, scene_rasters)
+        item = make_catalog_row(db_session, field_id, scene_rasters["assets"])
 
         report = run_ndvi_cycle(db_session)
 
@@ -254,7 +254,7 @@ class TestNdviCycle:
             {"id": str(field_id), "geo": json.dumps(wgs_box(300050, 5760050, 301950, 5761950))},
         )
         db_session.commit()
-        make_catalog_row(db_session, field_id, scene_rasters)
+        make_catalog_row(db_session, field_id, scene_rasters["assets"])
 
         run_ndvi_cycle(db_session)
 
@@ -308,7 +308,7 @@ class TestNdviCycle:
         """Поле неактивно: контур не находится, строка failed с причиной."""
         make_satellite_source(db_session)
         field_id = make_ndvi_field(db_session, name="Заброшенное-1", status="archived")
-        item = make_catalog_row(db_session, field_id, scene_rasters)
+        item = make_catalog_row(db_session, field_id, scene_rasters["assets"])
 
         report = run_ndvi_cycle(db_session)
 
