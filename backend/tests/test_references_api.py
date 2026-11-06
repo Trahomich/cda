@@ -6,8 +6,7 @@
 """
 
 from app.models.auth import UserRole
-from app.seed import CULTURES
-from app.seed import seed_references
+from app.seed import CULTURES, seed_references
 from tests.test_auth import auth_header, make_user
 
 API = "/api/v1/references/cultures"

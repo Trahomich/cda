@@ -17,7 +17,9 @@ from app.modules.references.schemas import CultureItem, CultureListResponse
 
 DbSession = Annotated[Session, Depends(get_db)]
 
-router = APIRouter(prefix="/references", tags=["references"], dependencies=[Depends(group_checker("references"))])
+router = APIRouter(
+    prefix="/references", tags=["references"], dependencies=[Depends(group_checker("references"))]
+)
 
 
 @router.get(
