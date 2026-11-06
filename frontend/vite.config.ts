@@ -53,9 +53,22 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
+    // Прокси на backend (make up): без CORS и с дефолтным VITE_API_BASE=/api/v1.
+    proxy: {
+      '/api': {
+        target: process.env.CDA_API_TARGET ?? 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   },
   preview: {
     port: 4173,
     host: true,
+    proxy: {
+      '/api': {
+        target: process.env.CDA_API_TARGET ?? 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
   },
 })
