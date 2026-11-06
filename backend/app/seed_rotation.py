@@ -15,7 +15,8 @@ CLI ``python -m app.cli seed-rotation``: для каждого активног�
 import logging
 import random
 import uuid
-from dataclasses import dataclass, field as dc_field
+from dataclasses import dataclass
+from dataclasses import field as dc_field
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -55,7 +56,7 @@ class SeedRotationReport:
     plans_created: int = 0
     cycles_created: int = 0
     skipped_existing: int = 0
-    missing_cultures: list[str] = field(default_factory=list)
+    missing_cultures: list[str] = dc_field(default_factory=list)
     violations: list[str] = dc_field(default_factory=list)
 
     def as_dict(self) -> dict:
@@ -138,8 +139,7 @@ def seed_rotation(
 
     # пул культур справочника; отсутствие культуры — не ошибка, просто сузим пул
     cultures = {
-        c.name: c
-        for c in db.scalars(select(Culture).where(Culture.name.in_(POOL_CULTURE_NAMES)))
+        c.name: c for c in db.scalars(select(Culture).where(Culture.name.in_(POOL_CULTURE_NAMES)))
     }
     report.missing_cultures = sorted(set(POOL_CULTURE_NAMES) - cultures.keys())
     pool = [cultures[name] for name in POOL_CULTURE_NAMES if name in cultures]
@@ -149,8 +149,7 @@ def seed_rotation(
 
     # матрица совместимости (culture_id, predecessor_id) → verdict
     matrix = {
-        (r.culture_id, r.predecessor_id): r.verdict
-        for r in db.scalars(select(PredecessorRule))
+        (r.culture_id, r.predecessor_id): r.verdict for r in db.scalars(select(PredecessorRule))
     }
 
     # активные поля без циклов и активных планов (идемпотентность)
@@ -159,9 +158,7 @@ def seed_rotation(
         .where(
             Field.status == "active",
             Field.id.not_in(select(CropCycle.field_id)),
-            Field.id.not_in(
-                select(RotationPlan.field_id).where(RotationPlan.status != "archived")
-            ),
+            Field.id.not_in(select(RotationPlan.field_id).where(RotationPlan.status != "archived")),
         )
         .order_by(Field.name)
     ).all()
@@ -170,9 +167,7 @@ def seed_rotation(
     for farm_field in fields:
         rng = random.Random(f"rotation:{_stable_key(farm_field)}")
         with_fallow = fallow if field_no % FALLOW_EVERY_N_FIELDS == 0 and fallow else None
-        sequence = _pick_sequence(
-            rng, pool=pool, matrix=matrix, fallow=with_fallow, years=years
-        )
+        sequence = _pick_sequence(rng, pool=pool, matrix=matrix, fallow=with_fallow, years=years)
         db.add(
             RotationPlan(
                 field_id=farm_field.id,
@@ -193,8 +188,10 @@ def seed_rotation(
                 kind="main",
                 predecessor_cycle_id=prev_cycle_id,
                 status=(
-                    "completed" if year < current_year
-                    else "in_progress" if year == current_year
+                    "completed"
+                    if year < current_year
+                    else "in_progress"
+                    if year == current_year
                     else "planned"
                 ),
             )
