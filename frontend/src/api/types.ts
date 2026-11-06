@@ -577,6 +577,8 @@ export interface WeatherForecastItem {
   temperature_min_c: number
   temperature_max_c: number
   precipitation_mm: number
+  /** Вероятность осадков, % (docs/06 §7.2); null — провайдер не отдаёт. */
+  precip_prob_pct?: number | null
   wind_max_ms: number
   humidity_avg_pct: number
   hazard?: string | null
