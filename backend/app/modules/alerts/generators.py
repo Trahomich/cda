@@ -197,7 +197,7 @@ class AlertGenerators:
             if len(scenes) < 2:
                 continue
             latest, prev = scenes[0], scenes[1]
-            gap = latest.captured_at.date() - prev.captured_at.date()
+            gap = latest.captured_at - prev.captured_at  # обе даты — date
             if gap > timedelta(days=self._ndvi_window_days) or gap <= timedelta(0):
                 continue
             prev_avg = float(prev.index_avg)
@@ -243,7 +243,7 @@ class AlertGenerators:
 
     def check_satellite_gap(self, db: Session) -> GenerationReport:
         """Алерт data_source: нет свежих сцен на поле stale_days суток и дольше."""
-        stale_before = datetime.now(tz=UTC) - timedelta(days=self._satellite_stale_days)
+        stale_before = date.today() - timedelta(days=self._satellite_stale_days)
         rows = db.execute(
             select(Field.id, Field.name).where(Field.status == "active").order_by(Field.name)
         ).fetchall()
