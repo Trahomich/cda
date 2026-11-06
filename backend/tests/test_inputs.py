@@ -43,11 +43,14 @@ def make_culture(db_session, *, name: str = "Пшеница", kind: str = "main"
     return culture
 
 
-def make_field(db_session, *, name: str = "Поле-1") -> Field:
-    field = Field(name=f"{name}-{uuid.uuid4().hex[:6]}", contour=square(41.0, 0.0, 0.01, 0.01))
-    db_session.add(field)
-    db_session.commit()
-    return field
+def make_field(client, hdr, *, name: str = "Поле-1") -> dict:
+    resp = client.post(
+        "/api/v1/fields",
+        json={"name": f"{name}-{uuid.uuid4().hex[:6]}", "contour": square(41.0, 0.0, 0.01, 0.01)},
+        headers=hdr,
+    )
+    assert resp.status_code == 201, resp.text
+    return resp.json()
 
 
 def make_cycle(
