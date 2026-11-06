@@ -250,6 +250,22 @@ function goQueue() {
         placeholder="0.6"
       >
 
+      <label
+        v-if="form.operation_type === 'harvesting'"
+        class="op-entry__label"
+        for="yield"
+      >Урожайность, ц/га (ENT-YIELD-RECORD)</label>
+      <input
+        v-if="form.operation_type === 'harvesting'"
+        id="yield"
+        v-model="form.yield_c_ha"
+        class="op-entry__control"
+        type="number"
+        step="0.1"
+        min="0.1"
+        placeholder="45.2"
+      >
+
       <button
         type="submit"
         class="op-entry__submit"
