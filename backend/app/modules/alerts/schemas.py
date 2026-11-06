@@ -11,7 +11,7 @@ class AlertItem(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    alert_id: uuid.UUID = Field(serialization_alias=None)
+    alert_id: uuid.UUID
     type: str
     severity: str
     field_id: uuid.UUID | None
