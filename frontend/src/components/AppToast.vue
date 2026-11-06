@@ -26,11 +26,13 @@ const store = useToastStore()
 
 <style scoped>
 .toasts {
+  /* Внизу справа, над нижней навигацией полевого режима (07-ux §3.1):
+   * не перекрывает ни её, ни верхнее меню кабинета. */
   position: fixed;
-  top: 0.75rem;
   right: 0.75rem;
-  left: 0.75rem;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   z-index: 1200;
+  width: min(26rem, calc(100vw - 1.5rem));
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
