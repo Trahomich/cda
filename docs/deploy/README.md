@@ -3,7 +3,7 @@
 Стек и сервер:
 - Сервер: `ssh cda@192.168.99.201` (Debian 13, docker 26.x, compose v2; sudo недоступен — всё в домашнем каталоге).
 - Каталоги на сервере: `~/cda/backend` (код API), `~/cda/frontend/dist` (собранная статика PWA), `~/cda/deploy` (compose + Caddyfile), `~/cda/.env` (секреты, **вне git**).
-- Сервисы (deploy/docker-compose.prod.yml): api (FastAPI, миграции при старте), db (postgis/postgis:18-3.6 — тега 18-3.5 в Docker Hub нет), redis (7-alpine), caddy (статика + прокси `/api/*` и `/healthz`), cloudflared (Cloudflare Tunnel).
+- Сервисы (deploy/docker-compose.prod.yml): api (FastAPI, миграции при старте), db (postgis/postgis:18-3.6 — тега 18-3.5 в Docker Hub нет), redis (7-alpine), caddy (статика + прокси `/api/*` и `/healthz`), cloudflared (Cloudflare Tunnel), weather-ingest (воркер приёма погоды Open-Meteo — тот же образ, что api, запуск `python -m app.services.weather_ingest`, ADR-09: api только читает; интервалы через env `INGEST_WEATHER_*`, CONTRACTS.md §7).
 
 ## Первичная настройка (один раз)
 
