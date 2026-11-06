@@ -130,8 +130,158 @@ class DemoReport:
     machines: int = 0
     jobs: int = 0
     alerts: int = 0
+    treatment_plans: int = 0
+    inputs: int = 0
     skipped: bool = False
     extra: list[str] = dc_field(default_factory=list)
+
+
+# Демо-препараты для справочника СЗР/удобрений (RULE-AGRO-07/08/10, задача #46):
+# по паре удобрений и СЗР, чтобы экраны E-05/E-16 и проверки доз работали «из коробки».
+DEMO_INPUTS: tuple[dict[str, Any], ...] = (
+    {
+        "kind": "fertilizer",
+        "name": "Аммиачная селитра (демо)",
+        "n_pct": 34.5,
+        "p2o5_pct": 0.0,
+        "k2o_pct": 0.0,
+        "unit": "kg_ha",
+    },
+    {
+        "kind": "fertilizer",
+        "name": "Аммофос (демо)",
+        "n_pct": 12.0,
+        "p2o5_pct": 52.0,
+        "k2o_pct": 0.0,
+        "unit": "kg_ha",
+    },
+    {
+        "kind": "ppp",
+        "name": "Борус Некст, КЭ (демо)",
+        "active_substance": "изопротурон, 500 г/л",
+        "concentration": 50.0,
+        "unit": "l_ha",
+        "waiting_days": 40,
+        "max_treatments_per_season": 1,
+    },
+    {
+        "kind": "ppp",
+        "name": "Фалькон, КЭ (демо)",
+        "active_substance": "спироксамин 250 + тебуконазол 167 + триадименол 43, г/л",
+        "concentration": 46.0,
+        "unit": "l_ha",
+        "waiting_days": 35,
+        "max_treatments_per_season": 2,
+    },
+)
+
+
+def _seed_users(db: Session, report: DemoReport) -> None:
+    """Демо-пользователи для входа в UI: агроном и руководитель (задача #46).
+
+    Идемпотентно: создаётся только отсутствующий логин.
+    """
+    from app.core.security import hash_password
+
+    demo_users = (
+        ("Демо Агроном", "demo_agronomist", UserRole.AGRONOMIST),
+        ("Демо Менеджер", "demo_manager", UserRole.MANAGER),
+    )
+    for fio, login_, role in demo_users:
+        if db.scalar(select(User).where(User.login == login_)) is None:
+            db.add(
+                User(
+                    fio=fio,
+                    login=login_,
+                    password_hash=hash_password("demo123"),
+                    role=role,
+                    is_active=True,
+                )
+            )
+            db.commit()
+            report.extra.append(f"создан демо-пользователь: {login_} / demo123")
+
+
+def _seed_inputs(db: Session, report: DemoReport) -> None:
+    """Демо-препараты в dat_agro_input (задача #46).
+
+    Идемпотентно: ON CONFLICT DO NOTHING по естественному ключу (kind, name).
+    """
+    stmt = (
+        pg_insert(AgroInput)
+        .values([dict(spec) for spec in DEMO_INPUTS])
+        .on_conflict_do_nothing(index_elements=["kind", "name"])
+        .returning(AgroInput.id)
+    )
+    report.inputs = len(db.execute(stmt).fetchall())
+    db.commit()
+
+
+def _seed_treatment_plans(
+    db: Session, report: DemoReport, cycle_by_field: dict[str, CropCycle]
+) -> None:
+    """Демо-планы внесения: completed + draft + approved (задача #46).
+
+    Ссылаются на демо-циклы текущего года и демо-препараты; удаляются
+    каскадно вместе с демо-хозяйством (по cycle_id).
+    """
+    inputs = {
+        (i.kind, i.name): i
+        for i in db.scalars(
+            select(AgroInput).where(
+                AgroInput.name.in_([spec["name"] for spec in DEMO_INPUTS])
+            )
+        )
+    }
+    year = date.today().year
+    demo_plans = (
+        # (поле цикла, препарат, доза, тип, дата, фаза, статус)
+        (
+            "Северное-1",
+            ("fertilizer", "Аммиачная селитра (демо)"),
+            90.0,
+            "fertilizing",
+            date(year, 4, 20),
+            "весенняя подкормка",
+            "completed",
+        ),
+        (
+            "Среднее",
+            ("ppp", "Борус Некст, КЭ (демо)"),
+            0.8,
+            "spraying",
+            None,
+            "кущирование (весна следующего сезона)",
+            "draft",
+        ),
+        (
+            "Степное-7",
+            ("ppp", "Фалькон, КЭ (демо)"),
+            0.6,
+            "spraying",
+            None,
+            "обработка по вегетации",
+            "approved",
+        ),
+    )
+    for field_name, input_key, dose, op_type, planned_date, phase, status in demo_plans:
+        cycle = cycle_by_field.get(field_name)
+        input_ = inputs.get(input_key)
+        if cycle is None or input_ is None:
+            continue
+        db.add(
+            TreatmentPlan(
+                cycle_id=cycle.id,
+                input_id=input_.id,
+                dose=dose,
+                operation_type=op_type,
+                planned_date=planned_date,
+                planned_phase=phase,
+                status=status,
+            )
+        )
+        report.treatment_plans += 1
+    db.commit()
 
 
 def _polygon(spec: DemoFieldSpec) -> dict:
