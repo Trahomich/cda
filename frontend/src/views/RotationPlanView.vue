@@ -238,61 +238,61 @@ onMounted(load)
               :key="field.field_id"
             >
               <tr>
-              <th scope="row">
-                <button
-                  type="button"
-                  class="rotation__field-toggle"
-                  :class="{ 'rotation__field-toggle--open': historyField === field.field_id }"
-                  :aria-expanded="historyField === field.field_id"
-                  :title="historyField === field.field_id ? 'Скрыть историю севооборота' : 'Показать историю севооборота (API-49)'"
-                  @click="toggleHistory(field.field_id)"
-                >
-                  {{ field.field_name }}
-                  <span class="rotation__area">{{ field.area_ga }} га</span>
-                </button>
-              </th>
-              <td
-                v-for="year in years"
-                :key="`${field.field_id}:${year}`"
-                class="rotation__cell"
-              >
-                <template v-if="editing === `${field.field_id}:${year}`">
-                  <select
-                    v-model="editCulture"
-                    class="rotation__select"
-                    :aria-label="`Культура ${field.field_name}, ${year}`"
-                    @change="saveEdit(field.field_id, year)"
-                    @keyup.esc="editing = null"
+                <th scope="row">
+                  <button
+                    type="button"
+                    class="rotation__field-toggle"
+                    :class="{ 'rotation__field-toggle--open': historyField === field.field_id }"
+                    :aria-expanded="historyField === field.field_id"
+                    :title="historyField === field.field_id ? 'Скрыть историю севооборота' : 'Показать историю севооборота (API-49)'"
+                    @click="toggleHistory(field.field_id)"
                   >
-                    <option value="">
-                      —
-                    </option>
-                    <option
-                      v-for="culture in plan.cultures"
-                      :key="culture.culture_id"
-                      :value="culture.culture_id"
-                    >
-                      {{ shortName(culture) }}
-                    </option>
-                  </select>
-                </template>
-                <button
-                  v-else
-                  type="button"
-                  class="rotation__culture"
-                  :class="{
-                    'rotation__culture--warn': violationOf(field.field_id, year)?.severity === 'warning',
-                    'rotation__culture--editable': canEdit,
-                  }"
-                  :disabled="!canEdit"
-                  :title="canEdit ? 'Изменить культуру' : 'План закрыт для правки'"
-                  @click="startEdit(field.field_id, year)"
+                    {{ field.field_name }}
+                    <span class="rotation__area">{{ field.area_ga }} га</span>
+                  </button>
+                </th>
+                <td
+                  v-for="year in years"
+                  :key="`${field.field_id}:${year}`"
+                  class="rotation__cell"
                 >
-                  {{ cellOf(field.field_id, year)?.cycle?.culture_name ?? '—' }}
-                  <span v-if="violationOf(field.field_id, year)">⚠</span>
-                </button>
-              </td>
-            </tr>
+                  <template v-if="editing === `${field.field_id}:${year}`">
+                    <select
+                      v-model="editCulture"
+                      class="rotation__select"
+                      :aria-label="`Культура ${field.field_name}, ${year}`"
+                      @change="saveEdit(field.field_id, year)"
+                      @keyup.esc="editing = null"
+                    >
+                      <option value="">
+                        —
+                      </option>
+                      <option
+                        v-for="culture in plan.cultures"
+                        :key="culture.culture_id"
+                        :value="culture.culture_id"
+                      >
+                        {{ shortName(culture) }}
+                      </option>
+                    </select>
+                  </template>
+                  <button
+                    v-else
+                    type="button"
+                    class="rotation__culture"
+                    :class="{
+                      'rotation__culture--warn': violationOf(field.field_id, year)?.severity === 'warning',
+                      'rotation__culture--editable': canEdit,
+                    }"
+                    :disabled="!canEdit"
+                    :title="canEdit ? 'Изменить культуру' : 'План закрыт для правки'"
+                    @click="startEdit(field.field_id, year)"
+                  >
+                    {{ cellOf(field.field_id, year)?.cycle?.culture_name ?? '—' }}
+                    <span v-if="violationOf(field.field_id, year)">⚠</span>
+                  </button>
+                </td>
+              </tr>
               <tr
                 v-if="historyField === field.field_id"
                 class="rotation__history-row"
