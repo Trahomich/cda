@@ -26,7 +26,10 @@ def _prepare(db_session, *, n_fields: int = 6) -> list[Field]:
     """Справочники, препараты, поля и циклы (как после полного v1/v2-01 сида)."""
     seed_references(db_session)
     seed_inputs(db_session)
-    fields = [make_field(db_session, name=f"Поле-{i:02d}", external_id=f"EXT-{i:03d}") for i in range(n_fields)]
+    fields = [
+        make_field(db_session, name=f"Поле-{i:02d}", external_id=f"EXT-{i:03d}")
+        for i in range(n_fields)
+    ]
     db_session.commit()
     seed_rotation(db_session, years_back=4, years_forward=4)
     return fields
