@@ -21,14 +21,17 @@ services:
       start_period: 10s
     restart: unless-stopped
 
-  # Воркер приёма погоды Open-Meteo (ADR-09, v1-03): тот же образ без API наружу
-  weather-ingest:
+  # Воркер каталогизации Sentinel-2 (ADR-09, v1-04): STAC earth-search → БД
+  sentinel-ingest:
     image: cda/backend:latest
     build: .
-    command: python -m app.services.weather_ingest
+    command: python -m app.services.sentinel_ingest
     environment:
       POSTGRES_HOST: db
       REDIS_HOST: redis
+      STAC_API_URL: https://earth-search.aws.element84.com/v1
+      INGEST_SATELLITE_CATALOG_HOURS: "6"
+      INGEST_SATELLITE_BACKFILL_DAYS: "14"
       INGEST_RUN_ONCE: "false"
     depends_on:
       db:
