@@ -400,7 +400,7 @@ class Alert(Base):
     __table_args__ = (
         CheckConstraint(
             "type IN ('weather_danger', 'ndvi_anomaly', 'deviation', "
-            "'machine_service', 'data_source')",
+            "'machine_service', 'data_source', 'custom')",
             name="ck_dat_alert_type",
         ),
         CheckConstraint(
