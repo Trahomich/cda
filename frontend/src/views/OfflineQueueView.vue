@@ -163,6 +163,14 @@ async function saveEdit(dropYield = false) {
         </form>
       </li>
     </ul>
+
+    <button
+      type="button"
+      class="queue__exit"
+      @click="$router.push({ name: 'fields-map' })"
+    >
+      ← Выйти из полевого режима (в кабинет)
+    </button>
   </section>
 </template>
 
