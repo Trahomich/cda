@@ -295,7 +295,7 @@ class TestCatalogCycle:
         assert report.status == "ok"
         assert report.scenes == 1 and report.fields == 1 and report.new_rows == 1
 
-        row = db.scalar(select(SatelliteCatalogItem))
+        row = db_session.scalar(select(SatelliteCatalogItem))
         assert row.field_id == field_id
         assert row.item_id == "S2C_37UFT_20261031_0_L2A"
         assert row.status == "cataloged" and row.processed_at is None
@@ -315,7 +315,7 @@ class TestCatalogCycle:
         second = run_catalog_cycle(db_session, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert first.new_rows == 1 and second.new_rows == 0
         assert second.status == "ok"
-        rows = db.scalars(select(SatelliteCatalogItem)).all()
+        rows = db_session.scalars(select(SatelliteCatalogItem)).all()
         assert len(rows) == 1  # UQ (field_id, item_id) защищает от дублей
 
     def test_scene_away_from_fields_not_cataloged(self, db_session):
@@ -334,7 +334,7 @@ class TestCatalogCycle:
         )
         report = run_catalog_cycle(db_session, client, date_from=WINDOW[0], date_to=WINDOW[1])
         assert report.new_rows == 0
-        assert db.scalars(select(SatelliteCatalogItem)).all() == []
+        assert db_session.scalars(select(SatelliteCatalogItem)).all() == []
 
     def test_unavailable_source_journal_error_no_exception(self, db_session):
         make_stac_field(db_session)
