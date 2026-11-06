@@ -71,7 +71,7 @@ class NdviStats:
     cloud_pct: float
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class NdviReport:
     """Итог цикла расчёта NDVI (для журналов и тестов)."""
 
