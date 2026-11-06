@@ -12,7 +12,7 @@ dat_satellite_scene с trust = 1 − cloud/100, дедуп UQ, недоступ�
 
 import json
 import uuid
-from datetime import UTC, date, datetime
+from datetime import date
 
 import numpy as np
 import pytest
