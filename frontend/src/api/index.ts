@@ -343,16 +343,26 @@ export function getAgroInputs(params: { kind?: 'fertilizer' | 'ppp'; q?: string 
   return apiClient.list<AgroInput>('/agro-inputs', { kind: params.kind, q: params.q })
 }
 
-/** API-15: GET /treatment-plans — планы внесения (фильтр status). */
-export function getTreatmentPlans(params: { status?: TreatmentPlanStatus } = {}): Promise<{
+/** API-15: GET /treatment-plans — планы внесения (фильтры status, cycle_id,
+ *  field_id — поддерживаются backend, docs/06 §5). */
+export function getTreatmentPlans(params: {
+  status?: TreatmentPlanStatus
+  field_id?: string
+  cycle_id?: string
+} = {}): Promise<{
   items: TreatmentPlan[]
   total: number
 }> {
-  return apiClient.list<TreatmentPlan>('/treatment-plans', { status: params.status })
+  return apiClient.list<TreatmentPlan>('/treatment-plans', {
+    status: params.status,
+    field_id: params.field_id,
+    cycle_id: params.cycle_id,
+  })
 }
 
 /** API-15: POST /treatment-plans — создать план внесения; 422 с problem+json
- *  при нарушении RULE-AGRO-07 (доза) / 08 (срок ожидания) / 10 (культуры, лимит). */
+ *  при нарушении RULE-AGRO-07 (доза) / 08 (срок ожидания) / 10 (культуры, лимит).
+ *  Для operation_type=spraying ответ дополняется weather_window (§7.2). */
 export function createTreatmentPlan(payload: TreatmentPlanRequest): Promise<TreatmentPlan> {
   return apiClient.request<TreatmentPlan>('/treatment-plans', { method: 'POST', body: payload })
 }
