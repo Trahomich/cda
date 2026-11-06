@@ -24,7 +24,7 @@ _NEW_TYPES = "('weather_danger', 'ndvi_anomaly', 'deviation', 'machine_service',
 
 
 def upgrade() -> None:
-    op.execute(f"ALTER TABLE dat_alert DROP CONSTRAINT ck_dat_alert_type")
+    op.execute("ALTER TABLE dat_alert DROP CONSTRAINT ck_dat_alert_type")
     op.create_check_constraint(
         "ck_dat_alert_type",
         "dat_alert",
