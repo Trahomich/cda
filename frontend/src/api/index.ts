@@ -1,29 +1,47 @@
 // Доменные вызовы API (только эндпоинты из docs/06-data-api.md §5).
+// Backend отдаёт «сырые» формы (типы Raw*/…Item в types.ts); здесь они
+// приводятся к экранным моделям, которые использовали вьюхи против мока.
+// Мок-транспорт имитирует те же сырые формы, поэтому путь данных один.
 import { apiClient } from './client'
 import type {
+  AdapterState,
   AdapterStatus,
   AgroInput,
+  Api05FieldDetail,
   AuthMe,
   AuthResponse,
   CropCycle,
+  CropCycleDetail,
   CropCycleRequest,
   Field,
   FieldCard,
+  FieldCardPlan,
+  FieldCycle,
   FieldOperation,
   FieldStatus,
   FieldWeather,
+  FieldWeatherDetail,
+  ForecastPage,
   Machine,
   MachineJob,
   MachineJobStatus,
   NdviPoint,
+  NdviTimelinePage,
   OperationRequest,
+  RotationCell,
   RotationPlan,
+  RotationPlanDetail,
+  SceneItem,
+  SourceStatusItem,
   TreatmentPlan,
   TreatmentPlanRequest,
   TreatmentPlanStatus,
   WeatherForecast,
+  WeatherForecastDay,
+  WeatherWindowDay,
   WeatherWindows,
   WindowOperationType,
+  WindowsResponse,
 } from './types'
 
 /** API-01: GET /fields — список полей (фильтры status, q по имени).
@@ -45,7 +63,8 @@ export function getFields(params: {
 }
 
 /** API-17: POST /operations — запись факта операции (мобильный, офлайн-очередь).
- *  Идемпотентность по client_id: повторная отправка не создаёт дубль. */
+ *  Идемпотентность по client_id: повторная отправка не создаёт дубль;
+ *  RULE-AGRO-12: площадь > 1,05 × площади поля → 201/200 с needs_review=true. */
 export function createOperation(payload: OperationRequest): Promise<FieldOperation> {
   return apiClient.request<FieldOperation>('/operations', { method: 'POST', body: payload })
 }
@@ -62,10 +81,10 @@ export function getOperations(params: {
 }
 
 /** API-46: POST /auth/login — аутентификация ({login, password} → токен и пользователь). */
-export function login(login: string, password: string): Promise<AuthResponse> {
+export function login(loginName: string, password: string): Promise<AuthResponse> {
   return apiClient.request<AuthResponse>('/auth/login', {
     method: 'POST',
-    body: { login, password },
+    body: { login: loginName, password },
   })
 }
 
@@ -76,38 +95,206 @@ export function getAuthMe(): Promise<AuthMe> {
 
 /* ─── Экран E-03 «Поле 360°» (docs/07-ux §3.2) ─── */
 
-/** API-05: GET /fields/{id} — карточка «Поле 360°»: агрегат поля. */
-export function getFieldCard(fieldId: string): Promise<FieldCard> {
-  return apiClient.request<FieldCard>(`/fields/${fieldId}`)
+const CYCLE_LIST_LIMIT = 200
+
+function toFieldCycle(c: CropCycleDetail): FieldCycle {
+  return {
+    cycle_id: c.cycle_id,
+    year: c.year,
+    culture_name: c.culture_name,
+    kind: c.kind,
+    status: c.status,
+    yield_c_ha: null, // фактическая урожайность — вне MVP-объёма API-05
+  }
+}
+
+/**
+ * API-05 + композиция: поле целиком из GET /fields/{id}, история культур —
+ * из items планов севооборота поля (API-08), планы внесения — из API-15.
+ */
+export async function getFieldCard(fieldId: string): Promise<FieldCard> {
+  const [detail, plans, treatments] = await Promise.all([
+    apiClient.request<Api05FieldDetail>(`/fields/${fieldId}`),
+    apiClient.list<RotationPlanDetail>('/rotation-plans', { limit: CYCLE_LIST_LIMIT }),
+    apiClient.list<TreatmentPlan>('/treatment-plans', { limit: CYCLE_LIST_LIMIT }),
+  ])
+  const cycles = plans.items
+    .filter((p) => p.field_id === fieldId)
+    .flatMap((p) => p.items)
+    .sort((a, b) => b.year - a.year)
+    .map(toFieldCycle)
+  const treatmentPlans: FieldCardPlan[] = treatments.items
+    .filter((t) => t.field_id === fieldId)
+    .map((t) => ({
+      plan_id: t.plan_id,
+      input_name: t.input_name,
+      dose: t.dose,
+      unit: t.unit,
+      planned_date: t.planned_date,
+      status: t.status,
+    }))
+  return {
+    field: {
+      field_id: detail.field_id,
+      name: detail.name,
+      contour: detail.contour,
+      area_ga: detail.area_ga,
+      status: detail.status,
+      current_cycle: detail.current_cycle ?? null,
+    },
+    cycles,
+    // Агрохимия и сводная проверка предшественника — вне MVP-объёма API-05.
+    agrochem: null,
+    rotation_check: null,
+    treatment_plans: treatmentPlans,
+  }
 }
 
 /** API-06: GET /fields/{id}/ndvi — NDVI-таймлайн сезона (cloud_pct > 80 — облачные). */
-export function getFieldNdvi(fieldId: string): Promise<NdviPoint[]> {
-  return apiClient.request<NdviPoint[]>(`/fields/${fieldId}/ndvi`)
+export async function getFieldNdvi(fieldId: string): Promise<NdviPoint[]> {
+  const page = await apiClient.request<NdviTimelinePage>(`/fields/${fieldId}/ndvi`)
+  return page.items.map((s: SceneItem) => ({
+    date: s.captured_at,
+    ndvi: s.index_avg,
+    cloud_pct: s.cloud_pct,
+  }))
 }
 
-/** API-07: GET /fields/{id}/weather — погода сейчас + прогноз 7 сут. */
-export function getFieldWeather(fieldId: string): Promise<FieldWeather> {
-  return apiClient.request<FieldWeather>(`/fields/${fieldId}/weather`)
+/** API-07: GET /fields/{id}/weather — факты и прогноз; «сейчас» — последний
+ *  факт, сводка (осадки 7 сут, GDD) считается на клиенте по фактам. */
+export async function getFieldWeather(fieldId: string): Promise<FieldWeather | null> {
+  const detail = await apiClient.request<FieldWeatherDetail>(`/fields/${fieldId}/weather`)
+  const facts = [...detail.facts].sort((a, b) => a.observed_at.localeCompare(b.observed_at))
+  const last = facts.at(-1)
+  if (!last) return null
+  const week = facts.slice(-7)
+  const precip7 = Math.round(week.reduce((s, f) => s + f.precipitation_mm, 0) * 10) / 10
+  // GDD: сумма эффективных температур, база 5 °C (t_avg − 5, отрицательные — 0).
+  const gdd = Math.round(week.reduce((s, f) => s + Math.max(0, f.temperature_avg_c - 5), 0) * 10) / 10
+  return {
+    now: {
+      date: last.observed_at,
+      temp_c: last.temperature_avg_c,
+      wind_ms: last.wind_max_ms,
+      precip_mm: last.precipitation_mm,
+      humidity_pct: last.humidity_avg_pct,
+    },
+    forecast: detail.forecast.map((d) => ({
+      date: d.forecast_for ?? '',
+      temp_min_c: d.temperature_min_c,
+      temp_max_c: d.temperature_max_c,
+      precip_mm: d.precipitation_mm,
+    })),
+    summary: { precip_7d_mm: precip7, gdd },
+  }
 }
 
 /* ─── Экран E-04 «План севооборота» (docs/07-ux §3.3) ─── */
 
-/** API-08: GET /rotation-plans — план севооборота (матрица поле × год,
- *  справочник культур и пересчитанные нарушения RULE-AGRO-01/02). */
-export function getRotationPlan(): Promise<RotationPlan> {
-  return apiClient.request<RotationPlan>('/rotation-plans')
+/** Горизонт матрицы: от текущего года (или самого раннего цикла) вперёд. */
+function horizonOf(plans: RotationPlanDetail[]): { from: number; to: number } {
+  const nowYear = new Date().getFullYear()
+  const years = plans.flatMap((p) => [p.year_from, p.year_to, ...p.items.map((c) => c.year)])
+  const from = years.length ? Math.min(nowYear, ...years) : nowYear
+  const to = years.length ? Math.max(nowYear, ...years) : nowYear + 4
+  return { from, to: Math.max(to, from + 4) }
+}
+
+/**
+ * API-08 + API-01 → экранная модель матрицы E-04: строки — все действующие
+ * поля, клетки — циклы из планов. Справочник культур выводится из циклов
+ * (отдельного эндпоинта ref_culture в API нет — открытое расширение контракта).
+ */
+export async function getRotationPlan(): Promise<RotationPlan> {
+  const [plansPage, fieldsPage] = await Promise.all([
+    apiClient.list<RotationPlanDetail>('/rotation-plans', { limit: CYCLE_LIST_LIMIT }),
+    apiClient.list<Field>('/fields', { limit: CYCLE_LIST_LIMIT, status: 'active' }),
+  ])
+  const plans = plansPage.items
+  const { from, to } = horizonOf(plans)
+
+  const cells: RotationCell[] = []
+  for (const f of fieldsPage.items) {
+    for (let year = from; year <= to; year++) {
+      const cycle = plans
+        .find((p) => p.field_id === f.field_id)
+        ?.items.find((c) => c.year === year)
+      cells.push({
+        field_id: f.field_id,
+        field_name: f.name,
+        area_ga: f.area_ga,
+        year,
+        cycle: cycle
+          ? {
+              cycle_id: cycle.cycle_id,
+              culture_id: cycle.culture_id,
+              culture_name: cycle.culture_name,
+              kind: cycle.kind,
+            }
+          : null,
+      })
+    }
+  }
+
+  // Культуры — уникальные из циклов (culture_id уникален глобально).
+  const cultureMap = new Map<string, RotationPlan['cultures'][number]>()
+  for (const c of plans.flatMap((p) => p.items)) {
+    if (!cultureMap.has(c.culture_id)) {
+      cultureMap.set(c.culture_id, {
+        culture_id: c.culture_id,
+        name: c.culture_name,
+        kind: c.kind,
+        repeat_years: 0, // нормы возврата (RULE-AGRO-02) в API не отдаются
+      })
+    }
+  }
+
+  const drafts = plans.filter((p) => p.status === 'draft')
+  const approved = plans.find((p) => p.status === 'approved')
+  return {
+    plan_id: (drafts[0] ?? plans[0])?.plan_id ?? '',
+    draft_plan_ids: drafts.map((p) => p.plan_id),
+    farm_name: '',
+    year_from: from,
+    year_to: to,
+    status: drafts.length ? 'draft' : (approved?.status ?? 'draft'),
+    approved_by: approved?.approved_by ?? null,
+    approved_at: approved?.approved_at ?? null,
+    cultures: [...cultureMap.values()].sort((a, b) => a.name.localeCompare(b.name, 'ru')),
+    cells,
+    violations: [], // GET API-08 не пересчитывает нарушения (см. types.ts)
+  }
 }
 
 /** API-10: POST /rotation-plans/{id}/approve — согласование руководителем. */
-export function approveRotationPlan(planId: string): Promise<{ plan_id: string; status: RotationPlan['status'] }> {
-  return apiClient.request(`/rotation-plans/${planId}/approve`, { method: 'POST' })
+export async function approveRotationPlan(
+  planId: string,
+): Promise<{ plan_id: string; status: RotationPlan['status'] }> {
+  const detail = await apiClient.request<RotationPlanDetail>(
+    `/rotation-plans/${planId}/approve`,
+    { method: 'POST' },
+  )
+  return { plan_id: detail.plan_id, status: detail.status }
 }
 
 /** API-11: POST /crop-cycles — добавить/заменить цикл в клетке матрицы;
  *  422 с problem+json (rule_id) при запретном предшественнике RULE-AGRO-01. */
-export function createCropCycle(payload: CropCycleRequest): Promise<CropCycle> {
-  return apiClient.request<CropCycle>('/crop-cycles', { method: 'POST', body: payload })
+export async function createCropCycle(payload: CropCycleRequest): Promise<CropCycle> {
+  const detail = await apiClient.request<CropCycleDetail>('/crop-cycles', {
+    method: 'POST',
+    body: payload,
+  })
+  return {
+    cycle_id: detail.cycle_id,
+    field_id: detail.field_id,
+    year: detail.year,
+    culture_id: detail.culture_id,
+    culture_name: detail.culture_name,
+    kind: detail.kind,
+    planned_yield_c_ha: detail.planned_yield_c_ha,
+    planned_harvest_date: detail.planned_harvest_date,
+    status: detail.status,
+  }
 }
 
 /* ─── Экран E-05 «Планы удобрений и СЗР» (docs/07-ux §2) ─── */
@@ -142,28 +329,72 @@ export function approveTreatmentPlan(planId: string): Promise<TreatmentPlan> {
 /* ─── Экран E-10 «Погода и погодные окна» (docs/07-ux, SC-03) ─── */
 
 /** API-29: GET /weather/forecast?field_id&days — прогноз на N суток (кэш 3 ч). */
-export function getWeatherForecast(fieldId: string, days = 7): Promise<WeatherForecast> {
-  return apiClient.request<WeatherForecast>('/weather/forecast', {
+export async function getWeatherForecast(fieldId: string, days = 7): Promise<WeatherForecast> {
+  const page = await apiClient.request<ForecastPage>('/weather/forecast', {
     query: { field_id: fieldId, days },
   })
+  const dayList: WeatherForecastDay[] = page.items.map((d) => ({
+    date: d.forecast_for ?? '',
+    temp_min_c: d.temperature_min_c,
+    temp_max_c: d.temperature_max_c,
+    precip_mm: d.precipitation_mm,
+    precip_prob_pct: undefined,
+    wind_ms: d.wind_max_ms,
+    humidity_pct: d.humidity_avg_pct,
+  }))
+  return { field_id: fieldId, days: dayList, stale: page.meta?.stale ?? false }
 }
 
 /** GET /weather/windows?field_id&operation_type — оценка погодного окна по
  *  RULE-AGRO-09 (03 §3.3): ближайшие подходящие сутки с обоснованием. */
-export function getWeatherWindows(
+export async function getWeatherWindows(
   fieldId: string,
   operationType: WindowOperationType,
 ): Promise<WeatherWindows> {
-  return apiClient.request<WeatherWindows>('/weather/windows', {
+  const raw = await apiClient.request<WindowsResponse>('/weather/windows', {
     query: { field_id: fieldId, operation_type: operationType },
   })
+  const days: WeatherWindowDay[] = raw.days.map((d) => ({
+    date: d.day,
+    is_window: d.ok,
+    summary: d.ok ? 'Все условия выполнены' : d.reasons.join('; '),
+  }))
+  const nearest = days.find((d) => d.is_window)
+  return {
+    field_id: raw.field_id,
+    operation_type: operationType,
+    days,
+    nearest_window_date: nearest ? nearest.date : null,
+    rule_text: raw.rule_text,
+    window_open: raw.window_open,
+    alert: raw.alert,
+  }
 }
 
 /* ─── Экран E-14 «Источники данных» (API-28) ─── */
 
-/** API-28: GET /sources/status — журнал адаптеров: источник, статус, last_success_at. */
-export function getSourcesStatus(): Promise<{ items: AdapterStatus[] }> {
-  return apiClient.list<AdapterStatus>('/sources/status')
+const ADAPTER_STATES: AdapterState[] = ['ok', 'degraded', 'error']
+
+/** API-28: GET /sources/status — журнал адаптеров (доступ: manager/admin). */
+export async function getSourcesStatus(): Promise<{ items: AdapterStatus[] }> {
+  const page = await apiClient.list<SourceStatusItem>('/sources/status')
+  const items = page.items.map((s) => {
+    const status = ADAPTER_STATES.includes(s.last_status as AdapterState)
+      ? (s.last_status as AdapterState)
+      : null
+    return {
+      source_id: s.source_id,
+      kind: s.kind,
+      title: s.source_id,
+      last_status: status,
+      last_success_at: s.last_success_at,
+      reason: s.last_event?.reason ?? null,
+      events: s.last_event
+        ? [{ at: s.last_event.at, status: s.last_event.status as AdapterState, reason: s.last_event.reason }]
+        : [],
+    }
+  })
+  return { items }
 }
 
 /* ─── Экран E-18 «Техника и задания» (API-19/20) ─── */
@@ -173,7 +404,7 @@ export function getMachines(): Promise<{ items: Machine[] }> {
   return apiClient.list<Machine>('/machines')
 }
 
-/** GET /machine-jobs — задания смены с развёрнутыми именами (read-only + confirm). */
+/** GET /machine-jobs — задания смены с именем машины (read-only + confirm). */
 export function getMachineJobs(params: { status?: MachineJobStatus } = {}): Promise<{
   items: MachineJob[]
   total: number
