@@ -39,19 +39,29 @@ class Field(Base):
     __tablename__ = "dat_field"
     __table_args__ = (
         CheckConstraint("status IN ('active', 'merged', 'archived')", name="ck_dat_field_status"),
-        UniqueConstraint("name", name="uq_dat_field_name"),
+        # имя НЕ уникально: в реальном SHP-импорте имена повторяются (v1-02);
+        # natural key импорта — external_id (docs/05 §IF-FIELDS)
+        UniqueConstraint("external_id", name="uq_dat_field_external_id"),
         Index("ix_dat_field_contour", "contour", postgresql_using="gist"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     contour: Mapped[Geography] = mapped_column(
-        Geography(geometry_type="POLYGON", srid=4326), nullable=False
+        # MultiPolygon: в реальном хозяйстве составные контуры (v1-02);
+        # typmod MULTIPOLYGON принимает и одиночные полигоны
+        Geography(geometry_type="MULTIPOLYGON", srid=4326),
+        nullable=False,
     )
     area_ga: Mapped[float] = mapped_column(
         Numeric(10, 2), Computed(AREA_GA_COMPUTED, persisted=True), nullable=False
     )
     status: Mapped[str] = mapped_column(String(10), nullable=False, server_default="active")
+    external_id: Mapped[str | None] = mapped_column(
+        # natural key импорта полей: атрибут code SHP, при пустом — name
+        String(100),
+        nullable=True,
+    )
     current_version_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid,
         ForeignKey(
