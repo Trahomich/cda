@@ -35,18 +35,22 @@ interface MockCulture {
   repeat_years: number
   /** Примерная дата плановой уборки ММ-ДД (для RULE-AGRO-08). */
   harvest_md: string
+  /** Группа культур (API-48) — фильтр справочника. */
+  crop_group: string
+  /** Цвет на карте (API-48, синхронизирован с backend/app/seed.py #54). */
+  color_hex: string
 }
 
 const CULTURES: MockCulture[] = [
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a1', name: 'Пшеница озимая', kind: 'main', repeat_years: 3, harvest_md: '07-25' },
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a2', name: 'Ячмень', kind: 'main', repeat_years: 3, harvest_md: '07-15' },
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a3', name: 'Овёс', kind: 'main', repeat_years: 2, harvest_md: '08-01' },
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a4', name: 'Горох', kind: 'main', repeat_years: 4, harvest_md: '07-10' },
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a5', name: 'Рапс яровой', kind: 'main', repeat_years: 4, harvest_md: '08-10' },
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a6', name: 'Гречиха', kind: 'main', repeat_years: 2, harvest_md: '09-01' },
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a7', name: 'Кукуруза на силос', kind: 'main', repeat_years: 4, harvest_md: '09-05' },
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a8', name: 'Пар', kind: 'fallow', repeat_years: 0, harvest_md: '09-30' },
-  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a9', name: 'Горчица белая (сидерат)', kind: 'catch', repeat_years: 0, harvest_md: '09-30' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a1', name: 'Пшеница озимая', kind: 'main', repeat_years: 3, harvest_md: '07-25', crop_group: 'cereals', color_hex: '#e8c46b' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a2', name: 'Ячмень', kind: 'main', repeat_years: 3, harvest_md: '07-15', crop_group: 'cereals', color_hex: '#d9a441' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a3', name: 'Овёс', kind: 'main', repeat_years: 2, harvest_md: '08-01', crop_group: 'cereals', color_hex: '#efe0a8' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a4', name: 'Горох', kind: 'main', repeat_years: 4, harvest_md: '07-10', crop_group: 'legumes', color_hex: '#66bb6a' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a5', name: 'Рапс яровой', kind: 'main', repeat_years: 4, harvest_md: '08-10', crop_group: 'oilseeds', color_hex: '#d4e157' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a6', name: 'Гречиха', kind: 'main', repeat_years: 2, harvest_md: '09-01', crop_group: 'cereals', color_hex: '#e29a5e' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a7', name: 'Кукуруза на силос', kind: 'main', repeat_years: 4, harvest_md: '09-05', crop_group: 'forage', color_hex: '#e5761b' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a8', name: 'Пар', kind: 'fallow', repeat_years: 0, harvest_md: '09-30', crop_group: 'other', color_hex: '#c8c8c8' },
+  { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000a9', name: 'Горчица белая (сидерат)', kind: 'catch', repeat_years: 0, harvest_md: '09-30', crop_group: 'grasses', color_hex: '#c5e1a5' },
   { culture_id: 'c1a0d9e0-0000-4000-8000-0000000000aa', name: 'Рапс (сидерат)', kind: 'catch', repeat_years: 0, harvest_md: '09-30' },
 ]
 
