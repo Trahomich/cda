@@ -1261,16 +1261,20 @@ export class MockTransport implements Transport {
           ? { year, culture_name: culture.name, kind: 'fallow' }
           : { year, culture_name: culture.name, kind: culture.kind }
       }
-      const cycle: CropCycle = {
+      const cycle: CropCycleDetail = {
         cycle_id: cycleUuid(n, year),
         field_id: field.field_id,
         year,
         culture_id: culture.culture_id,
         culture_name: culture.name,
         kind: culture.kind,
+        predecessor_cycle_id: null,
         planned_yield_c_ha: req.planned_yield_c_ha ?? null,
         planned_harvest_date: `${year}-${culture.harvest_md}`,
+        out_of_rotation: false,
+        reason: null,
         status: 'planned',
+        warnings: [],
       }
       return ok(cycle, 201)
     }
