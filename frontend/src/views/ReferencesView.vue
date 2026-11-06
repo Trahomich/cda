@@ -1,19 +1,19 @@
 <script setup lang="ts">
 // E-15 «Справочники» (07-ux §2: агрономические справочники; REQ-F-006, 009):
-// культуры (ref_culture — из плана севооборота, API-08) и препараты/удобрения
-// (API-14). Нормативы и цены — этап v1+ (docs/12-economics).
+// культуры (справочник ref_culture, API-48) и препараты/удобрения (API-14).
+// Нормативы и цены — этап v1+ (docs/12-economics).
 import { computed, onMounted, ref } from 'vue'
-import { getAgroInputs, getRotationPlan } from '@/api'
-import type { AgroInput, Culture, RotationPlan } from '@/api/types'
+import { getAgroInputs, getCultureReferences, getRotationPlan } from '@/api'
+import type { AgroInput, CultureReference, RotationPlan } from '@/api/types'
 
 const tab = ref<'cultures' | 'inputs'>('cultures')
-const cultures = ref<Culture[]>([])
+const cultures = ref<CultureReference[]>([])
 const inputs = ref<AgroInput[]>([])
 const plan = ref<RotationPlan | null>(null)
 const loading = ref(true)
 const failed = ref(false)
 
-const KIND_LABELS: Record<Culture['kind'], string> = {
+const KIND_LABELS: Record<CultureReference['kind'], string> = {
   main: 'основная',
   catch: 'промежуточная',
   fallow: 'пар',
