@@ -220,6 +220,7 @@ export async function getFieldWeather(fieldId: string): Promise<FieldWeather | n
       temp_min_c: d.temperature_min_c,
       temp_max_c: d.temperature_max_c,
       precip_mm: d.precipitation_mm,
+      precip_prob_pct: d.precip_prob_pct ?? null,
     })),
     summary: { precip_7d_mm: precip7, gdd },
   }
