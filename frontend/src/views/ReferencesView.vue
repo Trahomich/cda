@@ -130,7 +130,7 @@ onMounted(async () => {
               <td>{{ c.name }}</td>
               <td>{{ KIND_LABELS[c.kind] }}</td>
               <td class="ref__num">
-                {{ c.repeat_years === 0 ? '—' : c.repeat_years }}
+                {{ repeatYears(c) }}
               </td>
             </tr>
           </tbody>
