@@ -222,16 +222,16 @@ def seed_operations(db: Session) -> SeedOperationsReport:
     cultures = {c.id: c for c in db.scalars(select(Culture)).all()}
 
     # естественные ключи существующих строк (идемпотентность, docstring модуля)
-    op_keys = set(
-        db.execute(
+    op_keys: set[tuple] = {
+        tuple(r) for r in db.execute(
             select(FieldOperation.field_id, FieldOperation.date, FieldOperation.operation_type)
         ).fetchall()
-    )
-    plan_keys = set(
-        db.execute(
+    }
+    plan_keys: set[tuple] = {
+        tuple(r) for r in db.execute(
             select(TreatmentPlan.cycle_id, TreatmentPlan.input_id, TreatmentPlan.planned_date)
         ).fetchall()
-    )
+    }
 
     cycles_by_field: dict[uuid.UUID, list[CropCycle]] = {}
     for cycle in cycles:
