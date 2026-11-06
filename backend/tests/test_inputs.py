@@ -56,13 +56,13 @@ def make_field(client, hdr, *, name: str = "Поле-1") -> dict:
 def make_cycle(
     db_session,
     *,
-    field: Field,
+    field: dict,
     culture: Culture,
     year: int = 2027,
     harvest: date | None = date(2027, 7, 20),
 ) -> CropCycle:
     cycle = CropCycle(
-        field_id=field.id,
+        field_id=uuid.UUID(field["field_id"]),
         year=year,
         culture_id=culture.id,
         kind="main",
