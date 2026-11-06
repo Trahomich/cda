@@ -448,13 +448,15 @@ export type MachineJobStatus = 'draft' | 'confirmed' | 'rejected'
 export interface MachineJob {
   job_id: string
   machine_id: string
-  /** Развёрнутые имена для списка (машина, поле). */
+  /** Развёрнутое имя машины для списка (машина, поле). */
   machine_model: string
-  field_id: string | null
-  field_name: string | null
+  /** Связанный факт операции (поле раскрывается через него); null — внеполевая. */
+  field_operation_id: string | null
   performed_at: string
   area_ha: number
   fuel_l: number | null
+  /** Ссылка на трек в хранилище (MVP: не отдаётся списком). */
+  track_ref?: string | null
   duration_h: number | null
   status: MachineJobStatus
   source: 'manual' | 'telemetry'
