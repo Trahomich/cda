@@ -12,8 +12,8 @@
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0012_field_import"
-down_revision = "0011_operation_needs_review"
+revision = "0013_field_import"
+down_revision = "0012_satellite_catalog"
 branch_labels = None
 depends_on = None
 

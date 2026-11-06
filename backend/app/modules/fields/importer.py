@@ -24,7 +24,8 @@ import logging
 import tempfile
 import uuid
 import zipfile
-from dataclasses import dataclass, field as dc_field
+from dataclasses import dataclass
+from dataclasses import field as dc_field
 from datetime import date
 from pathlib import Path
 
@@ -79,7 +80,6 @@ class ImportReport:
 
 def _delete_all_fields(db: Session) -> int:
     """replace=True: удалить все поля хозяйства с зависимостями (FK без cascade)."""
-    from app.models.machinery import Machine
 
     field_ids = select(Field.id)
     cycle_ids = select(CropCycle.id).where(CropCycle.field_id.in_(field_ids))

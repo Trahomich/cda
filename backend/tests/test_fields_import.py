@@ -16,10 +16,9 @@
 from pathlib import Path
 
 import pytest
-from sqlalchemy import func, select, text
-
 from app.models.agronomy import Field, FieldVersion
 from app.modules.fields.importer import SOURCE_ID, import_fields
+from sqlalchemy import func, select, text
 
 # docs/examples/agronet.fields.zip — реальный файл хозяйства (задача #48)
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -132,9 +131,8 @@ def test_cli_import_fields(db_engine, monkeypatch, capsys):
     SessionLocal подменяется на тестовый engine, чтобы CLI не ушёл
     в БД из окружения (.env).
     """
-    from sqlalchemy.orm import sessionmaker
-
     import app.cli as cli
+    from sqlalchemy.orm import sessionmaker
 
     monkeypatch.setattr(cli, "SessionLocal", sessionmaker(bind=db_engine))
     rc = cli.main(["import-fields", str(SHP_ZIP)])
