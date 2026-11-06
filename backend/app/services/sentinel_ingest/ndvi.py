@@ -26,7 +26,7 @@ import logging
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import numpy as np
 from app.integrations import DataGapError, DataQualityError, SourceUnavailableError
