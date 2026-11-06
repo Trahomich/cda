@@ -847,6 +847,31 @@ function windowCheck(
   return [fails.length === 0, fails]
 }
 
+/** WEATHER-WINDOW (docs/06 §7.2) для плана spraying: окно на planned_date по
+ *  живому прогнозу мока (7 сут от сегодня). null — дата вне горизонта
+ *  прогноза (как в backend: weather_window: null). */
+function windowForPlan(plannedDate: string): PlanWeatherWindow | null {
+  const days = forecastDays(7)
+  const day = days.find((d) => d.date === plannedDate)
+  if (!day) return null
+  const i = days.indexOf(day)
+  const [ok, fails] = windowCheck('spraying', day, i === 0 ? 0 : days[i - 1].precip_mm)
+  // suggested_dates — до 5 подходящих дат из 7 суток, по возрастанию.
+  const suggested = days.filter((d, j) => {
+    const [dOk] = windowCheck('spraying', d, j === 0 ? 0 : days[j - 1].precip_mm)
+    return dOk
+  })
+    .slice(0, 5)
+    .map((d) => d.date)
+  return {
+    ok,
+    detail: ok
+      ? `${plannedDate}: условия опрыскивания выполнены (RULE-AGRO-09)`
+      : `${plannedDate}: ${fails.join(', ')}`,
+    suggested_dates: ok ? [plannedDate, ...suggested.filter((d) => d !== plannedDate)].slice(0, 5) : suggested,
+  }
+}
+
 /** GET /weather/windows: сырая форма backend (сутки с причинами, rule_text). */
 function windowsOf(n: number, type: WindowOperationType, fieldId: string) {
   const days = forecastDays(n)
