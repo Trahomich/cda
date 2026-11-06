@@ -10,7 +10,7 @@
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
-from app.models.references import Culture, Source
+from app.models.references import Culture, PredecessorRule, Source
 
 # Культуры средней полосы: name, kind, forage_flag, crop_group
 # (kind: main — основная, forage — кормовая, catch — сидерат/промежуточная,
