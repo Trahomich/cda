@@ -97,7 +97,6 @@ def input_npk(item: AgroInput) -> list[float] | None:
     return [float(item.n_pct or 0), float(item.p2o5_pct or 0), float(item.k2o_pct or 0)]
 
 
-
 def create_input(
     db: Session,
     *,
@@ -305,9 +304,12 @@ def validate_treatment_plan(
             raise _rule_violation(v)
 
     season = [p for p in _season_plans(db, cycle.field_id, cycle.year) if p.id != exclude_plan_id]
-    inputs_by_id = {i.id: i for i in db.scalars(select(AgroInput).where(AgroInput.id.in_(
-        [p.input_id for p in season]
-    ))).all()}
+    inputs_by_id = {
+        i.id: i
+        for i in db.scalars(
+            select(AgroInput).where(AgroInput.id.in_([p.input_id for p in season]))
+        ).all()
+    }
 
     # RULE-AGRO-07: суммарный N за сезон ≤ 180 кг д.в./га (default, v1)
     current_n = sum(
@@ -319,17 +321,13 @@ def validate_treatment_plan(
         for p in season
     )
     new_n = rules.nitrogen_kg_dv_ha(dose=dose, unit=item.unit, n_pct=item.n_pct)
-    if v := rules.check_n_season(
-        current_n=current_n, new_n=new_n, input_name=item.name
-    ):
+    if v := rules.check_n_season(current_n=current_n, new_n=new_n, input_name=item.name):
         raise _rule_violation(v)
 
     # RULE-AGRO-10: обработок одним действующим веществом ≤ max_treatments
     if item.active_substance is not None:
         count = sum(
-            1
-            for p in season
-            if inputs_by_id[p.input_id].active_substance == item.active_substance
+            1 for p in season if inputs_by_id[p.input_id].active_substance == item.active_substance
         )
         if v := rules.check_max_treatments(
             count=count,

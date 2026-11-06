@@ -185,7 +185,9 @@ def create_treatment_plan(
     response_model=TreatmentPlanItem,
     summary="API-16: согласование руководителем (draft → approved)",
 )
-def approve_treatment_plan(plan_id: uuid.UUID, user: ApproveAccess, db: DbSession) -> TreatmentPlanItem:
+def approve_treatment_plan(
+    plan_id: uuid.UUID, user: ApproveAccess, db: DbSession
+) -> TreatmentPlanItem:
     plan = service.get_treatment_plan(db, plan_id)
     plan = service.approve_treatment_plan(db, user=user, plan=plan)
     return _plan_item(_plan_row(db, plan))

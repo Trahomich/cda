@@ -71,7 +71,9 @@ def make_cycle(
 
 
 def make_fertilizer(db_session, *, name="Аммиачная селитра", n_pct=34.0, unit="kg_ha") -> AgroInput:
-    item = AgroInput(kind="fertilizer", name=f"{name}-{uuid.uuid4().hex[:6]}", n_pct=n_pct, unit=unit)
+    item = AgroInput(
+        kind="fertilizer", name=f"{name}-{uuid.uuid4().hex[:6]}", n_pct=n_pct, unit=unit
+    )
     db_session.add(item)
     db_session.commit()
     return item
@@ -162,7 +164,10 @@ class TestRulesUnit:
         )
 
     def test_check_max_treatments(self):
-        assert rules.check_max_treatments(count=1, max_treatments=2, substance="S", input_name="W") is None
+        assert (
+            rules.check_max_treatments(count=1, max_treatments=2, substance="S", input_name="W")
+            is None
+        )
         v = rules.check_max_treatments(count=2, max_treatments=2, substance="S", input_name="W")
         assert v is not None and v.rule_id == "RULE-AGRO-10" and "S" in v.rationale
 
@@ -191,9 +196,7 @@ class TestAgroInputs:
         assert body["waiting_days"] is None
         assert body["max_treatments_per_season"] == 2  # default (03 §1.4)
         # аудит создания справочника
-        rec = db_session.scalar(
-            select(AuditRecord).where(AuditRecord.entity == "agro_input")
-        )
+        rec = db_session.scalar(select(AuditRecord).where(AuditRecord.entity == "agro_input"))
         assert rec is not None and rec.action == "create"
 
     def test_create_ppp_with_limits(self, client, db_session):
@@ -249,7 +252,11 @@ class TestAgroInputs:
 
     def test_list_filters_and_rbac(self, client, db_session):
         hdr = headers(client, db_session)
-        client.post(API_INPUTS, json={"kind": "fertilizer", "name": "Мочевина", "unit": "kg_ha"}, headers=hdr)
+        client.post(
+            API_INPUTS,
+            json={"kind": "fertilizer", "name": "Мочевина", "unit": "kg_ha"},
+            headers=hdr,
+        )
         client.post(
             API_INPUTS,
             json={"kind": "ppp", "name": "Логран", "unit": "kg_ha"},
@@ -276,7 +283,9 @@ class TestTreatmentPlansCreate:
         field = make_field(db_session)
         cycle = make_cycle(db_session, field=field)
         item = make_ppp(db_session, waiting_days=20)
-        resp = post_plan(client, hdr, cycle, item, planned_date="2027-06-15", operation_type="spraying")
+        resp = post_plan(
+            client, hdr, cycle, item, planned_date="2027-06-15", operation_type="spraying"
+        )
         assert resp.status_code == 201, resp.text
         assert resp.headers["location"].startswith("/api/v1/treatment-plans/")
         body = resp.json()
@@ -303,7 +312,10 @@ class TestTreatmentPlansCreate:
         hdr = headers(client, db_session)
         cycle = make_cycle(db_session, field=make_field(db_session))
         fert = make_fertilizer(db_session, n_pct=46.0)  # 200 кг/га → 92 кг д.в. N
-        assert post_plan(client, hdr, cycle, fert, dose=200, operation_type="fertilizing").status_code == 201
+        assert (
+            post_plan(client, hdr, cycle, fert, dose=200, operation_type="fertilizing").status_code
+            == 201
+        )
         resp = post_plan(client, hdr, cycle, fert, dose=200, operation_type="fertilizing")
         assert resp.status_code == 422
         problem = resp.json()
@@ -327,7 +339,9 @@ class TestTreatmentPlansCreate:
         ok = post_plan(client, hdr, cycle, item, planned_date="2027-06-30")
         assert ok.status_code == 201
         # тем же препаратом не spraying — правило не применяется (03 §3.3)
-        ok2 = post_plan(client, hdr, cycle, item, planned_date="2027-07-11", operation_type="fertilizing")
+        ok2 = post_plan(
+            client, hdr, cycle, item, planned_date="2027-07-11", operation_type="fertilizing"
+        )
         assert ok2.status_code == 201
 
     def test_approved_crops_422_rule_10(self, client, db_session):
@@ -397,9 +411,7 @@ class TestTreatmentPlansList:
         # фильтры
         assert client.get(API_PLANS, params={"status": "draft"}).json()["total"] == 1
         assert client.get(API_PLANS, params={"status": "approved"}).json()["total"] == 0
-        assert (
-            client.get(API_PLANS, params={"field_id": str(field.id)}).json()["total"] == 1
-        )
+        assert client.get(API_PLANS, params={"field_id": str(field.id)}).json()["total"] == 1
         assert client.get(API_PLANS, params={"status": "нет"}).status_code == 400
 
 
