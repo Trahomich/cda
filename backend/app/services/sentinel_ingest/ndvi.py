@@ -29,6 +29,10 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 
 import numpy as np
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import Session
+
 from app.integrations import DataGapError, DataQualityError, SourceUnavailableError
 from app.integrations.raster import (
     compute_index_array,
@@ -38,10 +42,6 @@ from app.integrations.raster import (
 )
 from app.integrations.stac import SATELLITE_SOURCE_ID
 from app.models.integrations import SatelliteCatalogItem, SatelliteScene
-from sqlalchemy import select
-from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.orm import Session
-
 from app.services.sentinel_ingest.catalog import log_source
 
 logger = logging.getLogger(__name__)
@@ -113,8 +113,8 @@ def _read_band_window(href: str, contour_geojson: dict) -> tuple[np.ndarray, obj
     контура (сцена не скачивается). Вне плашки — fill 0: для отражений он
     даёт NaN-индекс (исключается из статистики), для SCL 0 = nodata.
     """
-    from rasterio.windows import from_bounds
     from rasterio.warp import transform_geom
+    from rasterio.windows import from_bounds
     from shapely.geometry import shape
 
     ds = _open_cog(href)
@@ -146,8 +146,8 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     не считается (сцене всё равно не сохраняться, 05 §5 п.2).
     """
     from rasterio.enums import Resampling
-    from rasterio.windows import from_bounds
     from rasterio.warp import transform_geom
+    from rasterio.windows import from_bounds
     from shapely.geometry import shape
 
     missing = [band for band in BAND_ASSETS if not assets.get(band)]
