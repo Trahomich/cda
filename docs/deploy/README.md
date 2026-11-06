@@ -47,3 +47,20 @@ TUNNEL_TOKEN=<JSON-токен туннеля Cloudflare>
 - postgres в prod не публикуется наружу (только внутри compose-сети); redis аналогично.
 - api публикуется на `127.0.0.1:8000` только для проверок с сервера.
 - БД-данные в named volume `pgdata`; при пересборке сохраняются.
+
+## Известная проблема: исходящие соединения cloudflared блокируются сетью (2026-11-06)
+
+Симптом: контейнер `cloudflared` бесконечно пишет
+`Unable to establish connection with Cloudflare edge error="TLS handshake with edge error: EOF"`.
+
+Диагностика (сервер и workspace-хост ведут себя одинаково):
+
+- TCP до `198.41.192.0/24`/`198.41.200.0/24:7844` открывается; DNS работает; `api.cloudflare.com:443` доступен.
+- openssl и тестовый Go-клиент завершают TLS-рукопожатие с edge успешно (в т.ч. с ALPN `h2`/`argotunnel`, клиентским сертификатом и post-quantum группой X25519MLKEM768).
+- Но ClientHello именно cloudflared (по tcpdump: hello доставлен, ACK получен) получает FIN от edge/посредника без ServerHello — через ~1.5–8 с. QUIC (UDP 7844) тоже не проходит.
+- Проявляется на любой версии cloudflared (2024.12.2 … 2026.10.7), с `--protocol http2/quic/h2mux`, в docker-сети и в `--network host` — то есть фильтр на сетевом периметре (DPI/DLP), а не в docker.
+
+Что нужно, чтобы заработало: разрешить на периметре исходящие TCP **и** UDP 7844 к Cloudflare без инспекции TLS (или внести cloudflared в исключения DLP). Стек уже настроен так, что cloudflared сам подключится сразу после открытия — он в `restart: unless-stopped` и `--protocol http2`.
+
+После открытия доступа добавить Public Hostname в Cloudflare Zero Trust (службу указать `http://caddy:8080`) и проверить `curl -f https://<домен>/healthz`.
+
