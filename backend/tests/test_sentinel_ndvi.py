@@ -323,7 +323,7 @@ class TestNdviCycle:
         field_id = make_ndvi_field(db_session)
         for i in range(3):
             make_catalog_row(
-                db_session, field_id, scene_rasters, item_id=f"S2A_37UFT_2026102{i}"
+                db_session, field_id, scene_rasters["assets"], item_id=f"S2A_37UFT_2026102{i}"
             )
 
         report = run_ndvi_cycle(db_session, batch_limit=2)
