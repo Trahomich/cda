@@ -942,6 +942,42 @@ export class MockTransport implements Transport {
       return ok(page)
     }
 
+    /* ── История севооборота поля (API-49): годы 2023..YEAR_TO по убыванию ── */
+    const cropCyclesMatch = /^\/fields\/([\w-]+)\/crop-cycles$/.exec(pathname)
+    if (method === 'GET' && cropCyclesMatch) {
+      const n = FIELD_N.get(cropCyclesMatch[1])
+      if (n === undefined) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${cropCyclesMatch[1]} не найдено`)
+      }
+      const nowYear = new Date().getFullYear()
+      const all: Array<{
+        year: number
+        culture_id: string
+        culture_name: string
+        kind: MockCulture['kind']
+        status: 'completed' | 'in_progress' | 'planned'
+        color_hex: string | null
+      }> = []
+      for (let year = 2023; year <= YEAR_TO; year++) {
+        const rec = cycleAt(n, year)
+        if (!rec) continue
+        const culture = cultureBySuffix(rec.cid)
+        all.push({
+          year,
+          culture_id: culture.culture_id,
+          culture_name: culture.name,
+          kind: culture.kind,
+          status: year < nowYear ? 'completed' : year === nowYear ? 'in_progress' : 'planned',
+          color_hex: culture.color_hex,
+        })
+      }
+      all.sort((a, b) => b.year - a.year)
+      const from = Number(params.get('year_from') ?? 0)
+      const to = Number(params.get('year_to') ?? 0)
+      const items = all.filter((i) => (!from || i.year >= from) && (!to || i.year <= to))
+      return ok({ items, total: items.length, limit: items.length, offset: 0 })
+    }
+
     /* ── Карточка «Поле 360°» (API-05): поле целиком, как реальный backend ── */
     const cardMatch = /^\/fields\/([\w-]+)$/.exec(pathname)
     if (method === 'GET' && cardMatch) {
