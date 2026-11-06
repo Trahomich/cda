@@ -338,7 +338,9 @@ def run_ndvi_cycle(
 
     if report.unavailable:
         reason = "; ".join(report.unavailable)[:500]
-        logger.error("sentinel-ndvi: недоступны COG (%d строк): %s", len(report.unavailable), reason)
+        logger.error(
+            "sentinel-ndvi: недоступны COG (%d строк): %s", len(report.unavailable), reason
+        )
         log_source(db, "error", reason)
     elif report.status == "ok":
         log_source(db, "ok", None)
