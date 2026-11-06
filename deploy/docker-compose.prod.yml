@@ -47,6 +47,24 @@ services:
     restart: unless-stopped
 
 
+  # Воркер каталогизации Sentinel-2 (ADR-09, v1-04): STAC earth-search → БД,
+  # NDVI по COG-окнам полей (анонимно, без кредов Copernicus); опрос каталога
+  # раз в 6 ч, окно backfill 14 дней (05 §4); env INGEST_SATELLITE_*
+  sentinel-ingest:
+    image: cda/api:latest
+    command: python -m app.services.sentinel_ingest
+    env_file: ../.env
+    environment:
+      POSTGRES_HOST: db
+      REDIS_HOST: redis
+      STAC_API_URL: https://earth-search.aws.element84.com/v1
+      INGEST_SATELLITE_CATALOG_HOURS: "6"
+      INGEST_SATELLITE_BACKFILL_DAYS: "14"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
   db:
     image: postgis/postgis:18-3.6
     environment:
