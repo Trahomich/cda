@@ -1,6 +1,40 @@
 // E2E UX-фиксы (MVP-23, #45): форма входа (401 → понятная ошибка), тосты не
-// перекрывают навигацию, явный выход из полевого режима.
+// перекрывают навигацию, явный выход из полевого режима;
+// #65: справочник культур (API-48) не зависит от плана севооборота.
 import { expect, test } from '@playwright/test'
+
+test('справочники: вкладка «Культуры» непустая без плана севооборота (#65)', async ({
+  page,
+}) => {
+  // Стенд после пересева хозяйства: планов севооборота нет — API-08 отвечает
+  // 404 problem+json. Вкладка должна показывать справочник API-48 целиком.
+  await page.route('**/api/v1/rotation-plans*', async (route) => {
+    await route.fulfill({
+      status: 404,
+      contentType: 'application/problem+json',
+      body: JSON.stringify({
+        type: 'https://cda.example/errors/not-found',
+        title: 'Нет ресурса',
+        status: 404,
+        detail: 'План севооборота не найден',
+      }),
+    })
+  })
+
+  await page.goto('/login')
+  await page.locator('.login__submit').click()
+  await page.waitForURL(/\/fields\/map/)
+  await page.goto('/references')
+
+  await expect(page.locator('.ref__state--error')).toHaveCount(0)
+  const rows = page.locator('.ref__table tbody tr')
+  await expect(rows.first()).toBeVisible({ timeout: 15_000 })
+  // Мок отдаёт 27 культур справочника — все на месте.
+  await expect(rows).toHaveCount(27)
+  await expect(rows.first()).toContainText('основная')
+  // Примечание указывает источник — справочник, а не план.
+  await expect(page.locator('.ref__note').first()).toContainText('справочник культур')
+})
 
 test('вход: 401 → понятная ошибка, подсказка демо-доступа по режиму', async ({ page }) => {
   await page.goto('/login')
