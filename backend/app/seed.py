@@ -13,48 +13,49 @@ from sqlalchemy.orm import Session
 
 from app.models.references import Culture, PredecessorRule, Source
 
-# Культуры средней полосы: name, kind, forage_flag, crop_group
-# (kind: main — основная, forage — кормовая, catch — сидерат/промежуточная,
-#  fallow — пар, полноправный элемент цепочки севооборота, RULE-AGRO-03)
+# Культуры средней полосы/юга (v1-08 #54, замечание №2): базовый набор
+# хозяйства ЖАМ/АЗА — name, kind, forage_flag, crop_group, color_hex, repeat_years.
+# kind: main — основная, forage — кормовая, catch — сидерат/промежуточная,
+#  fallow — пар, полноправный элемент цепочки севооборота (RULE-AGRO-03).
 # repeat_years — минимальный возврат культуры, лет (RULE-AGRO-02, 03 §3.1:
-# default 3, рапс 4, картофель 5)
+# default 3, рапс 4, картофель 5).
+# color_hex — стабильный контрастный цвет на карте Leaflet (#rrggbb):
+# зерновые — жёлто-янтарные, масличные — яркие, бобовые/травы — зелёные,
+# пропашные — тёплые, пар чистый — серый, пар занятый — бежевый.
 CULTURES: list[dict] = [
-    {"name": "Озимая пшеница", "kind": "main", "forage_flag": False, "crop_group": "cereals"},
-    {"name": "Ячмень", "kind": "main", "forage_flag": False, "crop_group": "cereals"},
-    {"name": "Кукуруза", "kind": "main", "forage_flag": False, "crop_group": "cereals"},
-    {"name": "Подсолнечник", "kind": "main", "forage_flag": False, "crop_group": "oilseeds"},
-    {"name": "Соя", "kind": "main", "forage_flag": False, "crop_group": "legumes"},
-    {
-        "name": "Рапс",
-        "kind": "main",
-        "forage_flag": False,
-        "crop_group": "oilseeds",
-        "repeat_years": 4,
-    },
-    {"name": "Гречиха", "kind": "main", "forage_flag": False, "crop_group": "cereals"},
-    {"name": "Горох", "kind": "main", "forage_flag": False, "crop_group": "legumes"},
-    {
-        "name": "Картофель",
-        "kind": "main",
-        "forage_flag": False,
-        "crop_group": "tubers",
-        "repeat_years": 5,
-    },
-    {"name": "Многолетние травы", "kind": "forage", "forage_flag": True, "crop_group": "grasses"},
-    {
-        "name": "Горчица (сидерат)",
-        "kind": "catch",
-        "forage_flag": False,
-        "crop_group": "other",
-        "repeat_years": 3,
-    },
-    {
-        "name": "Пар",
-        "kind": "fallow",
-        "forage_flag": False,
-        "crop_group": "other",
-        "repeat_years": 3,
-    },
+    # зерновые
+    {"name": "Озимая пшеница", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#e8c46b"},
+    {"name": "Яровая пшеница", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#f4e04d"},
+    {"name": "Ячмень", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#d9a441"},
+    {"name": "Ячмень озимый", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#bf8f3f"},
+    {"name": "Рожь", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#a97b22"},
+    {"name": "Овёс", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#efe0a8"},
+    {"name": "Тритикале", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#cbb25f"},
+    {"name": "Гречиха", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#e29a5e"},
+    {"name": "Просо", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#f2b469"},
+    {"name": "Кукуруза", "kind": "main", "forage_flag": False, "crop_group": "cereals", "color_hex": "#f28c28"},
+    {"name": "Кукуруза на силос", "kind": "forage", "forage_flag": True, "crop_group": "forage", "color_hex": "#e5761b"},
+    # масличные
+    {"name": "Подсолнечник", "kind": "main", "forage_flag": False, "crop_group": "oilseeds", "color_hex": "#ffb300"},
+    {"name": "Рапс", "kind": "main", "forage_flag": False, "crop_group": "oilseeds", "color_hex": "#d4e157", "repeat_years": 4},
+    {"name": "Рапс озимый", "kind": "main", "forage_flag": False, "crop_group": "oilseeds", "color_hex": "#c0ca33", "repeat_years": 4},
+    # бобовые
+    {"name": "Соя", "kind": "main", "forage_flag": False, "crop_group": "legumes", "color_hex": "#8bc34a"},
+    {"name": "Горох", "kind": "main", "forage_flag": False, "crop_group": "legumes", "color_hex": "#66bb6a"},
+    {"name": "Чечевица", "kind": "main", "forage_flag": False, "crop_group": "legumes", "color_hex": "#2e8b57"},
+    # пропашные
+    {"name": "Картофель", "kind": "main", "forage_flag": False, "crop_group": "tubers", "color_hex": "#e57373", "repeat_years": 5},
+    {"name": "Свёкла сахарная", "kind": "main", "forage_flag": False, "crop_group": "root_crops", "color_hex": "#ba68c8"},
+    {"name": "Овощи открытого грунта", "kind": "main", "forage_flag": False, "crop_group": "vegetables", "color_hex": "#26a69a"},
+    # кормовые травы
+    {"name": "Многолетние травы", "kind": "forage", "forage_flag": True, "crop_group": "grasses", "color_hex": "#43a047"},
+    {"name": "Люцерна", "kind": "forage", "forage_flag": True, "crop_group": "grasses", "color_hex": "#558b2f"},
+    {"name": "Клевер с тимофеевкой", "kind": "forage", "forage_flag": True, "crop_group": "grasses", "color_hex": "#9ccc65"},
+    {"name": "Однолетние травы", "kind": "catch", "forage_flag": True, "crop_group": "grasses", "color_hex": "#aed581"},
+    {"name": "Горчица (сидерат)", "kind": "catch", "forage_flag": False, "crop_group": "other", "color_hex": "#c5e1a5", "repeat_years": 3},
+    # пары (RULE-AGRO-03)
+    {"name": "Пар", "kind": "fallow", "forage_flag": False, "crop_group": "other", "color_hex": "#c8c8c8", "repeat_years": 3},
+    {"name": "Пар занятый", "kind": "fallow", "forage_flag": False, "crop_group": "other", "color_hex": "#d9d0b8", "repeat_years": 3},
 ]
 
 # Адаптеры MVP: source_id (05 §2), kind, enabled
