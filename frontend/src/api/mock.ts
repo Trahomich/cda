@@ -19,6 +19,7 @@ import type {
   MachineJob,
   NdviPoint,
   Page,
+  PlanWeatherWindow,
   TreatmentPlan,
   TreatmentPlanRequest,
   WeatherForecastDay,
