@@ -24,11 +24,14 @@ apiClient.setErrorHandler((error) => {
 const auth = useAuthStore()
 auth.restoreSession()
 
-// 401 (истёкший/невалидный JWT, баг #59): сброс сессии и переход на /login
+// 401 (истёкший/невалидный JWT, баг #58): сброс сессии и переход на /login
 // с возвратом на текущий экран после повторного входа (как в guard роутера).
+// Тост один (клиент гасит повторные 401 до нового токена — без лавины от
+// опросов погоды/алертов); 403 и сетевые ошибки идут прежним путём onError.
 apiClient.setUnauthorizedHandler(() => {
   const current = router.currentRoute.value
   auth.logout()
+  toast.push('info', 'Сессия истекла', 'Войдите заново, чтобы продолжить работу.')
   if (current.name !== 'login') {
     void router.push({
       name: 'login',
