@@ -153,6 +153,13 @@ async function saveEdit(dropYield = false) {
           <button type="submit">
             Сохранить и в очередь
           </button>
+          <button
+            v-if="editing.payload.yield_record"
+            type="button"
+            @click="saveEdit(true)"
+          >
+            Убрать урожайность и в очередь
+          </button>
         </form>
       </li>
     </ul>
