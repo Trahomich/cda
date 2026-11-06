@@ -62,6 +62,13 @@ demo_manager/demo123 из #46; сид идемпотентен — пользо�
 `... exec api python -m app.cli create-admin --login <логин> --password <пароль>`.
 Пароли/логины демо-входа — только в итоге задачи, не в коде.
 
+Импорт реального хозяйства (v1-02, IF-FIELDS): положить SHP-архив (zip, WGS84)
+или GeoJSON в `~/cda` на сервере (например docs/examples/agronet.fields.zip)
+и выполнить:
+`... exec api python -m app.cli import-fields /app/../agronet.fields.zip --replace`
+(`--replace` удаляет прежние поля с зависимостями — демо-поля заменяются
+реальными; пользователи и справочники сохраняются).
+
 ## Проверки
 
 - LAN (текущий режим): `curl -f http://192.168.99.201:8080/healthz` — приложение доступно в локальной сети.
