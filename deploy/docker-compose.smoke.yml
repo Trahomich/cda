@@ -1,0 +1,8 @@
+# ВРЕМЕННЫЙ override для дымовых тестов (не для постоянного стека!):
+# публикует PostgreSQL только на localhost сервера для make smoke через SSH-туннель.
+# Использование: docker compose -f docker-compose.prod.yml -f docker-compose.smoke.yml --env-file ../.env up -d db
+# После тестов: docker compose -f docker-compose.prod.yml --env-file ../.env up -d db
+services:
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"
