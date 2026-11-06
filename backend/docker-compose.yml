@@ -1,6 +1,7 @@
 services:
   api:
     build: .
+    image: cda/backend:latest
     environment:
       POSTGRES_HOST: db
       REDIS_HOST: redis
