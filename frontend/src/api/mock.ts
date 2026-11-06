@@ -1391,18 +1391,18 @@ export class MockTransport implements Transport {
         )
       }
       // Урожайность — только в операции уборки (03 §1.6, backend #27):
-      // yield_record при operation_type≠harvesting → 422.
+      // yield_record при operation_type≠harvesting → 422 (code как в backend).
       if (op.yield_record && op.operation_type !== 'harvesting') {
         return {
           status: 422,
           ok: false,
           json: null,
           problem: {
-            type: 'https://cda.example/errors/yield-not-harvesting',
+            type: 'https://cda.example/errors/yield-requires-harvesting',
             title: 'Нарушено бизнес-правило',
             status: 422,
-            detail: `Урожайность указана для операции «${OPERATION_TYPE_LABELS[op.operation_type] ?? op.operation_type}» — запись урожая возможна только в операции уборки`,
-            rule_id: 'RULE-AGRO-11',
+            detail: 'Урожайность принимается только для операции типа harvesting',
+            code: 'yield_requires_harvesting',
             entity: 'operation',
           },
         }
