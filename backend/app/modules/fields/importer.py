@@ -334,4 +334,4 @@ def import_fields(db: Session, payload_ref: str, *, replace: bool = False) -> Im
     return report
 
 
-__all__ = ["ImportReport", "import_fields", "mapping", "SOURCE_ID"]
+__all__ = ["ImportReport", "import_fields", "SOURCE_ID"]
