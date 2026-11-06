@@ -46,6 +46,7 @@ from app.core.config import Settings
 from app.core.db import SessionLocal
 from app.integrations.stac import EarthSearchStacClient
 from app.services.sentinel_ingest.catalog import run_catalog_cycle
+from app.services.sentinel_ingest.ndvi import run_ndvi_cycle
 
 logger = logging.getLogger(__name__)
 
