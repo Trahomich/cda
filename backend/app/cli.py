@@ -96,6 +96,19 @@ def cmd_import_fields(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_seed_inputs(_args: argparse.Namespace) -> int:
+    import json
+
+    with SessionLocal() as db:
+        report = seed_inputs(db)
+    print(json.dumps(report.as_dict(), ensure_ascii=False, indent=2))
+    if report.inserted:
+        print(f"Справочник препаратов: добавлено {report.inserted} позиций")
+    else:
+        print("Справочник препаратов уже заполнен — дублей не создано")
+    return 0
+
+
 def cmd_seed_rotation(args: argparse.Namespace) -> int:
     import json
 
