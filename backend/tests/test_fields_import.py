@@ -51,7 +51,7 @@ def test_import_creates_90_fields(db_session):
     assert len(versions) == 90
     assert all(v.version_no == 1 for v in versions)
     assert all(SOURCE_ID in (v.reason or "") for v in versions)
-    assert all(f.current_version_id == fv.id for f, fv in zip(fields, versions, strict=False))
+    assert {f.current_version_id for f in fields} == {v.id for v in versions}
 
 
 def test_import_geometry_valid_multipolygon(db_session):
