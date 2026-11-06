@@ -31,7 +31,9 @@ from app.modules.inputs.schemas import (
     TreatmentPlanCreate,
     TreatmentPlanItem,
     TreatmentPlanListResponse,
+    WeatherWindow,
 )
+from app.modules.weather.window import weather_window_for_plan
 
 DbSession = Annotated[Session, Depends(get_db)]
 WriteAccess = Annotated[User, Depends(role_checker(UserRole.AGRONOMIST, UserRole.ADMIN))]
