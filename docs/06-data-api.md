@@ -167,7 +167,7 @@ erDiagram
 | API-26 | GET /vet-events, POST /vet-events | ветсобытия | REQ-F-021 |
 | API-27 | GET /alerts (фильтры status/type/field_id, пагинация), POST /alerts/{id}/read, PATCH /alerts/{id} {status} (new→read→closed, неверный переход — 409) | оповещения пользователя | REQ-F-026, 034 |
 | API-28 | GET /sources/status | журнал адаптеров (источник, статус, last_success_at) | REQ-F-034 |
-| API-29 | GET /weather/forecast?field_id&days | прогноз (кэш 3 ч) | REQ-F-024 |
+| API-29 | GET /weather/forecast?field_id&days | прогноз (кэш 3 ч); каждый день содержит precip_prob_pct int 0–100 \| null (§7.2); поле также входит в агрегат API-07 | REQ-F-024 |
 | API-30 | POST /imports/soil | импорт агрохимии → ImportReport | REQ-F-031 |
 | API-31 | POST /imports/telemetry | импорт CSV/ISOXML → черновики работ | REQ-F-016, 032 |
 | API-32 | GET /export?entity= | экспорт доменных таблиц JSON/CSV | REQ-NF-007 |
