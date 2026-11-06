@@ -14,7 +14,7 @@ import uuid
 from datetime import UTC, date, datetime
 
 from geoalchemy2 import Geography
-from sqlalchemy import cast, func, select
+from sqlalchemy import case, cast, func, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
