@@ -52,6 +52,17 @@ export interface Field {
   } | null
 }
 
+/** Справочник культур (API-48, ref_culture): источник раскраски полей на карте. */
+export interface CultureReference {
+  culture_id: string
+  name: string
+  kind: 'main' | 'catch' | 'fallow'
+  forage_flag: boolean
+  crop_group: string
+  /** Стабильный цвет культуры на карте (#rrggbb); null — цвет не назначен. */
+  color_hex?: string | null
+}
+
 /** Роли пользователей: enum бэкенда по docs/01-requirements.md §2 (см. #22). */
 export type UserRole =
   | 'agronomist'
