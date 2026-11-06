@@ -5,6 +5,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
+# Системные библиотеки: libexpat1 — нужен rasterio (ImportError: libexpat.so.1
+# в slim-образе нет; найдено на ревью #62 при запуске sentinel-ingest NDVI)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libexpat1 \
+    && rm -rf /var/lib/apt/lists/*
+
 # libpq для psycopg (binary-колёса уже включают её; curl не нужен — healthcheck на python)
 WORKDIR /srv/app
 
