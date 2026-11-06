@@ -28,6 +28,7 @@ from app.core.security import hash_password
 from app.models.auth import User, UserRole
 from app.modules.weather.rules import seed_weather_rules
 from app.seed import seed_references
+from app.seed_inputs import seed_inputs
 
 
 def cmd_create_admin(args: argparse.Namespace) -> int:
