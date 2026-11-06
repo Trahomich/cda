@@ -144,7 +144,12 @@ export interface RotationCheck {
   message: string
 }
 
-/** Карточка «Поле 360°» — агрегат GET /fields/{id} (API-05). */
+/**
+ * Карточка «Поле 360°» (экран E-03) — экранная модель, собираемая на клиенте:
+ * API-05 возвращает поле целиком (контур, версии, журнал), история культур —
+ * из API-08 (items планов севооборота поля), планы внесения — из API-15.
+ * Агрохимия и сводная проверка севооборота в MVP-объёме backend отсутствуют.
+ */
 export interface FieldCard {
   field: Field & { contour: GeoJsonPolygon }
   /** История культур по годам, свежие сверху. */
@@ -161,7 +166,7 @@ export interface FieldCardPlan {
   input_name: string
   dose: number
   unit: string
-  planned_date: string
+  planned_date: string | null
   status: TreatmentPlanStatus
 }
 
