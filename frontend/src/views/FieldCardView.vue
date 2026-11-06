@@ -230,179 +230,179 @@ function fmtNum(v: number, digits = 1): string {
         v-show="activeTab === 'overview'"
         class="card360__grid"
       >
-      <!-- Контур + история культур -->
-      <div class="card360__block card360__block--map">
-        <h2 class="card360__block-title">
-          Контур поля
-        </h2>
-        <svg
-          class="card360__contour"
-          viewBox="0 0 200 120"
-          role="img"
-          aria-label="Контур поля"
-        >
-          <polygon
-            :points="contourPoints"
-            class="card360__polygon"
+        <!-- Контур + история культур -->
+        <div class="card360__block card360__block--map">
+          <h2 class="card360__block-title">
+            Контур поля
+          </h2>
+          <svg
+            class="card360__contour"
+            viewBox="0 0 200 120"
+            role="img"
+            aria-label="Контур поля"
+          >
+            <polygon
+              :points="contourPoints"
+              class="card360__polygon"
+            />
+          </svg>
+          <h2 class="card360__block-title">
+            Севооборот по годам
+          </h2>
+          <CropHistoryStrip
+            :items="cropHistory"
+            :yields="cycleYields"
           />
-        </svg>
-        <h2 class="card360__block-title">
-          Севооборот по годам
-        </h2>
-        <CropHistoryStrip
-          :items="cropHistory"
-          :yields="cycleYields"
-        />
-        <p class="card360__muted">
-          Цвет полосы — культура справочника (API-48); пунктир — план, обводка —
-          текущий год.
-        </p>
-        <p
-          v-if="currentCycle && card.rotation_check"
-          class="card360__check"
-          :class="{ 'card360__check--warn': !card.rotation_check.ok }"
-        >
-          Культура {{ currentCycle.year }}: {{ currentCycle.culture_name }} —
-          <template v-if="card.rotation_check.ok">
-            ✓ {{ card.rotation_check.message }}
-          </template>
-          <template v-else>
-            ⚠ {{ card.rotation_check.message }}
-          </template>
-        </p>
-      </div>
+          <p class="card360__muted">
+            Цвет полосы — культура справочника (API-48); пунктир — план, обводка —
+            текущий год.
+          </p>
+          <p
+            v-if="currentCycle && card.rotation_check"
+            class="card360__check"
+            :class="{ 'card360__check--warn': !card.rotation_check.ok }"
+          >
+            Культура {{ currentCycle.year }}: {{ currentCycle.culture_name }} —
+            <template v-if="card.rotation_check.ok">
+              ✓ {{ card.rotation_check.message }}
+            </template>
+            <template v-else>
+              ⚠ {{ card.rotation_check.message }}
+            </template>
+          </p>
+        </div>
 
-      <!-- NDVI -->
-      <div class="card360__block">
-        <h2 class="card360__block-title">
-          NDVI-таймлайн (сезон {{ currentCycle?.year ?? '—' }})
-        </h2>
-        <NdviTimeline
-          v-if="ndvi.length"
-          :points="ndvi"
-        />
-        <p
-          v-else
-          class="card360__muted"
-        >
-          Спутниковых снимков за сезон нет
-        </p>
-        <p
-          v-if="lastSatelliteDate"
-          class="card360__muted"
-        >
-          Дата последнего снимка: {{ lastSatelliteDate }} · ◌ — облачные точки
-        </p>
-      </div>
+        <!-- NDVI -->
+        <div class="card360__block">
+          <h2 class="card360__block-title">
+            NDVI-таймлайн (сезон {{ currentCycle?.year ?? '—' }})
+          </h2>
+          <NdviTimeline
+            v-if="ndvi.length"
+            :points="ndvi"
+          />
+          <p
+            v-else
+            class="card360__muted"
+          >
+            Спутниковых снимков за сезон нет
+          </p>
+          <p
+            v-if="lastSatelliteDate"
+            class="card360__muted"
+          >
+            Дата последнего снимка: {{ lastSatelliteDate }} · ◌ — облачные точки
+          </p>
+        </div>
 
-      <!-- Агрохимия -->
-      <div class="card360__block">
-        <h2 class="card360__block-title">
-          Агрохимия
-        </h2>
-        <p
-          v-if="card.agrochem"
-          class="card360__agrochem"
-        >
-          Проба от {{ card.agrochem.sample_date }}:<br>
-          pH {{ fmtNum(card.agrochem.ph) }} · гумус {{ fmtNum(card.agrochem.humus_pct) }} %<br>
-          P₂O₅ {{ card.agrochem.p2o5_mg100 }} · K₂O {{ card.agrochem.k2o_mg100 }} мг/100 г<br>
-          N {{ fmtNum(card.agrochem.n_mg100) }} мг/100 г
-        </p>
-        <p
-          v-else
-          class="card360__muted"
-        >
-          Данных агрохимии нет (импорт — API-30)
-        </p>
-      </div>
+        <!-- Агрохимия -->
+        <div class="card360__block">
+          <h2 class="card360__block-title">
+            Агрохимия
+          </h2>
+          <p
+            v-if="card.agrochem"
+            class="card360__agrochem"
+          >
+            Проба от {{ card.agrochem.sample_date }}:<br>
+            pH {{ fmtNum(card.agrochem.ph) }} · гумус {{ fmtNum(card.agrochem.humus_pct) }} %<br>
+            P₂O₅ {{ card.agrochem.p2o5_mg100 }} · K₂O {{ card.agrochem.k2o_mg100 }} мг/100 г<br>
+            N {{ fmtNum(card.agrochem.n_mg100) }} мг/100 г
+          </p>
+          <p
+            v-else
+            class="card360__muted"
+          >
+            Данных агрохимии нет (импорт — API-30)
+          </p>
+        </div>
 
-      <!-- Погода -->
-      <div class="card360__block">
-        <h2 class="card360__block-title">
-          Погода (сейчас + 7 сут)
-        </h2>
-        <p
-          v-if="weather"
-          class="card360__weather"
-        >
-          Сейчас: {{ fmtNum(weather.now.temp_c) }} °C,
-          ветер {{ fmtNum(weather.now.wind_ms) }} м/с,
-          влажность {{ weather.now.humidity_pct }} %<br>
-          Осадки за 7 сут: {{ fmtNum(weather.summary.precip_7d_mm) }} мм ·
-          GDD: {{ weather.summary.gdd }} °C·сут
-        </p>
-        <table
-          v-if="weather"
-          class="card360__forecast"
-        >
-          <thead>
-            <tr>
-              <th scope="col">
-                Дата
-              </th>
-              <th scope="col">
-                °C
-              </th>
-              <th scope="col">
-                Осадки, мм
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="day in weather.forecast"
-              :key="day.date"
+        <!-- Погода -->
+        <div class="card360__block">
+          <h2 class="card360__block-title">
+            Погода (сейчас + 7 сут)
+          </h2>
+          <p
+            v-if="weather"
+            class="card360__weather"
+          >
+            Сейчас: {{ fmtNum(weather.now.temp_c) }} °C,
+            ветер {{ fmtNum(weather.now.wind_ms) }} м/с,
+            влажность {{ weather.now.humidity_pct }} %<br>
+            Осадки за 7 сут: {{ fmtNum(weather.summary.precip_7d_mm) }} мм ·
+            GDD: {{ weather.summary.gdd }} °C·сут
+          </p>
+          <table
+            v-if="weather"
+            class="card360__forecast"
+          >
+            <thead>
+              <tr>
+                <th scope="col">
+                  Дата
+                </th>
+                <th scope="col">
+                  °C
+                </th>
+                <th scope="col">
+                  Осадки, мм
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="day in weather.forecast"
+                :key="day.date"
+              >
+                <td>{{ day.date.slice(5) }}</td>
+                <td>{{ day.temp_min_c }}…{{ day.temp_max_c }}</td>
+                <td>{{ fmtNum(day.precip_mm) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Планы и журнал -->
+        <div class="card360__block card360__block--plans">
+          <h2 class="card360__block-title">
+            Планы и журнал {{ currentCycle?.year ?? '' }}
+          </h2>
+          <ul class="card360__plans">
+            <li
+              v-for="plan in card.treatment_plans"
+              :key="plan.plan_id"
             >
-              <td>{{ day.date.slice(5) }}</td>
-              <td>{{ day.temp_min_c }}…{{ day.temp_max_c }}</td>
-              <td>{{ fmtNum(day.precip_mm) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Планы и журнал -->
-      <div class="card360__block card360__block--plans">
-        <h2 class="card360__block-title">
-          Планы и журнал {{ currentCycle?.year ?? '' }}
-        </h2>
-        <ul class="card360__plans">
-          <li
-            v-for="plan in card.treatment_plans"
-            :key="plan.plan_id"
-          >
-            • {{ plan.input_name }} — {{ fmtNum(plan.dose, 2) }}
-            {{ plan.unit === 'l_ha' ? 'л/га' : plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }},
-            {{ plan.planned_date }} — {{ PLAN_STATUS_LABELS[plan.status] ?? plan.status }}
-          </li>
-          <li
-            v-if="card.treatment_plans.length === 0"
-            class="card360__muted"
-          >
-            Планов внесения нет
-          </li>
-        </ul>
-        <h3 class="card360__block-title">
-          Журнал (факты)
-        </h3>
-        <ul class="card360__plans">
-          <li
-            v-for="op in operations"
-            :key="op.operation_id"
-          >
-            ✓ {{ op.date }} · {{ op.operation_type }} ·
-            {{ fmtNum(op.actual_area_ga, 2) }} га
-            <span v-if="op.performer">· {{ op.performer }}</span>
-          </li>
-          <li
-            v-if="operations.length === 0"
-            class="card360__muted"
-          >
-            Фактов работ пока нет
-          </li>
-        </ul>
-      </div>
+              • {{ plan.input_name }} — {{ fmtNum(plan.dose, 2) }}
+              {{ plan.unit === 'l_ha' ? 'л/га' : plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }},
+              {{ plan.planned_date }} — {{ PLAN_STATUS_LABELS[plan.status] ?? plan.status }}
+            </li>
+            <li
+              v-if="card.treatment_plans.length === 0"
+              class="card360__muted"
+            >
+              Планов внесения нет
+            </li>
+          </ul>
+          <h3 class="card360__block-title">
+            Журнал (факты)
+          </h3>
+          <ul class="card360__plans">
+            <li
+              v-for="op in operations"
+              :key="op.operation_id"
+            >
+              ✓ {{ op.date }} · {{ op.operation_type }} ·
+              {{ fmtNum(op.actual_area_ga, 2) }} га
+              <span v-if="op.performer">· {{ op.performer }}</span>
+            </li>
+            <li
+              v-if="operations.length === 0"
+              class="card360__muted"
+            >
+              Фактов работ пока нет
+            </li>
+          </ul>
+        </div>
       </div>
 
       <!-- Работы: планы (API-15 field_id) + журнал (API-18 field_id) одной
