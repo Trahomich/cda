@@ -22,6 +22,29 @@ TUNNEL_TOKEN=<JSON-токен туннеля Cloudflare>
 
 Токен туннеля передаётся пользователем; хранится только здесь.
 
+### Env ингест-воркеров (CONTRACTS.md §7, ADR-09)
+
+Значения по умолчанию зашиты в коде (backend/app/core/config.py); в
+docker-compose.prod.yml воркеры уже настроены, менять не требуется.
+
+| Переменная | Default | Назначение |
+|---|---|---|
+| `OPEN_METEO_BASE_URL` | `https://api.open-meteo.com/v1` | базовый URL API Open-Meteo (погода/прогноз) |
+| `STAC_API_URL` | `https://earth-search.aws.element84.com/v1` | каталог STAC Sentinel-2 (earth-search, анонимно) |
+| `INGEST_RUN_ONCE` | `false` | `true` — один цикл всех джоб и выход (тесты/разовый прогон) |
+| `INGEST_WEATHER_CURRENT_MINUTES` | `30` | периодичность джобы текущей погоды (weather-ingest) |
+| `INGEST_WEATHER_FORECAST_HOURS` | `3` | периодичность джобы прогноза |
+| `INGEST_WEATHER_ARCHIVE_MINUTES` | `60` | периодичность докачки архива погоды |
+| `INGEST_WEATHER_BACKFILL_DAYS` | `14` | окно докачки архива назад |
+| `INGEST_SATELLITE_CATALOG_HOURS` | `6` | периодичность опроса STAC-каталога (sentinel-ingest) |
+| `INGEST_SATELLITE_BACKFILL_DAYS` | `14` | окно поиска сцен Sentinel-2 назад |
+
+Также `INGEST_SATELLITE_REQUEST_TIMEOUT`, `INGEST_SATELLITE_RETRY_ATTEMPTS`,
+`INGEST_SATELLITE_RETRY_BASE_SECONDS`, `INGEST_SATELLITE_NDVI_BATCH`,
+`INGEST_SATELLITE_NDVI_WORKERS` (таймауты/ретраи/параметры расчёта NDVI).
+Fake-адаптеры остаются в тестах и dev-режиме; на проде воркеры работают
+по расписанию (`INGEST_RUN_ONCE=false`).
+
 ## Публикация наружу (Cloudflare Tunnel)
 
 Публичный URL: `https://cda.oblaka.pw` (Public Hostname в Cloudflare Zero Trust,
