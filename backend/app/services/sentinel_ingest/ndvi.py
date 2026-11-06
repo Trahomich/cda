@@ -122,6 +122,16 @@ def _read_band_window(href: str, contour_geojson: dict) -> tuple[np.ndarray, obj
         geom_raster = transform_geom("EPSG:4326", ds.crs, contour_geojson)
         bounds = shape(geom_raster).bounds
         window = from_bounds(*bounds, transform=ds.transform)
+        # Окно ЦЕЛОЧИСЛЕННОЕ (внешнее округление): от from_bounds оно дробное,
+        # read читает по округлённым пикселям, а window_transform(дробное окно)
+        # даёт сетку, смещённую до пикселя относительно данных → кривые min/max
+        # по граничным пикселям. Приводим к целым явно, покрывая контур целиком.
+        window = Window(
+            col_off=math.floor(window.col_off),
+            row_off=math.floor(window.row_off),
+            width=math.ceil(window.col_off + window.width) - math.floor(window.col_off),
+            height=math.ceil(window.row_off + window.height) - math.floor(window.row_off),
+        )
         if (
             window.width <= 0
             or window.height <= 0
