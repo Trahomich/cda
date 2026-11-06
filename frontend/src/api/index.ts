@@ -367,7 +367,8 @@ export function createTreatmentPlan(payload: TreatmentPlanRequest): Promise<Trea
   return apiClient.request<TreatmentPlan>('/treatment-plans', { method: 'POST', body: payload })
 }
 
-/** API-16: POST /treatment-plans/{id}/approve — согласование руководителем. */
+/** API-16: POST /treatment-plans/{id}/approve — согласование руководителем;
+ *  для spraying ответ содержит weather_window (§7.2). */
 export function approveTreatmentPlan(planId: string): Promise<TreatmentPlan> {
   return apiClient.request<TreatmentPlan>(`/treatment-plans/${planId}/approve`, { method: 'POST' })
 }
