@@ -130,7 +130,8 @@ class TestRulesUnit:
         assert rules.nitrogen_kg_dv_ha(-5, "kg_ha", 34.0) == 0.0
 
     def test_check_n_season(self):
-        assert rules.check_n_season(current_n=100, new_n=80, input_name="X") is not None
+        assert rules.check_n_season(current_n=100, new_n=80, input_name="X") is None  # ровно 180 — граница
+        assert rules.check_n_season(current_n=100, new_n=81, input_name="X") is not None
         assert rules.check_n_season(current_n=100, new_n=80, limit=200, input_name="X") is None
         v = rules.check_n_season(current_n=0, new_n=181, input_name="X")
         assert v is not None and v.rule_id == "RULE-AGRO-07" and v.severity == "ban"
@@ -138,7 +139,7 @@ class TestRulesUnit:
     def test_check_waiting_days(self):
         assert (
             rules.check_waiting_days(
-                planned_date=date(2027, 7, 1),
+                planned_date=date(2027, 6, 30),
                 harvest_date=date(2027, 7, 20),
                 waiting_days=20,
                 input_name="W",
@@ -283,7 +284,7 @@ class TestAgroInputs:
 class TestTreatmentPlansCreate:
     def test_create_draft_201(self, client, db_session):
         hdr = headers(client, db_session)
-        field = make_field(db_session)
+        field = make_field(client, hdr)
         cycle = make_cycle(db_session, field=field)
         item = make_ppp(db_session, waiting_days=20)
         resp = post_plan(
@@ -302,7 +303,7 @@ class TestTreatmentPlansCreate:
 
     def test_negative_dose_422_rule_07(self, client, db_session):
         hdr = headers(client, db_session)
-        cycle = make_cycle(db_session, field=make_field(db_session))
+        cycle = make_cycle(db_session, field=make_field(client, hdr))
         item = make_ppp(db_session)
         resp = post_plan(client, hdr, cycle, item, dose=-1.5)
         assert resp.status_code == 422
@@ -313,7 +314,7 @@ class TestTreatmentPlansCreate:
 
     def test_n_season_limit_422_rule_07(self, client, db_session):
         hdr = headers(client, db_session)
-        cycle = make_cycle(db_session, field=make_field(db_session))
+        cycle = make_cycle(db_session, field=make_field(client, hdr))
         fert = make_fertilizer(db_session, n_pct=46.0)  # 200 кг/га → 92 кг д.в. N
         assert (
             post_plan(client, hdr, cycle, fert, dose=200, operation_type="fertilizing").status_code
@@ -330,7 +331,7 @@ class TestTreatmentPlansCreate:
 
     def test_waiting_days_422_rule_08_and_pass(self, client, db_session):
         hdr = headers(client, db_session)
-        field = make_field(db_session)
+        field = make_field(client, hdr)
         cycle = make_cycle(db_session, field=field, harvest=date(2027, 7, 20))
         item = make_ppp(db_session, waiting_days=20)  # ≥ 30.06.2027
         resp = post_plan(client, hdr, cycle, item, planned_date="2027-07-11")  # 9 дн.
@@ -349,7 +350,7 @@ class TestTreatmentPlansCreate:
 
     def test_approved_crops_422_rule_10(self, client, db_session):
         hdr = headers(client, db_session)
-        cycle = make_cycle(db_session, field=make_field(db_session))
+        cycle = make_cycle(db_session, field=make_field(client, hdr))
         other = make_culture(db_session, name="Горох")
         item = make_ppp(db_session, approved_crops=[other.id])  # пшеница не входит
         resp = post_plan(client, hdr, cycle, item)
@@ -362,7 +363,7 @@ class TestTreatmentPlansCreate:
 
     def test_max_treatments_same_substance_422_rule_10(self, client, db_session):
         hdr = headers(client, db_session)
-        field = make_field(db_session)
+        field = make_field(client, hdr)
         cycle = make_cycle(db_session, field=field)
         first = make_ppp(db_session, name="Тарга", substance="флуазифоп", max_treatments=2)
         second = make_ppp(db_session, name="Тарга Супер", substance="флуазифоп", max_treatments=2)
@@ -378,7 +379,7 @@ class TestTreatmentPlansCreate:
 
     def test_unknown_operation_type_400(self, client, db_session):
         hdr = headers(client, db_session)
-        cycle = make_cycle(db_session, field=make_field(db_session))
+        cycle = make_cycle(db_session, field=make_field(client, hdr))
         item = make_ppp(db_session)
         resp = post_plan(client, hdr, cycle, item, operation_type="watering")
         assert resp.status_code == 400
@@ -400,7 +401,7 @@ class TestTreatmentPlansCreate:
 class TestTreatmentPlansList:
     def test_list_with_names_and_filters(self, client, db_session):
         hdr = headers(client, db_session)
-        field = make_field(db_session)
+        field = make_field(client, hdr)
         cycle = make_cycle(db_session, field=field)
         item = make_ppp(db_session)
         post_plan(client, hdr, cycle, item)
@@ -424,7 +425,7 @@ class TestTreatmentPlansList:
 class TestApprove:
     def test_approve_by_manager_with_audit(self, client, db_session):
         hdr = headers(client, db_session)
-        cycle = make_cycle(db_session, field=make_field(db_session))
+        cycle = make_cycle(db_session, field=make_field(client, hdr))
         item = make_ppp(db_session)
         plan_id = post_plan(client, hdr, cycle, item).json()["plan_id"]
         make_user(db_session, login="mgr_i", role=UserRole.MANAGER)
@@ -446,7 +447,7 @@ class TestApprove:
 
     def test_approve_by_agronomist_403(self, client, db_session):
         hdr = headers(client, db_session)
-        cycle = make_cycle(db_session, field=make_field(db_session))
+        cycle = make_cycle(db_session, field=make_field(client, hdr))
         item = make_ppp(db_session)
         plan_id = post_plan(client, hdr, cycle, item).json()["plan_id"]
         resp = client.post(f"{API_PLANS}/{plan_id}/approve", headers=hdr)
@@ -456,7 +457,7 @@ class TestApprove:
         """Черновик согласуют повторной проверкой: если за время жизни
         черновика лимит обработок занят другими планами — 422 (RULE-AGRO-10)."""
         hdr = headers(client, db_session)
-        cycle = make_cycle(db_session, field=make_field(db_session))
+        cycle = make_cycle(db_session, field=make_field(client, hdr))
         item = make_ppp(db_session, substance="флуазифоп", max_treatments=2)
         p1 = post_plan(client, hdr, cycle, item).json()["plan_id"]
         assert post_plan(client, hdr, cycle, item).status_code == 201
