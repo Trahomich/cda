@@ -233,10 +233,11 @@ onMounted(load)
             </tr>
           </thead>
           <tbody>
-            <tr
+            <template
               v-for="field in fields"
               :key="field.field_id"
             >
+              <tr>
               <th scope="row">
                 <button
                   type="button"
