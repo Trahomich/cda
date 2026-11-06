@@ -29,7 +29,7 @@ from datetime import date
 from pathlib import Path
 
 import shapefile
-from shapely.geometry import MultiPolygon, Polygon, mapping, shape
+from shapely.geometry import MultiPolygon, Polygon, shape
 from shapely.ops import unary_union
 from shapely.validation import make_valid
 from sqlalchemy import delete, select
