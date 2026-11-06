@@ -1,5 +1,7 @@
 // Типизированный API-клиент: единый разбор ошибок RFC 7807 (CONTRACTS §8),
-// пагинация ?limit&offset (06 §5), мок-транспорт в dev-режиме.
+// пагинация ?limit&offset (06 §5), мок-ранспорт в dev-режиме.
+// 401 (истёкший/невалидный токен, API-46/47) не показывается тостом:
+// клиент зовёт onUnauthorized — приложение сбрасывает сессию и ведёт на /login.
 import { FetchTransport, type Transport } from './transport'
 import { MockTransport } from './mock'
 import type { Page, Problem } from './types'
@@ -35,17 +37,22 @@ export interface RequestOptions {
 /** Обработчик ошибок (подключается из приложения: тост problem+json). */
 type ErrorHandler = (error: ApiError) => void
 
-/** Реакция на 401 (подключается из приложения): сессия истекла → выход на /login. */
+/** Обработчик 401 — сброс сессии и переход на /login (подключает приложение). */
 type UnauthorizedHandler = () => void
 
 const useMock =
   import.meta.env.DEV && import.meta.env.VITE_USE_MOCK !== 'false'
+
+/** Пути аутентификации: их 401 («неверный логин/пароль») — не конец сессии. */
+const AUTH_PATHS = ['/auth/login']
 
 export class ApiClient {
   private transport: Transport
   private onError: ErrorHandler | null = null
   private onUnauthorized: UnauthorizedHandler | null = null
   private token: string | null = null
+  /** Признак уже сброшенной сессии: глушит повторные 401 до нового логина. */
+  private unauthorizedHandled = false
 
   constructor() {
     const baseUrl = import.meta.env.VITE_API_BASE ?? '/api/v1'
@@ -64,6 +71,7 @@ export class ApiClient {
 
   setToken(token: string | null): void {
     this.token = token
+    if (token) this.unauthorizedHandled = false // новая сессия — 401 снова значимы
   }
 
   /** Запрос: бросает ApiError с разобранным problem+json при ошибке. */
@@ -99,6 +107,16 @@ export class ApiClient {
         response.status,
         problem,
       )
+      // 401 вне /auth/*: токен истёк/невалиден (API-46) — сбрасываем сессию
+      // и молча уходим на /login; тост не показываем, повторные 401 глохнем,
+      // пока не появится новый токен (баг #59: лавина «сервер недоступен»).
+      if (response.status === 401 && !AUTH_PATHS.some((p) => path.startsWith(p))) {
+        if (!this.unauthorizedHandled) {
+          this.unauthorizedHandled = true
+          this.onUnauthorized?.()
+        }
+        throw error
+      }
       this.onError?.(error)
       throw error
     }
@@ -113,7 +131,7 @@ export class ApiClient {
     path: string,
     query: { limit?: number; offset?: number } & Record<string, string | number | undefined> = {},
   ): Promise<Page<T>> {
-    return this.request<Page<T>>(path, { query: { limit: 50, ...query } })
+    return this.request<T>(path, { query: { limit: 50, ...query } })
   }
 }
 
