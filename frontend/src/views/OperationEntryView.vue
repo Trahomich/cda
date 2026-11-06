@@ -183,6 +183,10 @@ function goQueue() {
       <p class="op-entry__hint">
         {{ cacheInfo }}
       </p>
+      <p class="op-entry__hint">
+        Выйти из полевого режима — кнопка «В кабинет» вверху экрана или «Ещё…» →
+        «Выйти из полевого режима».
+      </p>
 
       <label
         class="op-entry__label"
