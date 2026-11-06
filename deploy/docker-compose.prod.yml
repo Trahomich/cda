@@ -1,0 +1,79 @@
+# Прод-стек ЦДА (сервер cda@192.168.99.201, каталог ~/cda).
+# Секреты — в ../.env на сервере (вне git): POSTGRES_PASSWORD, JWT_SECRET, TUNNEL_TOKEN.
+# Запуск: docker compose -f docker-compose.prod.yml --env-file ../.env up -d --build
+# Подробности: docs/deploy/README.md
+
+services:
+  api:
+    build: ../backend
+    image: cda/api:latest
+    env_file: ../.env
+    environment:
+      POSTGRES_HOST: db
+      REDIS_HOST: redis
+      ENV: prod
+      WEATHER_POLL_ENABLED: "true"
+    ports:
+      - "127.0.0.1:8000:8000" # только локально для проверок; наружу — через туннель
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  db:
+    image: postgis/postgis:18-3.6
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cda}
+      POSTGRES_USER: ${POSTGRES_USER:-cda}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD обязателен в .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cda} -d ${POSTGRES_DB:-cda}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "127.0.0.1:8080:8080" # только локально; наружу — cloudflared
+    volumes:
+      - ../frontend/dist:/srv/frontend:ro
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN обязателен в .env}
+    depends_on:
+      - caddy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
