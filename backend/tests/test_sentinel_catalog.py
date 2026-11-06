@@ -149,6 +149,26 @@ class TestStacClient:
         for band in CATALOG_ASSETS:
             assert item.asset(band).endswith(f"/{band}.tif")
 
+    def test_esa_asset_names_mapped(self):
+        """earth-search отдаёт ESA-имена red/nir → канонические b04/b08."""
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            feature = stac_feature("S2C_37UFT_20261031_0_L2A")
+            feature["assets"] = {
+                "red": {"href": "https://x/red.tif"},
+                "nir": {"href": "https://x/nir.tif"},
+                "scl": {"href": "https://x/scl.tif"},
+                "blue": {"href": "https://x/blue.tif"},
+            }
+            return httpx.Response(200, json={"features": [feature]})
+
+        item = mock_client(handler).search([0, 0, 1, 1], *WINDOW)[0]
+        assert item.assets == {
+            "b04": "https://x/red.tif",
+            "b08": "https://x/nir.tif",
+            "scl": "https://x/scl.tif",
+        }
+
     def test_tile_from_grid_code(self):
         """tile из grid:code без префикса MGRS-, если нет s2:mgrs_tile."""
 
