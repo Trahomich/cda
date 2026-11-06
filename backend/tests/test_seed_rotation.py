@@ -15,7 +15,6 @@ from app.models.agronomy import CropCycle, Field, RotationPlan
 from app.models.references import Culture, PredecessorRule
 from app.seed import seed_references
 from app.seed_rotation import seed_rotation
-from geoalchemy2 import Geography
 from sqlalchemy import select
 from tests.test_auth import auth_header, make_user
 from tests.test_fields import square
