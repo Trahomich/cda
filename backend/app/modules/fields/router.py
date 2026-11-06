@@ -148,7 +148,7 @@ def get_field_crop_cycles(
     year_from: int | None = Query(default=None, ge=1900, le=2200),
     year_to: int | None = Query(default=None, ge=1900, le=2200),
 ) -> FieldCropCycleListResponse:
-    from app.modules.rotation.schemas import FieldCropCycleItem, FieldCropCycleListResponse
+    from app.modules.rotation.schemas import FieldCropCycleItem
     from app.modules.rotation.service import field_crop_cycles, get_field as get_rotation_field
 
     get_rotation_field(db, field_id)  # 404 для несуществующего поля
