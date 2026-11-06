@@ -14,6 +14,7 @@ import {
 } from '@/api'
 import type {
   AgroInput,
+  PlanWeatherWindow,
   RotationPlan,
   TreatmentPlan,
   TreatmentPlanRequest,
