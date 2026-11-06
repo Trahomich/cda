@@ -66,8 +66,9 @@ demo_manager/demo123 из #46; сид идемпотентен — пользо�
 GeoJSON кладётся на сервер, копируется в контейнер api и импортируется:
 
 ```
-docker cp ~/cda/agronet.fields.zip $(ssh cda@192.168.99.201 'cd cda && docker compose -f deploy/docker-compose.prod.yml --env-file .env ps -q api'):/tmp/fields.zip
-ssh cda@192.168.99.201 'cd cda && docker compose -f deploy/docker-compose.prod.yml --env-file .env exec api python -m app.cli import-fields /tmp/fields.zip --replace'
+ssh cda@192.168.99.201 'cd cda && \
+  docker cp agronet.fields.zip $(docker compose -f deploy/docker-compose.prod.yml --env-file .env ps -q api):/tmp/fields.zip && \
+  docker compose -f deploy/docker-compose.prod.yml --env-file .env exec api python -m app.cli import-fields /tmp/fields.zip --replace'
 ```
 
 (`--replace` удаляет прежние поля с зависимостями — демо-поля заменяются
