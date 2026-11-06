@@ -158,7 +158,7 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     """
     from rasterio.enums import Resampling
     from rasterio.warp import transform_geom
-    from rasterio.windows import from_bounds
+    from rasterio.windows import Window, from_bounds
     from shapely.geometry import shape
 
     missing = [band for band in BAND_ASSETS if not assets.get(band)]
