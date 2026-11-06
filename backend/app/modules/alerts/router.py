@@ -177,7 +177,7 @@ def patch_alert(alert_id: UUID, body: AlertPatch, db: DbSession) -> AlertItem:
     return _to_item(alert)
 
 
-@router.get(
+@sources_router.get(
     "/sources/status",
     response_model=SourcesStatusResponse,
     summary="API-28: состояние адаптеров источников",
