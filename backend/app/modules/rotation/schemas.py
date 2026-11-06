@@ -48,6 +48,24 @@ class CycleDetail(CycleItem):
     warnings: list[ViolationItem] = Field(default_factory=list)
 
 
+class FieldCropCycleItem(BaseModel):
+    """Элемент истории севооборота поля (API-49, v1-10 #66): цвет — для карты."""
+
+    year: int
+    culture_id: uuid.UUID
+    culture_name: str
+    kind: str
+    status: str
+    color_hex: str | None = Field(default=None, max_length=7)
+
+
+class FieldCropCycleListResponse(BaseModel):
+    """Обёртка API-49: items по убыванию года + total."""
+
+    items: list[FieldCropCycleItem]
+    total: int
+
+
 class CycleCreate(BaseModel):
     """POST /crop-cycles (API-11). kind согласовывается с видом культуры
     (RULE-AGRO-03); reason обязателен при warn-нарушениях и out_of_rotation."""
