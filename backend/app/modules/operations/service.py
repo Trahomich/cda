@@ -144,7 +144,8 @@ def create_operation(db: Session, *, data: OperationCreate) -> tuple[FieldOperat
         )
 
     # FK проверяем до вставки (иначе IntegrityError → 500)
-    if db.get(Field, data.field_id) is None:
+    field = db.get(Field, data.field_id)
+    if field is None:
         raise AppError(
             f"Поле {data.field_id} не найдено",
             code="not_found",
