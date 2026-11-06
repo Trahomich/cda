@@ -95,6 +95,21 @@ def cmd_import_fields(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_seed_rotation(args: argparse.Namespace) -> int:
+    import json
+
+    from app.seed_rotation import seed_rotation
+
+    with SessionLocal() as db:
+        report = seed_rotation(db, years_back=args.years_back, years_forward=args.years_forward)
+    print(json.dumps(report.as_dict(), ensure_ascii=False, indent=2))
+    if report.fields_processed:
+        print("Севооборот распределён (повторный запуск ничего не изменит)")
+    else:
+        print("Нет полей без плана/циклов — распределять нечего")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="CLI ИС ЦДА")
     sub = parser.add_subparsers(dest="command", required=True)
