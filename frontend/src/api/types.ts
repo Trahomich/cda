@@ -367,6 +367,9 @@ export interface TreatmentPlan {
   planned_date: string
   planned_phase: string | null
   status: TreatmentPlanStatus
+  /** WEATHER-WINDOW (§7.2): только в ответах POST/approve для spraying;
+   *  null — прочие типы, GET-список или нет прогноза на planned_date. */
+  weather_window?: PlanWeatherWindow | null
 }
 
 /** WEATHER-WINDOW (docs/06 §7.2): погодное окно для планов spraying.
