@@ -162,6 +162,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_import.set_defaults(func=cmd_import_fields)
 
+    p_inputs = sub.add_parser(
+        "seed-inputs",
+        help="справочник препаратов: ≥30 реальных удобрений и СЗР (v2-01, docs/06 §7.2)",
+    )
+    p_inputs.set_defaults(func=cmd_seed_inputs)
+
     p_rot = sub.add_parser(
         "seed-rotation",
         help="распределить севооборот по полям без плана/циклов (v1-10, RULE-AGRO-01/02)",
