@@ -12,7 +12,10 @@
   import-fields    — импорт реальных полей хозяйства из SHP-архива (zip)
                      или GeoJSON (v1-02, IF-FIELDS); идемпотентен по
                      external_id, --replace удаляет прежние поля; печатает
-                     отчёт JSON (created/updated/skipped/area_mismatch).
+                     отчёт JSON (created/updated/skipped/area_mismatch);
+  seed-rotation    — распределить севооборот по полям без плана и циклов
+                     (v1-10): план + циклы по годам, RULE-AGRO-01/02;
+                     идемпотентен (повторный запуск ничего не меняет).
 """
 
 import argparse
