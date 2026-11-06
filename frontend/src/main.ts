@@ -24,6 +24,19 @@ apiClient.setErrorHandler((error) => {
 const auth = useAuthStore()
 auth.restoreSession()
 
+// 401 (истёкший/невалидный JWT, баг #59): сброс сессии и переход на /login
+// с возвратом на текущий экран после повторного входа (как в guard роутера).
+apiClient.setUnauthorizedHandler(() => {
+  const current = router.currentRoute.value
+  auth.logout()
+  if (current.name !== 'login') {
+    void router.push({
+      name: 'login',
+      query: current.meta.public ? {} : { redirect: current.fullPath },
+    })
+  }
+})
+
 // Офлайн-режим: слушатели сети + автосинхронизация очереди при 'online'.
 const offline = useOfflineStore()
 offline.init()
