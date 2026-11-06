@@ -301,6 +301,7 @@ trust <0.5 помечается «низкая уверенность».
 |---|---|---|---|
 | И1 Open-Meteo [REC-16] | IF-WEATHER | mod-weather (окна, алерты), mod-fields (карточка), RULE-TECH-01 (04) | REQ-F-023..026 |
 | И5 Sentinel-2 [REC-17] | IF-SATELLITE | mod-satellite, mod-inputs (дозы по NDVI/NDRE) | REQ-F-027..030 |
+| шейпы хозяйства (файл пользователя) | IF-FIELDS | mod-fields (контуры, площади) | REQ-F-001 |
 | И10–И13 почвы/ГЗУ [REC-18] | IF-SOIL | mod-fields (агрохимия), mod-inputs (баланс) | REQ-F-004, 031 |
 | И14–И15 телематика [REC-20] | IF-TELEMETRY | mod-machinery (черновики работ) | REQ-F-016, 032 |
 | И16–И17 цены [REC-24, REC-25] | IF-PRICES | rules-engine (экономика рекомендаций) | REQ-F-033 |
