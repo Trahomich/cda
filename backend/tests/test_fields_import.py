@@ -128,11 +128,18 @@ def test_import_external_id_is_natural_key(db_session):
     assert any("#" in eid for eid in external_ids if eid)
 
 
-def test_cli_import_fields(db_session, capsys):
-    """Подкоманда CLI печатает отчёт JSON (контракт запуска v1-02)."""
-    from app.cli import main
+def test_cli_import_fields(db_engine, monkeypatch, capsys):
+    """Подкоманда CLI печатает отчёт JSON (контракт запуска v1-02).
 
-    rc = main(["import-fields", str(SHP_ZIP)])
+    SessionLocal подменяется на тестовый engine, чтобы CLI не ушёл
+    в БД из окружения (.env).
+    """
+    from sqlalchemy.orm import sessionmaker
+
+    import app.cli as cli
+
+    monkeypatch.setattr(cli, "SessionLocal", sessionmaker(bind=db_engine))
+    rc = cli.main(["import-fields", str(SHP_ZIP)])
     assert rc == 0
     import json
 
