@@ -1421,7 +1421,12 @@ export class MockTransport implements Transport {
         return problem(409, 'https://cda.example/errors/conflict', 'Конфликт', `План уже в статусе «${t.status}»`)
       }
       t.status = 'approved'
-      return ok(treatmentView(t))
+      const view = treatmentView(t)
+      // WEATHER-WINDOW (§7.2): тот же расчёт, что в POST (API-15).
+      if (t.operation_type === 'spraying') {
+        view.weather_window = windowForPlan(t.planned_date)
+      }
+      return ok(view)
     }
 
     /* ── Операции (API-17/18) ── */
