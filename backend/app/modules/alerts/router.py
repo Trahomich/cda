@@ -25,6 +25,7 @@ from app.core.errors import AppError
 from app.core.rbac import group_checker
 from app.models.agronomy import Alert
 from app.models.references import Source
+from app.modules.alerts.generators import ALERT_TYPES
 from app.modules.alerts.schemas import (
     AlertItem,
     AlertPatch,
