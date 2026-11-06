@@ -945,25 +945,23 @@ function windowCheck(
   return [fails.length === 0, fails]
 }
 
-/** GET /weather/windows: сутки горизонта с оценкой и ближайшее окно. */
-function windowsOf(n: number, type: WindowOperationType) {
+/** GET /weather/windows: сырая форма backend (сутки с причинами, rule_text). */
+function windowsOf(n: number, type: WindowOperationType, fieldId: string) {
   const days = forecastDays(n)
-  const assessed = days.map((d, i) => {
+  const raw = days.map((d, i) => {
     const [isWindow, fails] = windowCheck(type, d, i === 0 ? 0 : days[i - 1].precip_mm)
-    return {
-      date: d.date,
-      is_window: isWindow,
-      summary: isWindow
-        ? `Все условия ${OP_WINDOW_LABELS[type]} выполнены`
-        : fails.join('; '),
-    }
+    return { day: d.date, ok: isWindow, reasons: fails }
   })
-  const nearest = assessed.find((d) => d.is_window)
+  const nearest = raw.find((d) => d.ok)
   return {
-    field_id: FIELDS.find((f) => FIELD_N.get(f.field_id) === n)!.field_id,
     operation_type: type,
-    days: assessed,
-    nearest_window_date: nearest ? nearest.date : null,
+    field_id: fieldId,
+    rule_text: `Условия ${OP_WINDOW_LABELS[type]} (RULE-AGRO-09, docs/03 §3.3)`,
+    window_open: Boolean(nearest),
+    days: raw,
+    alert: nearest
+      ? null
+      : `В горизонте ${days.length} суток нет погодного окна для «${type}» (${raw[0]?.reasons.join('; ') ?? 'условия не выполнены'})`,
   }
 }
 
