@@ -421,7 +421,7 @@ export interface AdapterStatus {
   source_id: string
   kind: string
   title: string
-  last_status: AdapterState
+  last_status: AdapterState | null
   last_success_at: string | null
   reason: string | null
   events: SourceEvent[]
