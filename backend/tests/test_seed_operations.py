@@ -48,8 +48,7 @@ def _operation_facts(db_session) -> list[tuple]:
         )
     ).fetchall()
     return sorted(
-        (str(f), d, t, str(i), float(dos or 0), p, str(c))
-        for f, d, t, i, dos, p, c in rows
+        (str(f), d, t, str(i), float(dos or 0), p, str(c)) for f, d, t, i, dos, p, c in rows
     )
 
 
@@ -89,7 +88,7 @@ def test_seed_operations_creates_history_and_plans(db_session) -> None:
     for plan in plans:
         assert plan.operation_type in ("fertilizing", "spraying", "seed_treatment")
         assert plan.planned_date is not None
-    #approved ≈70 %: мягкая проверка на маленькой выборке
+    # approved ≈70 %: мягкая проверка на маленькой выборке
     assert any(p.status == "approved" for p in plans)
 
 

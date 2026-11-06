@@ -95,13 +95,33 @@ SPRAY_HISTORY_DEFAULT: tuple[tuple[str, float, float], ...] = (
 
 # планы 2026: шаблоны (тип, препараты-кандидаты, диапазон дозы, диапазон дат)
 PLAN_TEMPLATES: tuple[dict, ...] = (
-    {"op": "fertilizing", "names": ("Мочевина (карбамид)", "Аммиачная селитра"),
-     "dose": (60.0, 110.0), "days": (4, 5), "phase": "весенняя подкормка"},
-    {"op": "spraying", "names": ("Гранстар Про, ВДГ", "Топаз, КЭ", "Абига-Пик, ВС",
-                                 "Каратэ Зеон, МКС", "Базагран, ВР"),
-     "dose": (0.4, 1.2), "days": (5, 6), "phase": "обработка по вегетации"},
-    {"op": "seed_treatment", "names": ("Максим, КС", "ТМТД, ВСК"),
-     "dose": (1.0, 2.0), "days": (3, 4), "phase": "протравливание семян"},
+    {
+        "op": "fertilizing",
+        "names": ("Мочевина (карбамид)", "Аммиачная селитра"),
+        "dose": (60.0, 110.0),
+        "days": (4, 5),
+        "phase": "весенняя подкормка",
+    },
+    {
+        "op": "spraying",
+        "names": (
+            "Гранстар Про, ВДГ",
+            "Топаз, КЭ",
+            "Абига-Пик, ВС",
+            "Каратэ Зеон, МКС",
+            "Базагран, ВР",
+        ),
+        "dose": (0.4, 1.2),
+        "days": (5, 6),
+        "phase": "обработка по вегетации",
+    },
+    {
+        "op": "seed_treatment",
+        "names": ("Максим, КС", "ТМТД, ВСК"),
+        "dose": (1.0, 2.0),
+        "days": (3, 4),
+        "phase": "протравливание семян",
+    },
 )
 APPROVED_SHARE = 0.7
 
@@ -139,50 +159,80 @@ def _history_rows(
     year = cycle.year
     fallow = cycle.kind == "fallow"
     rows: list[dict] = [
-        {"operation_type": "tillage",
-         "date": date(year, 4, rng.randint(3, 20)),
-         "input_id": None, "actual_dose": None},
+        {
+            "operation_type": "tillage",
+            "date": date(year, 4, rng.randint(3, 20)),
+            "input_id": None,
+            "actual_dose": None,
+        },
     ]
     if fallow:
-        rows.append({"operation_type": "tillage",
-                     "date": date(year, 6, rng.randint(5, 25)),
-                     "input_id": None, "actual_dose": None})
-        rows.append({"operation_type": "tillage",
-                     "date": date(year, 8, rng.randint(5, 25)),
-                     "input_id": None, "actual_dose": None})
+        rows.append(
+            {
+                "operation_type": "tillage",
+                "date": date(year, 6, rng.randint(5, 25)),
+                "input_id": None,
+                "actual_dose": None,
+            }
+        )
+        rows.append(
+            {
+                "operation_type": "tillage",
+                "date": date(year, 8, rng.randint(5, 25)),
+                "input_id": None,
+                "actual_dose": None,
+            }
+        )
         return rows
 
     winter = culture.name.startswith("Озимая")
     # посев: озимые — сентябрь, яровые — конец апреля/май (допущение docstring)
-    rows.append({"operation_type": "seeding",
-                 "date": (date(year, 9, rng.randint(5, 25)) if winter
-                          else date(year, 4, rng.randint(20, 30))),
-                 "input_id": None, "actual_dose": None})
+    rows.append(
+        {
+            "operation_type": "seeding",
+            "date": (
+                date(year, 9, rng.randint(5, 25)) if winter else date(year, 4, rng.randint(20, 30))
+            ),
+            "input_id": None,
+            "actual_dose": None,
+        }
+    )
     # внесения: 1–3, апрель–июнь
     for _ in range(rng.randint(1, 3)):
         name, lo, hi = FERT_HISTORY[rng.randrange(len(FERT_HISTORY))]
         month = rng.randint(4, 6)
-        rows.append({"operation_type": "fertilizing",
-                     "date": date(year, month, rng.randint(2, 27)),
-                     "input_name": name,
-                     "actual_dose": round(rng.uniform(lo, hi), 2)})
+        rows.append(
+            {
+                "operation_type": "fertilizing",
+                "date": date(year, month, rng.randint(2, 27)),
+                "input_name": name,
+                "actual_dose": round(rng.uniform(lo, hi), 2),
+            }
+        )
     # обработки: 0–2, май–июль
-    spray_pool = SPRAY_HISTORY_BY_GROUP.get(
-        culture.crop_group or "", SPRAY_HISTORY_DEFAULT
-    )
+    spray_pool = SPRAY_HISTORY_BY_GROUP.get(culture.crop_group or "", SPRAY_HISTORY_DEFAULT)
     for _ in range(rng.randint(0, 2)):
         name, lo, hi = spray_pool[rng.randrange(len(spray_pool))]
         month = rng.randint(5, 7)
-        rows.append({"operation_type": "spraying",
-                     "date": date(year, month, rng.randint(2, 27)),
-                     "input_name": name,
-                     "actual_dose": round(rng.uniform(lo, hi), 2)})
+        rows.append(
+            {
+                "operation_type": "spraying",
+                "date": date(year, month, rng.randint(2, 27)),
+                "input_name": name,
+                "actual_dose": round(rng.uniform(lo, hi), 2),
+            }
+        )
     # уборка: июль–сентябрь (масличные/бобовые — август–октябрь)
     last_month = 10 if (culture.crop_group in ("oilseeds", "legumes", "tubers")) else 9
     month = rng.randint(7, last_month)
-    rows.append({"operation_type": "harvesting",
-                 "date": date(year, month, rng.randint(5, 27)),
-                 "input_id": None, "actual_dose": None})
+    rows.append(
+        {
+            "operation_type": "harvesting",
+            "date": date(year, month, rng.randint(5, 27)),
+            "input_id": None,
+            "actual_dose": None,
+        }
+    )
     # без дубля (field, date, operation_type): добиваем даты уникальностью типа
     seen: set[tuple[date, str]] = set()
     for row in rows:
@@ -223,12 +273,14 @@ def seed_operations(db: Session) -> SeedOperationsReport:
 
     # естественные ключи существующих строк (идемпотентность, docstring модуля)
     op_keys: set[tuple] = {
-        tuple(r) for r in db.execute(
+        tuple(r)
+        for r in db.execute(
             select(FieldOperation.field_id, FieldOperation.date, FieldOperation.operation_type)
         ).fetchall()
     }
     plan_keys: set[tuple] = {
-        tuple(r) for r in db.execute(
+        tuple(r)
+        for r in db.execute(
             select(TreatmentPlan.cycle_id, TreatmentPlan.input_id, TreatmentPlan.planned_date)
         ).fetchall()
     }
@@ -296,12 +348,10 @@ def seed_operations(db: Session) -> SeedOperationsReport:
             candidates = [
                 inputs_by_name[("fertilizer" if tpl["op"] == "fertilizing" else "ppp", name)]
                 for name in tpl["names"]
-                if ("fertilizer" if tpl["op"] == "fertilizing" else "ppp", name)
-                in inputs_by_name
+                if ("fertilizer" if tpl["op"] == "fertilizing" else "ppp", name) in inputs_by_name
             ]
             candidates = [
-                i for i in candidates
-                if tpl["op"] != "spraying" or _may_spray_on(i, culture)
+                i for i in candidates if tpl["op"] != "spraying" or _may_spray_on(i, culture)
             ]
             if not candidates:
                 continue
