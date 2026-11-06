@@ -117,19 +117,24 @@ async function load() {
   failed.value = false
   try {
     // Карточка догружает NDVI и погоду отдельными эндпоинтами (API-06/07),
-    // журнал поля — API-18 (фильтр field_id, последние записи).
-    const [c, h, n, w, ops] = await Promise.all([
+    // журнал поля — API-18 (фильтр field_id, последние записи), вкладка
+    // «Работы» — планы API-15 (field_id) + полный журнал поля (API-18).
+    const [c, h, n, w, ops, wplans, wops] = await Promise.all([
       getFieldCard(fieldId),
       getFieldCropCycles(fieldId),
       getFieldNdvi(fieldId),
       getFieldWeather(fieldId),
       getOperations({ field_id: fieldId, limit: 5 }),
+      getTreatmentPlans({ field_id: fieldId }),
+      getOperations({ field_id: fieldId, limit: 100 }),
     ])
     card.value = c
     cropHistory.value = h
     ndvi.value = n
     weather.value = w
     operations.value = ops.items
+    fieldPlans.value = wplans.items
+    fieldOperations.value = wops.items
   } catch {
     failed.value = true // тост с problem+json уже показал API-клиент
   } finally {
