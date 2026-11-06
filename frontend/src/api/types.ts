@@ -106,6 +106,11 @@ export interface FieldOperation extends OperationRequest {
   deviation_flag: boolean
   needs_review: boolean
   status: string
+  /** Обоснование отклонения факта от плана (>10 %, RULE-AGRO-11). */
+  deviation_rationale?: string | null
+  cycle_id?: string | null
+  machine_job_id?: string | null
+  client_id?: string | null
 }
 
 /** Ответ GET /auth/me (API-47). */
