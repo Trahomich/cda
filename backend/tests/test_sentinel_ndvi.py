@@ -358,7 +358,3 @@ class TestWorkerSettings:
 
         assert "ndvi" in worker.__doc__.lower()
         assert hasattr(worker, "_ndvi_cycle")
-
-
-# фикстура datetime используется для сверки processed_at ниже при желании
-_ = (UTC, datetime)
