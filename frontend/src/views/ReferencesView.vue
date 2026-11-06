@@ -33,6 +33,13 @@ function cropNames(input: AgroInput): string {
     .join(', ')
 }
 
+/** Норма возврата на то же поле (RULE-AGRO-02) — из плана севооборота,
+ *  если он есть; у справочника API-48 этого поля нет, показываем «—». */
+function repeatYears(c: CultureReference): string {
+  const years = plan.value?.cultures.find((p) => p.culture_id === c.culture_id)?.repeat_years
+  return years && years > 0 ? String(years) : '—'
+}
+
 const filteredInputs = computed(() => inputs.value)
 
 onMounted(async () => {
