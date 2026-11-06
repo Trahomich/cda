@@ -147,8 +147,7 @@ def test_seed_operations_spraying_respects_approved_crops(db_session) -> None:
     _prepare(db_session)
     seed_operations(db_session)
     cultures = {c.id: c for c in db_session.scalars(select(Culture)).all()}
-    inputs = {i.id: i for i in db_session.scalars(select(__import__(
-        "app.models.agronomy", fromlist=["AgroInput"]).AgroInput)).all()}
+    inputs = {i.id: i for i in db_session.scalars(select(AgroInput)).all()}
     for plan in db_session.scalars(select(TreatmentPlan)).all():
         if plan.operation_type != "spraying":
             continue
