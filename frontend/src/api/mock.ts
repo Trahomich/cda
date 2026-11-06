@@ -1402,7 +1402,12 @@ export class MockTransport implements Transport {
         status: 'draft',
       }
       TREATMENTS.unshift(created)
-      return ok(treatmentView(created), 201)
+      const view = treatmentView(created)
+      // WEATHER-WINDOW (§7.2): подсказка для spraying, не блокирующая.
+      if (created.operation_type === 'spraying') {
+        view.weather_window = windowForPlan(created.planned_date)
+      }
+      return ok(view, 201)
     }
 
     /* ── Согласование плана внесения (API-16) ── */
