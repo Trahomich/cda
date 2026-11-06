@@ -859,11 +859,13 @@ function windowForPlan(plannedDate: string): PlanWeatherWindow | null {
   if (!day) return null
   const i = days.indexOf(day)
   const [ok, fails] = windowCheck('spraying', day, i === 0 ? 0 : days[i - 1].precip_mm)
-  // suggested_dates — до 5 подходящих дат из 7 суток, по возрастанию.
-  const suggested = days.filter((d, j) => {
-    const [dOk] = windowCheck('spraying', d, j === 0 ? 0 : days[j - 1].precip_mm)
-    return dOk
-  })
+  // suggested_dates — до 5 подходящих дат из 7 суток, по возрастанию даты
+  // (planned_date при ok=true входит в список сама собой).
+  const suggested = days
+    .filter((d, j) => {
+      const [dOk] = windowCheck('spraying', d, j === 0 ? 0 : days[j - 1].precip_mm)
+      return dOk
+    })
     .slice(0, 5)
     .map((d) => d.date)
   return {
@@ -871,7 +873,7 @@ function windowForPlan(plannedDate: string): PlanWeatherWindow | null {
     detail: ok
       ? `${plannedDate}: условия опрыскивания выполнены (RULE-AGRO-09)`
       : `${plannedDate}: ${fails.join(', ')}`,
-    suggested_dates: ok ? [plannedDate, ...suggested.filter((d) => d !== plannedDate)].slice(0, 5) : suggested,
+    suggested_dates: suggested,
   }
 }
 
