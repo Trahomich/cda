@@ -88,13 +88,15 @@ async function load() {
   try {
     // Карточка догружает NDVI и погоду отдельными эндпоинтами (API-06/07),
     // журнал поля — API-18 (фильтр field_id, последние записи).
-    const [c, n, w, ops] = await Promise.all([
+    const [c, h, n, w, ops] = await Promise.all([
       getFieldCard(fieldId),
+      getFieldCropCycles(fieldId),
       getFieldNdvi(fieldId),
       getFieldWeather(fieldId),
       getOperations({ field_id: fieldId, limit: 5 }),
     ])
     card.value = c
+    cropHistory.value = h
     ndvi.value = n
     weather.value = w
     operations.value = ops.items
