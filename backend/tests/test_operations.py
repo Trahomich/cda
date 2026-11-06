@@ -266,6 +266,90 @@ class TestJournal:
         assert client.get(f"{API}/{uuid.uuid4()}", headers=agro_headers).status_code == 404
 
 
+class TestNeedsReview:
+    """RULE-AGRO-12 (доработка #43): площадь > 1,05 × поля — 201 + needs_review."""
+
+    def test_area_over_105_percent(self, client, db_session, agro_headers, demo):
+        from decimal import Decimal
+
+        limit = Decimal(str(demo["field"].area_ga)) * Decimal("1.05")
+        resp = client.post(
+            API,
+            json=op_body(demo, actual_area_ga=float(limit) + 1.0),
+            headers=agro_headers,
+        )
+        assert resp.status_code == 201, resp.text
+        assert resp.json()["needs_review"] is True
+        assert resp.json()["deviation_flag"] is False  # площадь — не отклонение дозы
+
+    def test_area_exactly_105_percent_not_flagged(self, client, db_session, agro_headers, demo):
+        from decimal import Decimal
+
+        limit = Decimal(str(demo["field"].area_ga)) * Decimal("1.05")
+        resp = client.post(
+            API, json=op_body(demo, actual_area_ga=float(limit)), headers=agro_headers
+        )
+        assert resp.status_code == 201, resp.text
+        assert resp.json()["needs_review"] is False
+
+    def test_area_by_latest_contour_version(self, client, db_session, agro_headers, demo):
+        from decimal import Decimal
+
+        from app.models.agronomy import FieldVersion
+
+        # Версия контура с меньшим полигоном (≈ четверть исходного) с 2027-01-01:
+        # норма считается по версии на дату операции, а не по текущему контуру
+        db_session.add(
+            FieldVersion(
+                field_id=demo["field"].id,
+                version_no=1,
+                contour=WKTElement(
+                    "POLYGON((40.0 0.0, 40.005 0.0, 40.005 0.005, 40.0 0.005, 40.0 0.0))",
+                    srid=4326,
+                ),
+                valid_from=date(2027, 1, 1),
+            )
+        )
+        db_session.commit()
+        version = db_session.scalars(
+            select(FieldVersion).where(FieldVersion.field_id == demo["field"].id)
+        ).first()
+        assert Decimal(str(version.area_ga)) < Decimal(str(demo["field"].area_ga))
+        # > 1,05 × версии, но < 1,05 × текущего контура
+        actual = float(Decimal(str(version.area_ga)) * Decimal("1.06"))
+        assert actual < float(Decimal(str(demo["field"].area_ga)))
+        resp = client.post(API, json=op_body(demo, actual_area_ga=actual), headers=agro_headers)
+        assert resp.status_code == 201
+        assert resp.json()["needs_review"] is True
+
+    def test_idempotent_repeat_keeps_flag(self, client, db_session, agro_headers, demo):
+        from decimal import Decimal
+
+        payload = op_body(
+            demo, actual_area_ga=float(Decimal(str(demo["field"].area_ga)) * Decimal("1.5"))
+        )
+        first = client.post(API, json=payload, headers=agro_headers)
+        assert first.json()["needs_review"] is True
+        second = client.post(API, json=payload, headers=agro_headers)
+        assert second.status_code == 200
+        assert second.json()["needs_review"] is True
+        assert second.json()["operation_id"] == first.json()["operation_id"]
+
+    def test_flag_in_journal(self, client, db_session, agro_headers, demo):
+        from decimal import Decimal
+
+        client.post(
+            API,
+            json=op_body(
+                demo, actual_area_ga=float(Decimal(str(demo["field"].area_ga)) * Decimal("2"))
+            ),
+            headers=agro_headers,
+        )
+        journal = client.get(API, params={"field_id": str(demo["field"].id)}, headers=agro_headers)
+        item = journal.json()["items"][0]
+        assert item["needs_review"] is True
+
+
 class TestAccess:
     def test_machine_operator_can_write(self, client, db_session, demo):
         make_user(db_session, login="oper_ops", role=UserRole.MACHINE_OPERATOR)
