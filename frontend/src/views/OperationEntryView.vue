@@ -38,6 +38,8 @@ const form = reactive({
   date: new Date().toISOString().slice(0, 10),
   actual_area_ga: '' as string,
   actual_dose: '' as string,
+  // Урожайность (ENT-YIELD-RECORD, 03 §1.7) — только для операции уборки.
+  yield_c_ha: '' as string,
 })
 
 const selectedField = computed(() => fields.value.find((f) => f.field_id === form.field_id))
