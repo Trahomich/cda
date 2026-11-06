@@ -382,7 +382,9 @@ class TestCatalogCycle:
 
     def test_no_fields_cycle_skipped(self, db_session):
         make_satellite_source(db_session)
-        report = run_catalog_cycle(db_session, FakeStacClient([]), date_from=WINDOW[0], date_to=WINDOW[1])
+        report = run_catalog_cycle(
+            db_session, FakeStacClient([]), date_from=WINDOW[0], date_to=WINDOW[1]
+        )
         assert report.status == "skipped" and report.skipped
         source, _ = last_source_state(db_session)
         assert source.last_status == "degraded"
