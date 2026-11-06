@@ -67,7 +67,7 @@ demo_manager/demo123 из #46; сид идемпотентен — пользо�
 - LAN (текущий режим): `curl -f http://192.168.99.201:8080/healthz` — приложение доступно в локальной сети.
 - Локально на сервере: `curl -f http://127.0.0.1:8000/healthz` (напрямую api, только с самого сервера).
 - Дымовые e2e: `make smoke SMOKE_BASE_URL=https://<публичный-URL>` (задача #36).
-- Логи: `docker compose -f ~/cda/deploy/docker-compose.prod.yml logs -f [api|db|caddy|cloudflared|weather-ingest]`.
+- Логи: `docker compose -f ~/cda/deploy/docker-compose.prod.yml logs -f [api|db|caddy|cloudflared|weather-ingest|sentinel-ingest]`.
 
 ## Заметки
 
