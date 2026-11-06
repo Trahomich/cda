@@ -58,6 +58,14 @@ function logout() {
       </span>
       <button
         type="button"
+        class="field__exit"
+        title="Выйти из полевого режима и вернуться в кабинет"
+        @click="exitFieldMode"
+      >
+        В кабинет
+      </button>
+      <button
+        type="button"
         class="field__logout"
         @click="logout"
       >
