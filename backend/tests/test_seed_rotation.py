@@ -213,8 +213,15 @@ def test_seed_rotation_skips_fields_with_existing_data(db_session) -> None:
         plans = db_session.scalars(
             select(RotationPlan).where(RotationPlan.field_id == field.id)
         ).all()
-        assert len(cycles) == (1 if field is with_cycle else 0)
-        assert len(plans) == 1
+        # у поля с циклом сохраняется только его цикл (плана и не было);
+        # у поля с draft-планом — только этот план (1), циклов не добавлено
+        if field is with_cycle:
+            assert len(cycles) == 1
+            assert len(plans) == 0
+        else:
+            assert len(cycles) == 0
+            assert len(plans) == 1
+            assert plans[0].status == "draft"
 
 
 # ---------- API-49 ----------
