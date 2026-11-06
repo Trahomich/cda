@@ -181,6 +181,29 @@ class TestOpenMeteoAdapter:
         with pytest.raises(DataQualityError, match="ветер"):
             adapter.fetch_current(str(field_id))
 
+    def test_forecast_precip_prob_pct_int_and_null(self, db_session):
+        """Вероятность осадков нормализуется в int; null сохраняется (§7.2)."""
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        adapter = adapter_for(
+            db_session,
+            {"/forecast": load_fixture("openmeteo_forecast.json", day_offsets=list(range(7)))},
+        )
+        items = adapter.fetch_forecast(str(field_id), days=7)
+        # фикстура: вероятности [10, 35, 90, 55, None, 0, 45]
+        values = [i.precip_prob_pct for i in items]
+        assert values == [10, 35, 90, 55, None, 0, 45]
+        assert all(v is None or isinstance(v, int) for v in values)
+
+    def test_data_quality_precip_prob_out_of_range(self, db_session):
+        payload = load_fixture("openmeteo_current.json")
+        payload["daily"]["precipitation_probability_max"] = [120]  # > 100 % (05 §5)
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        adapter = adapter_for(db_session, {"/forecast": payload})
+        with pytest.raises(DataQualityError, match="вероятность"):
+            adapter.fetch_current(str(field_id))
+
     def test_source_unavailable_on_500(self, db_session):
         make_field(db_session)
         field_id = db_session.scalar(text("SELECT id FROM dat_field"))
