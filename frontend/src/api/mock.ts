@@ -669,8 +669,9 @@ function ndviOf(n: number): NdviPoint[] {
   })
 }
 
-/** Погода: факт сейчас + прогноз 7 сут (детерминированный паттерн). */
-function weatherOf(n: number): unknown {
+/** Погода (API-07): факты за неделю + прогноз 7 сут (детерминированный паттерн),
+ *  сырая форма backend — факты/прогноз/мета. */
+function weatherOf(n: number, fieldId: string): unknown {
   const day = 24 * 3600 * 1000
   const iso = (offset: number) => new Date(Date.now() + offset * day).toISOString().slice(0, 10)
   const pattern = [
@@ -682,11 +683,34 @@ function weatherOf(n: number): unknown {
     { min: 7, max: 15, precip: 0.5 },
     { min: 6, max: 16, precip: 0 },
   ]
-  const precip7 = pattern.reduce((s, d) => s + d.precip, 0)
+  const fact = (d: { min: number; max: number; precip: number }, i: number, offset: number) => {
+    const avg = Math.round(((d.min + d.max) / 2) * 10) / 10
+    return {
+      observed_at: iso(offset),
+      temperature_avg_c: avg,
+      temperature_min_c: d.min,
+      temperature_max_c: d.max,
+      precipitation_mm: d.precip,
+      wind_max_ms: 2 + ((n + i) % 7),
+      humidity_avg_pct: 55 + ((n * 3 + i) % 30),
+      source_id: 'weather.open-meteo',
+    }
+  }
   return {
-    now: { date: iso(0), temp_c: 18.4 - (n % 3), wind_ms: 3.2, precip_mm: 0, humidity_pct: 62 },
-    forecast: pattern.map((d, i) => ({ date: iso(i + 1), temp_min_c: d.min, temp_max_c: d.max, precip_mm: d.precip })),
-    summary: { precip_7d_mm: Math.round(precip7 * 10) / 10, gdd: 214 + n * 6 },
+    field_id: fieldId,
+    // Факты: прошедшая неделя (сегодня — последний факт, «сейчас» в E-10).
+    facts: pattern.map((d, i) => fact(d, i, i - (pattern.length - 1))),
+    forecast: pattern.map((d, i) => ({
+      forecast_for: iso(i + 1),
+      issued_at: new Date().toISOString(),
+      temperature_min_c: d.min,
+      temperature_max_c: d.max,
+      precipitation_mm: d.precip,
+      wind_max_ms: 2 + ((n + i) % 7),
+      humidity_avg_pct: 55 + ((n * 3 + i) % 30),
+      hazard: 'none',
+    })),
+    meta: { source_id: 'weather.open-meteo', status: 'ok', last_success_at: null, stale: false },
   }
 }
 
