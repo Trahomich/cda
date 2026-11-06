@@ -17,7 +17,7 @@ dependencies = [
     "pyjwt>=2.9",
     "python-multipart>=0.0.12",
     "apscheduler>=3.10,<4",
-    "httpx>=0.27", # рантайм: адаптеры Open-Meteo / Copernicus (был ошибочно в dev)
+    "httpx[socks]>=0.27", # рантайм: адаптеры Open-Meteo / Copernicus; socks — обход DPI для api.open-meteo (через ALL_PROXY, см. deploy/README)
     # Растровая обработка Sentinel-2 (MVP-10). Верхние границы — из-за CPU
     # окружения (без SSE4.2): numpy>=2.4/shapely>=2.1/rasterio>=1.4 падают
     # с SIGILL; версии ниже работают и совместимы с Python 3.12/3.13.
