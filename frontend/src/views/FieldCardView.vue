@@ -461,7 +461,79 @@ function fmtNum(v: number, digits = 1): string {
   </section>
 </template>
 
-<style scoped>
+.card360__tabs {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.card360__tab {
+  background: #fff;
+  border: 2px solid #c8e6c9;
+  border-radius: 8px 8px 0 0;
+  padding: 0.45rem 1rem;
+  font-size: 1rem;
+  min-height: 44px;
+  cursor: pointer;
+  color: #1b5e20;
+}
+
+.card360__tab--active {
+  background: #e8f5e9;
+  font-weight: 700;
+}
+
+.card360__works {
+  background: #fff;
+  border: 1px solid #c8e6c9;
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+}
+
+.card360__works-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.card360__works-item {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+  font-size: 0.98rem;
+}
+
+.card360__works-chip {
+  border-radius: 6px;
+  padding: 0.05rem 0.45rem;
+  font-size: 0.8rem;
+}
+
+.card360__works-chip--plan {
+  border: 1.5px dashed #2e7d32;
+  color: #1b5e20;
+  background: #f1f8f1;
+}
+
+.card360__works-chip--fact {
+  background: #2e7d32;
+  color: #fff;
+}
+
+.card360__works-date {
+  font-variant-numeric: tabular-nums;
+  color: #424242;
+}
+
+.card360__works-status {
+  color: #757575;
+  font-size: 0.9rem;
+}
+
+<style point="end-marker" />
 .card360 {
   display: flex;
   flex-direction: column;
