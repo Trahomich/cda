@@ -72,6 +72,23 @@ const openViolations = computed(
 /** Развёрнутые rationale (кнопка «Почему?»). */
 const explained = ref(new Set<string>())
 
+/** Показать/скрыть ленту истории поля (API-49) под строкой матрицы. */
+async function toggleHistory(fieldId: string) {
+  if (historyField.value === fieldId) {
+    historyField.value = null
+    return
+  }
+  historyField.value = fieldId
+  historyLoading.value = true
+  try {
+    historyItems.value = await getFieldCropCycles(fieldId)
+  } catch {
+    historyItems.value = [] // тост уже показан; лента покажет пустое состояние
+  } finally {
+    historyLoading.value = false
+  }
+}
+
 /** Короткое имя культуры для клетки (без «(сидерат)»). */
 function shortName(culture: Culture): string {
   return culture.name.replace(' (сидерат)', '')
