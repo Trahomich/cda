@@ -55,7 +55,9 @@ test('офлайн-ввод 3 операций и синхронизация (10
   // Демо-сид журнала датирован будущим (2027) и стоит выше наших записей —
   // ищем строки сегодняшней даты: их ровно 3 (без дублей) с исполнителем.
   const today = new Date().toISOString().slice(0, 10)
-  await page.goto('/f/operations')
+  // На экране очереди — возвращаемся SPA-навигацией (без page.goto: перезагрузка
+  // страницы пересоздаёт mock-транспорт со сид-данными, реальный API персистентен).
+  await page.getByRole('button', { name: 'Работы', exact: true }).click()
   const journalItems = page.locator('.op-entry__journal-list li')
   const todaysRows = journalItems.filter({ hasText: today })
   await expect(todaysRows).toHaveCount(3, { timeout: 15_000 })
