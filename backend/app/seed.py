@@ -116,17 +116,23 @@ PREDECESSOR_RULES: list[dict] = [
 def seed_references(db: Session) -> dict[str, int]:
     """Вставить справочные записи; вернуть счётчики добавленного.
 
-    Идемпотентность — ON CONFLICT DO NOTHING:
-    ref_culture по name, ref_source по source_id,
-    ref_predecessor_matrix по паре (culture_id, predecessor_id).
+    Идемпотентность — ON CONFLICT:
+    ref_culture по name — DO UPDATE SET color_hex (v1-08 #54: актуализация
+    стабильного цвета у уже развёрнутых БД; прочие поля существующих строк
+    не трогаем — счётчик вставок = прирост числа строк);
+    ref_source по source_id — DO NOTHING;
+    ref_predecessor_matrix по паре (culture_id, predecessor_id) — DO NOTHING.
     """
-    cultures = (
+    before = db.scalar(select(func.count()).select_from(Culture)) or 0
+    db.execute(
         pg_insert(Culture)
         .values(CULTURES)
-        .on_conflict_do_nothing(index_elements=["name"])
-        .returning(Culture.id)
+        .on_conflict_do_update(
+            index_elements=["name"], set_={"color_hex": pg_insert(Culture).excluded.color_hex}
+        )
     )
-    inserted_cultures = len(db.execute(cultures).fetchall())
+    after = db.scalar(select(func.count()).select_from(Culture)) or 0
+    inserted_cultures = after - before
 
     sources = (
         pg_insert(Source)
