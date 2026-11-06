@@ -72,6 +72,7 @@ class OperationItem(BaseModel):
     source: str
     deviation_flag: bool
     deviation_rationale: str | None
+    needs_review: bool
     status: str
     yield_record: YieldRecordItem | None = None
 
