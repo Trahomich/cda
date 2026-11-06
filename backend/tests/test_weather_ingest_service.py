@@ -97,7 +97,7 @@ class TestIngestHistoryGaps:
 
         assert report.ok == 1
         days = observation_days(db_session, field_id)
-        expected = {today - timedelta(days=i) for i in range(0, 15)}
+        expected = {date.today() + timedelta(days=off) for off in offsets}
         assert days == expected
         # повторный прогон: пропусков нет — к источнику не обращаемся
         ingest2 = make_service_ingest(db_session, {"/archive": httpx.Response(404)})
