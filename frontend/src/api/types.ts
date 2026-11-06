@@ -243,20 +243,27 @@ export interface RotationViolation {
   suggestion_culture_id?: string | null
 }
 
-/** План севооборота — GET /rotation-plans (API-08; ENT-ROTATION-PLAN, 03 §1.2). */
+/** План севооборота — экранная модель матрицы E-04, собираемая из API-08
+ *  (планы по полям) и API-01 (список полей): строки матрицы — все активные
+ *  поля, клетки — циклы из items планов. */
 export interface RotationPlan {
   plan_id: string
+  /** Идентификаторы черновиков для согласования (API-10, по одному на поле). */
+  draft_plan_ids: string[]
   farm_name: string
   year_from: number
   year_to: number
   status: 'draft' | 'approved' | 'archived'
   approved_by: string | null
   approved_at: string | null
-  /** Справочник культур для выбора в матрице (06 §3, ref_culture). */
+  /** Справочник культур для выбора в матрице (06 §3, ref_culture);
+   *  в MVP выводится из циклов существующих планов. */
   cultures: Culture[]
   /** Клетки матрицы: одна строка поля на год горизонта. */
   cells: RotationCell[]
-  /** Пересчитанные нарушения (RULE-AGRO-01/02), пусто — план чист. */
+  /** Пересчитанные нарушения (RULE-AGRO-01/02), пусто — план чист.
+   *  GET API-08 в MVP не пересчитывает нарушения: они видны при добавлении
+   *  цикла (422 problem+json с rule_id/rationale). */
   violations: RotationViolation[]
 }
 
