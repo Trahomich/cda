@@ -273,7 +273,7 @@ function goQueue() {
         >
           {{ op.date }} · {{ fields.find((f) => f.field_id === op.field_id)?.name ?? op.field_id }} ·
           {{ OPERATION_TYPES.find((t) => t.value === op.operation_type)?.label ?? op.operation_type }} ·
-          {{ op.actual_area_ga }} га
+          {{ op.actual_area_ga }} га · {{ op.performer ?? '—' }}
         </li>
       </ul>
       <p
