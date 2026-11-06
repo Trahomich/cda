@@ -48,3 +48,25 @@ def test_sources_mvp_set() -> None:
     assert ids == {"weather.open-meteo", "satellite.sentinel2-l2a", "manual"}
     for source in SOURCES:
         assert source["enabled"] is True
+
+
+def test_predecessor_rules_reference_known_cultures() -> None:
+    names = {c["name"] for c in CULTURES}
+    for rule in PREDECESSOR_RULES:
+        assert rule["culture"] in names
+        assert rule["predecessor"] in names
+
+
+def test_predecessor_rules_pairs_unique() -> None:
+    pairs = [(r["culture"], r["predecessor"]) for r in PREDECESSOR_RULES]
+    assert len(pairs) == len(set(pairs))
+
+
+def test_predecessor_rules_demo_minimum() -> None:
+    """Демо-минимум задачи #46: минимум одна warn- и одна ban-пара с обоснованием."""
+    verdicts = {r["verdict"] for r in PREDECESSOR_RULES}
+    assert "warn" in verdicts
+    assert "ban" in verdicts
+    for rule in PREDECESSOR_RULES:
+        assert rule["verdict"] in {"ok", "warn", "ban"}  # ck_ref_pred_matrix_verdict
+        assert rule["comment"]  # rationale обязателен (RULE-AGRO-01)
