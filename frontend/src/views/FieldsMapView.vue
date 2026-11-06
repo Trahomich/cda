@@ -178,7 +178,11 @@ onMounted(async () => {
   }).addTo(map)
   map.on('zoomend', syncLabelZoom)
   contoursLayer = L.featureGroup().addTo(map)
-  await Promise.all([loadCultures(), loadFields(contoursLayer)])
+  // Сначала справочник культур, потом поля: заливка читает cultureColors в момент
+  // построения geoJSON-слоя (на живом API геометрия полей тяжелее справочника,
+  // при параллельной загрузке поля успели бы отрисоваться серыми — ревью #55).
+  await loadCultures()
+  await loadFields(contoursLayer)
   syncLabelZoom()
 })
 
