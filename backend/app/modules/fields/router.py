@@ -41,6 +41,7 @@ from app.modules.fields.schemas import (
     VersionItem,
     VersionListResponse,
 )
+from app.modules.rotation.schemas import FieldCropCycleListResponse
 
 DbSession = Annotated[Session, Depends(get_db)]
 # чтение — матрица 07-ux §5 (E-02/E-03); изменение — только агроном и админ
