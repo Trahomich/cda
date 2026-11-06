@@ -28,6 +28,7 @@ from app.models.agronomy import (
     TreatmentPlan,
 )
 from app.models.machinery import Machine, MachineJob
+from app.modules.geo import unwrap_single_multi
 
 # entity (API-32) -> ORM-модель; белый список доменных таблиц MVP
 ENTITIES: dict[str, type] = {

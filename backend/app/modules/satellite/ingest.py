@@ -26,6 +26,7 @@ from app.integrations import Scene, SourceUnavailableError
 from app.models.agronomy import Field
 from app.models.integrations import SatelliteScene, SourceJournalEntry
 from app.models.references import Source
+from app.modules.geo import unwrap_single_multi
 
 logger = logging.getLogger(__name__)
 
