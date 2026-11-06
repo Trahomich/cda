@@ -71,8 +71,11 @@ def make_culture(db: Session) -> Culture:
 def make_cycle(db: Session, field_id: uuid.UUID, status="in_progress") -> CropCycle:
     culture = make_culture(db)
     cycle = CropCycle(
-        field_id=field_id, year=date.today().year, culture_id=culture.id,
-        kind="main", status=status,
+        field_id=field_id,
+        year=date.today().year,
+        culture_id=culture.id,
+        kind="main",
+        status=status,
     )
     db.add(cycle)
     db.commit()
@@ -110,8 +113,11 @@ def make_scene(
     index_avg: float,
     index: str = "ndvi",
 ) -> SatelliteScene:
-    db.execute(db_text("INSERT INTO ref_source (source_id, kind) VALUES (:s, 'satellite')")
-               .bindparams(s=SATELLITE_SOURCE_ID))
+    db.execute(
+        db_text("INSERT INTO ref_source (source_id, kind) VALUES (:s, 'satellite')").bindparams(
+            s=SATELLITE_SOURCE_ID
+        )
+    )
     scene = SatelliteScene(
         field_id=field_id,
         index=index,
@@ -143,8 +149,9 @@ class TestWeatherGenerator:
         """Заморозок в прогнозе на поле с активным циклом → weather_danger critical."""
         field_id = make_field(db_session)
         make_cycle(db_session, field_id)
-        make_forecast(db_session, field_id, forecast_for=date.today() + timedelta(days=2),
-                      hazard="frost")
+        make_forecast(
+            db_session, field_id, forecast_for=date.today() + timedelta(days=2), hazard="frost"
+        )
         report = AlertGenerators().check_weather(db_session)
         assert report.created == 1
         (alert,) = alerts(db_session)
@@ -167,8 +174,9 @@ class TestWeatherGenerator:
         field_id = make_field(db_session)
         make_cycle(db_session, field_id)
         make_forecast(db_session, field_id, forecast_for=date.today(), hazard="wind")
-        make_forecast(db_session, field_id, forecast_for=date.today() + timedelta(days=1),
-                      hazard="frost")
+        make_forecast(
+            db_session, field_id, forecast_for=date.today() + timedelta(days=1), hazard="frost"
+        )
         AlertGenerators().check_weather(db_session)
         (alert,) = alerts(db_session)
         assert alert.severity == "critical"
@@ -186,8 +194,9 @@ class TestWeatherGenerator:
     def test_old_forecast_out_of_horizon_ignored(self, db_session):
         field_id = make_field(db_session)
         make_cycle(db_session, field_id)
-        make_forecast(db_session, field_id, forecast_for=date.today() + timedelta(days=30),
-                      hazard="frost")
+        make_forecast(
+            db_session, field_id, forecast_for=date.today() + timedelta(days=30), hazard="frost"
+        )
         assert AlertGenerators().check_weather(db_session).created == 0
 
     def test_duplication_skipped_until_closed(self, db_session):
@@ -220,8 +229,9 @@ class TestNdviGenerator:
     def test_drop_over_threshold(self, db_session):
         """mean NDVI упал более чем на 15 % между соседними сценами за ≤10 дн."""
         field_id = make_field(db_session)
-        make_scene(db_session, field_id, captured_at=date.today() - timedelta(days=6),
-                   index_avg=0.60)
+        make_scene(
+            db_session, field_id, captured_at=date.today() - timedelta(days=6), index_avg=0.60
+        )
         make_scene(db_session, field_id, captured_at=date.today(), index_avg=0.48)
         report = AlertGenerators().check_ndvi(db_session)
         assert report.created == 1
@@ -233,16 +243,18 @@ class TestNdviGenerator:
 
     def test_small_drop_no_alert(self, db_session):
         field_id = make_field(db_session)
-        make_scene(db_session, field_id, captured_at=date.today() - timedelta(days=6),
-                   index_avg=0.60)
+        make_scene(
+            db_session, field_id, captured_at=date.today() - timedelta(days=6), index_avg=0.60
+        )
         make_scene(db_session, field_id, captured_at=date.today(), index_avg=0.56)
         assert AlertGenerators().check_ndvi(db_session).created == 0
 
     def test_window_too_wide_no_alert(self, db_session):
         """Сцены через 11 дней не соседние — сравнивать нельзя."""
         field_id = make_field(db_session)
-        make_scene(db_session, field_id, captured_at=date.today() - timedelta(days=11),
-                   index_avg=0.60)
+        make_scene(
+            db_session, field_id, captured_at=date.today() - timedelta(days=11), index_avg=0.60
+        )
         make_scene(db_session, field_id, captured_at=date.today(), index_avg=0.30)
         assert AlertGenerators().check_ndvi(db_session).created == 0
 
@@ -253,8 +265,9 @@ class TestNdviGenerator:
 
     def test_growth_no_alert(self, db_session):
         field_id = make_field(db_session)
-        make_scene(db_session, field_id, captured_at=date.today() - timedelta(days=6),
-                   index_avg=0.30)
+        make_scene(
+            db_session, field_id, captured_at=date.today() - timedelta(days=6), index_avg=0.30
+        )
         make_scene(db_session, field_id, captured_at=date.today(), index_avg=0.55)
         assert AlertGenerators().check_ndvi(db_session).created == 0
 
@@ -268,8 +281,9 @@ class TestSatelliteGap:
     def test_stale_scene_alerts(self, db_session):
         """Последняя сцена старше 14 сут → data_source info."""
         field_id = make_field(db_session)
-        make_scene(db_session, field_id, captured_at=date.today() - timedelta(days=20),
-                   index_avg=0.5)
+        make_scene(
+            db_session, field_id, captured_at=date.today() - timedelta(days=20), index_avg=0.5
+        )
         report = AlertGenerators().check_satellite_gap(db_session)
         assert report.created == 1
         (alert,) = alerts(db_session)
@@ -297,12 +311,11 @@ class TestAlertEngine:
         from sqlalchemy.orm import sessionmaker
 
         field_id = make_field(db_session)
-        make_scene(db_session, field_id, captured_at=date.today() - timedelta(days=6),
-                   index_avg=0.60)
-        make_scene(db_session, field_id, captured_at=date.today(), index_avg=0.40)
-        engine = AlertEngine(
-            session_factory=sessionmaker(bind=db_engine, expire_on_commit=False)
+        make_scene(
+            db_session, field_id, captured_at=date.today() - timedelta(days=6), index_avg=0.60
         )
+        make_scene(db_session, field_id, captured_at=date.today(), index_avg=0.40)
+        engine = AlertEngine(session_factory=sessionmaker(bind=db_engine, expire_on_commit=False))
         events.publish(
             SCENE_INGESTED_EVENT,
             {"field_id": str(field_id), "index": "ndvi", "index_avg": 0.4},
@@ -315,11 +328,10 @@ class TestAlertEngine:
 
         field_id = make_field(db_session)
         make_cycle(db_session, field_id)
-        make_forecast(db_session, field_id, forecast_for=date.today() + timedelta(days=1),
-                      hazard="hail")
-        engine = AlertEngine(
-            session_factory=sessionmaker(bind=db_engine, expire_on_commit=False)
+        make_forecast(
+            db_session, field_id, forecast_for=date.today() + timedelta(days=1), hazard="hail"
         )
+        engine = AlertEngine(session_factory=sessionmaker(bind=db_engine, expire_on_commit=False))
         engine.subscribe()
         try:
             events.publish(FORECAST_INGESTED_EVENT, {"fields": 1})
@@ -349,8 +361,13 @@ class TestApi27:
         return auth_header(client, login, "secret123")
 
     @staticmethod
-    def make_alert(db: Session, *, type="ndvi_anomaly", status="new",  # noqa: A002
-                   field_id=None) -> Alert:
+    def make_alert(
+        db: Session,
+        *,
+        type="ndvi_anomaly",
+        status="new",  # noqa: A002
+        field_id=None,
+    ) -> Alert:
         alert = Alert(
             type=type,
             severity="warning",
@@ -402,27 +419,23 @@ class TestApi27:
         resp = client.post(f"{API}/alerts/{alert.id}/read", headers=h)
         assert resp.status_code == 200
         # read → closed (PATCH)
-        resp = client.patch(f"{API}/alerts/{alert.id}", headers=h,
-                            json={"status": "closed"})
+        resp = client.patch(f"{API}/alerts/{alert.id}", headers=h, json={"status": "closed"})
         assert resp.status_code == 200 and resp.json()["status"] == "closed"
         # closed → read недопустим: 409
-        resp = client.patch(f"{API}/alerts/{alert.id}", headers=h,
-                            json={"status": "read"})
+        resp = client.patch(f"{API}/alerts/{alert.id}", headers=h, json={"status": "read"})
         assert resp.status_code == 409
         assert resp.json()["code"] == "alert_invalid_transition"
 
     def test_patch_new_to_closed_allowed(self, client, db_session, agro):
         h = self.auth(client, agro)
         alert = self.make_alert(db_session)
-        resp = client.patch(f"{API}/alerts/{alert.id}", headers=h,
-                            json={"status": "closed"})
+        resp = client.patch(f"{API}/alerts/{alert.id}", headers=h, json={"status": "closed"})
         assert resp.status_code == 200 and resp.json()["status"] == "closed"
 
     def test_patch_unknown_status_422(self, client, db_session, agro):
         h = self.auth(client, agro)
         alert = self.make_alert(db_session)
-        resp = client.patch(f"{API}/alerts/{alert.id}", headers=h,
-                            json={"status": "resolved"})
+        resp = client.patch(f"{API}/alerts/{alert.id}", headers=h, json={"status": "resolved"})
         assert resp.status_code == 422
 
     def test_unknown_alert_404(self, client, db_session, agro):
