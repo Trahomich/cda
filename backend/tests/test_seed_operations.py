@@ -14,7 +14,7 @@ from datetime import date
 import pytest
 from sqlalchemy import delete, select
 
-from app.models.agronomy import CropCycle, Field, FieldOperation, TreatmentPlan
+from app.models.agronomy import AgroInput, CropCycle, Field, FieldOperation, TreatmentPlan
 from app.seed import seed_references
 from app.seed_inputs import seed_inputs
 from app.seed_operations import seed_operations
