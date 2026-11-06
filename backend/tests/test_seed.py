@@ -7,9 +7,9 @@
 from app.seed import CULTURES, PREDECESSOR_RULES, SOURCES
 
 
-def test_cultures_count_in_mvp_range() -> None:
-    # 03 §5.2: MVP ограничивается 8–12 основными культурами средней полосы
-    assert 8 <= len(CULTURES) <= 12
+def test_cultures_count_covers_base_farm_set() -> None:
+    # v1-08 #54: базовый набор хозяйства (замечание №2) — 20+ позиций
+    assert len(CULTURES) >= 20
 
 
 def test_cultures_names_unique() -> None:
@@ -24,6 +24,22 @@ def test_cultures_kinds_valid() -> None:
         assert culture["kind"] in {"main", "forage", "catch", "fallow"}
         assert isinstance(culture["forage_flag"], bool)
         assert culture["crop_group"]
+
+
+def test_cultures_color_hex_valid_and_unique() -> None:
+    """color_hex: формат #rrggbb, стабильность (уникальность в справочнике)."""
+    colors = [c["color_hex"] for c in CULTURES]
+    assert all(c is not None for c in colors)
+    assert all(re.fullmatch(r"#[0-9a-fA-F]{6}", c) for c in colors)  # noqa: A?
+    assert len(colors) == len(set(colors))
+
+
+def test_cultures_groups_full_set() -> None:
+    """Группы покрывают зерновые/масличные/бобовые/кормовые/пропашные/пары."""
+    groups = {c["crop_group"] for c in CULTURES}
+    assert {"cereals", "oilseeds", "legumes", "grasses"} <= groups
+    # пары присутствуют как отдельный kind (RULE-AGRO-03)
+    assert any(c["kind"] == "fallow" for c in CULTURES)
 
 
 def test_mvp_cultures_present() -> None:
