@@ -101,7 +101,7 @@ export interface OperationRequest {
 /** Операция — ответ API-17/18 (06 §5, пример создания).
  *  needs_review=true — RULE-AGRO-12: площадь > 1,05 × поля, сохранено,
  *  требует проверки агрономом («факт важнее плана», не 422). */
-export interface FieldOperation extends OperationRequest {
+export interface FieldOperation extends Omit<OperationRequest, 'client_id'> {
   operation_id: string
   deviation_flag: boolean
   needs_review: boolean
@@ -110,6 +110,7 @@ export interface FieldOperation extends OperationRequest {
   deviation_rationale?: string | null
   cycle_id?: string | null
   machine_job_id?: string | null
+  /** Ключ идемпотентности офлайн-очереди; в ответе может отсутствовать. */
   client_id?: string | null
 }
 
