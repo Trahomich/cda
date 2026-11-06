@@ -443,6 +443,8 @@ function treatmentView(t: MockTreatment): TreatmentPlan {
     planned_date: t.planned_date,
     planned_phase: t.planned_phase,
     status: t.status,
+    // GET-список (API-15): weather_window не считается (null), как в backend.
+    weather_window: null,
   }
 }
 
