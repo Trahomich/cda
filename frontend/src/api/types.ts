@@ -388,7 +388,7 @@ export interface WeatherWindows {
   rule_text?: string
   /** Есть ли окно в горизонте. */
   window_open?: boolean
-  /** Сообщение о缺乏 окна для алерта (когда nearest_window_date = null). */
+  /** Сообщение об отсутствии окна для алерта (когда nearest_window_date = null). */
   alert?: string | null
 }
 
