@@ -76,9 +76,24 @@ class TreatmentPlanCreate(BaseModel):
     basis_recommendation_id: uuid.UUID | None = None
 
 
+class WeatherWindow(BaseModel):
+    """WEATHER-WINDOW (docs/06 §7.2) — подсказка для планов spraying.
+
+    ok=false + detail («2026-06-10: ветер 6.2 м/с (>4), осадки 70 % (≥50)»),
+    suggested_dates — до 5 подходящих дат из ближайших 7 суток. Не блокирует
+    создание/согласование (жёсткие правила — только RULE-AGRO-07/08/10)."""
+
+    ok: bool
+    detail: str
+    suggested_dates: list[date] = Field(default_factory=list)
+
+
 class TreatmentPlanItem(BaseModel):
     """ENT-TREATMENT-PLAN (docs/03 §1.5) с развёрнутыми именами для списка
-    E-05 (frontend/src/api/types.ts: TreatmentPlan)."""
+    E-05 (frontend/src/api/types.ts: TreatmentPlan). Для operation_type=
+    spraying ответ POST (API-15) и approve (API-16) дополняется полем
+    weather_window (WEATHER-WINDOW, §7.2): объект, либо null, если прогноза
+    на planned_date в кэше нет; для прочих типов — null."""
 
     plan_id: uuid.UUID
     cycle_id: uuid.UUID
@@ -95,6 +110,7 @@ class TreatmentPlanItem(BaseModel):
     planned_date: date | None
     planned_phase: str | None
     status: str
+    weather_window: WeatherWindow | None = None
 
 
 class TreatmentPlanListResponse(BaseModel):
