@@ -69,7 +69,8 @@ def cmd_seed_demo(args: argparse.Namespace) -> int:
     print(
         f"Демо-хозяйство создано: полей {report.fields}, циклов {report.cycles}, "
         f"планов севооборота {report.plans}, операций {report.operations}, "
-        f"машин {report.machines}, заданий {report.jobs}, алертов {report.alerts}"
+        f"машин {report.machines}, заданий {report.jobs}, алертов {report.alerts}, "
+        f"препаратов {report.inputs}, планов внесения {report.treatment_plans}"
     )
     for line in report.extra:
         print(f"- {line}")
