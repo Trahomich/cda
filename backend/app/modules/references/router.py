@@ -25,7 +25,7 @@ router = APIRouter(
 @router.get(
     "/cultures",
     response_model=CultureListResponse,
-    summary="Справочник культур (name, kind, crop_group, repeat_years, color_hex)",
+    summary="API-48: справочник культур (name, kind, crop_group, repeat_years, color_hex)",
 )
 def list_cultures(
     db: DbSession,
