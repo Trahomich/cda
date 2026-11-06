@@ -188,7 +188,7 @@ class AlertGenerators:
             fields = {row.id: "" for row in rows}
         created = duplicates = 0
         for fid in fields:
-            scenes = db.execute(
+            scenes = db.scalars(
                 select(SatelliteScene)
                 .where(SatelliteScene.field_id == fid, SatelliteScene.index == "ndvi")
                 .order_by(SatelliteScene.captured_at.desc())
