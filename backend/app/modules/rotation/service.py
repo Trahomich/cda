@@ -415,7 +415,9 @@ def _validate_chain(
     return violations
 
 
-def _validate_plan_items(db: Session, field_id: uuid.UUID, items: list[PlanItemDraft]) -> list[Violation]:
+def _validate_plan_items(
+    db: Session, field_id: uuid.UUID, items: list[PlanItemDraft]
+) -> list[Violation]:
     """Dry-run черновика items[]: цепочка проверяется по RULE-AGRO-01..04.
 
     Проверяется вся последовательность (включая уже существующие циклы поля
