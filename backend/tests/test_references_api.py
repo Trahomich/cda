@@ -51,6 +51,27 @@ def test_cultures_filter_and_pagination(client, db_session) -> None:
     assert page["offset"] == 5
 
 
+def test_cultures_reseed_idempotent(client, db_session) -> None:
+    """Повторный сид: без дубликатов, color_hex/repeat_years актуальны.
+
+    Актуализация repeat_years важна исторически: multi-values INSERT
+    терял ключи, отсутствующие в первой строке (рапс 4, картофель 5 —
+    03 §3.1), и развёрнутые БД хранили дефолт 3.
+    """
+    first = seed_references(db_session)
+    assert first["ref_culture"] >= 20
+    second = seed_references(db_session)
+    assert second["ref_culture"] == 0  # новых строк нет
+    resp = client.get(API, headers=hdr(client, db_session, login="agro_r3"))
+    body = resp.json()
+    items = {i["name"]: i for i in body["items"]}
+    assert len(items) == body["total"]
+    assert items["Рапс"]["repeat_years"] == 4
+    assert items["Рапс озимый"]["repeat_years"] == 4
+    assert items["Картофель"]["repeat_years"] == 5
+    assert items["Овёс"]["repeat_years"] == 3
+
+
 def test_cultures_requires_auth(client, db_session) -> None:
     resp = client.get(API)  # без токена
     assert resp.status_code == 401
