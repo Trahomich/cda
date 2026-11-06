@@ -352,6 +352,10 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
     seed_references(db)
     seed_weather_rules(db)
 
+    # демо-пользователи и препараты — тоже идемпотентны, создаются всегда
+    _seed_users(db, report)
+    _seed_inputs(db, report)
+
     existing = demo_fields_exist(db)
     if existing and not reset:
         report.skipped = True
