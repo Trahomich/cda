@@ -137,7 +137,8 @@ async function submit() {
   busy.value = true
   try {
     // 422 (RULE-AGRO-07/08/10) придут problem+json — текст в тосте.
-    await createTreatmentPlan({
+    // Для spraying ответ содержит weather_window (WEATHER-WINDOW, §7.2).
+    const created = await createTreatmentPlan({
       cycle_id: form.value.cycle_id,
       input_id: form.value.input_id,
       dose: Number(form.value.dose),
@@ -145,6 +146,7 @@ async function submit() {
       planned_date: form.value.planned_date,
       planned_phase: form.value.planned_phase || null,
     })
+    windowResult.value = { input_name: created.input_name, window: created.weather_window ?? null }
     form.value.dose = ''
     form.value.planned_phase = ''
     await load()
@@ -153,6 +155,50 @@ async function submit() {
   } finally {
     busy.value = false
   }
+}
+
+/* ── WEATHER-WINDOW (docs/06 §7.2): подсказка для планов spraying ── */
+
+/** Результат последнего создания плана spraying: окно на плановую дату. */
+const windowResult = ref<{ input_name: string; window: PlanWeatherWindow | null } | null>(null)
+
+/** Подставить предложенную дату в форму («перенести обработку в окно»). */
+function applySuggestedDate(date: string) {
+  form.value.planned_date = date
+}
+
+/* ── Диалог согласования (API-16): подтверждение + окно после approve ── */
+
+const approveTarget = ref<TreatmentPlan | null>(null)
+/** weather_window из ответа approve (для spraying), null — нет/не spraying. */
+const approveWindow = ref<PlanWeatherWindow | null>(null)
+const approveDone = ref(false)
+
+function openApprove(p: TreatmentPlan) {
+  approveTarget.value = p
+  approveWindow.value = null
+  approveDone.value = false
+}
+
+async function confirmApprove() {
+  if (!approveTarget.value) return
+  busy.value = true
+  try {
+    const approved = await approveTreatmentPlan(approveTarget.value.plan_id)
+    approveWindow.value = approved.weather_window ?? null
+    approveDone.value = true
+    await load()
+  } catch {
+    // тост уже показан
+  } finally {
+    busy.value = false
+  }
+}
+
+function closeApprove() {
+  approveTarget.value = null
+  approveWindow.value = null
+  approveDone.value = false
 }
 
 async function approve(planId: string) {
