@@ -436,6 +436,35 @@ onMounted(load)
   overflow-x: auto;
 }
 
+/* название поля — кнопка раскрытия истории севооборота (API-49) */
+.rotation__field-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: #1b5e20;
+  text-align: left;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-height: 44px;
+}
+
+.rotation__field-toggle:hover {
+  text-decoration: underline;
+}
+
+.rotation__field-toggle--open {
+  text-decoration: underline;
+}
+
+.rotation__history-row > td {
+  background: #f6faf6;
+  padding: 0.5rem 0.7rem;
+}
+
 .rotation__matrix {
   width: 100%;
   border-collapse: collapse;
