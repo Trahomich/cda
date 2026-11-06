@@ -58,6 +58,8 @@ class Settings(BaseSettings):
     ingest_satellite_request_timeout: float = 30.0
     ingest_satellite_retry_attempts: int = 3  # в пределах цикла; далее — планировщик
     ingest_satellite_retry_base_seconds: float = 60.0  # 0 — без пауз (тесты)
+    ingest_satellite_ndvi_batch: int = 200  # строк каталога за цикл расчёта NDVI
+    ingest_satellite_ndvi_workers: int = 4  # потоков чтения COG (окна полей, 05 §2)
 
     # Спутник (MVP-10, docs/05 §2 IF-SATELLITE, §4: опрос каталога раз в 6 ч)
     satellite_enabled: bool = False  # true — нужны ключи Copernicus (см. ниже)
