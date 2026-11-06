@@ -257,12 +257,14 @@ class AlertGenerators:
         ).fetchall()
         created = duplicates = 0
         for field_id, name in rows:
-            latest_at, latest_id = db.execute(
+            latest = db.execute(
                 select(SatelliteScene.captured_at, SatelliteScene.id)
                 .where(SatelliteScene.field_id == field_id)
                 .order_by(SatelliteScene.captured_at.desc())
                 .limit(1)
-            ).one() if db.scalar(select(SatelliteScene.id).where(SatelliteScene.field_id == field_id).limit(1)) else (None, None)  # noqa: E501
+            ).first()
+            latest_at = latest[0] if latest else None
+            latest_id = latest[1] if latest else None
             if latest_at is not None and latest_at > stale_before:
                 continue
             last_str = latest_at.isoformat() if latest_at is not None else None
