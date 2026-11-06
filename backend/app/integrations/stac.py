@@ -28,8 +28,14 @@ logger = logging.getLogger(__name__)
 SATELLITE_SOURCE_ID = "satellite.sentinel2-l2a"
 COLLECTION = "sentinel-2-l2a"
 
-#: каналы, нужные для NDVI и маски облаков (05 §2: B04, B08, SCL)
-CATALOG_ASSETS = ("b04", "b08", "scl")
+#: каналы, нужные для NDVI и маски облаков (05 §2: B04, B08, SCL);
+#: ключ актива — каноническое имя, значения — возможные имена в каталоге
+#: (earth-search отдаёт ESA-имена red/nir, Copernicus — b04/b08)
+CATALOG_ASSETS: dict[str, tuple[str, ...]] = {
+    "b04": ("b04", "red"),
+    "b08": ("b08", "nir"),
+    "scl": ("scl",),
+}
 
 #: верхний порог облачности каталогизации: >60 % сцена не сохраняется (05 §5 п.2)
 MAX_CATALOG_CLOUD_PCT = 60.0
