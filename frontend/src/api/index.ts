@@ -66,6 +66,22 @@ export function getFields(params: {
   })
 }
 
+/** API-48: GET /references/cultures — справочник культур (color_hex — цвет на карте).
+ *  Бэкенд ограничивает limit сотней, поэтому справочник больше сотни берём постранично. */
+export async function getCultureReferences(): Promise<CultureReference[]> {
+  const limit = 100
+  const first = await apiClient.list<CultureReference>('/references/cultures', { limit })
+  const items = [...first.items]
+  while (items.length < first.total) {
+    const page = await apiClient.list<CultureReference>('/references/cultures', {
+      limit,
+      offset: items.length,
+    })
+    items.push(...page.items)
+  }
+  return items
+}
+
 /** API-17: POST /operations — запись факта операции (мобильный, офлайн-очередь).
  *  Идемпотентность по client_id: повторная отправка не создаёт дубль;
  *  RULE-AGRO-12: площадь > 1,05 × площади поля → 201/200 с needs_review=true. */
