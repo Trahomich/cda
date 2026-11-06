@@ -44,6 +44,7 @@ const useMock =
 export class ApiClient {
   private transport: Transport
   private onError: ErrorHandler | null = null
+  private onUnauthorized: UnauthorizedHandler | null = null
   private token: string | null = null
 
   constructor() {
