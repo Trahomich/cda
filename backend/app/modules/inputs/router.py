@@ -212,4 +212,7 @@ def approve_treatment_plan(
 ) -> TreatmentPlanItem:
     plan = service.get_treatment_plan(db, plan_id)
     plan = service.approve_treatment_plan(db, user=user, plan=plan)
-    return _plan_item(_plan_row(db, plan))
+    row = _plan_row(db, plan)
+    item = _plan_item(row)
+    item.weather_window = _plan_window(db, row[1], plan)  # WEATHER-WINDOW, §7.2
+    return item
