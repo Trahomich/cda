@@ -14,15 +14,15 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator:  getByText('2026-11-05').first()
+Locator:  getByText(/NDVI 0\.1\d/).first()
 Expected: visible
 Received: hidden
-Timeout:  15000ms
+Timeout:  5000ms
 
 Call log:
-  - Expect "toBeVisible" getByText('2026-11-05').first() with timeout 15000ms
-  - waiting for getByText('2026-11-05').first()
-    30 × locator resolved to <title data-v-c0ec5f5a="">2026-11-05 · NDVI 0.165 · облачность 0 %</title>
+  - Expect "toBeVisible" getByText(/NDVI 0\.1\d/).first() with timeout 5000ms
+  - waiting for getByText(/NDVI 0\.1\d/).first()
+    12 × locator resolved to <title data-v-c0ec5f5a="">2026-11-05 · NDVI 0.165 · облачность 0 %</title>
        - unexpected value "hidden"
 
 ```
@@ -64,7 +64,7 @@ Call log:
   - heading "Агрохимия" [level=2]
   - paragraph: Данных агрохимии нет (импорт — API-30)
   - heading "Погода (сейчас + 7 сут)" [level=2]
-  - paragraph: "Сейчас: 6,3 °C, ветер 9,3 м/с, влажность 70 % Осадки за 7 сут: 0,8 мм · GDD: 2.5 °C·сут"
+  - paragraph: "Сейчас: 0,7 °C, ветер 5,4 м/с, влажность 73 % Осадки за 7 сут: 0,8 мм · GDD: 2.5 °C·сут"
   - table:
     - rowgroup:
       - row "Дата °C Осадки, мм":
@@ -153,9 +153,9 @@ Call log:
   39 |   await page.goto(`${BASE}/fields/8826f29b-ffff-4b63-a71b-848c6b4e347e`)
   40 |   await expect(page.getByText('14/ЖАМ/74га')).toBeVisible({ timeout: 15000 })
   41 |   // NDVI-таймлайн: живые даты Sentinel-2 ноября (title точки + подпись оси).
-> 42 |   await expect(page.getByText('2026-11-05').first()).toBeVisible({ timeout: 15000 })
-     |                                                      ^ Error: expect(locator).toBeVisible() failed
-  43 |   await expect(page.getByText(/NDVI 0\.1\d/).first()).toBeVisible()
+  42 |   await expect(page.getByText('2026-11-05', { exact: true })).toBeVisible({ timeout: 15000 })
+> 43 |   await expect(page.getByText(/NDVI 0\.1\d/).first()).toBeVisible()
+     |                                                       ^ Error: expect(locator).toBeVisible() failed
   44 | })
   45 | 
   46 | test('E-10 Погода: живой факт и прогноз на стенде', async ({ page }) => {
