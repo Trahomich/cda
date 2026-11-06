@@ -218,6 +218,7 @@ def create_operation(db: Session, *, data: OperationCreate) -> tuple[FieldOperat
         source=data.source,
         deviation_flag=deviation_flag,
         deviation_rationale=rationale,
+        needs_review=_needs_review(db, db.get(Field, data.field_id), data),
         status="done",
     )
     db.add(operation)
