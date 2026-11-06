@@ -156,7 +156,6 @@ class TestWorker:
         assert jobs[service.JOB_CURRENT].trigger.interval == timedelta(minutes=30)
         assert jobs[service.JOB_FORECAST].trigger.interval == timedelta(hours=3)
         assert jobs[service.JOB_ARCHIVE].trigger.interval == timedelta(minutes=60)
-        scheduler.shutdown(wait=False)
 
     def test_run_once_cycle_no_fields(self, db_session, monkeypatch):
         """run_once по всем трём джобам на пустой БД: не падает, пишет журнал."""
