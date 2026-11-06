@@ -384,6 +384,12 @@ export interface WeatherWindows {
   days: WeatherWindowDay[]
   /** Ближайшие сутки окна или null, если в горизонте нет (→ ENT-ALERT). */
   nearest_window_date: string | null
+  /** Текст правила RULE-AGRO-09 (обоснование, REQ-F-025). */
+  rule_text?: string
+  /** Есть ли окно в горизонте. */
+  window_open?: boolean
+  /** Сообщение о缺乏 окна для алерта (когда nearest_window_date = null). */
+  alert?: string | null
 }
 
 /* ─── Источники данных (API-28, экран E-14; ref_source, 06 §3) ─── */
