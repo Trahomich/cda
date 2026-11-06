@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     satellite_retry_base_seconds: float = 3600.0
     satellite_request_timeout: float = 30.0
     satellite_raster_cache_dir: str = "/var/lib/cda/satellite"  # распакованные каналы L2A
+
+    # Алерты (MVP-12): генераторы на событиях шины + периодический прогон
+    alerts_poll_enabled: bool = False  # true — страховочный прогон по расписанию
+    alerts_poll_minutes: int = 30
+    alerts_ndvi_drop_pct: float = 15.0  # падение mean NDVI, % (REQ-F-029)
+    alerts_ndvi_window_days: int = 10  # окно сравнения соседних сцен
+    alerts_satellite_stale_days: int = 14  # пауза сцен для data_source-алерта
     # Ключи Copernicus Data Space (плейсхолдеры в .env.example; в local пусто)
     copernicus_auth_url: str = (
         "https://identity.dataspace.copernicus.eu/auth/realms/CDAS/protocol/openid-connect/token"
