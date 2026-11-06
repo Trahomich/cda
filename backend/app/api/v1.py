@@ -10,6 +10,7 @@ from app.core.config import get_settings
 from app.modules.auth import router as auth_router
 from app.modules.export import router as export_router
 from app.modules.fields import router as fields_router
+from app.modules.inputs import router as inputs_router
 from app.modules.machinery import router as machinery_router
 from app.modules.operations.router import router as operations_router
 from app.modules.rotation import router as rotation_router
