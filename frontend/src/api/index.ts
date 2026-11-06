@@ -181,6 +181,20 @@ export async function getFieldNdvi(fieldId: string): Promise<NdviPoint[]> {
   }))
 }
 
+/** API-49: GET /fields/{id}/crop-cycles — история севооборота поля (годы по
+ *  убыванию, culture_name и color_hex отдаёт бэкенд из справочника API-48);
+ *  year_from/year_to — необязательный фильтр, без них — все годы. */
+export async function getFieldCropCycles(
+  fieldId: string,
+  params: { year_from?: number; year_to?: number } = {},
+): Promise<CropCycleHistoryItem[]> {
+  const page = await apiClient.list<CropCycleHistoryItem>(
+    `/fields/${fieldId}/crop-cycles`,
+    params,
+  )
+  return page.items
+}
+
 /** API-07: GET /fields/{id}/weather — факты и прогноз; «сейчас» — последний
  *  факт, сводка (осадки 7 сут, GDD) считается на клиенте по фактам. */
 export async function getFieldWeather(fieldId: string): Promise<FieldWeather | null> {
