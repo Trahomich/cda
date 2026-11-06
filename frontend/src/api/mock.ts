@@ -261,27 +261,6 @@ function fieldOfCycle(cycleId: string): { field: MockField; n: number; year: num
   return null
 }
 
-/** Все циклы поля (история + план), свежие сверху. */
-function cyclesOfField(n: number): Array<{ year: number; culture: MockCulture; yield?: number }> {
-  const out: Array<{ year: number; culture: MockCulture; yield?: number }> = []
-  for (let year = 2023; year <= YEAR_TO; year++) {
-    const rec = cycleAt(n, year)
-    if (rec) out.push({ year, culture: cultureBySuffix(rec.cid), yield: rec.yield })
-  }
-  return out.reverse()
-}
-
-function toFieldCycle(n: number, year: number, culture: MockCulture, yieldC?: number): FieldCycle {
-  return {
-    cycle_id: cycleUuid(n, year),
-    year,
-    culture_name: culture.name,
-    kind: culture.kind,
-    status: year < 2027 ? 'completed' : 'planned',
-    yield_c_ha: yieldC ?? null,
-  }
-}
-
 /** Ближайший предыдущий цикл с основной культурой (пары/сидераты пропускаем
  *  при проверке предшественника — RULE-AGRO-03). */
 function prevMain(n: number, year: number): { year: number; culture: MockCulture } | null {
