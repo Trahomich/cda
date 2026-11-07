@@ -245,11 +245,16 @@ function fmtNum(v: number, digits = 1): string {
         ‹ Поля
       </RouterLink>
       <h1 class="card360__title">
-        {{ card ? card.field.name : 'Поле' }}
-        <span
-          v-if="card"
-          class="card360__area"
-        >· {{ fmtNum(card.field.area_ga, 2) }} га</span>
+        <template v-if="card">
+          {{ card.field.name }}
+          <span class="card360__area">· {{ fmtNum(card.field.area_ga, 2) }} га</span>
+        </template>
+        <Skeleton
+          v-else
+          width="11rem"
+          height="1.3rem"
+          pill
+        />
       </h1>
       <button
         type="button"
