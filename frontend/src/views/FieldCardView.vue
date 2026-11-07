@@ -867,25 +867,26 @@ function fmtNum(v: number, digits = 1): string {
   color: #1b5e20;
 }
 
-.card360__polygon {
+.card360__contour {
   width: 100%;
   height: auto;
   max-height: 180px;
 }
 
-.card360__polygon polygon {
+polygon.card360__polygon {
   fill: #a5d6a7;
   stroke: #2e7d32;
   stroke-width: 1.5;
 }
 
-/* §7.3: PNG-слой под контуром; контур при слое — полупрозрачная заливка */
+/* §7.3: PNG-слой под контуром; при активном слое контур stroke-only,
+ *  чтобы заливка не перекрывала снимок (v2-fix-G) */
 .card360__ndvi-layer {
   opacity: 0.95;
 }
 
-.card360__contour--layered .card360__polygon polygon {
-  fill-opacity: 0.18;
+.card360__contour--layered polygon.card360__polygon {
+  fill-opacity: 0;
 }
 
 .card360__layers {
