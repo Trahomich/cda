@@ -210,11 +210,17 @@ class TestDetectorsApi:
         assert "ndvi_stagnation" not in codes(body["items"])
 
     def test_waterlogging_warn_and_alert(self, world, db_session) -> None:
+        """warn — эпизод не на последней сцене (доля пикселей мала); alert —
+        эпизод на последней сцене и/или ndwi_mean ≥ порога p90 (§8.2 v3)."""
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
-        make_scene(db_session, fid, TODAY, 0.40, ndwi_mean=0.02, ndwi_p90=0.12)
-        for back in range(7):  # 25 мм за 7 суток
-            make_obs(db_session, fid, TODAY - timedelta(days=back), precip_mm=25 / 7)
+        episode_day = TODAY - timedelta(days=5)
+        make_scene(db_session, fid, episode_day, 0.40, ndwi_mean=0.02, ndwi_p90=0.12)
+        make_scene(db_session, fid, TODAY, 0.42, ndwi_mean=0.02, ndwi_p90=0.05)  # чистая
+        for back in range(7):  # 25 мм за 7 суток к дате эпизода
+            make_obs(
+                db_session, fid, episode_day - timedelta(days=back), precip_mm=25 / 7
+            )
         db_session.commit()
         body = get_insights(client, hdr, fid)
         assert item(body, "waterlogging")["severity"] == "warn"
