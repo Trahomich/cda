@@ -24,6 +24,7 @@ import type {
 } from '@/api/types'
 import CropHistoryStrip from '@/components/CropHistoryStrip.vue'
 import NdviTimeline from '@/components/NdviTimeline.vue'
+import Skeleton from '@/components/Skeleton.vue'
 
 const route = useRoute()
 const fieldId = route.params.fieldId as string
