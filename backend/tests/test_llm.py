@@ -33,6 +33,7 @@ def test_summarize_success_returns_response_text() -> None:
     body = json.loads(req.read().decode())
     assert body["model"] == DEFAULT_MODEL  # qwen3.5:9b (09 §8.1)
     assert body["stream"] is False
+    assert body["think"] is False  # think-блок не съедает num_predict (#113)
     assert body["options"] == {"temperature": 0.3, "num_ctx": 4096}
     assert "Сделай сводку" in body["prompt"] and "NDVI 0.45" in body["prompt"]
 
