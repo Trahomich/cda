@@ -262,8 +262,8 @@ class TestVraMap:
 
         bbox = [float(v) for v in resp.headers["X-Field-Bbox"].split(",")]
         assert len(bbox) == 4 and bbox[0] < bbox[2] and bbox[1] < bbox[3]
-        # окно поля в UTM: X 300100..301900 — в WGS84 bbox попадает
-        assert 37.0 < bbox[0] < 40.0 and 50.0 < bbox[1] < 53.0
+        # окно поля в UTM (зона 37N, запад центрального меридиана 39°): ~36° с.ш. 52°
+        assert 35.5 < bbox[0] < 37.0 and 51.0 < bbox[1] < 53.0
 
         width, _, height = resp.headers["X-Image-Size"].partition("x")
         with MemoryFile(resp.content) as mem, mem.open() as src:
