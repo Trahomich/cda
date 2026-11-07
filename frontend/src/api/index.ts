@@ -39,12 +39,15 @@ import type {
   TreatmentPlan,
   TreatmentPlanRequest,
   TreatmentPlanStatus,
+  VraZonesResponse,
   WeatherForecast,
   WeatherForecastDay,
+  WeatherForecastItem,
   WeatherWindowDay,
   WeatherWindows,
   WindowOperationType,
   WindowsResponse,
+  YieldForecastResponse,
 } from './types'
 
 /** API-01: GET /fields — список полей (фильтры status, q по имени).
