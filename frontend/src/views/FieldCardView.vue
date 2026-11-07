@@ -727,6 +727,136 @@ function fmtNum(v: number, digits = 1): string {
           </p>
         </div>
 
+        <!-- Дифференцированное внесение (API-52, §7.4) -->
+        <div
+          id="vra"
+          class="card360__block"
+        >
+          <h2 class="card360__block-title">
+            Дифференцированное внесение
+          </h2>
+          <Skeleton
+            v-if="vraLoading"
+            :lines="4"
+          />
+          <p
+            v-else-if="vraUniform"
+            class="card360__muted"
+          >
+            Поле однородно по NDVI — зоны дифференцированного внесения не выделяются
+          </p>
+          <p
+            v-else-if="!vra"
+            class="card360__muted"
+          >
+            Нет данных для зон внесения (нужна чистая NDVI-сцена)
+          </p>
+          <template v-else>
+            <p class="card360__muted">
+              По чистой сцене {{ fmtDate(vra.date) }} ·
+              неоднородность NDVI (IQR): {{ fmtNum(vra.iqr_ndvi, 2) }}
+            </p>
+            <!-- SVG-превью карты зон: PNG-оверлей в рамке контура (§7.4) -->
+            <svg
+              class="card360__vra-map"
+              viewBox="0 0 200 120"
+              role="img"
+              aria-label="Карта зон дифференцированного внесения"
+            >
+              <image
+                v-if="vraMap && vraMapRect"
+                class="card360__vra-layer"
+                :href="vraMap.url"
+                :x="vraMapRect.x"
+                :y="vraMapRect.y"
+                :width="vraMapRect.width"
+                :height="vraMapRect.height"
+                preserveAspectRatio="none"
+              />
+              <polygon
+                :points="contourPoints"
+                class="card360__vra-contour"
+              />
+            </svg>
+            <table class="card360__vra-table">
+              <thead>
+                <tr>
+                  <th scope="col">
+                    Зона
+                  </th>
+                  <th scope="col">
+                    Площадь, га
+                  </th>
+                  <th scope="col">
+                    Ср. NDVI
+                  </th>
+                  <th scope="col">
+                    Доза
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="zone in vra.zones"
+                  :key="zone.zone"
+                  :class="`card360__vra-row--${zone.zone}`"
+                >
+                  <td>{{ zone.zone }} · {{ zone.label }}</td>
+                  <td>{{ fmtNum(zone.area_ga) }}</td>
+                  <td>{{ fmtNum(zone.ndvi_mean, 2) }}</td>
+                  <td>{{ doseLabel(zone) }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="card360__muted">
+              Дозы — рекомендация, не план. Базовая доза:
+              {{
+                vra.base_dose_kg_ha !== null
+                  ? `${fmtNum(vra.base_dose_kg_ha)} кг/га (последний согласованный план)`
+                  : 'нет согласованного плана внесения — показано отклонение от базовой'
+              }}
+            </p>
+          </template>
+        </div>
+
+        <!-- Прогноз урожайности (API-53, §7.4) -->
+        <div class="card360__block">
+          <h2 class="card360__block-title">
+            Прогноз урожайности
+          </h2>
+          <Skeleton
+            v-if="yieldLoading"
+            :lines="2"
+          />
+          <p
+            v-else-if="yieldForecast === 'insufficient'"
+            class="card360__muted"
+          >
+            Данных сезона недостаточно для прогноза
+          </p>
+          <p
+            v-else-if="!yieldForecast"
+            class="card360__muted"
+          >
+            Прогноз недоступен
+          </p>
+          <div
+            v-else
+            class="card360__yield"
+          >
+            <p class="card360__yield-value">
+              {{ fmtNum(yieldForecast.forecast_c_ha) }} ц/га
+              <span class="card360__yield-range">
+                интервал {{ fmtNum(yieldForecast.low_c_ha) }}–{{ fmtNum(yieldForecast.high_c_ha) }}
+              </span>
+            </p>
+            <p class="card360__muted">
+              {{ yieldForecast.culture_name }}, сезон {{ yieldForecast.cycle_year }} ·
+              оценка по спутнику (NDVI), точность растёт с числом сезонов
+            </p>
+          </div>
+        </div>
+
         <!-- Агрохимия -->
         <div class="card360__block">
           <h2 class="card360__block-title">
