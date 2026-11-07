@@ -174,16 +174,22 @@ export async function getFieldCard(fieldId: string): Promise<FieldCard> {
 
 /** API-06: GET /fields/{id}/ndvi — NDVI-таймлайн сезона (cloud_pct > 80 — облачные). */
 export async function getFieldNdvi(fieldId: string): Promise<NdviPoint[]> {
-  const page = await apiClient.request<NdviTimelinePage>(`/fields/${fieldId}/ndvi`)
-  return page.items.map((s: SceneItem) => ({
-    date: s.captured_at,
-    ndvi: s.index_avg,
-    cloud_pct: s.cloud_pct,
-    index_min: s.index_min,
-    index_max: s.index_max,
-    trust: s.trust,
-    render_available: s.render_available ?? false,
-  }))
+  // limit=200: годовая история (~70 сцен на поле за год при revisit ~5 сут);
+  // порядок нормализуем по возрастанию даты (API отдаёт от свежих к старым).
+  const page = await apiClient.request<NdviTimelinePage>(
+    `/fields/${fieldId}/ndvi?limit=200`,
+  )
+  return page.items
+    .map((s: SceneItem) => ({
+      date: s.captured_at,
+      ndvi: s.index_avg,
+      cloud_pct: s.cloud_pct,
+      index_min: s.index_min,
+      index_max: s.index_max,
+      trust: s.trust,
+      render_available: s.render_available ?? false,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date))
 }
 
 /** §7.3: загруженный PNG-рендер сцены (ndvi/truecolor) с геопривязкой окна. */
