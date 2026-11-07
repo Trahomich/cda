@@ -159,4 +159,106 @@ def field_ndvi(
     )
 
 
+def _render_meta_or_none(
+    db: DbSession, field: Field, captured_at: date
+) -> tuple[str, int, int] | None:
+    """(bbox, width, height) рендера: сайдкар ингеста, иначе контур поля.
+
+    Фолбэк по контуру: сайдкар писался до #83-формата или утерян — оверлей
+    займёт рамку контура (грубее окна растра, но без 500).
+    """
+    meta_file = meta_path("", field.id, captured_at)  # только имя, без каталога
+    raise NotImplementedError  # заменяется вызовом ниже
+
+
+@router.get(
+    "/fields/{field_id}/ndvi/{captured_at}/render.png",
+    response_class=FileResponse,
+    summary="§7.3: PNG-рендер сцены (NDVI-карта / true-color) окна поля",
+)
+def field_ndvi_render(
+    field_id: uuid.UUID,
+    captured_at: date,
+    db: DbSession,
+    settings: SettingsDep,
+    *,
+    variant: str = Query(default="ndvi", description="ndvi | truecolor"),
+) -> FileResponse:
+    if variant not in RENDER_VARIANTS:
+        raise AppError(
+            f"Неизвестный вариант «{variant}»; допустимо: {', '.join(RENDER_VARIANTS)}",
+            code="unknown_variant",
+            title="Некорректный запрос",
+            status_code=422,
+        )
+    field = _get_field(db, field_id)
+    scene_exists = (
+        db.scalar(
+            select(SatelliteScene.id).where(
+                SatelliteScene.field_id == field.id,
+                SatelliteScene.index == "ndvi",
+                SatelliteScene.captured_at == captured_at,
+            )
+        )
+        is not None
+    )
+    if not scene_exists:
+        raise AppError(
+            f"Сцена NDVI за {captured_at.isoformat()} не найдена",
+            code="scene_not_found",
+            title="Не найдено",
+            status_code=404,
+        )
+    render_dir = settings.ndvi_render_dir or ""
+    path = render_path(render_dir, field.id, variant, captured_at)
+    if not render_dir or not path.is_file():
+        raise AppError(
+            f"Рендер ({variant}) сцены за {captured_at.isoformat()} не найден",
+            code="render_not_found",
+            title="Не найдено",
+            status_code=404,
+        )
+
+    # геопривязка окна: сайдкар ингеста; фолбэк — bbox контура + размер PNG
+    bbox: tuple[float, float, float, float] | None = None
+    width = height = 0
+    meta_file = meta_path(render_dir, field.id, captured_at)
+    if meta_file.is_file():
+        try:
+            meta = json.loads(meta_file.read_text(encoding="utf-8"))
+            bbox = tuple(float(v) for v in meta["bbox"])
+            width, height = int(meta["width"]), int(meta["height"])
+        except (ValueError, KeyError, TypeError):
+            bbox = None
+    if bbox is None:
+        from shapely.geometry import shape
+
+        geojson = db.scalar(select(func.ST_AsGeoJSON(Field.contour)).where(Field.id == field.id))
+        if geojson is None:
+            raise AppError(
+                "Контур поля недоступен",
+                code="contour_unavailable",
+                title="Ошибка данных",
+                status_code=500,
+            )
+        min_lon, min_lat, max_lon, max_lat = shape(json.loads(geojson)).bounds
+        bbox = (min_lon, min_lat, max_lon, max_lat)
+    if not width or not height:
+        import rasterio
+
+        with rasterio.open(path) as ds:
+            width, height = ds.width, ds.height
+
+    return FileResponse(
+        path,
+        media_type="image/png",
+        headers={
+            "X-Field-Bbox": ",".join(f"{v:.6f}" for v in bbox),
+            "X-Image-Size": f"{width}x{height}",
+            # рендер даты_immutable: имя включает дату сцены (§7.3)
+            "Cache-Control": "public, max-age=31536000, immutable",
+        },
+    )
+
+
 __all__ = ["router"]
