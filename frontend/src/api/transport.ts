@@ -66,4 +66,12 @@ export class FetchTransport implements Transport {
       problem: res.ok ? null : parseProblem(res.headers.get('content-type'), text),
     }
   }
+
+  async raw(path: string): Promise<{ ok: boolean; status: number; blob: Blob; headers: Headers }> {
+    const headers: Record<string, string> = { Accept: 'image/png' }
+    const token = this.getToken()
+    if (token) headers.Authorization = `Bearer ${token}`
+    const res = await fetch(this.baseUrl + path, { method: 'GET', headers })
+    return { ok: res.ok, status: res.status, blob: await res.blob(), headers: res.headers }
+  }
 }
