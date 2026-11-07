@@ -275,6 +275,8 @@ export async function getYieldForecast(
     return null
   }
 }
+
+/** API-49: GET /fields/{id}/crop-cycles — история севооборота поля (годы по
  *  убыванию, culture_name и color_hex отдаёт бэкенд из справочника API-48);
  *  year_from/year_to — необязательный фильтр, без них — все годы. */
 export async function getFieldCropCycles(
