@@ -96,17 +96,17 @@ def meta_path(render_dir: Path | str, field_id, captured_at: date) -> Path:
 
 
 def renders_exist(render_dir: Path | str, field_id, captured_at: date) -> bool:
-    """true, если на диске есть PNG обоих вариантов (render_available, §7.3)."""
+    """true, если на диске есть PNG обязательных вариантов (render_available, §7.3)."""
     return all(
         render_path(render_dir, field_id, variant, captured_at).is_file()
-        for variant in RENDER_VARIANTS
+        for variant in REQUIRED_VARIANTS
     )
 
 
-def _palette_rgb(t: np.ndarray) -> np.ndarray:
-    """t ∈ [0,1] → RGB по опорным точкам PALETTE (линейная интерполяция)."""
-    stops = np.array([s for s, _ in PALETTE], dtype="float32")
-    colors = np.array([c for _, c in PALETTE], dtype="float32")
+def _palette_rgb(t: np.ndarray, palette: tuple[tuple[float, tuple[int, int, int]], ...]) -> np.ndarray:
+    """t ∈ [0,1] → RGB по опорным точкам палитры (линейная интерполяция)."""
+    stops = np.array([s for s, _ in palette], dtype="float32")
+    colors = np.array([c for _, c in palette], dtype="float32")
     rgb = np.zeros(t.shape + (3,), dtype="uint8")
     for channel in range(3):
         rgb[..., channel] = np.interp(t, stops, colors[:, channel]).astype("uint8")
