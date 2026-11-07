@@ -6,6 +6,7 @@
 import { onMounted, ref, watch } from 'vue'
 import { getFields } from '@/api'
 import type { Field, FieldStatus } from '@/api/types'
+import Skeleton from '@/components/Skeleton.vue'
 
 const rows = ref<Field[]>([])
 const total = ref(0)
