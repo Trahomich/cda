@@ -77,9 +77,17 @@ function popupHtml(field: Field): string {
     `<strong>${field.name}</strong><br/>` +
     `Площадь: ${area} га<br/>` +
     `Культура сезона: ${culture}<br/>` +
-    `Статус: ${STATUS_LABELS[field.status]}` +
+    `Статус: ${STATUS_LABELS[field.status]}<br/>` +
+    // Пункт 1 (v2-fix-A): из попапа контура — в карточку поля, тот же роут,
+    // что у клика по подписи и строке списка.
+    `<a href="/fields/${field.field_id}" class="field-popup__link">Открыть карточку поля →</a>` +
     `</div>`
   )
+}
+
+/** Переход в карточку поля (пункт 1, v2-fix-A): тот же роут, что у строки списка. */
+function openFieldCard(field: Field): void {
+  void router.push({ name: 'field-card', params: { fieldId: field.field_id } })
 }
 
 /** Скрытие/показ подписей номеров по зуму (класс на контейнере карты). */
