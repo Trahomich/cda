@@ -52,4 +52,12 @@ test('карточка поля: оверлей NDVI-сцены появляет
     /card360__layer-btn--active/,
   )
   await expect(layer).toBeVisible()
+
+  // Переключение варианта: truecolor-снимок (blob-URL нового PNG).
+  await page.locator('.card360__layer-btn--truecolor').click()
+  await expect(page.locator('.card360__layer-btn--truecolor')).toHaveClass(
+    /card360__layer-btn--active/,
+  )
+  await expect(layer).toBeVisible()
+  await expect(layer).toHaveAttribute('href', /^blob:/)
 })
