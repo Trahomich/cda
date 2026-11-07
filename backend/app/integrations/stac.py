@@ -231,4 +231,5 @@ __all__ = [
     "MAX_CATALOG_CLOUD_PCT",
     "SATELLITE_SOURCE_ID",
     "StacItem",
+    "StacSearchClient",
 ]
