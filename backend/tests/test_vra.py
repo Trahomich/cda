@@ -65,6 +65,7 @@ def make_vra_rasters(tmp_path, red, *, seed=7) -> dict:
     """
     rng = np.random.default_rng(seed)
     nir = rng.uniform(2900, 3100, (N, N)).astype("uint16")
+    tmp_path.mkdir(parents=True, exist_ok=True)  # подпапки сцен
     t10 = Affine(10.0, 0.0, X0, 0.0, -10.0, Y1)
     t20 = Affine(20.0, 0.0, X0, 0.0, -20.0, Y1)
     b04 = _write_tif(tmp_path / "b04.tif", red.astype("uint16"), t10, CRS)
