@@ -13,15 +13,13 @@ from datetime import date
 
 import pytest
 from app.models.agronomy import CropCycle
+from app.models.auth import UserRole
 from app.models.integrations import SatelliteScene
 from app.models.references import Culture
 from app.modules.satellite.router import SATELLITE_SOURCE_ID
-from sqlalchemy import text as db_text
 from sqlalchemy.orm import Session
 from tests.test_auth import auth_header, make_user
-from tests.test_satellite import FIELD_SQUARE, make_field, make_satellite_source
-
-from app.models.auth import UserRole
+from tests.test_satellite import make_field, make_satellite_source
 
 API = "/api/v1"
 
