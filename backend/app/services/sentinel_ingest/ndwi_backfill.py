@@ -118,7 +118,7 @@ def run_ndwi_backfill(
         tasks.append((scene.id, contour, assets))
     db.rollback()  # закрыть неявную транзакцию select'ов перед записями
 
-    def compute(task: tuple[uuid.UUID, dict, dict]) -> tuple[uuid.UUID, object]:
+    def compute(task: tuple[uuid.UUID, dict, dict]) -> tuple[uuid.UUID, NdviStats | BaseException]:
         scene_id, contour, assets = task
         try:
             stats = zonal_ndvi(assets, contour)
