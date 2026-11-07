@@ -76,7 +76,8 @@ def make_vra_rasters(tmp_path, red, *, seed=7) -> dict:
 def striped_red() -> np.ndarray:
     """Три горизонтальные полосы 1600/800/300 → три уровня NDVI."""
     rows = np.arange(N)[:, None]
-    return np.where(rows < BAND_ROWS[0], 1600, np.where(rows < BAND_ROWS[1], 800, 300))
+    stripes = np.where(rows < BAND_ROWS[0], 1600, np.where(rows < BAND_ROWS[1], 800, 300))
+    return np.broadcast_to(stripes, (N, N)).copy()
 
 
 def wgs_box(xmin, ymin, xmax, ymax) -> dict:
