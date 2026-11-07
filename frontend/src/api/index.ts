@@ -182,7 +182,40 @@ export async function getFieldNdvi(fieldId: string): Promise<NdviPoint[]> {
     index_min: s.index_min,
     index_max: s.index_max,
     trust: s.trust,
+    render_available: s.render_available ?? false,
   }))
+}
+
+/** §7.3: загруженный PNG-рендер сцены (ndvi/truecolor) с геопривязкой окна. */
+export interface NdviRender {
+  url: string
+  /** Границы окна растра: minLon, minLat, maxLon, maxLat (WGS84). */
+  bbox: [number, number, number, number]
+  width: number
+  height: number
+}
+
+/** §7.3: GET /fields/{id}/ndvi/{date}/render.png?variant= — PNG + заголовки
+ *  X-Field-Bbox/X-Image-Size; null, если рендера нет (404). */
+export async function getNdviRender(
+  fieldId: string,
+  date: string,
+  variant: 'ndvi' | 'truecolor',
+): Promise<NdviRender | null> {
+  const res = await apiClient.raw(
+    `/fields/${fieldId}/ndvi/${date}/render.png?variant=${variant}`,
+  )
+  if (!res.ok) return null
+  const bboxRaw = (res.headers.get('X-Field-Bbox') ?? '').split(',').map(Number)
+  if (bboxRaw.length !== 4 || bboxRaw.some((v) => !Number.isFinite(v))) return null
+  const size = (res.headers.get('X-Image-Size') ?? '0x0').split('x').map(Number)
+  if (!size[0] || !size[1]) return null
+  return {
+    url: URL.createObjectURL(res.blob),
+    bbox: bboxRaw as [number, number, number, number],
+    width: size[0],
+    height: size[1],
+  }
 }
 
 /** API-49: GET /fields/{id}/crop-cycles — история севооборота поля (годы по
