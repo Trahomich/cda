@@ -123,3 +123,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  ndvi-renders: # §7.3 (#83): PNG-рендеры сцен; пишет sentinel-ingest, читает api (ro)
