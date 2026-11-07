@@ -56,6 +56,7 @@ DbSession = Annotated[Session, Depends(get_db)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
 SATELLITE_SOURCE_ID = "satellite.sentinel2-l2a"
 COMPOSITE_WINDOW_DAYS = 14  # окно композита (05 §2): нет сцены — stale
+CLEAN_CLOUD_PCT = 60  # «чистая» сцена для ИИ-продуктов (docs/06 §7.4)
 
 router = APIRouter(tags=["satellite"], dependencies=[Depends(group_checker("satellite"))])
 
