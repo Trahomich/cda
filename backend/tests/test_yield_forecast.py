@@ -61,20 +61,6 @@ def make_scene(db: Session, field_id: uuid.UUID, day: date, avg: float, cloud_pc
     )
 
 
-def make_cloudy_scene(db: Session, field_id: uuid.UUID, day: date, avg: float, cloud_pct=100.0):
-    """Сцена с cloud_pct > 60 — вне бизнес-порога; CHECK-констрейнт таблицы
-    (ck_dat_satellite_scene_cloud) на время теста снимается вызывающим."""
-    db.execute(
-        db_text(
-            "INSERT INTO dat_satellite_scene (id, field_id, index, captured_at, "
-            "resolution_m, index_avg, index_min, index_max, cloud_pct, source_id) "
-            "VALUES (gen_random_uuid(), :field, 'ndvi', :day, 10, :avg, :avg, :avg, "
-            ":cloud, :source)"
-        ),
-        {"field": field_id, "day": day, "avg": avg, "cloud": cloud_pct, "source": SATELLITE_SOURCE_ID},
-    )
-
-
 class TestYieldForecast:
     @pytest.fixture(autouse=True)
     def _setup(self, client, db_session):
