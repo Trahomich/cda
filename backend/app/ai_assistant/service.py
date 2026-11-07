@@ -391,8 +391,10 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
         except Exception:
             logger.warning("insights: VRA-расчёт не удался", exc_info=True)
 
-        items = build_items(db, field_id, vra_iqr=vra_iqr, vra_day=vra_day)
-        context = _llm_context(db, field, items, vra_verdict=vra_verdict) if items else ""
+        items = build_items(db, field_id, vra_iqr=vra_iqr, vra_day=vra_day, year=year)
+        context = (
+            _llm_context(db, field, items, vra_verdict=vra_verdict, year=year) if items else ""
+        )
     finally:
         db.close()  # вернуть соединение в пул ДО тяжёлого шага
 
