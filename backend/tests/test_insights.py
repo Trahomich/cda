@@ -471,8 +471,6 @@ class TestSummaryFallback:
 
 
 class TestBackgroundFix101:
-    """#101: сессия БД не держится во время LLM-вызова; очередь LLM;
-    доработка перезапускается, пока в кэше rules-ответ без сводки."""
 
     @staticmethod
     def _fake_redis(monkeypatch) -> dict[str, str]:
