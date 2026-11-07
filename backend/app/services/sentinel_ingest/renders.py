@@ -148,7 +148,9 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     # прореживание окна до MAX_SIDE_PX (ближайший сосед, трансформ × f)
     factor = max(1, math.ceil(max(red_arr.shape) / MAX_SIDE_PX))
     sl = (slice(None, None, factor), slice(None, None, factor))
-    transform = red_transform * float(factor)
+    from rasterio.transform import Affine
+
+    transform = red_transform * Affine.scale(factor, factor)
     nir_d = nir_arr[sl]
     red_d = red_arr[sl]
     green_d = green_arr[sl]
