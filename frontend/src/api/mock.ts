@@ -1370,6 +1370,17 @@ export class MockTransport implements Transport {
       return ok(yieldOf(n, field.field_id, field.current_cycle?.culture_name ?? 'Пшеница озимая'))
     }
 
+    /* ── «Выводы ассистента» (API-51, §7.4, #96): только числовые
+       детекторы, source='rules' (мок-мир без Ollama), поле 7 — пусто ── */
+    const insightsMatch = /^\/fields\/([\w-]+)\/insights$/.exec(pathname)
+    if (method === 'GET' && insightsMatch) {
+      const field = FIELDS.find((f) => f.field_id === insightsMatch[1])
+      if (!field) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${insightsMatch[1]} не найдено`)
+      }
+      return ok(insightsOf(FIELD_N.get(field.field_id)!, field.field_id))
+    }
+
     /* ── Погода (API-07): факты + прогноз + мета, как backend ── */
     const weatherMatch = /^\/fields\/([\w-]+)\/weather$/.exec(pathname)
     if (method === 'GET' && weatherMatch) {
