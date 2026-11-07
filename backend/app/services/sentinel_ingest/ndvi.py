@@ -304,6 +304,8 @@ def scene_upsert(db: Session, field_id: uuid.UUID, captured_at: date, stats: Ndv
             index_min=stats.index_min,
             index_max=stats.index_max,
             cloud_pct=stats.cloud_pct,
+            ndwi_mean=stats.ndwi_mean,
+            ndwi_p90=stats.ndwi_p90,
             composite_days=1,
             source_id=SATELLITE_SOURCE_ID,
             trust=round(1.0 - stats.cloud_pct / 100.0, 2),
