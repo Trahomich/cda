@@ -95,7 +95,9 @@ def make_history_field(db: Session, name="Историческое-1") -> uuid.U
 
 def footprint() -> dict:
     """Footprint плашки STAC (WGS84): накрывает контур поля с запасом."""
-    return transform_geom(CRS, "EPSG:4326", mapping(box(X0, Y1 - 200000, X0 + 200000, Y1)))
+    return transform_geom(
+        CRS, "EPSG:4326", mapping(box(X0 - 200, Y1 - 2200, X0 + 2200, Y1 + 200))
+    )
 
 
 def stac_item(item_id: str, captured: date, assets: dict, *, cloud=5.0) -> StacItem:
