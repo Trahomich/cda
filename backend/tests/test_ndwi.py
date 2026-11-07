@@ -40,20 +40,15 @@ CONTOUR = None  # задаётся фикстурой wat_scene
 
 @pytest.fixture()
 def ndwi_scene_rasters(color_rasters, tmp_path):  # noqa: F811
-    """К сцене #83 (b02/b03 добавлены) b03 занижается: поле влажное (NDWI > 0).
+    """К сцене #83 (b02/b03 добавлены) b03 заменяется на «влажный» канал.
 
-    Возвращаются те же assets, но массив green известен тесту — сверка
-    статистики идёт по исходникам scene_rasters (nir/red) и green.
+    green > nir по всей плашке → NDWI > 0 (влажное поле), NDVI остаётся как был.
     """
-    from tests.test_sentinel_ndvi import _write_tif
+    from rasterio.transform import Affine
+    from tests.test_sentinel_ndvi import CRS, X0, Y1, _write_tif
 
-    green = color_rasters["assets"]  # путь b03 заменяем на «влажный» канал
     nir = color_rasters["nir"]
     wet_green = (nir.astype("float32") * 1.6 + 300).astype("uint16")  # green > nir → NDWI > 0
-    t10 = green and None  # noqa: F841 — читаем transform из исходного теста ниже
-    from rasterio.transform import Affine
-    from tests.test_sentinel_ndvi import CRS, X0, Y1
-
     t10 = Affine(10.0, 0.0, X0, 0.0, -10.0, Y1)
     color_rasters["assets"] = {
         **color_rasters["assets"],
