@@ -157,14 +157,6 @@ const lastPoint = computed(() => props.points[lastClearIdx.value] ?? null)
           class="ndvi__trust-mark"
         />
         <text
-          v-if="dot.showVal"
-          :x="dot.cx"
-          :y="dot.cy - (dot.last ? 10 : 7)"
-          class="ndvi__val"
-          :class="{ 'ndvi__val--last': dot.last }"
-          text-anchor="middle"
-        >{{ dot.val }}</text>
-        <text
           v-if="i % dateStep === 0 || i === points.length - 1"
           :x="dot.cx"
           :y="H - 8"
