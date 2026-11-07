@@ -563,6 +563,8 @@ export interface SceneItem {
   anomaly_zones_ref: string | null
   /** PNG-рендеры обоих вариантов на диске (§7.3, #83). */
   render_available?: boolean
+  /** Вымокание по NDWI-детектору (§7.4): null — NDWI-статистики нет. */
+  waterlogged?: boolean | null
 }
 
 /** Ответ API-06: пагинация + мета источника сцен. */
