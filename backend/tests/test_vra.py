@@ -251,7 +251,6 @@ class TestVraZones:
 class TestVraMap:
     def test_png_headers_and_size(self, client, vra_world, agro_headers):
         """PNG зон: 3 оттенка, геопривязка X-Field-Bbox/X-Image-Size (§7.3)."""
-        import rasterio
         from rasterio.io import MemoryFile
 
         resp = client.get(f"/api/v1/fields/{vra_world}/vra/map.png", headers=agro_headers)
