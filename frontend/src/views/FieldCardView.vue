@@ -3,13 +3,14 @@
 // культур, предшественник ✓/нарушение, NDVI-таймлайн (облачные точки ◌),
 // агрохимия, погода сейчас+7 сут (осадки, GDD), планы/журнал.
 // Данные: API-05/06/07 + API-18 (журнал поля).
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
   getFieldCard,
   getFieldCropCycles,
   getFieldNdvi,
   getFieldWeather,
+  getNdviRender,
   getOperations,
   getTreatmentPlans,
 } from '@/api'
@@ -20,8 +21,9 @@ import type {
   FieldOperation,
   FieldWeather,
   NdviPoint,
+  NdviRender,
   TreatmentPlan,
-} from '@/api/types'
+} from '@/api'
 import CropHistoryStrip from '@/components/CropHistoryStrip.vue'
 import NdviTimeline from '@/components/NdviTimeline.vue'
 import Skeleton from '@/components/Skeleton.vue'
