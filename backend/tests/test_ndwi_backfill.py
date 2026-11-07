@@ -34,7 +34,7 @@ def _wet_b03_assets(rasters, tmp_path) -> dict:
     wet_green = (nir.astype("float32") * 1.6 + 300).astype("uint16")
     t10 = Affine(10.0, 0.0, X0, 0.0, -10.0, Y1)
     b03 = _write_tif(tmp_path / "b03_wet.tif", wet_green, t10, CRS)
-    return {**scene_rasters["assets"], "b03": b03}
+    return {**rasters["assets"], "b03": b03}
 
 
 def _make_scene(db, tmp_path, assets) -> tuple:
