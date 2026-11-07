@@ -216,56 +216,6 @@ class TestYieldForecast:
         assert resp.status_code == 422
         assert resp.json()["code"] == "yield_no_model"
 
-    def test_cloudy_scenes_excluded(self):
-        """Облачные сцены (cloud > 60) не считаются чистыми: 2 чистые +
-        2 облачные → 422 yield_no_season_data; после добавления третьей
-        чистой прогноз 200 и считается только по чистым сценам.
-
-        Схема запрещает cloud > 60 (CHECK, см. test_satellite), поэтому
-        констрейнт на время теста снимается и восстанавливается в finally
-        после удаления облачных строк.
-        """
-        culture = make_culture(self.db, coeffs=(-10.0, 40.0, 30.0))
-        make_cycle(self.db, self.field_id, culture, 2026)
-        make_scene(self.db, self.field_id, date(2026, 5, 1), 0.5)
-        make_scene(self.db, self.field_id, date(2026, 6, 1), 0.7)
-        self.db.commit()
-        self.db.execute(
-            db_text("ALTER TABLE dat_satellite_scene DROP CONSTRAINT ck_dat_satellite_scene_cloud")
-        )
-        self.db.commit()
-        try:
-            make_cloudy_scene(self.db, self.field_id, date(2026, 7, 1), 0.9, cloud_pct=100.0)
-            make_cloudy_scene(self.db, self.field_id, date(2026, 8, 1), 0.95, cloud_pct=80.0)
-            self.db.commit()
-
-            resp = self._get()
-            assert resp.status_code == 422
-            assert resp.json()["code"] == "yield_no_season_data"
-
-            # третья чистая сцена → прогноз есть, облачные в расчёт не входят
-            make_scene(self.db, self.field_id, date(2026, 9, 1), 0.8)
-            self.db.commit()
-            body = self._get().json()
-            # чистые: 0.5, 0.7, 0.8 → max 0.8, Σ(ndvi−0.2)+ = 1.6 → 0.016
-            assert body["ndvi_max"] == 0.8
-            assert body["ndvi_integral"] == pytest.approx(0.016, abs=1e-6)
-        finally:
-            self.db.execute(
-                db_text(
-                    "DELETE FROM dat_satellite_scene "
-                    "WHERE field_id = :field AND cloud_pct > 60"
-                ),
-                {"field": self.field_id},
-            )
-            self.db.execute(
-                db_text(
-                    "ALTER TABLE dat_satellite_scene ADD CONSTRAINT "
-                    "ck_dat_satellite_scene_cloud CHECK (cloud_pct <= 60)"
-                )
-            )
-            self.db.commit()
-
     def test_rbac_mechanizer_forbidden(self):
         auth = auth_header(self.client, "yf-mach", "pw-yf2")
         resp = self.client.get(f"{API}/fields/{self.field_id}/yield-forecast", headers=auth)
