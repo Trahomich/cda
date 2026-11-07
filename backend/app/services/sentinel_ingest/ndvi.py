@@ -351,16 +351,18 @@ def run_ndvi_cycle(
     for row in rows:
         if row.field_id not in contours:
             contours[row.field_id] = lookup(str(row.field_id))
-        payload[id(row)] = (row.field_id, dict(row.assets or {}))
+        payload[id(row)] = (row.field_id, dict(row.assets or {}), row.item_id, row.captured_at)
     db.rollback()  # закрыть неявную транзакцию select'ов перед записями
 
     def compute(item: SatelliteCatalogItem) -> tuple[SatelliteCatalogItem, object]:
-        field_id, assets = payload[id(item)]
+        field_id, assets, item_id, captured_at = payload[id(item)]
         contour = contours.get(field_id)
         if contour is None:
             return item, DataGapError(f"поле {field_id} неактивно или без контура")
         try:
-            return item, zonal_ndvi(assets, contour)
+            result = zonal_ndvi(assets, contour)
+            _maybe_render(render_dir, field_id, item_id, captured_at, assets, contour, result)
+            return item, result
         except (DataGapError, DataQualityError, SourceUnavailableError) as exc:
             return item, exc
 
