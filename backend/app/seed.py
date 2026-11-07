@@ -245,6 +245,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "vegetables",
         "color_hex": "#26a69a",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -60.0,
+        "yield_k_ndvi_max": 300.0,
+        "yield_k_ndvi_int": 240.0,
     },
     # кормовые травы
     {
