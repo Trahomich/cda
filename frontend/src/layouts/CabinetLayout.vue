@@ -104,6 +104,23 @@ function logout() {
   }
 }
 
+/* Совсем узкие экраны: ещё компактнее (v2-fix-J) */
+@media (max-width: 1100px) {
+  .cabinet__header {
+    gap: 0.25rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .cabinet__nav {
+    padding: 0.3rem 0.45rem;
+    font-size: 0.88rem;
+  }
+
+  .cabinet__brand {
+    max-width: 10rem;
+  }
+}
+
 .cabinet__spacer {
   flex: 1;
 }
