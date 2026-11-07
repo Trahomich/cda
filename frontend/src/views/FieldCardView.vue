@@ -468,7 +468,14 @@ function fmtNum(v: number, digits = 1): string {
           <h2 class="card360__block-title">
             Планы и журнал {{ currentCycle?.year ?? '' }}
           </h2>
-          <ul class="card360__plans">
+          <Skeleton
+            v-if="!card || journalLoading"
+            :lines="4"
+          />
+          <ul
+            v-else
+            class="card360__plans"
+          >
             <li
               v-for="plan in card.treatment_plans"
               :key="plan.plan_id"
