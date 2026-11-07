@@ -1010,6 +1010,28 @@ async function renderScenePng(variant: 'ndvi' | 'truecolor', sceneIdx: number): 
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b ?? new Blob()), 'image/png'))
 }
 
+/** Отрисовка демо-PNG карты зон VRA (API-52, §7.4, #97): 3 вертикальные
+ *  полосы красный→жёлтый→зелёный (зоны 1/2/3) по долям площади зон. */
+async function vraMapPng(
+  zones: Array<{ zone: number; area_ga: number }>,
+): Promise<Blob> {
+  const canvas = document.createElement('canvas')
+  canvas.width = 200
+  canvas.height = 100
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new Blob()
+  const total = zones.reduce((s, z) => s + z.area_ga, 0) || 1
+  const colors = ['#e57373', '#fff176', '#81c784'] // пониженное → повышенное
+  let x = 0
+  for (const z of zones) {
+    const w = (z.area_ga / total) * 200
+    ctx.fillStyle = colors[z.zone - 1] ?? '#cccccc'
+    ctx.fillRect(x, 0, w + 1, 100)
+    x += w
+  }
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b ?? new Blob()), 'image/png'))
+}
+
 export class MockTransport implements Transport {
   async request(method: string, path: string, body?: unknown): Promise<TransportResponse> {
     // Имитация сети; задержку можно переопределить из e2e через
