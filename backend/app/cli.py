@@ -276,6 +276,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_ndwi.set_defaults(func=cmd_backfill_ndwi)
 
+    p_hist = sub.add_parser(
+        "backfill-history",
+        help="инжест NDVI-сцен Sentinel-2 прошлых сезонов (#108, docs/06 §7.5)",
+    )
+    p_hist.add_argument(
+        "--years", type=int, default=4, help="глубина истории, включая текущий год (4)"
+    )
+    p_hist.add_argument(
+        "--workers", type=int, default=None, help="потоков чтения COG (по умолчанию из env)"
+    )
+    p_hist.set_defaults(func=cmd_backfill_history)
+
     args = parser.parse_args(argv)
     return args.func(args)
 
