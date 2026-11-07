@@ -36,6 +36,7 @@ def summarize(
     timeout: float = REQUEST_TIMEOUT_SECONDS,
     keep_alive: str | None = None,
     attempts: int | None = None,
+    num_predict: int | None = None,
 ) -> str | None:
     """Свести контекст данных хозяйства в короткий текст через Ollama.
 
