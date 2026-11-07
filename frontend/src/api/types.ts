@@ -559,6 +559,8 @@ export interface SceneItem {
   source_id: string
   trust: number
   anomaly_zones_ref: string | null
+  /** PNG-рендеры обоих вариантов на диске (§7.3, #83). */
+  render_available?: boolean
 }
 
 /** Ответ API-06: пагинация + мета источника сцен. */
