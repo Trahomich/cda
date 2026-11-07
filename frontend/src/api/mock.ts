@@ -1111,7 +1111,12 @@ async function renderScenePng(
       ctx.fillRect((i * 37 + sceneIdx * 11) % 190, (i * 53 + sceneIdx * 7) % 90, 10, 8)
     }
   }
-  ctx.fillStyle = variant === 'ndvi' ? 'rgba(46,125,50,0.5)' : 'rgba(59,69,31,0.5)'
+  ctx.fillStyle =
+    variant === 'ndvi'
+      ? 'rgba(46,125,50,0.5)'
+      : variant === 'ndwi'
+        ? 'rgba(21,101,192,0.55)'
+        : 'rgba(59,69,31,0.5)'
   ctx.beginPath()
   ctx.arc(60 + (sceneIdx * 13) % 80, 40 + (sceneIdx * 7) % 30, 18, 0, Math.PI * 2)
   ctx.fill()
