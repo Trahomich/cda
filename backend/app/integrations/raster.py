@@ -52,6 +52,19 @@ def compute_index_array(index: str, nir: np.ndarray, other: np.ndarray) -> np.nd
     return np.where(np.isfinite(array), array, np.nan)
 
 
+def compute_ndwi_array(green: np.ndarray, nir: np.ndarray) -> np.ndarray:
+    """NDWI (McFeeters) = (B03 − B08)/(B03 + B08); пиксели без данных → NaN.
+
+    Не входит в INDICES (API-06 не отдаёт ndwi таймлайном): NDWI — вспомогательный
+    канал детектора вымоканий (docs/06 §7.4), его статистика хранится колонками
+    ndwi_mean/ndwi_p90 при сцене ndvi, а не отдельными сценами dat_satellite_scene.
+    """
+    with np.errstate(divide="ignore", invalid="ignore"):
+        denom = green + nir
+        array = (green - nir) / np.where(denom == 0, np.nan, denom)
+    return np.where(np.isfinite(array), array, np.nan)
+
+
 def validate_index_values(index: str, values: np.ndarray) -> None:
     """Диапазон [−1; 1] — иначе DataQualityError (05 §5, правило 4)."""
     if values.size == 0:
