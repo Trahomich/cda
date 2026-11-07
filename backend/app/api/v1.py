@@ -6,6 +6,7 @@ auth, fields, rotation, inputs, weather, satellite, machinery.
 
 from fastapi import APIRouter
 
+from app.ai_assistant.router import router as ai_assistant_router
 from app.core.config import get_settings
 from app.modules.alerts import router as alerts_router
 from app.modules.alerts import sources_router
