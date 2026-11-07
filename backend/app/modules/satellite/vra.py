@@ -286,13 +286,16 @@ def _from_cache(data: dict) -> VraZones | None:
         return None
 
 
-def peak_scenes(db: Session, field_id: uuid.UUID) -> list[SatelliteScene]:
+def peak_scenes(
+    db: Session, field_id: uuid.UUID, *, year: int | None = None
+) -> list[SatelliteScene]:
     """Топ-3 чистых NDVI-сцены сезона по index_avg (§7.4 v1.4), по возрастанию даты.
 
-    Сезон — календарный год последней сцены поля (задача #106: зоны вегетации
-    видны на пиковых снимках, а не на последних, где вегетации уже нет).
+    Сезон по умолчанию (year=None) — календарный год последней сцены поля
+    (задача #106: зоны вегетации видны на пиковых снимках, а не на последних,
+    где вегетации уже нет). Явный year — сцены сезона YYYY (§7.5).
     """
-    latest = latest_scene(db, field_id)
+    latest = latest_scene(db, field_id, year=year)
     if latest is None:
         return []
     rows = db.scalars(
