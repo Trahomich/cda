@@ -210,6 +210,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "legumes",
         "color_hex": "#2e8b57",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -4.0,
+        "yield_k_ndvi_max": 24.0,
+        "yield_k_ndvi_int": 16.0,
     },
     # пропашные
     {
