@@ -80,19 +80,30 @@ const OP_LABELS: Record<string, string> = {
   other: 'прочее',
 }
 
+/** Текущий сезон: item истории севооборота (API-49) со статусом in_progress;
+ *  cycles из API-08 содержат только планируемые годы (2027+ в моке),
+ *  поэтому текущий год ищем не по реальной дате, а по статусу цикла. */
+const currentSeason = computed(
+  () =>
+    cropHistory.value.find((c) => c.status === 'in_progress') ??
+    cropHistory.value.find((c) => c.year === new Date().getFullYear()) ??
+    null,
+)
+
 const currentCycle = computed(() => {
-  const year = new Date().getFullYear()
-  return card.value?.cycles.find((c) => c.year === year) ?? card.value?.cycles[0] ?? null
+  const bySeason = currentSeason.value
+    ? card.value?.cycles.find((c) => c.year === currentSeason.value.year)
+    : undefined
+  // Поля seasons у API-08 и API-49 совпадают (year/culture_name/kind).
+  return bySeason ?? (currentSeason.value as FieldCycle | null) ?? card.value?.cycles[0] ?? null
 })
 
 /** Цвет контура (п.5, v2-fix-A): color_hex культуры текущего цикла из
  *  истории севооборота (API-49 отдаёт цвет из справочника API-48);
  *  без культуры/цвета — прежний зелёный. */
-const contourColor = computed(() => {
-  const year = currentCycle.value?.year
-  if (year == null) return null
-  return cropHistory.value.find((c) => c.year === year)?.color_hex ?? null
-})
+const contourColor = computed(
+  () => currentSeason.value?.color_hex ?? cropHistory.value.find((c) => c.year === currentCycle.value?.year)?.color_hex ?? null,
+)
 
 /** Урожайность по году (из API-05 cycles) — в подсказку ленты API-49. */
 const cycleYields = computed(() => {
