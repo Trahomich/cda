@@ -14,6 +14,7 @@ import {
   getOperations,
   getTreatmentPlans,
 } from '@/api'
+} from '@/api'
 import type {
   CropCycleHistoryItem,
   FieldCard,
@@ -21,9 +22,9 @@ import type {
   FieldOperation,
   FieldWeather,
   NdviPoint,
-  NdviRender,
   TreatmentPlan,
-} from '@/api'
+} from '@/api/types'
+import type { NdviRender } from '@/api'
 import CropHistoryStrip from '@/components/CropHistoryStrip.vue'
 import NdviTimeline from '@/components/NdviTimeline.vue'
 import Skeleton from '@/components/Skeleton.vue'
