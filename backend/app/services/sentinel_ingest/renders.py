@@ -183,7 +183,14 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     t = np.clip((ndvi - _NDVI_LO) / (_NDVI_HI - _NDVI_LO), 0.0, 1.0)
     t[~np.isfinite(ndvi)] = 0.0
     alpha_ndvi = np.where(inside & np.isfinite(ndvi) & ~cloud_d, 255, 0).astype("uint8")
-    png_ndvi = _png_rgba(_palette_rgb(t), alpha_ndvi)
+    png_ndvi = _png_rgba(_palette_rgb(t, PALETTE), alpha_ndvi)
+
+    # --- вариант ndwi (§7.4): «сухо → влажно → вода», маски те же ---------
+    ndwi = compute_ndwi_array(green_d.astype("float32"), nir_d.astype("float32"))
+    t_w = np.clip((ndwi - _NDWI_LO) / (_NDWI_HI - _NDWI_LO), 0.0, 1.0)
+    t_w[~np.isfinite(ndwi)] = 0.0
+    alpha_ndwi = np.where(inside & np.isfinite(ndwi) & ~cloud_d, 255, 0).astype("uint8")
+    png_ndwi = _png_rgba(_palette_rgb(t_w, PALETTE_NDWI), alpha_ndwi)
 
     # --- вариант truecolor: композит B04/B03/B02, перцентильная нормировка
     lo, hi = np.percentile(
