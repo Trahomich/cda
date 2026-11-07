@@ -99,9 +99,13 @@ def build_items(
         )
         drought = detectors.detect_drought(precip_14d, gdd_14d, gdd_days, latest.captured_at)
 
+    culture_name: str | None = None
+    if latest is not None:
+        culture_name = detectors.current_culture_name(db, field_id, latest.captured_at)
+
     candidates: list[InsightItem | None] = [
         detectors.detect_ndvi_drop(scenes),
-        detectors.detect_ndvi_stagnation(scenes),
+        detectors.detect_ndvi_stagnation(scenes, culture_name),
         detectors.detect_waterlogging(latest, precip_7d),
         drought,
         detectors.detect_ndvi_lag_last_year(scenes),
