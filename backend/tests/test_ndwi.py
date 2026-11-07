@@ -11,8 +11,7 @@ ndwi_p90 ≥ 0.10 ∧ ndvi_mean < 0.45 ∧ осадки 7 сут ≥ 20 мм.
 """
 
 import json
-import uuid
-from datetime import date, timedelta
+from datetime import timedelta
 
 import numpy as np
 import pytest
