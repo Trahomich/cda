@@ -550,9 +550,8 @@ class TestLlmContext105:
     def test_refresh_passes_context_with_verdicts(self, world, db_session, monkeypatch) -> None:
         """refresh_insights передаёт LLM контекст с NDVI-серией и вердиктами
         моделей (VRA без ассетов → «нет расчёта»)."""
-        from sqlalchemy.orm import sessionmaker
-
         from app.ai_assistant import service
+        from sqlalchemy.orm import sessionmaker
 
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
@@ -560,7 +559,7 @@ class TestLlmContext105:
         make_scene(db_session, fid, TODAY, 0.50)
         db_session.commit()
 
-        store = TestBackgroundFix101._fake_redis(monkeypatch)
+        TestBackgroundFix101._fake_redis(monkeypatch)
         monkeypatch.setattr(service, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
         captured: dict[str, str] = {}
 
