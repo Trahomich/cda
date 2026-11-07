@@ -70,8 +70,6 @@ class _FullAssetsFilter:
     пропускаются (счётчик — в отчёт), чтобы у каждой сцены были рендеры
     truecolor и статистика NDWI (§7.5)."""
 
-    source_id: str  # делегируется внутреннему клиенту при необходимости
-
     def __init__(self, inner) -> None:
         self._inner = inner
         self.skipped = 0
