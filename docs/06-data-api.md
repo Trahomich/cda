@@ -1,6 +1,6 @@
 # Модель данных и REST API ЦДА
 
-Статус: готово · Версия: 1.3 · Дата: 2026-11-07 · Автор: Иван Куликов
+Статус: готово · Версия: 1.4 · Дата: 2026-11-07 · Автор: Иван Куликов
 
 Опирается на CONTRACTS.md (§4–§6, §8), docs/03-domain-agronomy.md (ENT, RULE-AGRO),
 docs/04-domain-farm.md (ENT, RULE-TECH/LIVE) и docs/05-integrations.md (IF, нормализованные
