@@ -215,7 +215,69 @@ function onDotSelect(date: string): void {
 
 onUnmounted(() => {
   if (layer.value) URL.revokeObjectURL(layer.value.url)
+  if (vraMap.value) URL.revokeObjectURL(vraMap.value.url)
 })
+
+/* ── Дифференцированное внесение (API-52, §7.4): зоны + карта ── */
+
+const vra = ref<VraZonesResponse | null>(null)
+/** Поле однородно (422 vra_uniform_field) — короткая пометка. */
+const vraUniform = ref(false)
+const vraLoading = ref(true)
+/** PNG-карта зон (raw + геопривязка X-Field-Bbox/X-Image-Size). */
+const vraMap = ref<NdviRender | null>(null)
+
+async function loadVra() {
+  try {
+    const res = await getFieldVra(fieldId)
+    if (res.kind === 'ok') {
+      vra.value = res.data
+      vraMap.value = await getFieldVraMap(fieldId)
+    } else if (res.kind === 'uniform') {
+      vraUniform.value = true
+    }
+  } finally {
+    vraLoading.value = false
+  }
+}
+
+/** Позиция карты зон в SVG-превью: bbox → координаты рамки мини-карты. */
+const vraMapRect = computed(() => {
+  const frame = mapFrame.value
+  const r = vraMap.value
+  if (!frame || !r) return null
+  const [minLon, minLat, maxLon, maxLat] = r.bbox
+  return {
+    x: 10 + (minLon - frame.minLon) * frame.s,
+    y: 110 - (maxLat - frame.minLat) * frame.s,
+    width: (maxLon - minLon) * frame.s,
+    height: (maxLat - minLat) * frame.s,
+  }
+})
+
+/** Доза зоны: «N кг/га» при рассчитанной; иначе отклонение от базовой. */
+function doseLabel(zone: VraZoneItem): string {
+  if (zone.dose_kg_ha !== null) return `${fmtNum(zone.dose_kg_ha)} кг/га`
+  const pct = Math.round(Math.abs(zone.dose_factor - 1) * 100)
+  if (!pct) return 'базовая'
+  return `${zone.dose_factor > 1 ? '+' : '−'}${pct} % от базовой`
+}
+
+/* ── Прогноз урожайности (API-53, §7.4) ── */
+
+const yieldForecast = ref<YieldForecastResponse | 'insufficient' | null>(null)
+const yieldLoading = ref(true)
+
+async function loadYield() {
+  try {
+    yieldForecast.value = await getYieldForecast(fieldId)
+  } catch {
+    yieldForecast.value = null
+  } finally {
+    yieldLoading.value = false
+  }
+}
+
 
 /** Позиция PNG в SVG: bbox рендера (X-Field-Bbox) → координаты рамки мини-карты. */
 const layerRect = computed(() => {
