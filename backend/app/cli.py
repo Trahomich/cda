@@ -173,6 +173,35 @@ def cmd_backfill_ndwi(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_backfill_history(args: argparse.Namespace) -> int:
+    import json
+
+    from app.core.config import get_settings
+    from app.integrations.stac import EarthSearchStacClient
+    from app.services.sentinel_ingest.history_backfill import run_history_backfill
+
+    settings = get_settings()
+    client = EarthSearchStacClient(
+        base_url=settings.stac_api_url,
+        request_timeout=settings.ingest_satellite_request_timeout,
+    )
+    with SessionLocal() as db:
+        report = run_history_backfill(
+            db,
+            client=client,
+            years=args.years,
+            batch_limit=settings.ingest_satellite_ndvi_batch,
+            max_workers=settings.ingest_satellite_ndvi_workers,
+            render_dir=settings.ndvi_render_dir or None,
+        )
+    data = report.as_dict()
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+    if data["catalog_failed_count"] or data["scenes_unavailable_count"]:
+        print("ВНИМАНИЕ: часть окон STAC/COG недоступна — повторный запуск доберёт")
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="CLI ИС ЦДА")
     sub = parser.add_subparsers(dest="command", required=True)
