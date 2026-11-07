@@ -179,6 +179,9 @@ export async function getFieldNdvi(fieldId: string): Promise<NdviPoint[]> {
     date: s.captured_at,
     ndvi: s.index_avg,
     cloud_pct: s.cloud_pct,
+    index_min: s.index_min,
+    index_max: s.index_max,
+    trust: s.trust,
   }))
 }
 
