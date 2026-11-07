@@ -216,7 +216,12 @@ def field_ndvi_render(
     if meta_file.is_file():
         try:
             meta = json.loads(meta_file.read_text(encoding="utf-8"))
-            bbox = tuple(float(v) for v in meta["bbox"])
+            bbox = (
+                float(meta["bbox"][0]),
+                float(meta["bbox"][1]),
+                float(meta["bbox"][2]),
+                float(meta["bbox"][3]),
+            )
             width, height = int(meta["width"]), int(meta["height"])
         except (ValueError, KeyError, TypeError):
             bbox = None
