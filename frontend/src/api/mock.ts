@@ -1220,6 +1220,9 @@ export class MockTransport implements Transport {
         // §7.3: рендеры есть у последних дат сезона (старые — как исторические),
         // но не у облачных сцен (cloud ≤ 60, как в ingest).
         render_available: i >= ndviPoints.length - 3 && p.cloud_pct <= 60,
+        // §7.4: NDWI-детектор — вымокание у отдельных сцен (у поля 1 —
+        // и на последней рендерной дате, для бейджа по умолчанию).
+        waterlogged: i === 4 || (n === 1 && i === 8),
       }))
       return ok({
         items: scenes,
