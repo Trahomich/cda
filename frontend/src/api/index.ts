@@ -279,6 +279,18 @@ export async function getYieldForecast(
   }
 }
 
+/** API-51: GET /fields/{id}/insights — «Выводы ассистента» (§7.4):
+ *  items — числовые детекторы (всегда), summary — LLM-сводка
+ *  (null при source=rules); null — поле не найдено или прочая ошибка
+ *  (блок в карточке скрывается, кэш на клиенте не делаем). */
+export async function getInsights(fieldId: string): Promise<InsightsResponse | null> {
+  try {
+    return await apiClient.request<InsightsResponse>(`/fields/${fieldId}/insights`)
+  } catch {
+    return null
+  }
+}
+
 /** API-49: GET /fields/{id}/crop-cycles — история севооборота поля (годы по
  *  убыванию, culture_name и color_hex отдаёт бэкенд из справочника API-48);
  *  year_from/year_to — необязательный фильтр, без них — все годы. */
