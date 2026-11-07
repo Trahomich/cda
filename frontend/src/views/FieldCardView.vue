@@ -981,6 +981,41 @@ function fmtNum(v: number, digits = 1): string {
   align-items: start;
 }
 
+/* Карта поля — на всю ширину карточки и крупнее (v2-fix-I) */
+.card360__block--map {
+  grid-column: 1 / -1;
+}
+
+.card360__map-wrap {
+  position: relative;
+}
+
+.card360__zoom {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 2;
+}
+
+.card360__zoom-btn {
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid #c8e6c9;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1b5e20;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.card360__zoom-btn:hover {
+  background: #e8f5e9;
+}
+
 .card360__block {
   background: #fff;
   border: 1px solid #c8e6c9;
@@ -997,13 +1032,22 @@ function fmtNum(v: number, digits = 1): string {
 .card360__contour {
   width: 100%;
   height: auto;
-  max-height: 180px;
+  max-height: 300px;
+  /* зум/пан (v2-fix-I): жесты перетаскивания не скроллят страницу */
+  touch-action: none;
+  cursor: grab;
+}
+
+.card360__contour--dragging {
+  cursor: grabbing;
 }
 
 polygon.card360__polygon {
   fill: #a5d6a7;
   stroke: #2e7d32;
   stroke-width: 1.5;
+  /* при зуме линия не толстеет (v2-fix-I) */
+  vector-effect: non-scaling-stroke;
 }
 
 /* §7.3: PNG-слой под контуром; при активном слое контур stroke-only,
