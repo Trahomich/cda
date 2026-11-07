@@ -81,8 +81,16 @@ class SceneStat:
     ndwi_p90: float | None
 
 
-def load_scenes(db: Session, field_id: uuid.UUID, limit: int = 200) -> list[SceneStat]:
-    """Чистые NDVI-сцены поля по возрастанию даты (для трендов и лага)."""
+def load_scenes(
+    db: Session, field_id: uuid.UUID, limit: int = 200, *, year: int | None = None
+) -> list[SceneStat]:
+    """Чистые NDVI-сцены поля по возрастанию даты (для трендов и лага).
+
+    year — сцены только сезона YYYY (§7.5, исторические выводы ассистента).
+    """
+    filters = [SatelliteScene.field_id == field_id, SatelliteScene.index == "ndvi"]
+    if year is not None:
+        filters.append(func.extract("year", SatelliteScene.captured_at) == year)
     rows = db.execute(
         select(
             SatelliteScene.id,
@@ -91,7 +99,7 @@ def load_scenes(db: Session, field_id: uuid.UUID, limit: int = 200) -> list[Scen
             SatelliteScene.ndwi_mean,
             SatelliteScene.ndwi_p90,
         )
-        .where(SatelliteScene.field_id == field_id, SatelliteScene.index == "ndvi")
+        .where(*filters)
         .order_by(SatelliteScene.captured_at.desc(), SatelliteScene.created_at.desc())
         .limit(limit)
     ).all()
