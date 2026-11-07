@@ -346,7 +346,7 @@ function fmtNum(v: number, digits = 1): string {
             текущий год.
           </p>
           <p
-            v-if="currentCycle && card.rotation_check"
+            v-if="card && currentCycle && card.rotation_check"
             class="card360__check"
             :class="{ 'card360__check--warn': !card.rotation_check.ok }"
           >
