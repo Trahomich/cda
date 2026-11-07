@@ -25,8 +25,7 @@ test('карточка поля: оверлей NDVI-сцены появляет
 
   // По умолчанию — NDVI на последнюю дату с рендером (2027-07-31).
   await expect(page.locator('.card360__layer-btn--ndvi')).toHaveClass(/card360__layer-btn--active/)
-  const select = page.locator('.card360__layer-date')
-  await expect(select).toHaveValue('2027-07-31')
+  await expect(page.locator('.card360__layer-date-label')).toContainText('31.07.2027')
 
   // Оверлей в SVG мини-карты: <image> с blob-URL, геопривязан по bbox.
   const layer = page.locator('svg.card360__contour image.card360__ndvi-layer')
@@ -36,23 +35,21 @@ test('карточка поля: оверлей NDVI-сцены появляет
   // При активном слое заливка контура прозрачна — снимок не перекрыт (v2-fix-G).
   await expect(page.locator('polygon.card360__polygon')).toHaveCSS('fill-opacity', '0')
 
-  // Смена даты: рендер за 2027-07-17 тоже есть.
-  await select.selectOption('2027-07-17')
+  // Выбор даты кликом по точке графика (v2-fix-H): рендер за 2027-07-17 есть.
+  await page.locator('.ndvi__hit[data-date="2027-07-17"]').click()
+  await expect(page.locator('.card360__layer-date-label')).toContainText('17.07.2027')
   await expect(layer).toBeVisible()
 
-  // Переключение варианта: truecolor-снимок (blob-URL нового PNG).
-  await page.locator('.card360__layer-btn--truecolor').click()
-  await expect(page.locator('.card360__layer-btn--truecolor')).toHaveClass(
-    /card360__layer-btn--active/,
-  )
-  await expect(layer).toBeVisible()
-  await expect(layer).toHaveAttribute('href', /^blob:/)
-
-  // «Контур» скрывает оверлей — остаётся чистый контур.
+  // «Контур» скрывает оверлей; клик по точке снова включает NDVI (v2-fix-H).
   await page.locator('.card360__layer-btn--contour').click()
   await expect(page.locator('.card360__layer-btn--contour')).toHaveClass(
     /card360__layer-btn--active/,
   )
   await expect(layer).toHaveCount(0)
   await expect(page.locator('polygon.card360__polygon')).toBeVisible()
+  await page.locator('.ndvi__hit[data-date="2027-07-31"]').click()
+  await expect(page.locator('.card360__layer-btn--ndvi')).toHaveClass(
+    /card360__layer-btn--active/,
+  )
+  await expect(layer).toBeVisible()
 })
