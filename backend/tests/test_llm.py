@@ -114,6 +114,7 @@ def test_summarize_num_predict_sent_only_when_given() -> None:
 
     assert summarize("p", "c", num_predict=256, **kwargs) == "ok"
     assert bodies[-1]["options"] == {"temperature": 0.3, "num_ctx": 4096, "num_predict": 256}
+    assert bodies[-1]["think"] is False  # top-level, не в options (#113)
 
 
 def test_summarize_model_override() -> None:
