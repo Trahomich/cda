@@ -2,7 +2,7 @@
 // Backend отдаёт «сырые» формы (типы Raw*/…Item в types.ts); здесь они
 // приводятся к экранным моделям, которые использовали вьюхи против мока.
 // Мок-транспорт имитирует те же сырые формы, поэтому путь данных один.
-import { apiClient } from './client'
+import { apiClient, ApiError } from './client'
 import type {
   AdapterState,
   AdapterStatus,
