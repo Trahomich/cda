@@ -1644,4 +1644,55 @@ export class MockTransport implements Transport {
       `Мок не реализует ${method} ${pathname}`,
     )
   }
+
+  /** §7.3: бинарный GET рендера сцены (PNG 200×100, canvas);
+   *  имитирует эндпоинт /fields/{id}/ndvi/{date}/render.png. */
+  async raw(path: string): Promise<{ ok: boolean; status: number; blob: Blob; headers: Headers }> {
+    const hook = globalThis as { __CDA_MOCK_DELAY__?: number }
+    await delay(hook.__CDA_MOCK_DELAY__ ?? 200)
+    const [pathname, search = ''] = path.split('?')
+    const params = new URLSearchParams(search)
+
+    const empty = (status: number) => ({
+      ok: false,
+      status,
+      blob: new Blob(),
+      headers: new Headers(),
+    })
+
+    const renderMatch = /^\/fields\/([\w-]+)\/ndvi\/(\d{4}-\d{2}-\d{2})\/render\.png$/.exec(pathname)
+    if (!renderMatch) return empty(404)
+
+    const field = FIELDS.find((f) => f.field_id === renderMatch[1])
+    if (!field) return empty(404)
+
+    const variant = params.get('variant') ?? 'ndvi'
+    if (variant !== 'ndvi' && variant !== 'truecolor') return empty(422)
+
+    // Рендер есть только у дат с render_available (условие как в ndvi-эндпоинте).
+    const ndviPoints = ndviOf(FIELD_N.get(field.field_id)!)
+    const idx = ndviPoints.findIndex((p) => p.date === renderMatch[2])
+    if (idx < 0 || !(idx >= ndviPoints.length - 3 && ndviPoints[idx].cloud_pct <= 60)) {
+      return empty(404)
+    }
+
+    const blob = await renderScenePng(variant, idx)
+    const ring = field.contour.coordinates[0] as number[][]
+    const lons = ring.map((c) => c[0])
+    const lats = ring.map((c) => c[1])
+    const bbox = [
+      Math.min(...lons),
+      Math.min(...lats),
+      Math.max(...lons),
+      Math.max(...lats),
+    ]
+      .map((v) => v.toFixed(6))
+      .join(',')
+    const headers = new Headers({
+      'Content-Type': 'image/png',
+      'X-Field-Bbox': bbox,
+      'X-Image-Size': '200x100',
+    })
+    return { ok: true, status: 200, blob, headers }
+  }
 }
