@@ -25,6 +25,8 @@ import type {
   FieldWeather,
   NdviPoint,
   TreatmentPlan,
+  VraZoneItem,
+  YieldForecastResponse,
 } from '@/api/types'
 import type { NdviRender } from '@/api'
 import CropHistoryStrip from '@/components/CropHistoryStrip.vue'
