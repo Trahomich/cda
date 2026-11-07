@@ -1387,18 +1387,6 @@ polygon.card360__polygon {
   color: #33691e;
 }
 
-/* §7.4: бейдж вымокания у даты слоя (NDWI-детектор) */
-.card360__waterlogged {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.1rem 0.45rem;
-  border-radius: 999px;
-  background: #e3f2fd;
-  color: #0d47a1;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
 /* ── «Выводы ассистента» (API-51, §7.4) ── */
 
 .card360__insights {
