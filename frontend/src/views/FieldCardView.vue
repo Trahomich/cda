@@ -387,8 +387,12 @@ function fmtNum(v: number, digits = 1): string {
           <h2 class="card360__block-title">
             Агрохимия
           </h2>
+          <Skeleton
+            v-if="!card"
+            :lines="2"
+          />
           <p
-            v-if="card.agrochem"
+            v-else-if="card.agrochem"
             class="card360__agrochem"
           >
             Проба от {{ card.agrochem.sample_date }}:<br>
