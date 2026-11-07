@@ -255,7 +255,11 @@ onUnmounted(() => {
       <span
         v-if="tab === 'map' && loading"
         class="map-screen__state"
-      >Загрузка контуров…</span>
+      ><Skeleton
+        width="7rem"
+        height="0.9rem"
+        pill
+      /></span>
       <span
         v-else-if="tab === 'map' && failed"
         class="map-screen__state map-screen__state--error"
