@@ -326,12 +326,3 @@ class TestNdwiApi:
         resp = self.client.get(f"{API}/fields/{self.field_id}/ndvi", headers=self.auth)
         items = resp.json()["items"]
         assert items[0]["waterlogged"] is False
-
-
-def scene_rasters_assets(ndwi_scene_rasters):
-    """Активы сцены без b03 (эмуляция строки каталога до #83)."""
-    return {k: v for k, v in ndwi_scene_rasters["assets"].items() if k != "b03"}
-
-
-def _b03_only_less(ndwi_scene_rasters):
-    return scene_rasters_assets(ndwi_scene_rasters)
