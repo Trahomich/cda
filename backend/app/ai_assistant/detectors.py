@@ -27,13 +27,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.ai_assistant.schemas import InsightItem
-from app.models.integrations import SatelliteScene, WeatherObservation
 from app.models.agronomy import CropCycle
+from app.models.integrations import SatelliteScene, WeatherObservation
 from app.models.references import Agrochem, Culture
 from app.modules.satellite.vra import VRA_MIN_IQR
 from app.modules.satellite.waterlog import (
-    WATERLOG_NDWI_P90,
     WATERLOG_NDVI_MEAN,
+    WATERLOG_NDWI_P90,
     WATERLOG_PRECIP_MM_7D,
     waterlogged,
 )
@@ -273,9 +273,7 @@ def detect_waterlogging(
     episodes = [
         scene
         for scene in scenes
-        if waterlogged(
-            scene.ndwi_p90, scene.ndvi_mean, precip_by_date.get(scene.captured_at)
-        )
+        if waterlogged(scene.ndwi_p90, scene.ndvi_mean, precip_by_date.get(scene.captured_at))
         is True
     ]
     if not episodes:
@@ -285,8 +283,7 @@ def detect_waterlogging(
     max_p90 = max(float(scene.ndwi_p90) for scene in episodes)
     on_latest = bool(scenes) and dates[-1] == scenes[-1].captured_at
     wide = any(
-        scene.ndwi_mean is not None and scene.ndwi_mean >= WATERLOG_NDWI_P90
-        for scene in episodes
+        scene.ndwi_mean is not None and scene.ndwi_mean >= WATERLOG_NDWI_P90 for scene in episodes
     )
 
     if len(dates) <= 3:
@@ -371,9 +368,7 @@ def detect_ndvi_lag_last_year(scenes: Sequence[SceneStat]) -> InsightItem | None
         year_ago = latest.captured_at.replace(year=latest.captured_at.year - 1)
     except ValueError:  # 29 февраля
         year_ago = latest.captured_at.replace(year=latest.captured_at.year - 1, day=28)
-    candidates = [
-        s for s in scenes if abs((s.captured_at - year_ago).days) <= NDVI_LAG_WINDOW_DAYS
-    ]
+    candidates = [s for s in scenes if abs((s.captured_at - year_ago).days) <= NDVI_LAG_WINDOW_DAYS]
     if not candidates:
         return None
     ref = min(candidates, key=lambda s: abs((s.captured_at - year_ago).days))

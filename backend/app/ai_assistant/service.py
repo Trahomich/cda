@@ -211,9 +211,10 @@ def _llm_context(db: Session, field: Field, items: list[InsightItem]) -> str:
             for op in ops
         )
         parts.append(f"Последние работы: {works}.")
-    parts.append("Детекторы (items):\n" + json.dumps(
-        [item.model_dump(mode="json") for item in items], ensure_ascii=False
-    ))
+    parts.append(
+        "Детекторы (items):\n"
+        + json.dumps([item.model_dump(mode="json") for item in items], ensure_ascii=False)
+    )
     return "\n".join(parts)
 
 

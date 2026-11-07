@@ -13,7 +13,7 @@ from datetime import date, timedelta
 import pytest
 from app.models.integrations import SatelliteScene, WeatherObservation
 from app.models.references import Agrochem, Source
-from tests.test_inputs import headers, make_cycle, make_culture, make_field
+from tests.test_inputs import headers, make_culture, make_cycle, make_field
 
 API = "/api/v1"
 SATELLITE_SOURCE = "satellite.sentinel2-l2a"
@@ -218,9 +218,7 @@ class TestDetectorsApi:
         make_scene(db_session, fid, episode_day, 0.40, ndwi_mean=0.02, ndwi_p90=0.12)
         make_scene(db_session, fid, TODAY, 0.42, ndwi_mean=0.02, ndwi_p90=0.05)  # чистая
         for back in range(7):  # 25 мм за 7 суток к дате эпизода
-            make_obs(
-                db_session, fid, episode_day - timedelta(days=back), precip_mm=25 / 7
-            )
+            make_obs(db_session, fid, episode_day - timedelta(days=back), precip_mm=25 / 7)
         db_session.commit()
         body = get_insights(client, hdr, fid)
         assert item(body, "waterlogging")["severity"] == "warn"
