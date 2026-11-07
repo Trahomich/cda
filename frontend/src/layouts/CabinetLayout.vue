@@ -76,20 +76,32 @@ function logout() {
 .cabinet__header {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.35rem;
   background: #2e7d32;
   color: #fff;
-  padding: 0.6rem 1rem;
-  font-size: 1.05rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.95rem;
   flex-wrap: wrap;
 }
 
 .cabinet__brand {
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 16rem;
 }
 
 .cabinet__role {
   opacity: 0.9;
+  white-space: nowrap;
+}
+
+/* На узких экранах роль убираем — компактность шапки (v2-fix-J) */
+@media (max-width: 1280px) {
+  .cabinet__role {
+    display: none;
+  }
 }
 
 .cabinet__spacer {
@@ -99,11 +111,13 @@ function logout() {
 .cabinet__nav {
   color: #fff;
   text-decoration: none;
-  padding: 0.5rem 0.75rem;
+  padding: 0.35rem 0.6rem;
   border-radius: 6px;
-  min-height: 48px;
+  min-height: 40px;
   display: inline-flex;
   align-items: center;
+  font-size: 0.92rem;
+  white-space: nowrap;
 }
 
 .cabinet__nav.router-link-active {
@@ -116,10 +130,11 @@ function logout() {
   font-weight: 600;
   border: none;
   border-radius: 6px;
-  padding: 0.5rem 0.9rem;
-  font-size: 1rem;
-  min-height: 48px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.92rem;
+  min-height: 40px;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .cabinet__main {
