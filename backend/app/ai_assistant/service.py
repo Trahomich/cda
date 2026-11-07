@@ -174,12 +174,17 @@ def get_insights(
     return resp
 
 
-def _vra_iqr_cached(field_id: uuid.UUID, day: date) -> float | None:
-    """IQR из кэша VRA-расчёта (vra.py #94); нет кэша — детектор молчит."""
-    data = cache_get(f"vra:{field_id}:{day.isoformat()}")
+def _vra_peak_cached(field_id: uuid.UUID) -> tuple[date, float] | None:
+    """(дата, IQR) пиковой сцены из кэша VRA (vra.py #106); нет — детектор молчит.
+
+    VRA-зоны теперь строятся по пиковым сценам сезона — их даты отличаются
+    от последней сцены, поэтому vra.py кладёт указатель текущих зон
+    отдельно (ключ vra:peak:{field_id}).
+    """
+    data = cache_get(f"vra:peak:{field_id}")
     if isinstance(data, dict):
         try:
-            return float(data["iqr_ndvi"])
+            return date.fromisoformat(data["date"]), float(data["iqr_ndvi"])
         except (KeyError, ValueError, TypeError):
             return None
     return None
