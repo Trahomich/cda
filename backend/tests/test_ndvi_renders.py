@@ -30,13 +30,14 @@ from app.services.sentinel_ingest.renders import (
 from rasterio.transform import Affine
 from sqlalchemy import select
 from tests.test_satellite import make_satellite_source
-from tests.test_sentinel_ndvi import (
+from tests.test_sentinel_ndvi import (  # noqa: F401 — фикстура scene_rasters
     CRS,
     X0,
     Y1,
     N,
     make_catalog_row,
     make_ndvi_field,
+    scene_rasters,
     wgs_box,
 )
 
