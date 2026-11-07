@@ -35,7 +35,7 @@ from app.core.errors import AppError
 from app.models.agronomy import CropCycle, Field, FieldOperation
 from app.models.references import Culture
 from app.modules.satellite import vra
-from app.modules.satellite.waterlog import precip_sums_7d
+from app.modules.satellite.waterlog import precip_sums_7d, waterlogged
 
 logger = logging.getLogger(__name__)
 
