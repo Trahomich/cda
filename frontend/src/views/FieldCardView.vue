@@ -85,6 +85,15 @@ const currentCycle = computed(() => {
   return card.value?.cycles.find((c) => c.year === year) ?? card.value?.cycles[0] ?? null
 })
 
+/** Цвет контура (п.5, v2-fix-A): color_hex культуры текущего цикла из
+ *  истории севооборота (API-49 отдаёт цвет из справочника API-48);
+ *  без культуры/цвета — прежний зелёный. */
+const contourColor = computed(() => {
+  const year = currentCycle.value?.year
+  if (year == null) return null
+  return cropHistory.value.find((c) => c.year === year)?.color_hex ?? null
+})
+
 /** Урожайность по году (из API-05 cycles) — в подсказку ленты API-49. */
 const cycleYields = computed(() => {
   const out: Record<number, number> = {}
