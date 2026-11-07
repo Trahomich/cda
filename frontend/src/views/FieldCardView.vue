@@ -610,21 +610,21 @@ function fmtNum(v: number, digits = 1): string {
               @pointerup="onPanEnd"
               @pointercancel="onPanEnd"
             >
-            <image
-              v-if="layer && layerRect"
-              class="card360__ndvi-layer"
-              :href="layer.url"
-              :x="layerRect.x"
-              :y="layerRect.y"
-              :width="layerRect.width"
-              :height="layerRect.height"
-              preserveAspectRatio="none"
-            />
-            <polygon
-              :points="contourPoints"
-              class="card360__polygon"
-              :style="contourColor ? { fill: contourColor } : undefined"
-            />
+              <image
+                v-if="layer && layerRect"
+                class="card360__ndvi-layer"
+                :href="layer.url"
+                :x="layerRect.x"
+                :y="layerRect.y"
+                :width="layerRect.width"
+                :height="layerRect.height"
+                preserveAspectRatio="none"
+              />
+              <polygon
+                :points="contourPoints"
+                class="card360__polygon"
+                :style="contourColor ? { fill: contourColor } : undefined"
+              />
             </svg>
           </div>
           <h2 class="card360__block-title">
