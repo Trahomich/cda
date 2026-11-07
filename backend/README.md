@@ -225,6 +225,29 @@ agronomist/admin; согласование — manager/admin.
 Композит «лучшая сцена за 14 суток» (05 §2) не реализован — все сцены
 сохраняются с `composite_days=1`; отмечено как развитие.
 
+### Инжест исторических NDVI-сцен (#108, docs/06 §7.5)
+
+CLI `backfill-history` догружает чистые NDVI-сцены Sentinel-2 прошлых
+сезонов тем же конвейером sentinel-ingest (каталог STAC по квартальным
+окнам → расчёт NDVI/NDWI + рендеры ndvi/truecolor/ndwi, §7.3/§7.4):
+годы `current_year−N+1…текущий` (`--years`, по умолчанию 4), item'ы без
+полного набора каналов b02/b03/b04/b08/scl пропускаются с журналированием
+(рендеры truecolor и NDWI). Идемпотентен — UQ каталога (field_id, item_id)
+и UQ сцен (field_id, index, captured_at, source_id); после прогона
+инвалидирует кэш `insights:*` и `vra:peak:*` активных полей, чтобы
+сезонные API (#110) не отдавали старые данные:
+
+```bash
+# стенд: тот же образ/окружение, что у воркера sentinel-ingest
+# (доступ к БД и тому STAC; рендеры — в общий том ndvi-renders)
+docker compose -f deploy/docker-compose.prod.yml exec sentinel-ingest \
+    python -m app.cli backfill-history --years 4
+```
+
+Отчёт — JSON: новые сцены по годам (`per_year`), каталог (`catalog_*`),
+пропуски (`assets_skipped`), недоступные окна STAC / COG (`catalog_failed`,
+`scenes_unavailable` — повторный запуск доберёт их; код выхода 1).
+
 ## Модуль алертов (MVP-12, API-27/28)
 
 `app/modules/alerts/` — оповещения и состояние адаптеров по docs/03 §1.8:
