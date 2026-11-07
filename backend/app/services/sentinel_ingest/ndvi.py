@@ -212,34 +212,7 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
         raise DataGapError("каналы b04/b08 на разных сетках — окно не совпадает")
 
     # SCL → сетка NIR (10 м, nearest), вне плашки — 0 (nodata, не облако).
-    # reproject по координатам, а не read(out_shape=...): out_shape растягивает
-    # SCL-окно (сетка 20 м) на NIR-окно (10 м) как на картинку — граница
-    # облачной зоны уезжает на пиксель.
-    scl_ds = _open_cog(assets["scl"])
-    try:
-        from rasterio.warp import reproject
-
-        geom_scl = transform_geom("EPSG:4326", scl_ds.crs, contour_geojson)
-        w = from_bounds(*shape(geom_scl).bounds, transform=scl_ds.transform)
-        window = Window(
-            col_off=math.floor(w.col_off),
-            row_off=math.floor(w.row_off),
-            width=math.ceil(w.col_off + w.width) - math.floor(w.col_off),
-            height=math.ceil(w.row_off + w.height) - math.floor(w.row_off),
-        )
-        scl_src = scl_ds.read(1, window=window, boundless=True, fill_value=0)
-        scl = np.zeros(nir_arr.shape, dtype=scl_src.dtype)
-        reproject(
-            source=scl_src,
-            destination=scl,
-            src_transform=scl_ds.window_transform(window),
-            src_crs=scl_ds.crs,
-            dst_transform=nir_transform,
-            dst_crs=nir_crs,
-            resampling=Resampling.nearest,
-        )
-    finally:
-        scl_ds.close()
+    scl = _read_scl_grid(assets, contour_geojson, nir_transform, nir_crs, nir_arr.shape)
 
     ndvi = compute_index_array(INDEX, nir_arr.astype("float32"), red_arr.astype("float32"))
 
