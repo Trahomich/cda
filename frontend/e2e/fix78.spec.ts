@@ -47,7 +47,7 @@ test('карточка поля: контур окрашен цветом кул
 
   // …совпадает с заливкой контура на мини-карте карточки.
   const polygonFill = await page
-    .locator('.card360__polygon polygon')
+    .locator('polygon.card360__polygon')
     .evaluate((el) => getComputedStyle(el).fill)
   expect(polygonFill).toBe(expected)
 })
