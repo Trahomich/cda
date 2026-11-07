@@ -192,8 +192,7 @@ async function loadLayer() {
     return
   }
   const mode = layerMode.value
-  const variant: 'ndvi' | 'truecolor' | 'ndwi' =
-    mode === 'truecolor' ? 'truecolor' : mode === 'ndwi' ? 'ndwi' : 'ndvi'
+  const variant: 'ndvi' | 'truecolor' = mode === 'truecolor' ? 'truecolor' : 'ndvi'
   const r = await getNdviRender(fieldId, renderDate.value, variant)
   if (token !== layerToken) {
     // Пользователь успел переключить режим/дату — этот ответ устарел.
