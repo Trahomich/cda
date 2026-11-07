@@ -256,9 +256,7 @@ def field_ndvi_render(
     response_model=VraZonesResponse,
     summary="API-52: зоны дифференцированного внесения (§7.4)",
 )
-def field_vra(
-    field_id: uuid.UUID, db: DbSession, settings: SettingsDep
-) -> VraZonesResponse:
+def field_vra(field_id: uuid.UUID, db: DbSession, settings: SettingsDep) -> VraZonesResponse:
     field = _get_field(db, field_id)
     result = vra.vra_zones(db, field)
     base_dose = vra.base_dose_kg_ha(db, field.id)
@@ -274,9 +272,7 @@ def field_vra(
                 area_ga=z.area_ga,
                 ndvi_mean=z.ndvi_mean,
                 dose_factor=z.dose_factor,
-                dose_kg_ha=(
-                    None if base_dose is None else round(base_dose * z.dose_factor, 2)
-                ),
+                dose_kg_ha=(None if base_dose is None else round(base_dose * z.dose_factor, 2)),
             )
             for z in result.zones
         ],
