@@ -269,8 +269,8 @@ def field_yield_forecast(field_id: uuid.UUID, db: DbSession) -> YieldForecastRes
         )
 
     avgs = [float(s.index_avg) for s in scenes]
-    ndvi_max = round(max(avgs), 3)
-    ndvi_integral = round(sum(max(v - 0.2, 0.0) for v in avgs) / 100, 3)
+    ndvi_max = max(avgs)
+    ndvi_integral = sum(max(v - 0.2, 0.0) for v in avgs) / 100
     forecast = float(k_base) + float(k_max) * ndvi_max + float(k_int) * ndvi_integral
     return YieldForecastResponse(
         field_id=field.id,
