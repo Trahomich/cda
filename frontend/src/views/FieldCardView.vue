@@ -689,6 +689,66 @@ function fmtNum(v: number, digits = 1): string {
           </p>
         </div>
 
+        <!-- «Выводы ассистента» (API-51, §7.4): детекторы + LLM-сводка -->
+        <div class="card360__block card360__block--insights">
+          <h2 class="card360__block-title">
+            Выводы ассистента
+          </h2>
+          <Skeleton
+            v-if="insightsLoading"
+            :lines="3"
+          />
+          <p
+            v-else-if="!insights"
+            class="card360__muted"
+          >
+            Выводы недоступны
+          </p>
+          <template v-else>
+            <!-- summary — LLM-сводка; при source=rules её нет (только пункты) -->
+            <p
+              v-if="insights.summary"
+              class="card360__insights-summary"
+            >
+              {{ insights.summary }}
+            </p>
+            <ul
+              v-if="insights.items.length"
+              class="card360__insights"
+            >
+              <li
+                v-for="item in insights.items"
+                :key="item.code"
+                class="card360__insight"
+                :class="`card360__insight--${item.severity}`"
+              >
+                <span
+                  class="card360__insight-mark"
+                  :title="item.severity"
+                >{{ SEVERITY_MARKS[item.severity] }}</span>
+                <span class="card360__insight-text">
+                  {{ item.title }} — {{ item.detail }}<a
+                    v-if="item.code === 'vra_heterogeneity'"
+                    class="card360__insight-link"
+                    href="#vra"
+                  >зоны внесения</a>
+                </span>
+              </li>
+            </ul>
+            <p
+              v-else
+              class="card360__muted"
+            >
+              Отклонений по данным детекторов не выявлено.
+            </p>
+            <p class="card360__muted card360__insights-meta">
+              По числовым детекторам (NDVI, NDWI, агрохимия){{
+                insights.source === 'rules+llm' ? ' и сводке ИИ' : ''
+              }} · {{ fmtDate(insights.generated_at.slice(0, 10)) }}
+            </p>
+          </template>
+        </div>
+
         <!-- NDVI -->
         <div class="card360__block">
           <h2 class="card360__block-title">
