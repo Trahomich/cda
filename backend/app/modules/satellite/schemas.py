@@ -68,7 +68,7 @@ class VraZonesResponse(BaseModel):
     """API-52: зоны дифференцированного внесения по последнему чистому NDVI."""
 
     field_id: uuid.UUID
-    date: date = Field(description="дата сцены, по которой построены зоны")
+    date: Date = Field(description="дата сцены, по которой построены зоны")
     iqr_ndvi: float
     base_dose_kg_ha: float | None = None
     zones: list[VraZoneItem]
