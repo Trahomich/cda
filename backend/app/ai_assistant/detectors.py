@@ -226,7 +226,11 @@ def detect_waterlogging(
         ),
         data_refs=[
             _scene_ref(scene),
-            {"source": "weather", "precip_mm_7d": precip_mm_7d, "date": scene.captured_at.isoformat()},
+            {
+                "source": "weather",
+                "precip_mm_7d": precip_mm_7d,
+                "date": scene.captured_at.isoformat(),
+            },
         ],
     )
 
