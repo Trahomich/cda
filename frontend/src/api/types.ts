@@ -209,6 +209,8 @@ export interface NdviPoint {
   index_max?: number | null
   /** Доверие источника сцены (API-06): < 1 — пометка на точке. */
   trust?: number | null
+  /** PNG-рендеры обоих вариантов на диске (§7.3): дата доступна как слой. */
+  render_available?: boolean
 }
 
 /** Погода: факт сейчас + прогноз 7 сут — GET /fields/{id}/weather (API-07). */
