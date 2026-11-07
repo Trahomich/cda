@@ -134,7 +134,7 @@ def _png_rgba(rgb: np.ndarray, alpha: np.ndarray) -> bytes:
 
 
 def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
-    """Рендер обоих вариантов по COG-активам сцены и контуру поля.
+    """Рендер всех вариантов (ndvi/truecolor/ndwi) по COG-активам и контуру.
 
     ``None`` — рендер невозможен без ошибки: в активах нет каналов b02/b03
     (строки каталога до #83). Сетевые ошибки COG (SourceUnavailableError)
