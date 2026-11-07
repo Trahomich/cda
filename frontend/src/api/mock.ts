@@ -463,8 +463,15 @@ const USERS: MockUser[] = [
   { login: 'manager', password: 'demo', name: 'Руководитель', role: 'manager' },
 ]
 
-function problem(status: number, type: string, title: string, detail: string): TransportResponse {
-  return { status, ok: false, json: null, problem: { type, title, status, detail } }
+function problem(
+  status: number,
+  type: string,
+  title: string,
+  detail: string,
+  code?: string,
+): TransportResponse {
+  const extra = code ? { code } : {}
+  return { status, ok: false, json: null, problem: { type, title, status, detail, ...extra } }
 }
 
 function ok(json: unknown, status = 200): TransportResponse {
