@@ -21,16 +21,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import FileResponse, Response
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings, get_settings
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
-from app.models.agronomy import Field
+from app.models.agronomy import CropCycle, Field
 from app.models.integrations import SatelliteScene
-from app.models.references import Source
+from app.models.references import Culture, Source
 from app.modules.satellite import vra
 from app.modules.satellite.schemas import (
     INDICES,
@@ -39,6 +39,7 @@ from app.modules.satellite.schemas import (
     SourceMeta,
     VraZoneItem,
     VraZonesResponse,
+    YieldForecastResponse,
 )
 from app.modules.satellite.waterlog import precip_sums_7d, waterlogged
 from app.services.sentinel_ingest.renders import (
