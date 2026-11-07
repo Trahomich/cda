@@ -1708,7 +1708,8 @@ export class MockTransport implements Transport {
     }
 
     const blob = await renderScenePng(variant, idx)
-    const ring = field.contour.coordinates[0] as number[][]
+    const ring = (field.contour as GeoJsonPolygon | undefined)?.coordinates[0] as number[][] | undefined
+    if (!ring || ring.length < 4) return empty(404)
     const lons = ring.map((c) => c[0])
     const lats = ring.map((c) => c[1])
     const bbox = [
