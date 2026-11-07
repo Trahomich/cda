@@ -109,7 +109,7 @@ services:
   caddy:
     image: caddy:2-alpine
     ports:
-      - "8080:8080" # LAN-доступ (решение от 2026-11-06): MVP доступен по http://192.168.99.201:8080; наружу в интернет — через cloudflared
+      - "8080:8080" # доступ: LAN http://192.168.99.201:8080 (туннель Cloudflare удалён 2026-11-07)
     volumes:
       - ../frontend/dist:/srv/frontend:ro
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
