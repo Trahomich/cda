@@ -311,6 +311,40 @@ def process_catalog_row(db: Session, item: SatelliteCatalogItem, contour: dict) 
     return apply_row_result(db, item, zonal_ndvi(item.assets or {}, contour))
 
 
+def _maybe_render(
+    render_dir: str | None,
+    field_id: uuid.UUID,
+    item_id: str,
+    captured_at: date,
+    assets: dict,
+    contour: dict,
+    stats: "NdviStats",
+) -> None:
+    """PNG-рендеры сцены (docs/06 §7.3, #83); ошибки не роняют цикл.
+
+    Рендерится только сохраняемая сцена (облачность ≤ 60). Уже готовые
+    рендеры не перегенерируются (повторная обработка строки после сбоя).
+    """
+    if not render_dir or stats.cloud_pct > MAX_SCENE_CLOUD_PCT:
+        return
+    from app.services.sentinel_ingest.renders import render_scene, renders_exist, write_renders
+
+    try:
+        if renders_exist(render_dir, field_id, captured_at):
+            return
+        render = render_scene(assets, contour)
+        if render is not None:
+            write_renders(render_dir, field_id, captured_at, render)
+    except Exception:  # noqa: BLE001 — рендер вторичен относительно сцены
+        logger.warning(
+            "sentinel-ndvi: рендер сцены %s (поле %s, %s) не записан",
+            item_id,
+            field_id,
+            captured_at,
+            exc_info=True,
+        )
+
+
 def run_ndvi_cycle(
     db: Session,
     *,
