@@ -129,6 +129,11 @@ def field_ndvi(
         )
     )
     render_dir = settings.ndvi_render_dir or None
+    # осадки 7 сут для флага вымокания (§7.4): один запрос на страницу,
+    # только для сцен с NDWI-статистикой (старые строки — NULL)
+    precip = precip_sums_7d(
+        db, field.id, [s.captured_at for s in scenes if s.ndwi_p90 is not None]
+    )
     items = [
         SceneItem(
             scene_id=s.id,
@@ -147,6 +152,12 @@ def field_ndvi(
             # §7.3: рендер есть, если на диске оба PNG; каталог не задан — false
             render_available=bool(
                 render_dir and renders_exist(render_dir, s.field_id, s.captured_at)
+            ),
+            # §7.4: вымокание по NDWI + осадкам; null — данных нет
+            waterlogged=waterlogged(
+                float(s.ndwi_p90) if s.ndwi_p90 is not None else None,
+                float(s.index_avg),
+                precip.get(s.captured_at),
             ),
         )
         for s in scenes
