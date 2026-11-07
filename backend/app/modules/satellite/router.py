@@ -95,6 +95,7 @@ def _source_meta(db: Session, field_id: uuid.UUID, total: int) -> SourceMeta:
 def field_ndvi(
     field_id: uuid.UUID,
     db: DbSession,
+    settings: SettingsDep,
     *,
     index: str = Query(default="ndvi", description=f"Индекс: {', '.join(INDICES)}"),
     date_from: date | None = Query(default=None, description="Начало периода (включительно)"),
