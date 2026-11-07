@@ -33,6 +33,8 @@ test('карточка поля: оверлей NDVI-сцены появляет
   await expect(layer).toBeVisible({ timeout: 10_000 })
   await expect(layer).toHaveAttribute('href', /^blob:/)
   await expect(page.locator('polygon.card360__polygon')).toBeVisible()
+  // При активном слое заливка контура прозрачна — снимок не перекрыт (v2-fix-G).
+  await expect(page.locator('polygon.card360__polygon')).toHaveCSS('fill-opacity', '0')
 
   // Смена даты: рендер за 2027-07-17 тоже есть.
   await select.selectOption('2027-07-17')
