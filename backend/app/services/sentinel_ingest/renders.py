@@ -249,7 +249,9 @@ def write_renders(
 __all__ = [
     "MAX_SIDE_PX",
     "PALETTE",
+    "PALETTE_NDWI",
     "RENDER_VARIANTS",
+    "REQUIRED_VARIANTS",
     "SceneRender",
     "meta_path",
     "render_path",
