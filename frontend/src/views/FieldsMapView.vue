@@ -480,12 +480,13 @@ onUnmounted(() => {
   line-height: 1.45;
 }
 
-/* Краткий номер поля в центроиде (#55): компактная постоянная подпись. */
+/* Краткий номер поля в центроиде (#55): компактная постоянная подпись.
+   v2-fix-A: подпись интерактивна — клик открывает карточку поля. */
 .leaflet-tooltip.field-label {
   background: none;
   border: none;
   box-shadow: none;
-  padding: 0;
+  padding: 0.35rem 0.5rem;
   color: #10200f;
   font-size: 0.85rem;
   font-weight: 700;
@@ -494,7 +495,13 @@ onUnmounted(() => {
     0 0 3px #fff,
     0 0 2px #fff;
   white-space: nowrap;
-  pointer-events: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.leaflet-tooltip.field-label:hover {
+  color: #1b5e20;
+  background: rgba(255, 255, 255, 0.55);
 }
 
 /* До LABEL_MIN_ZOOM подписи скрыты (сливаются на плотной карте 90 полей). */
