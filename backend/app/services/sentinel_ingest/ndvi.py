@@ -197,10 +197,7 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     контура с данными каналов), docs/05 §2 v1. При облачности > 60 статистика
     не считается (сцене всё равно не сохраняться, 05 §5 п.2).
     """
-    from rasterio.enums import Resampling
     from rasterio.warp import transform_geom
-    from rasterio.windows import Window, from_bounds
-    from shapely.geometry import shape
 
     missing = [band for band in BAND_ASSETS if not assets.get(band)]
     if missing:
