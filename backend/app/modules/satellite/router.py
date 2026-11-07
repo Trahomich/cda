@@ -17,7 +17,6 @@ GET /fields/{field_id}/ndvi/{date}/render.png?variant=ndvi|truecolor
 import json
 import uuid
 from datetime import UTC, date, timedelta
-from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
