@@ -64,8 +64,8 @@ class TestNdwiBackfill:
         db_session.expire_all()
         scene = db_session.scalar(select(SatelliteScene).where(SatelliteScene.field_id == field_id))
         expected = zonal_ndvi(item.assets, wgs_box(300100, 5760100, 301900, 5760900))
-        assert scene.ndwi_mean == expected.ndwi_mean
-        assert scene.ndwi_p90 == expected.ndwi_p90
+        assert float(scene.ndwi_mean) == pytest.approx(expected.ndwi_mean)
+        assert float(scene.ndwi_p90) == pytest.approx(expected.ndwi_p90)
         assert scene.ndwi_mean > 0  # «влажное» поле: green > nir
         # NDVI-колонки не пересчитываются — сцена уже принята по этим данным
         assert float(scene.index_avg) > 0
