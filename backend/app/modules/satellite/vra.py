@@ -335,12 +335,22 @@ def _scene_iqr_and_zones(
     return iqr, zones
 
 
-def vra_zones(db: Session, field: Field) -> VraZones:
+def vra_zones(db: Session, field: Field, *, year: int | None = None) -> VraZones:
     """Зоны по пиковым сценам вегетации (§7.4 v1.4): топ-3 по index_avg,
     стабильность — IQR ≥ порога минимум на 2 из 3 (при <3 сцен — на всех,
-    кроме максимум одной); зоны — по сцене с максимальным index_avg."""
-    peaks = peak_scenes(db, field.id)
+    кроме максимум одной); зоны — по сцене с максимальным index_avg.
+
+    Явный year (§7.5) — сцены сезона YYYY; сезона нет — 404 season_not_found.
+    Без year — текущий сезон (год последней сцены)."""
+    peaks = peak_scenes(db, field.id, year=year)
     if not peaks:
+        if year is not None:
+            raise AppError(
+                f"У поля {field.id} нет NDVI-сцен сезона {year}",
+                code="season_not_found",
+                title="Сезон не найден",
+                status_code=404,
+            )
         raise _err_no_data(field.id, "нет чистых NDVI-сцен")
     peak_dates = tuple(scene.captured_at for scene in peaks)
     analyzed = [(scene, *_scene_iqr_and_zones(db, field, scene)) for scene in peaks]
@@ -353,9 +363,11 @@ def vra_zones(db: Session, field: Field) -> VraZones:
     scene, _, zones = max(confirmed, key=lambda row: (row[0].index_avg, row[0].captured_at))
     assert zones is not None  # подтверждённая сцена неоднородна по построению
     result = replace(zones, peak_dates=peak_dates)
-    # указатель для «Выводов ассистента»: актуальные зоны поля (§8.2)
+    # указатель для «Выводов ассистента»: актуальные зоны поля (§8.2);
+    # сезонный год (§7.5) — отдельный ключ, ключ текущего сезона не трогаем
+    pointer_key = f"vra:peak:{field.id}" if year is None else f"vra:peak:{field.id}:{year}"
     cache_set(
-        f"vra:peak:{field.id}",
+        pointer_key,
         {"date": result.captured_at.isoformat(), "iqr_ndvi": result.iqr_ndvi},
         CACHE_TTL_SECONDS,
     )
