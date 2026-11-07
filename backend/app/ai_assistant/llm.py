@@ -52,6 +52,10 @@ def summarize(
 
     ``num_predict`` — лимит генерации (токенов) в options; ``None`` =
     лимит не передаётся (значение Ollama по умолчанию).
+
+    В тело запроса всегда добавляется top-level ``"think": False`` (#113):
+    у think-моделей (qwen3.5) блок размышлений съедает весь num_predict и
+    response остаётся пустым; не-think-модели параметр игнорируют.
     """
     settings = get_settings()
     url_root = (settings.ollama_base_url if base_url is None else base_url).strip()
