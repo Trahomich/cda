@@ -190,6 +190,20 @@ onMounted(async () => {
     attribution: '&copy; участники OpenStreetMap',
   }).addTo(map)
   map.on('zoomend', syncLabelZoom)
+  // Ссылка «Открыть карточку поля» в попапе контура: SPA-переход без
+  // перезагрузки страницы (v2-fix-A, пункт 1).
+  map.on('popupopen', (e) => {
+    const link = e.popup
+      .getElement()
+      ?.querySelector<HTMLAnchorElement>('.field-popup__link')
+    if (link) {
+      L.DomEvent.on(link, 'click', (ev) => {
+        L.DomEvent.preventDefault(ev)
+        const id = link.dataset.fieldId
+        if (id) void router.push({ name: 'field-card', params: { fieldId: id } })
+      })
+    }
+  })
   contoursLayer = L.featureGroup().addTo(map)
   // Сначала справочник культур, потом поля: заливка читает cultureColors в момент
   // построения geoJSON-слоя (на живом API геометрия полей тяжелее справочника,
