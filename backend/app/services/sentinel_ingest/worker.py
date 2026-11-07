@@ -116,6 +116,7 @@ def _ndvi_cycle(settings: Settings) -> None:
             db,
             batch_limit=settings.ingest_satellite_ndvi_batch,
             max_workers=settings.ingest_satellite_ndvi_workers,
+            render_dir=settings.ndvi_render_dir or None,
         )
     except Exception:  # noqa: BLE001 — фоновая джоба не роняет воркер
         logger.exception("sentinel-ingest [ndvi]: сбой прогона")
