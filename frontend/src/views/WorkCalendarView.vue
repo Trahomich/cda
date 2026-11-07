@@ -244,18 +244,14 @@ const planCount = computed(() => monthPlans.value.length)
     </p>
 
     <p
-      v-if="loading"
-      class="cal__state"
-    >
-      Загрузка календаря…
-    </p>
-    <p
-      v-else-if="failed"
+      v-if="failed"
       class="cal__state cal__state--error"
     >
       Не удалось загрузить календарь работ
     </p>
 
+    <!-- Сетка месяца рендерится сразу (v2-fix-E): номера дней видны до
+         загрузки, чипы работ — скелетоны-пилюли, заполняются по готовности. -->
     <template v-else>
       <div class="cal__grid-wrap">
         <table class="cal__grid">
