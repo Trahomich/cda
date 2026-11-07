@@ -14,14 +14,14 @@
 ```
 Error: expect(locator).toBeVisible() failed
 
-Locator: locator('tr').filter({ hasText: 'Базагран, ВР' }).filter({ hasText: '2026-11-13' }).first().locator('.tp__approve')
+Locator: locator('tr').filter({ hasText: 'Скор, КЭ' }).filter({ hasText: '2026-11-13' }).first().locator('.tp__approve')
 Expected: visible
 Timeout: 15000ms
 Error: element(s) not found
 
 Call log:
-  - Expect "toBeVisible" locator('tr').filter({ hasText: 'Базагран, ВР' }).filter({ hasText: '2026-11-13' }).first().locator('.tp__approve') with timeout 15000ms
-  - waiting for locator('tr').filter({ hasText: 'Базагран, ВР' }).filter({ hasText: '2026-11-13' }).first().locator('.tp__approve')
+  - Expect "toBeVisible" locator('tr').filter({ hasText: 'Скор, КЭ' }).filter({ hasText: '2026-11-13' }).first().locator('.tp__approve') with timeout 15000ms
+  - waiting for locator('tr').filter({ hasText: 'Скор, КЭ' }).filter({ hasText: '2026-11-13' }).first().locator('.tp__approve')
 
 ```
 
@@ -71,6 +71,14 @@ Call log:
         - columnheader "Статус"
         - columnheader "Действия"
     - rowgroup:
+      - row "14/ЖАМ/74га · 2026 · Соя Актара, ВДГ 2 л/га 2026-11-12 черновик Согласовать":
+        - cell "14/ЖАМ/74га · 2026 · Соя"
+        - cell "Актара, ВДГ"
+        - cell "2 л/га"
+        - cell "2026-11-12"
+        - cell "черновик"
+        - cell "Согласовать":
+          - button "Согласовать"
       - row "14/ЖАМ/74га · 2026 · Соя Абига-Пик, ВС 2 л/га 2026-11-12 черновик Согласовать":
         - cell "14/ЖАМ/74га · 2026 · Соя"
         - cell "Абига-Пик, ВС"
@@ -434,14 +442,6 @@ Call log:
         - cell "2026-04-06 · весенняя подкормка"
         - cell "согласован"
         - cell "—"
-      - row "70/ЖАМ/104га · 2026 · Ячмень Абига-Пик, ВС 0,49 л/га 2026-05-07 · обработка по вегетации черновик Согласовать":
-        - cell "70/ЖАМ/104га · 2026 · Ячмень"
-        - cell "Абига-Пик, ВС"
-        - cell "0,49 л/га"
-        - cell "2026-05-07 · обработка по вегетации"
-        - cell "черновик"
-        - cell "Согласовать":
-          - button "Согласовать"
   - heading "Новый план внесения" [level=2]
   - text: Цикл (поле · год · культура)
   - combobox "Цикл (поле · год · культура)":
@@ -1375,10 +1375,10 @@ Call log:
   75  |   await page.goto(`${BASE}/treatment-plans`)
   76  |   await expect(page.getByRole('heading', { name: /планы удобрений/i })).toBeVisible({ timeout: 15000 })
   77  | 
-  78  |   // Форма: цикл поля 14/ЖАМ (2026, Соя), Абига-Пик, spraying, 2026-11-12 —
-  79  |   // в живом прогнозе мороз/ветер → «окно не подходит» + detail.
+  78  |   // Форма: цикл поля 14/ЖАМ (2026, Соя), Актара (тиаметоксам, лимит не занят),
+  79  |   // spraying, 2026-11-12 — в живом прогнозе мороз/ветер → «окно не подходит».
   80  |   await page.locator('select.tp__input').first().selectOption({ label: '14/ЖАМ/74га · 2026 · Соя' })
-  81  |   await page.getByLabel('Препарат / удобрение').selectOption({ label: 'Абига-Пик, ВС (СЗР)' })
+  81  |   await page.getByLabel('Препарат / удобрение').selectOption({ label: 'Актара, ВДГ (СЗР)' })
   82  |   await page.getByLabel(/^Доза/).fill('2')
   83  |   await page.getByLabel('Плановая дата').fill('2026-11-12')
   84  |   await page.getByRole('button', { name: 'Создать черновик' }).click()
@@ -1390,9 +1390,9 @@ Call log:
   90  |   console.log('окно 2026-11-12:', (await win.innerText()).replace(/\n/g, ' | '))
   91  | 
   92  |   // Дата без прогноза (июль 2026) → weather_window: null → «окно не оценено».
-  93  |   // Препарат с другим действующим веществом (Актара/тиаметоксам): лимит
-  94  |   // RULE-AGRO-10 по «хлорокиси меди» уже исчерпан планами выше.
-  95  |   await page.getByLabel('Препарат / удобрение').selectOption({ label: 'Актара, ВДГ (СЗР)' })
+  93  |   // Препарат со своим действующим веществом (пенконазол) — лимиты RULE-AGRO-10
+  94  |   // считаются по веществу, а не по полю.
+  95  |   await page.getByLabel('Препарат / удобрение').selectOption({ label: 'Топаз, КЭ (СЗР)' })
   96  |   await page.getByLabel('Плановая дата').fill('2026-07-01')
   97  |   await page.getByRole('button', { name: 'Создать черновик' }).click()
   98  |   await expect(win).toContainText('окно не оценено', { timeout: 15000 })
@@ -1400,7 +1400,7 @@ Call log:
   100 | 
   101 |   // Ещё один spraying на дату с живым прогнозом (2026-11-13) — этот черновик
   102 |   // ниже согласует менеджер: в диалоге должно быть окно с detail.
-  103 |   await page.getByLabel('Препарат / удобрение').selectOption({ label: 'Базагран, ВР (СЗР)' })
+  103 |   await page.getByLabel('Препарат / удобрение').selectOption({ label: 'Скор, КЭ (СЗР)' })
   104 |   await page.getByLabel('Плановая дата').fill('2026-11-13')
   105 |   await page.getByRole('button', { name: 'Создать черновик' }).click()
   106 |   await expect(win).toContainText('2026-11-13', { timeout: 15000 })
@@ -1411,8 +1411,8 @@ Call log:
   111 | test('Менеджер: согласование черновика, окно в диалоге', async ({ page }) => {
   112 |   await login(page, 'demo_manager')
   113 |   await page.goto(`${BASE}/treatment-plans`)
-  114 |   // Черновик spraying с живым прогнозом (создан тестом выше): Базагран, 2026-11-13.
-  115 |   const row = page.locator('tr', { hasText: 'Базагран, ВР' }).filter({ hasText: '2026-11-13' }).first()
+  114 |   // Черновик spraying с живым прогнозом (создан тестом выше): Скор, 2026-11-13.
+  115 |   const row = page.locator('tr', { hasText: 'Скор, КЭ' }).filter({ hasText: '2026-11-13' }).first()
   116 |   const approveBtn = row.locator('.tp__approve')
 > 117 |   await expect(approveBtn).toBeVisible({ timeout: 15000 })
       |                            ^ Error: expect(locator).toBeVisible() failed
