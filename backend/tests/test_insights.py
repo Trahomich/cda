@@ -238,6 +238,49 @@ class TestDetectorsApi:
         body = get_insights(client, hdr, fid)
         assert "waterlogging" not in codes(body["items"])
 
+    def test_waterlogging_mid_season_episode_warn(self, world, db_session) -> None:
+        """Эпизод в середине сезона (дожди только там): warn с датой эпизода,
+        хотя последняя сцена чистая (§8.2 v3 — анализ всех сцен сезона)."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr, name="Средне-мокрое")["field_id"])
+        dates = [TODAY - timedelta(days=4 * back) for back in range(5)]  # 5 сцен
+        for day in dates:
+            make_scene(db_session, fid, day, 0.40, ndwi_mean=0.02, ndwi_p90=0.12)
+        mid = dates[2]  # ländert в середине
+        for back in range(7):  # 25 мм за 7 суток к дате mid
+            make_obs(db_session, fid, mid - timedelta(days=back), precip_mm=25 / 7)
+        db_session.commit()
+        body = get_insights(client, hdr, fid)
+        it = item(body, "waterlogging")
+        assert it["severity"] == "warn"  # последняя сцена чистая, доля мала
+        assert mid.isoformat() in it["detail"]
+        assert TODAY.isoformat() not in it["detail"]  # последняя — не эпизод
+
+    def test_waterlogging_episode_on_latest_alert(self, world, db_session) -> None:
+        """Эпизод на последней сцене — alert, даже если доля пикселей мала."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr, name="Мокрый финал")["field_id"])
+        dates = [TODAY - timedelta(days=4 * back) for back in range(5)]
+        for day in dates:
+            make_scene(db_session, fid, day, 0.40, ndwi_mean=0.02, ndwi_p90=0.12)
+        for back in range(7):  # дожди в окне последней сцены
+            make_obs(db_session, fid, TODAY - timedelta(days=back), precip_mm=25 / 7)
+        db_session.commit()
+        body = get_insights(client, hdr, fid)
+        assert item(body, "waterlogging")["severity"] == "alert"
+
+    def test_waterlogging_silent_all_scenes_without_ndwi(self, world, db_session) -> None:
+        """Ни у одной сцены нет NDWI (каталог до #83): эпизодов нет — вывода нет."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr, name="Без NDWI")["field_id"])
+        for back in range(5):
+            make_scene(db_session, fid, TODAY - timedelta(days=4 * back), 0.40)
+        for back in range(30):
+            make_obs(db_session, fid, TODAY - timedelta(days=back), precip_mm=5.0)
+        db_session.commit()
+        body = get_insights(client, hdr, fid)
+        assert "waterlogging" not in codes(body["items"])
+
     def test_drought(self, world, db_session) -> None:
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
