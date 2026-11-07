@@ -589,8 +589,6 @@ class TestBackgroundFix101:
         get_insights(client, hdr, fid)  # кэш rules без сводки — повтор
         assert spy["n"] == 2
 
-        import json as _json
-
         import app.core.cache as cache_mod
 
         key = f"insights:{fid}:{TODAY.isoformat()}"
