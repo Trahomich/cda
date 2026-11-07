@@ -555,7 +555,8 @@ function fmtNum(v: number, digits = 1): string {
               class="card360__polygon"
               :style="contourColor ? { fill: contourColor } : undefined"
             />
-          </svg>
+            </svg>
+          </div>
           <h2 class="card360__block-title">
             Севооборот по годам
           </h2>
