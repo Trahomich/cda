@@ -28,7 +28,6 @@ from tests.test_sentinel_ndvi import (  # noqa: F401 — фикстура scene_
 def _wet_b03_assets(rasters, tmp_path) -> dict:
     """Активы с «влажным» b03 (green > nir → NDWI > 0) на сетке b04/b08."""
     from rasterio.transform import Affine
-
     from tests.test_sentinel_ndvi import _write_tif
 
     nir = rasters["nir"]
