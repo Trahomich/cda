@@ -88,9 +88,7 @@ def quarter_windows(year: int, today: date) -> list[tuple[date, date]]:
         start = date(year, quarter * 3 + 1, 1)
         end_month = quarter * 3 + 3
         end = (
-            date(year, 12, 31)
-            if end_month == 12
-            else date(end_month + 1, 1, 1) - timedelta(days=1)
+            date(year, 12, 31) if end_month == 12 else date(end_month + 1, 1, 1) - timedelta(days=1)
         )
         if start > today:
             break
@@ -178,9 +176,7 @@ def run_history_backfill(
     report.fields = len(field_ids)
 
     after = _scene_counts_by_year(db, year_from, year_to)
-    report.per_year = {
-        year: after.get(year, 0) - before.get(year, 0) for year in report.years
-    }
+    report.per_year = {year: after.get(year, 0) - before.get(year, 0) for year in report.years}
     logger.info(
         "backfill-history: годы=%s окон=%d каталог: сцен=%d новых=%d без каналов=%d ошибок=%d; "
         "сцен новых=%d (по годам=%s), облако>60=%d гэпов=%d ошибок=%d недоступно=%d; "

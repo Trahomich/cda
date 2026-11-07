@@ -95,9 +95,7 @@ def make_history_field(db: Session, name="Историческое-1") -> uuid.U
 
 def footprint() -> dict:
     """Footprint плашки STAC (WGS84): накрывает контур поля с запасом."""
-    return transform_geom(
-        CRS, "EPSG:4326", mapping(box(X0, Y1 - 200000, X0 + 200000, Y1))
-    )
+    return transform_geom(CRS, "EPSG:4326", mapping(box(X0, Y1 - 200000, X0 + 200000, Y1)))
 
 
 def stac_item(item_id: str, captured: date, assets: dict, *, cloud=5.0) -> StacItem:
@@ -262,9 +260,7 @@ class TestRunHistoryBackfill:
             def search(self, bbox, date_from, date_to, *, max_cloud_pct=None):
                 raise SourceUnavailableError("STAC недоступен (HTTP 503)")
 
-        report = run_history_backfill(
-            db_session, client=UnavailableClient(), years=1, today=TODAY
-        )
+        report = run_history_backfill(db_session, client=UnavailableClient(), years=1, today=TODAY)
         assert report.catalog_failed  # все окна в ошибках
         assert len(report.catalog_failed) == report.windows
         assert report.per_year == {2026: 0}
@@ -277,9 +273,7 @@ class TestRunHistoryBackfill:
             "app.services.sentinel_ingest.history_backfill.cache_delete",
             lambda *patterns: calls.extend(patterns) or 0,
         )
-        report = run_history_backfill(
-            db_session, client=FakeStacClient([]), years=1, today=TODAY
-        )
+        report = run_history_backfill(db_session, client=FakeStacClient([]), years=1, today=TODAY)
         assert report.fields == 0 and not calls
         assert report.as_dict()["catalog_failed_count"] == 0
 
