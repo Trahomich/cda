@@ -140,7 +140,7 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     if len(grids) != 2:  # одна форма + один transform — иначе окно не совпало
         raise ValueError("каналы b02/b03/b04/b08 на разных сетках — окно не совпадает")
 
-    scl = _read_scl_grid(assets, red_transform, red_crs, red_arr.shape)
+    scl = _read_scl_grid(assets, contour_geojson, red_transform, red_crs, red_arr.shape)
     from app.services.sentinel_ingest.ndvi import CLOUD_SCL_VALUES
 
     cloud = np.isin(scl, CLOUD_SCL_VALUES)
