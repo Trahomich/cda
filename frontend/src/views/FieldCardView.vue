@@ -33,8 +33,6 @@ const cropHistory = ref<CropCycleHistoryItem[]>([])
 const ndvi = ref<NdviPoint[]>([])
 const weather = ref<FieldWeather | null>(null)
 const operations = ref<FieldOperation[]>([])
-const loading = ref(true)
-const failed = ref(false)
 
 /** Вкладки карточки (v2): «Обзор» — блоки 360°, «Работы» — план+факт поля. */
 const activeTab = ref<'overview' | 'works'>('overview')
