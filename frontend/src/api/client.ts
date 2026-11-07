@@ -126,6 +126,11 @@ export class ApiClient {
   ): Promise<Page<T>> {
     return this.request<Page<T>>(path, { query: { limit: 50, ...query } })
   }
+
+  /** Бинарный GET (image/png и пр.): blob + заголовки ответа. */
+  raw(path: string): Promise<{ ok: boolean; status: number; blob: Blob; headers: Headers }> {
+    return this.transport.raw(path)
+  }
 }
 
 export const apiClient = new ApiClient()
