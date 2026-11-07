@@ -1083,8 +1083,9 @@ export class MockTransport implements Transport {
         source_id: 'satellite.sentinel2-l2a',
         trust: 0.9,
         anomaly_zones_ref: null,
-        // §7.3: рендеры есть у последних дат сезона (старые — как исторические)
-        render_available: i >= ndviPoints.length - 3,
+        // §7.3: рендеры есть у последних дат сезона (старые — как исторические),
+        // но не у облачных сцен (cloud ≤ 60, как в ingest).
+        render_available: i >= ndviPoints.length - 3 && p.cloud_pct <= 60,
       }))
       return ok({
         items: scenes,
