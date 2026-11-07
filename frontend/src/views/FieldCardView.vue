@@ -1408,6 +1408,86 @@ polygon.card360__polygon {
   color: #33691e;
 }
 
+/* §7.4: бейдж вымокания у даты слоя (NDWI-детектор) */
+.card360__waterlogged {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: #e3f2fd;
+  color: #0d47a1;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ── «Выводы ассистента» (API-51, §7.4) ── */
+
+.card360__insights {
+  list-style: none;
+  margin: 0.2rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.card360__insight {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  background: #f5f5f5;
+  font-size: 0.88rem;
+}
+
+.card360__insight--alert {
+  background: #ffebee;
+}
+
+.card360__insight--warn {
+  background: #fff8e1;
+}
+
+.card360__insight--info {
+  background: #e8f5e9;
+}
+
+.card360__insight-mark {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+.card360__insight--alert .card360__insight-mark {
+  color: #c62828;
+}
+
+.card360__insight--warn .card360__insight-mark {
+  color: #ef6c00;
+}
+
+.card360__insight--info .card360__insight-mark {
+  color: #1b5e20;
+}
+
+.card360__insight-text {
+  flex: 1 1 auto;
+}
+
+.card360__insight-link {
+  margin-left: 0.4rem;
+  color: #1565c0;
+}
+
+.card360__insights-summary {
+  margin: 0.2rem 0;
+  font-size: 0.9rem;
+}
+
+.card360__insights-meta {
+  font-size: 0.78rem;
+}
+
 .card360__check {
   margin: 0.6rem 0 0;
   padding: 0.5rem 0.6rem;
