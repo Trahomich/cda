@@ -90,11 +90,15 @@ const layout = computed(() => {
       dateShort: fmtDate(p.date),
       cloudPct: p.cloud_pct,
       trust: p.trust,
+      waterlogged: p.waterlogged === true,
     })),
   }
 })
 
 const lastPoint = computed(() => props.points[lastClearIdx.value] ?? null)
+
+/** Есть ли сцены с вымоканием (§7.4) — показывать ли легенду. */
+const hasWaterlogged = computed(() => props.points.some((p) => p.waterlogged === true))
 </script>
 
 <template>
