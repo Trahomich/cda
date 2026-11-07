@@ -99,6 +99,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "cereals",
         "color_hex": "#e29a5e",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -5.0,
+        "yield_k_ndvi_max": 26.0,
+        "yield_k_ndvi_int": 18.0,
     },
     {
         "name": "Просо",
