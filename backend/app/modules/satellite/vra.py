@@ -121,7 +121,7 @@ def compute_vra(db: Session, field: Field, scene: SatelliteScene) -> VraZones:
     if not assets:
         raise _err_no_data(field.id, f"нет ассетов каталога за {scene.captured_at.isoformat()}")
 
-    contour_geojson = __import__("json").loads(
+    contour_geojson = json.loads(
         db.scalar(select(func.ST_AsGeoJSON(Field.contour)).where(Field.id == field.id))
     )
     try:
