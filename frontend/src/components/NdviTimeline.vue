@@ -173,8 +173,16 @@ const hasWaterlogged = computed(() => props.points.some((p) => p.waterlogged ===
             dot.selectable && !dot.cloudy ? 'ndvi__dot--selectable' : '',
           ]"
         >
-          <title>{{ dot.date }} · NDVI {{ dot.val }} · облачность {{ dot.cloudPct }} %<template v-if="dot.trust != null"> · доверие {{ dot.trust }}</template></title>
+          <title>{{ dot.date }} · NDVI {{ dot.val }} · облачность {{ dot.cloudPct }} %<template v-if="dot.trust != null"> · доверие {{ dot.trust }}</template><template v-if="dot.waterlogged"> · вымокание</template></title>
         </circle>
+        <!-- Вымокание на сцене (§7.4, NDWI-детектор) — синее кольцо ◉ -->
+        <circle
+          v-if="dot.waterlogged"
+          :cx="dot.cx"
+          :cy="dot.cy"
+          r="5.5"
+          class="ndvi__water-ring"
+        />
         <!-- Невидимая зона клика поверх точки, чтобы не перекрывалась ею -->
         <circle
           v-if="dot.selectable"
