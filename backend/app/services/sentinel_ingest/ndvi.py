@@ -37,6 +37,7 @@ from sqlalchemy.orm import Session
 from app.integrations import DataGapError, DataQualityError, SourceUnavailableError
 from app.integrations.raster import (
     compute_index_array,
+    compute_ndwi_array,
     contour_mask,
     stats_over_mask,
     validate_index_values,
