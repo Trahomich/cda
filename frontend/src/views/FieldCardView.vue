@@ -303,12 +303,6 @@ const SEVERITY_MARKS: Record<InsightSeverity, string> = {
   alert: '⛔',
 }
 
-/** Сцена выбранной даты слоя с вымоканием (§7.4) — бейдж у даты. */
-const selectedWaterlogged = computed(
-  () => ndvi.value.find((p) => p.date === renderDate.value)?.waterlogged === true,
-)
-
-
 /** Позиция PNG в SVG: bbox рендера (X-Field-Bbox) → координаты рамки мини-карты. */
 const layerRect = computed(() => {
   const frame = mapFrame.value
