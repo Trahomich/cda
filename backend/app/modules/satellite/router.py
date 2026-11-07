@@ -251,4 +251,57 @@ def field_ndvi_render(
     )
 
 
+@router.get(
+    "/fields/{field_id}/vra",
+    response_model=VraZonesResponse,
+    summary="API-52: зоны дифференцированного внесения (§7.4)",
+)
+def field_vra(
+    field_id: uuid.UUID, db: DbSession, settings: SettingsDep
+) -> VraZonesResponse:
+    field = _get_field(db, field_id)
+    result = vra.vra_zones(db, field)
+    base_dose = vra.base_dose_kg_ha(db, field.id)
+    return VraZonesResponse(
+        field_id=field.id,
+        date=result.captured_at,
+        iqr_ndvi=result.iqr_ndvi,
+        base_dose_kg_ha=base_dose,
+        zones=[
+            VraZoneItem(
+                zone=z.zone,
+                label=z.label,
+                area_ga=z.area_ga,
+                ndvi_mean=z.ndvi_mean,
+                dose_factor=z.dose_factor,
+                dose_kg_ha=(
+                    None if base_dose is None else round(base_dose * z.dose_factor, 2)
+                ),
+            )
+            for z in result.zones
+        ],
+        map_png_url=f"{settings.api_v1_prefix}/fields/{field.id}/vra/map.png",
+    )
+
+
+@router.get(
+    "/fields/{field_id}/vra/map.png",
+    response_class=Response,
+    summary="API-52: PNG-карта зон внесения (геопривязка — как §7.3)",
+)
+def field_vra_map(field_id: uuid.UUID, db: DbSession) -> Response:
+    field = _get_field(db, field_id)
+    result = vra.vra_zones(db, field)
+    return Response(
+        content=result.png,
+        media_type="image/png",
+        headers={
+            "X-Field-Bbox": ",".join(f"{v:.6f}" for v in result.bbox),
+            "X-Image-Size": f"{result.width}x{result.height}",
+            # зоны пересчитываются максимум раз в 24 ч по дате сцены (§7.4)
+            "Cache-Control": "public, max-age=86400",
+        },
+    )
+
+
 __all__ = ["router"]
