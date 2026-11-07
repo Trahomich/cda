@@ -67,7 +67,7 @@ def precip_sums_7d(db: Session, field_id, dates: Iterable[date]) -> dict[date, f
             WeatherObservation.observed_at <= unique[-1],
         )
     ).all()
-    by_date: dict[date, list[float | None]] = {}
+    by_date: dict[date, list[float]] = {}
     for observed_at, mm in rows:
         by_date.setdefault(observed_at, []).append(float(mm) if mm is not None else 0.0)
 
