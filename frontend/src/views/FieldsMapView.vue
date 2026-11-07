@@ -159,7 +159,6 @@ async function loadFields(layer: L.FeatureGroup) {
           opacity: 1,
         })
         featureLayer.getTooltip()?.on('click', () => openFieldCard(field))
-        featureLayer.on('click', () => openFieldCard(field))
         const { name, color } = cultureColorOf(field)
         legendMap.set(name, color)
       },
