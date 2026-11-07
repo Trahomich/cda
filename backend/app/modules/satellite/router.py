@@ -188,11 +188,6 @@ def field_yield_forecast(field_id: uuid.UUID, db: DbSession) -> YieldForecastRes
     поделён на 100 (docs/06 §7.4): forecast = yield_k_base +
     yield_k_ndvi_max·ndvi_max + yield_k_ndvi_int·ndvi_integral, интервал ±25 %.
     """
-    from sqlalchemy import case
-
-    from app.models.agronomy import CropCycle
-    from app.models.references import Culture
-
     field = _get_field(db, field_id)
 
     def _scenes_of_year(year: int) -> list[SatelliteScene]:
