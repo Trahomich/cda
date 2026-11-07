@@ -66,8 +66,17 @@ function title(item: CropCycleHistoryItem): string {
     v-if="items.length"
     class="strip"
   >
+    <!-- Ось времени слева направо по возрастанию года (v2-fix-A п.6):
+         «… +N» — самые старые годы, скрытые за пределами окна. -->
     <span
-      v-for="item in visible"
+      v-if="hidden > 0"
+      class="strip__more"
+      :title="`Ещё ${hidden} гг. раньше: ${hiddenItems
+        .map((i) => `${i.year} — ${i.culture_name}`)
+        .join(', ')}`"
+    >… +{{ hidden }}</span>
+    <span
+      v-for="item in visibleAsc"
       :key="item.year"
       class="strip__cell"
       :class="`strip__cell--${item.status}`"
@@ -80,14 +89,6 @@ function title(item: CropCycleHistoryItem): string {
       />
       <span class="strip__name">{{ shortName(item.culture_name) }}</span>
     </span>
-    <span
-      v-if="hidden > 0"
-      class="strip__more"
-      :title="`Ещё ${hidden} гг. раньше: ${items
-        .slice(maxYears)
-        .map((i) => `${i.year} — ${i.culture_name}`)
-        .join(', ')}`"
-    >+{{ hidden }} …</span>
   </div>
   <p
     v-else
