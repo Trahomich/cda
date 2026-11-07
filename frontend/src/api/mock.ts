@@ -1078,8 +1078,12 @@ function windowsOf(n: number, type: WindowOperationType, fieldId: string) {
 
 /** Отрисовка демо-PNG 200×100 (canvas) для raw(): ndvi — палитра
  *  коричневый→жёлтый→зелёный (как бэкенд), truecolor — оливково-зелёные
- *  тона; «пятно» детерминировано от индекса даты, чтобы сцены различались. */
-async function renderScenePng(variant: 'ndvi' | 'truecolor', sceneIdx: number): Promise<Blob> {
+ *  тона, ndwi (§7.4) — «сухо→влажно→вода» жёлтый→бирюзовый→синий;
+ *  «пятно» детерминировано от индекса даты, чтобы сцены различались. */
+async function renderScenePng(
+  variant: 'ndvi' | 'truecolor' | 'ndwi',
+  sceneIdx: number,
+): Promise<Blob> {
   const canvas = document.createElement('canvas')
   canvas.width = 200
   canvas.height = 100
@@ -1090,6 +1094,13 @@ async function renderScenePng(variant: 'ndvi' | 'truecolor', sceneIdx: number): 
     grad.addColorStop(0, '#8a5a2b')
     grad.addColorStop(0.5, '#d9c34a')
     grad.addColorStop(1, '#2e7d32')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, 200, 100)
+  } else if (variant === 'ndwi') {
+    const grad = ctx.createLinearGradient(0, 100, 0, 0)
+    grad.addColorStop(0, '#e0c24a')
+    grad.addColorStop(0.5, '#26a69a')
+    grad.addColorStop(1, '#1565c0')
     ctx.fillStyle = grad
     ctx.fillRect(0, 0, 200, 100)
   } else {
