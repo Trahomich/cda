@@ -358,6 +358,7 @@ def refresh_insights(field_id: uuid.UUID, day: date) -> None:
                     keep_alive=LLM_KEEP_ALIVE,
                 ),
                 items,
+                context,
             )
         finally:
             _llm_semaphore.release()
