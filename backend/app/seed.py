@@ -30,6 +30,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "cereals",
         "color_hex": "#e8c46b",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -10.0,
+        "yield_k_ndvi_max": 40.0,
+        "yield_k_ndvi_int": 30.0,
     },
     {
         "name": "Яровая пшеница",
@@ -37,6 +41,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "cereals",
         "color_hex": "#f4e04d",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -9.5,
+        "yield_k_ndvi_max": 38.0,
+        "yield_k_ndvi_int": 28.0,
     },
     {
         "name": "Ячмень",
@@ -44,6 +52,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "cereals",
         "color_hex": "#d9a441",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -9.0,
+        "yield_k_ndvi_max": 36.0,
+        "yield_k_ndvi_int": 28.0,
     },
     {
         "name": "Ячмень озимый",
@@ -51,6 +63,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "cereals",
         "color_hex": "#bf8f3f",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -9.5,
+        "yield_k_ndvi_max": 37.0,
+        "yield_k_ndvi_int": 28.0,
     },
     {
         "name": "Рожь",
@@ -93,6 +109,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "cereals",
         "color_hex": "#f28c28",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -15.0,
+        "yield_k_ndvi_max": 95.0,
+        "yield_k_ndvi_int": 60.0,
     },
     {
         "name": "Кукуруза на силос",
@@ -108,6 +128,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "oilseeds",
         "color_hex": "#ffb300",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -6.0,
+        "yield_k_ndvi_max": 34.0,
+        "yield_k_ndvi_int": 20.0,
     },
     {
         "name": "Рапс",
@@ -116,6 +140,10 @@ CULTURES: list[dict] = [
         "crop_group": "oilseeds",
         "color_hex": "#d4e157",
         "repeat_years": 4,
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -5.0,
+        "yield_k_ndvi_max": 30.0,
+        "yield_k_ndvi_int": 25.0,
     },
     {
         "name": "Рапс озимый",
@@ -124,6 +152,10 @@ CULTURES: list[dict] = [
         "crop_group": "oilseeds",
         "color_hex": "#c0ca33",
         "repeat_years": 4,
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -5.0,
+        "yield_k_ndvi_max": 31.0,
+        "yield_k_ndvi_int": 25.0,
     },
     # бобовые
     {
