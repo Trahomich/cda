@@ -160,9 +160,8 @@ const contourPoints = computed(() => {
 
 /* ── Слой мини-карты (§7.3): NDVI-рендер / truecolor снимок / контур ── */
 
-/** Режим слоя: 'ndvi' | 'truecolor' | 'ndwi' — PNG-оверлей на контуре
- *  (ndwi — карта вымоканий, §7.4), 'none' — контур. */
-const layerMode = ref<'ndvi' | 'truecolor' | 'ndwi' | 'none'>('ndvi')
+/** Режим слоя: 'ndvi' | 'truecolor' — PNG-оверлей на контуре, 'none' — контур. */
+const layerMode = ref<'ndvi' | 'truecolor' | 'none'>('ndvi')
 /** Даты со свежими рендерами (render_available у API-06, §7.3). */
 const renderDates = computed(() => ndvi.value.filter((p) => p.render_available).map((p) => p.date))
 /** Выбранная дата слоя; по умолчанию — последняя с рендером. */
