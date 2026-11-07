@@ -932,15 +932,6 @@ polygon.card360__polygon {
   color: #33691e;
 }
 
-.card360__layer-date {
-  border: 1px solid #c8e6c9;
-  border-radius: 6px;
-  padding: 0.3rem 0.4rem;
-  font-size: 0.85rem;
-  background: #fff;
-  color: #1b5e20;
-}
-
 .card360__check {
   margin: 0.6rem 0 0;
   padding: 0.5rem 0.6rem;
