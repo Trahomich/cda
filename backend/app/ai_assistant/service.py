@@ -107,7 +107,7 @@ def build_items(
     candidates: list[InsightItem | None] = [
         detectors.detect_ndvi_drop(scenes),
         detectors.detect_ndvi_stagnation(scenes, culture_name),
-        detectors.detect_waterlogging(latest, precip_7d),
+        detectors.detect_waterlogging(scenes, precip_map),
         drought,
         detectors.detect_ndvi_lag_last_year(scenes),
         detectors.detect_agrochem_low(detectors.latest_agrochem(db, field_id)),
