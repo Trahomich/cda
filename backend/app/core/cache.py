@@ -55,4 +55,22 @@ def cache_set(key: str, value, ttl_seconds: int) -> None:
         logger.debug("кэш: не удалось записать %s — работаем без кэша", key, exc_info=True)
 
 
-__all__ = ["cache_get", "cache_set", "client"]
+def cache_delete(*patterns: str) -> int:
+    """Удалить ключи по glob-паттернам (scan+delete); вернуть число удалённых.
+
+    Недоступность кэша — не ошибка (мягкий fail, как у get/set): работаем
+    дальше, ключи истекут по TTL сами.
+    """
+    deleted = 0
+    try:
+        client_local = client()
+        for pattern in patterns:
+            keys = list(client_local.scan_iter(match=pattern, count=100))
+            if keys:
+                deleted += int(client_local.delete(*keys))
+    except Exception:  # сеть/отсутствие сервера — работаем без кэша
+        logger.debug("кэш: не удалось удалить по %s — ключи истекут по TTL", patterns, exc_info=True)
+    return deleted
+
+
+__all__ = ["cache_delete", "cache_get", "cache_set", "client"]
