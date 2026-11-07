@@ -737,6 +737,15 @@ function fmtNum(v: number, digits = 1): string {
               </button>
               <button
                 type="button"
+                class="card360__layer-btn card360__layer-btn--ndwi"
+                :class="{ 'card360__layer-btn--active': layerMode === 'ndwi' }"
+                :aria-pressed="layerMode === 'ndwi'"
+                @click="layerMode = 'ndwi'"
+              >
+                Вымокания
+              </button>
+              <button
+                type="button"
                 class="card360__layer-btn card360__layer-btn--contour"
                 :class="{ 'card360__layer-btn--active': layerMode === 'none' }"
                 :aria-pressed="layerMode === 'none'"
