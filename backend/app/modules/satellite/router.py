@@ -182,6 +182,64 @@ def field_ndvi(
 
 
 @router.get(
+    "/fields/{field_id}/seasons",
+    response_model=SeasonsResponse,
+    summary="API-54: список сезонов NDVI поля (§7.5)",
+)
+def field_seasons(field_id: uuid.UUID, db: DbSession) -> SeasonsResponse:
+    """Сезоны поля: distinct-годы чистых NDVI-сцен по убыванию (§7.5).
+
+    culture_name — культура основного (main) цикла года (батч-запрос),
+    null — цикла года нет; is_current — год последней чистой сцены поля.
+    """
+    field = _get_field(db, field_id)
+    rows = db.execute(
+        select(
+            func.extract("year", SatelliteScene.captured_at).label("year"),
+            func.count().label("scenes"),
+            func.min(SatelliteScene.captured_at).label("first_date"),
+            func.max(SatelliteScene.captured_at).label("last_date"),
+        )
+        .where(
+            SatelliteScene.field_id == field.id,
+            SatelliteScene.index == "ndvi",
+            # только чистые сцены (§7.5); фильтр явный, на случай ослабления
+            # констрейнта БД cloud ≤ 60 (как в API-53)
+            SatelliteScene.cloud_pct <= CLEAN_CLOUD_PCT,
+        )
+        .group_by(func.extract("year", SatelliteScene.captured_at))
+        .order_by(func.extract("year", SatelliteScene.captured_at).desc())
+    ).all()
+    years = [int(row.year) for row in rows]
+    culture_by_year: dict[int, str | None] = {}
+    if years:
+        cycles = db.execute(
+            select(CropCycle.year, Culture.name)
+            .join(Culture, CropCycle.culture_id == Culture.id)
+            .where(
+                CropCycle.field_id == field.id,
+                CropCycle.kind == "main",
+                CropCycle.year.in_(years),
+            )
+        ).all()
+        culture_by_year = {int(year): name for year, name in cycles}
+    # текущий сезон — год последней чистой сцены поля = max год агрегата
+    current_year = max(years) if years else None
+    items = [
+        SeasonItem(
+            year=year,
+            scenes=int(row.scenes),
+            first_date=row.first_date,
+            last_date=row.last_date,
+            culture_name=culture_by_year.get(year),
+            is_current=year == current_year,
+        )
+        for row, year in zip(rows, years, strict=True)
+    ]
+    return SeasonsResponse(field_id=field.id, items=items, total=len(items))
+
+
+@router.get(
     "/fields/{field_id}/yield-forecast",
     response_model=YieldForecastResponse,
     summary="API-53: прогноз урожайности по NDVI (§7.4, 09-ai §8.3)",
