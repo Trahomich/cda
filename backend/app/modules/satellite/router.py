@@ -39,6 +39,8 @@ from app.modules.satellite.schemas import (
     INDICES,
     NdviTimelineResponse,
     SceneItem,
+    SeasonItem,
+    SeasonsResponse,
     SourceMeta,
     VraZoneItem,
     VraZonesResponse,
