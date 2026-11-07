@@ -197,9 +197,6 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     )
 
 
-INDEX_NAME = "ndvi"
-
-
 def write_renders(
     render_dir: Path | str, field_id, captured_at: date, render: SceneRender
 ) -> None:
