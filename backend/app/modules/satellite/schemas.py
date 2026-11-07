@@ -65,11 +65,15 @@ class VraZoneItem(BaseModel):
 
 
 class VraZonesResponse(BaseModel):
-    """API-52: зоны дифференцированного внесения по последнему чистому NDVI."""
+    """API-52: зоны дифференцированного внесения по пиковым NDVI-сценам."""
 
     field_id: uuid.UUID
-    date: Date = Field(description="дата сцены, по которой построены зоны")
+    date: Date = Field(description="дата пиковой сцены, по которой построены зоны")
     iqr_ndvi: float
+    peak_dates: list[Date] = Field(
+        default_factory=list,
+        description="даты топ-3 пиковых сцен сезона (подтверждение стабильности)",
+    )
     base_dose_kg_ha: float | None = None
     zones: list[VraZoneItem]
     map_png_url: str
