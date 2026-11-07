@@ -24,18 +24,4 @@ down_revision = "0015_forecast_precip_prob"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-_COLUMNS = (
-    ("yield_k_base", -10.0),
-    ("yield_k_ndvi_max", 40.0),
-    ("yield_k_ndvi_int", 30.0),
-)
-
-
-def upgrade() -> None:
-    for name, _default in _COLUMNS:
-        op.add_column("ref_culture", sa.Column(name, sa.Numeric(6, 2), nullable=True))
-
-
-def downgrade() -> None:
-    for name, _default in reversed(_COLUMNS):
-        op.drop_column("ref_culture", name)
+_COLUMNS = ("yield_k_base", "yield_k_ndvi_max", "yield_k_ndvi_int")
