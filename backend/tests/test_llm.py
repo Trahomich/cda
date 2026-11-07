@@ -98,6 +98,23 @@ def test_summarize_empty_response_is_none() -> None:
     assert summarize("p", "c", http=_client(handler), base_url="http://o:11434") is None
 
 
+def test_summarize_num_predict_sent_only_when_given() -> None:
+    """num_predict попадает в options только если задан (#112):
+    по умолчанию лимит генерации не передаётся (значение Ollama)."""
+    bodies: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        bodies.append(json.loads(request.read().decode()))
+        return httpx.Response(200, json={"response": "ok"})
+
+    kwargs = {"http": _client(handler), "base_url": "http://o:11434"}
+    assert summarize("p", "c", **kwargs) == "ok"
+    assert bodies[-1]["options"] == {"temperature": 0.3, "num_ctx": 4096}
+
+    assert summarize("p", "c", num_predict=256, **kwargs) == "ok"
+    assert bodies[-1]["options"] == {"temperature": 0.3, "num_ctx": 4096, "num_predict": 256}
+
+
 def test_summarize_model_override() -> None:
     """Явная модель переопределяет настройку (проверяется в payload)."""
 
