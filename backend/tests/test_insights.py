@@ -150,7 +150,7 @@ class TestDetectorsApi:
         assert "ndvi_stagnation" not in codes(body["items"])
 
     def test_ndvi_stagnation_silent_out_of_season(self, world, db_session) -> None:
-        """Ноябрь — вне сезона вегетации: тот же ряд, но вывода нет (09 §8.2 v1.1)."""
+        """Ноябрь, поля без цикла — фолбэк «обычное» окно 4–10: вывода нет (§8.2 v1.1)."""
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         for i, ndvi in enumerate((0.45, 0.46, 0.47)):
@@ -173,6 +173,39 @@ class TestDetectorsApi:
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         for i, ndvi in enumerate((0.18, 0.19, 0.19)):  # среднее 0.187 < 0.3
             make_scene(db_session, fid, date(2026, 5, 20) - timedelta(days=10 - 4 * i), ndvi)
+        body = get_insights(client, hdr, fid)
+        assert "ndvi_stagnation" not in codes(body["items"])
+
+    def test_ndvi_stagnation_winter_culture_november(self, world, db_session) -> None:
+        """Озимая пшеница (цикл 2027, осенний сев) — ноябрь в её окне: item."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        culture = make_culture(db_session, name="Пшеница озимая")
+        make_cycle(db_session, field={"field_id": str(fid)}, culture=culture, year=2027)
+        for i, ndvi in enumerate((0.45, 0.46, 0.47)):
+            make_scene(db_session, fid, date(2026, 11, 20) - timedelta(days=10 - 4 * i), ndvi)
+        body = get_insights(client, hdr, fid)
+        assert item(body, "ndvi_stagnation")["severity"] == "info"
+
+    def test_ndvi_stagnation_spring_culture_november_silent(self, world, db_session) -> None:
+        """Яровая пшеница в ноябре — вне окна 4–10: вывода нет."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        culture = make_culture(db_session, name="Пшеница яровая")
+        make_cycle(db_session, field={"field_id": str(fid)}, culture=culture, year=2027)
+        for i, ndvi in enumerate((0.45, 0.46, 0.47)):
+            make_scene(db_session, fid, date(2026, 11, 20) - timedelta(days=10 - 4 * i), ndvi)
+        body = get_insights(client, hdr, fid)
+        assert "ndvi_stagnation" not in codes(body["items"])
+
+    def test_ndvi_stagnation_winter_culture_august_silent(self, world, db_session) -> None:
+        """Август вне окна даже озимых (март–июнь, сентябрь–ноябрь): нет вывода."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        culture = make_culture(db_session, name="Рожь озимая")
+        make_cycle(db_session, field={"field_id": str(fid)}, culture=culture, year=2027)
+        for i, ndvi in enumerate((0.45, 0.46, 0.47)):
+            make_scene(db_session, fid, date(2026, 8, 20) - timedelta(days=10 - 4 * i), ndvi)
         body = get_insights(client, hdr, fid)
         assert "ndvi_stagnation" not in codes(body["items"])
 
