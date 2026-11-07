@@ -75,6 +75,8 @@ class VraZones:
     width: int
     height: int
     bbox: tuple[float, float, float, float]  # WGS84: minLon, minLat, maxLon, maxLat
+    #: даты топ-3 пиковых сцен сезона, по которым подтверждалась стабильность
+    peak_dates: tuple[date, ...] = ()
 
 
 def _err_no_data(field_id: uuid.UUID, reason: str) -> AppError:
