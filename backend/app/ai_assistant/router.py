@@ -33,7 +33,12 @@ router = APIRouter(tags=["ai"], dependencies=[Depends(group_checker("satellite")
     summary="Выводы ассистента по полю (детекторы + LLM-сводка, API-51)",
 )
 def field_insights(
-    field_id: uuid.UUID, background: BackgroundTasks, db: DbSession, settings: SettingsDep
+    field_id: uuid.UUID,
+    background: BackgroundTasks,
+    db: DbSession,
+    settings: SettingsDep,
+    *,
+    year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"),
 ) -> InsightsResponse:
     field = db.get(Field, field_id)
     if field is None:
@@ -43,4 +48,4 @@ def field_insights(
             title="Не найдено",
             status_code=404,
         )
-    return service.get_insights(db, field, background, settings)
+    return service.get_insights(db, field, background, settings, year=year)
