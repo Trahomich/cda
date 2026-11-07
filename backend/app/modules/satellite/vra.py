@@ -267,6 +267,7 @@ def _from_cache(data: dict) -> VraZones | None:
             width=int(data["width"]),
             height=int(data["height"]),
             bbox=tuple(float(v) for v in data["bbox"]),  # type: ignore[arg-type]
+            peak_dates=tuple(date.fromisoformat(d) for d in data.get("peak_dates", [])),
         )
     except (KeyError, ValueError, TypeError):
         logger.warning("VRA: битый кэш — пересчитаю", exc_info=True)
