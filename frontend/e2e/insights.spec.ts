@@ -44,7 +44,7 @@ test('карточка поля: выводы ассистента — пунк�
   await expect(block).toContainText('По числовым детекторам (NDVI, NDWI, агрохимия)')
 })
 
-test('карточка поля: слой «Вымокания» — NDWI-рендер и бейдж даты (§7.4)', async ({ page }) => {
+test('карточка поля: отдельного слоя «Вымокания» и бейджа у даты нет (§7.4, #102)', async ({ page }) => {
   await page.goto(`/fields/${FIRST_FIELD}`)
 
   const ndviBlock = page.locator('.card360__block', {
@@ -52,31 +52,20 @@ test('карточка поля: слой «Вымокания» — NDWI-рен
   })
   await expect(ndviBlock).toBeVisible({ timeout: 15_000 })
 
-  // Кнопка слоя «Вымокания» между «Снимок» и «Контур»
-  const ndwiBtn = ndviBlock.locator('.card360__layer-btn--ndwi')
-  await expect(ndwiBtn).toBeVisible()
-  await ndwiBtn.click()
-  await expect(ndwiBtn).toHaveAttribute('aria-pressed', 'true')
+  // Кнопки слоя «Вымокания» и бейджа вымокания больше нет
+  await expect(ndviBlock.locator('.card360__layer-btn--ndwi')).toHaveCount(0)
+  await expect(ndviBlock.locator('.card360__waterlogged')).toHaveCount(0)
+  await expect(ndviBlock.locator('.card360__layer-date-label')).not.toContainText('вымокание')
 
-  // PNG-оверлей (blob-URL) в мини-карте, контур поверх — stroke-only
+  // Базовый NDVI-слой работает: PNG-оверлей, контур поверх — stroke-only
   const layer = page.locator('svg.card360__contour image.card360__ndvi-layer')
   await expect(layer).toBeVisible({ timeout: 10_000 })
   await expect(layer).toHaveAttribute('href', /^blob:/)
   const polygon = page.locator('svg.card360__contour polygon.card360__polygon')
   await expect(polygon).toHaveCSS('fill-opacity', '0')
-
-  // По умолчанию последняя рендерная дата 31.07.2027 — вымокание: бейдж
-  await expect(ndviBlock.locator('.card360__layer-date-label')).toContainText('Снимок за 31.07.2027')
-  await expect(ndviBlock.locator('.card360__waterlogged')).toBeVisible()
-  await expect(ndviBlock.locator('.card360__waterlogged')).toContainText('вымокание')
-
-  // Сцена 17.07 без вымокания — бейдж скрывается (клик по точке графика)
-  await ndviBlock.locator('.ndvi__hit[data-date="2027-07-17"]').click()
-  await expect(ndviBlock.locator('.card360__layer-date-label')).toContainText('Снимок за 17.07.2027')
-  await expect(ndviBlock.locator('.card360__waterlogged')).toHaveCount(0)
 })
 
-test('карточка поля: вымокание отмечено кольцами на графике NDVI (§7.4)', async ({ page }) => {
+test('карточка поля: колец вымокания на графике NDVI нет (§7.4, #102)', async ({ page }) => {
   await page.goto(`/fields/${FIRST_FIELD}`)
 
   const ndviBlock = page.locator('.card360__block', {
@@ -84,10 +73,8 @@ test('карточка поля: вымокание отмечено кольц�
   })
   await expect(ndviBlock.locator('.ndvi__svg')).toBeVisible({ timeout: 15_000 })
 
-  // Поле 1: сцены 05.06 и 31.07 с вымоканием — два кольца ◉ + легенда
-  const rings = ndviBlock.locator('.ndvi__water-ring')
-  await expect(rings).toHaveCount(2)
-  await expect(ndviBlock.locator('.ndvi__legend')).toContainText('вымокание')
+  await expect(ndviBlock.locator('.ndvi__water-ring')).toHaveCount(0)
+  await expect(ndviBlock.locator('.ndvi__legend')).not.toContainText('вымокание')
 })
 
 test('карточка поля: без отклонений — пустые выводы (§7.4)', async ({ page }) => {
