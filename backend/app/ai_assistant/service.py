@@ -264,7 +264,8 @@ def _llm_context(
             .limit(1)
         ).first()
     if cycle is not None:
-        parts.append(f"Культура текущего сезона: {cycle[1]} ({cycle[0].year}).")
+        season_word = f"сезона {year}" if year is not None else "текущего сезона"
+        parts.append(f"Культура {season_word}: {cycle[1]} ({cycle[0].year}).")
     probe = detectors.latest_agrochem(db, field.id)
     if probe is not None:
         ph = f"pH {float(probe.ph):.1f}" if probe.ph is not None else "pH нет"
