@@ -200,6 +200,14 @@ async function loadLayer() {
 
 watch([renderDate, layerMode], () => void loadLayer())
 
+/** Клик по точке графика (v2-fix-H): даты без рендера не выбираем;
+ *  если слой выключен («Контур»), включаем NDVI. */
+function onDotSelect(date: string): void {
+  if (!renderDates.value.includes(date)) return
+  renderDate.value = date
+  if (layerMode.value === 'none') layerMode.value = 'ndvi'
+}
+
 onUnmounted(() => {
   if (layer.value) URL.revokeObjectURL(layer.value.url)
 })
