@@ -16,6 +16,8 @@ export interface TransportResponse {
 
 export interface Transport {
   request(method: HttpMethod, path: string, body?: unknown): Promise<TransportResponse>
+  /** Бинарный GET (image/png и т.п.): blob + избранные заголовки. */
+  raw(path: string): Promise<{ ok: boolean; status: number; blob: Blob; headers: Headers }>
 }
 
 /** Разбор ошибки RFC 7807 из ответа fetch. */
