@@ -92,11 +92,17 @@ def _err_no_data(field_id: uuid.UUID, reason: str) -> AppError:
     )
 
 
-def latest_scene(db: Session, field_id: uuid.UUID) -> SatelliteScene | None:
-    """Последняя чистая NDVI-сцена поля (в БД только cloud ≤ 60, 05 §5)."""
+def latest_scene(db: Session, field_id: uuid.UUID, *, year: int | None = None) -> SatelliteScene | None:
+    """Последняя чистая NDVI-сцена поля (в БД только cloud ≤ 60, 05 §5).
+
+    year — сцены только сезона YYYY (§7.5).
+    """
+    filters = [SatelliteScene.field_id == field_id, SatelliteScene.index == "ndvi"]
+    if year is not None:
+        filters.append(func.extract("year", SatelliteScene.captured_at) == year)
     return db.scalars(
         select(SatelliteScene)
-        .where(SatelliteScene.field_id == field_id, SatelliteScene.index == "ndvi")
+        .where(*filters)
         .order_by(SatelliteScene.captured_at.desc(), SatelliteScene.created_at.desc())
         .limit(1)
     ).first()
