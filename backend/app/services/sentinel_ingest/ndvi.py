@@ -276,7 +276,16 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     validate_index_values(INDEX, ndvi[valid])
     index_min, index_avg, index_max = stats_over_mask(ndvi, valid)
     std = round(float(np.std(ndvi[valid])), 3)
-    return NdviStats(index_min, index_avg, index_max, std, cloud_pct)
+    ndwi = _zonal_ndwi(assets, contour_geojson, nir_arr, nir_transform, valid)
+    return NdviStats(
+        index_min,
+        index_avg,
+        index_max,
+        std,
+        cloud_pct,
+        ndwi_mean=ndwi[0] if ndwi else None,
+        ndwi_p90=ndwi[1] if ndwi else None,
+    )
 
 
 def scene_upsert(db: Session, field_id: uuid.UUID, captured_at: date, stats: NdviStats) -> bool:
