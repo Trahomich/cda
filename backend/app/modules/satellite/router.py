@@ -243,7 +243,7 @@ def field_ndvi_render(
         headers={
             "X-Field-Bbox": ",".join(f"{v:.6f}" for v in bbox),
             "X-Image-Size": f"{width}x{height}",
-            # рендер даты_immutable: имя включает дату сцены (§7.3)
+            # рендер даты неизменен: имя файла включает дату сцены (§7.3)
             "Cache-Control": "public, max-age=31536000, immutable",
         },
     )
