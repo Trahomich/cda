@@ -121,7 +121,7 @@ def run_ndwi_backfill(
     def compute(task: tuple[uuid.UUID, dict, dict]) -> tuple[uuid.UUID, object]:
         scene_id, contour, assets = task
         try:
-            stats = zonal_ndvi(assets, contour)  # type: NdviStats
+            stats = zonal_ndvi(assets, contour)
             if stats.ndwi_mean is None or stats.ndwi_p90 is None:
                 # b03 есть, но NDWI не считался (сетка/пиксели) — сцена остаётся NULL
                 return scene_id, DataGapError("NDWI не рассчитан по каналу b03")
