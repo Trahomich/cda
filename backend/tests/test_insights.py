@@ -13,7 +13,7 @@ from datetime import date, timedelta
 import pytest
 from app.models.integrations import SatelliteScene, WeatherObservation
 from app.models.references import Agrochem, Source
-from tests.test_inputs import headers, make_field
+from tests.test_inputs import headers, make_cycle, make_culture, make_field
 
 API = "/api/v1"
 SATELLITE_SOURCE = "satellite.sentinel2-l2a"
