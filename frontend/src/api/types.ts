@@ -569,6 +569,41 @@ export interface NdviTimelinePage extends Page<SceneItem> {
   meta: { source_id: string; status: string | null; last_success_at: string | null; stale: boolean }
 }
 
+/** Зона дифференцированного внесения (API-52, docs/06 §7.4). */
+export interface VraZoneItem {
+  zone: number
+  label: string
+  area_ga: number
+  ndvi_mean: number
+  dose_factor: number
+  dose_kg_ha: number | null
+}
+
+/** Ответ API-52: зоны VRA по последней чистой NDVI-сцене (§7.4). */
+export interface VraZonesResponse {
+  field_id: string
+  date: string
+  iqr_ndvi: number
+  base_dose_kg_ha: number | null
+  zones: VraZoneItem[]
+  map_png_url: string
+}
+
+/** Прогноз урожайности по NDVI (API-53, docs/06 §7.4; 09-ai §8.3). */
+export interface YieldForecastResponse {
+  field_id: string
+  cycle_year: number
+  culture_id: string
+  culture_name: string
+  method: string
+  ndvi_max: number
+  ndvi_integral: number
+  forecast_c_ha: number
+  low_c_ha: number
+  high_c_ha: number
+  disclaimer: string
+}
+
 /** Факт погоды — элемент facts[] API-07. */
 export interface WeatherFactItem {
   observed_at: string
