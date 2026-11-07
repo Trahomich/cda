@@ -255,8 +255,12 @@ def field_yield_forecast(field_id: uuid.UUID, db: DbSession) -> YieldForecastRes
             status_code=422,
         )
 
-    coeffs = (culture.yield_k_base, culture.yield_k_ndvi_max, culture.yield_k_ndvi_int)
-    if any(k is None for k in coeffs):
+    k_base, k_max, k_int = (
+        culture.yield_k_base,
+        culture.yield_k_ndvi_max,
+        culture.yield_k_ndvi_int,
+    )
+    if k_base is None or k_max is None or k_int is None:
         raise AppError(
             f"Для культуры «{culture.name}» нет коэффициентов модели (ref_culture)",
             code="yield_no_model",
@@ -267,7 +271,7 @@ def field_yield_forecast(field_id: uuid.UUID, db: DbSession) -> YieldForecastRes
     avgs = [float(s.index_avg) for s in scenes]
     ndvi_max = round(max(avgs), 3)
     ndvi_integral = round(sum(max(v - 0.2, 0.0) for v in avgs) / 100, 3)
-    forecast = float(coeffs[0]) + float(coeffs[1]) * ndvi_max + float(coeffs[2]) * ndvi_integral
+    forecast = float(k_base) + float(k_max) * ndvi_max + float(k_int) * ndvi_integral
     return YieldForecastResponse(
         field_id=field.id,
         cycle_year=cycle.year,
