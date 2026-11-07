@@ -880,6 +880,67 @@ function fmtNum(v: number, digits = 1): string {
   stroke-width: 1.5;
 }
 
+/* §7.3: PNG-слой под контуром; контур при слое — полупрозрачная заливка */
+.card360__ndvi-layer {
+  opacity: 0.95;
+}
+
+.card360__contour--layered .card360__polygon polygon {
+  fill-opacity: 0.18;
+}
+
+.card360__layers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.card360__layer-switch {
+  display: inline-flex;
+  border: 1px solid #c8e6c9;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.card360__layer-btn {
+  border: none;
+  background: #f1f8f1;
+  color: #1b5e20;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+.card360__layer-btn:not(:last-child) {
+  border-right: 1px solid #c8e6c9;
+}
+
+.card360__layer-btn--active {
+  background: #2e7d32;
+  color: #fff;
+  font-weight: 600;
+}
+
+.card360__layer-date-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #33691e;
+}
+
+.card360__layer-date {
+  border: 1px solid #c8e6c9;
+  border-radius: 6px;
+  padding: 0.3rem 0.4rem;
+  font-size: 0.85rem;
+  background: #fff;
+  color: #1b5e20;
+}
+
 .card360__check {
   margin: 0.6rem 0 0;
   padding: 0.5rem 0.6rem;
