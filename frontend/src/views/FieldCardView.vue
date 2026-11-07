@@ -472,14 +472,12 @@ function fmtNum(v: number, digits = 1): string {
             v-if="!card || journalLoading"
             :lines="4"
           />
-          <ul
-            v-else
-            class="card360__plans"
-          >
-            <li
-              v-for="plan in card.treatment_plans"
-              :key="plan.plan_id"
-            >
+          <template v-else>
+            <ul class="card360__plans">
+              <li
+                v-for="plan in card.treatment_plans"
+                :key="plan.plan_id"
+              >
               • {{ plan.input_name }} — {{ fmtNum(plan.dose, 2) }}
               {{ plan.unit === 'l_ha' ? 'л/га' : plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }},
               {{ plan.planned_date }} — {{ PLAN_STATUS_LABELS[plan.status] ?? plan.status }}
