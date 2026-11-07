@@ -65,6 +65,19 @@ class StacItem:
         return self.assets.get(band)
 
 
+class StacSearchClient(Protocol):
+    """Структурный тип клиента каталога: реальный или фейк (CONTRACTS §7)."""
+
+    def search(
+        self,
+        bbox: list[float],
+        date_from: date,
+        date_to: date,
+        *,
+        max_cloud_pct: float | None = None,
+    ) -> list[StacItem]: ...
+
+
 def _http_error(status_code: int) -> Exception:
     if status_code >= 500 or status_code in (408, 429):
         return SourceUnavailableError(
