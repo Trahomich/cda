@@ -597,7 +597,8 @@ class TestBackgroundFix101:
 
     def test_db_released_before_llm_and_cache_updated(self, world, db_session, monkeypatch):
         """На момент инференса пул не занят сессией фоновой задачи; параметры
-        вызова LLM — timeout=300/attempts=1/keep_alive=30m; кэш дорабатывается."""
+        вызова LLM — timeout=600/attempts=1/keep_alive=30m/num_predict=256
+        (#112); кэш дорабатывается."""
         from app.ai_assistant import service
         from sqlalchemy.orm import sessionmaker
 
