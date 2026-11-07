@@ -346,11 +346,13 @@ def _checked_summary(
     return fallback[:2000]
 
 
-def refresh_insights(field_id: uuid.UUID, day: date) -> None:
+def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) -> None:
     """Фоновая доработка (BackgroundTasks): VRA-неоднородность + LLM-сводка.
 
-    Любые ошибки — только в лог: пользователь получает rules-ответ из кэша,
-    повторный запрос перезапустит доработку, пока summary в кэше null (#101).
+    year (§7.5) — сезон YYYY (точка привязки day = последняя сцена сезона;
+    без year — текущий сезон). Любые ошибки — только в лог: пользователь
+    получает rules-ответ из кэша, повторный запрос перезапустит доработку,
+    пока summary в кэше null (#101).
 
     Соединение БД НЕ держится во время инференса (#101): сессия закрывается
     до вызова LLM (до 600 с), иначе параллельные фоновые задачи исчерпывают
@@ -363,7 +365,7 @@ def refresh_insights(field_id: uuid.UUID, day: date) -> None:
         field = db.get(Field, field_id)
         if field is None:
             return
-        scene = vra.latest_scene(db, field_id)
+        scene = vra.latest_scene(db, field_id, year=year)
         if scene is None or scene.captured_at != day:
             return  # появилась новая сцена — её ключ дорабатывается отдельно
 
@@ -372,7 +374,7 @@ def refresh_insights(field_id: uuid.UUID, day: date) -> None:
         vra_verdict = VRA_NO_DATA_VERDICT
         try:
             # зоны по пиковым сценам (#106): iqr и дата — подтверждённой пиковой
-            result = vra.vra_zones(db, field)  # кэшируется у себя (24 ч)
+            result = vra.vra_zones(db, field, year=year)  # кэшируется у себя (24 ч)
             vra_iqr, vra_day = result.iqr_ndvi, result.captured_at
             vra_verdict = (
                 f"Модель дифвнесения: поле неоднородно, {len(result.zones)} зон дифвнесения, "
