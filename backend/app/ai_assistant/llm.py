@@ -64,6 +64,10 @@ def summarize(
         "model": chosen_model,
         "prompt": f"{prompt}\n\nДанные хозяйства (context):\n{context}",
         "stream": False,
+        # top-level (НЕ в options): у think-моделей (qwen3.5) блок размышлений
+        # съедает весь num_predict — response пуст (#113); не-think-модели
+        # параметр игнорируют, сводке «подумать» не нужно (§8.1)
+        "think": False,
         "options": {"temperature": 0.3, "num_ctx": 4096},
     }
     if num_predict is not None:
