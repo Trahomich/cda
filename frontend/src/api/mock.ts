@@ -1992,7 +1992,7 @@ export class MockTransport implements Transport {
     if (!field) return empty(404)
 
     const variant = params.get('variant') ?? 'ndvi'
-    if (variant !== 'ndvi' && variant !== 'truecolor') return empty(422)
+    if (variant !== 'ndvi' && variant !== 'truecolor' && variant !== 'ndwi') return empty(422)
 
     // Рендер есть только у дат с render_available (условие как в ndvi-эндпоинте).
     const ndviPoints = ndviOf(FIELD_N.get(field.field_id)!)
