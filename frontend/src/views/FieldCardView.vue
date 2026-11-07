@@ -413,8 +413,18 @@ function fmtNum(v: number, digits = 1): string {
           <h2 class="card360__block-title">
             Погода (сейчас + 7 сут)
           </h2>
+          <Skeleton
+            v-if="weatherLoading"
+            :lines="4"
+          />
           <p
-            v-if="weather"
+            v-else-if="weatherFailed"
+            class="card360__muted"
+          >
+            Не удалось загрузить погоду
+          </p>
+          <p
+            v-else-if="weather"
             class="card360__weather"
           >
             Сейчас: {{ fmtNum(weather.now.temp_c) }} °C,
