@@ -290,6 +290,10 @@ CULTURES: list[dict] = [
         "forage_flag": True,
         "crop_group": "grasses",
         "color_hex": "#aed581",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га зелёной массы
+        "yield_k_base": -20.0,
+        "yield_k_ndvi_max": 140.0,
+        "yield_k_ndvi_int": 110.0,
     },
     {
         "name": "Горчица (сидерат)",
