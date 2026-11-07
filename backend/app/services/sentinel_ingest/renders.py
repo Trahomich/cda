@@ -6,7 +6,9 @@
   фиксированными опорными точками (фикс. гамма); облака (SCL 8/9/10) и
   пиксели вне контура — прозрачные;
 - ``truecolor`` — композит видимых каналов B04/B03/B02 с перцентильной
-  нормировкой яркости; вне контура — прозрачные, облака — как есть.
+  нормировкой яркости; вне контура — прозрачные, облака — как есть;
+- ``ndwi`` — NDWI-карта «сухо → влажно → вода» (docs/06 §7.4, #91),
+  палитра жёлтый → бирюзовый → синий; облака и вне контура — прозрачные.
 
 Хранение (§7.3): ``{render_dir}/{field_id}/{variant}/{date}.png`` плюс
 сайдкар ``{render_dir}/{field_id}/meta/{date}.json`` — bbox окна растра в
@@ -16,7 +18,8 @@ WGS84 и размер в пикселях (для заголовков X-Field-B
 Ошибки рендера не роняют цикл NDVI: вызывающая сторона ловит исключения
 (лог, рендера нет → render_available=false). Отсутствие каналов b02/b03
 в активах каталога (строки, каталогизированные до #83) — не ошибка:
-рендер просто пропускается, сцена сохраняется как раньше.
+рендер просто пропускается, сцена сохраняется как раньше (в т.ч. без
+NDWI-статистики ndwi_mean/ndwi_p90).
 """
 
 import json
@@ -28,12 +31,17 @@ from pathlib import Path
 
 import numpy as np
 
-from app.integrations.raster import compute_index_array, contour_mask
+from app.integrations.raster import compute_index_array, compute_ndwi_array, contour_mask
 
 logger = logging.getLogger(__name__)
 
-#: варианты рендера (§7.3): каталог ndvi-renders/{field_id}/{variant}/
-RENDER_VARIANTS = ("ndvi", "truecolor")
+#: варианты рендера: каталог ndvi-renders/{field_id}/{variant}/ (§7.3 + §7.4)
+RENDER_VARIANTS = ("ndvi", "truecolor", "ndwi")
+
+#: варианты, обязательные для render_available (§7.3: «PNG обоих вариантов» —
+#: ndvi и truecolor; ndwi добавлен #91 и у сцен, отрендеренных кодом #83,
+#: отсутствует — это не делает render_available=false)
+REQUIRED_VARIANTS = ("ndvi", "truecolor")
 
 #: максимум по длинной стороне PNG: окно поля прореживается до него
 MAX_SIDE_PX = 1024
