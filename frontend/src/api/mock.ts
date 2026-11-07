@@ -1222,7 +1222,8 @@ export class MockTransport implements Transport {
           'https://cda.example/errors/uniform-field',
           'Прогноз недоступен',
           'Поле однородно по NDVI (IQR < 0,12): зоны дифференцированного внесения не выделяются',
-        ) // code? см. vra_uniform_field ниже
+          'vra_uniform_field',
+        )
       }
       return ok(vraOf(n, field.field_id))
     }
