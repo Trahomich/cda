@@ -642,7 +642,7 @@ function yieldOf(n: number, fieldId: string, cultureName: string): {
 } {
   const points = ndviOf(n).filter((p) => p.cloud_pct <= 60)
   const ndviMax = Math.max(...points.map((p) => p.ndvi))
-  const integral = Math.round(points.reduce((s, p) => s + Math.max(0, p.ndvi - 0.2), 0)) / 100
+  const integral = Math.round((points.reduce((s, p) => s + Math.max(0, p.ndvi - 0.2), 0) / 100) * 1000) / 1000
   const forecast = Math.round((12 + n * 1.4 + ndviMax * 15 + integral * 6) * 10) / 10
   const culture = CULTURES.find((c) => c.name === cultureName) ?? CULTURES[0]
   return {
