@@ -42,7 +42,6 @@ import type {
   VraZonesResponse,
   WeatherForecast,
   WeatherForecastDay,
-  WeatherForecastItem,
   WeatherWindowDay,
   WeatherWindows,
   WindowOperationType,
