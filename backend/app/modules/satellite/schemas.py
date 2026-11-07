@@ -72,6 +72,29 @@ class VraZonesResponse(BaseModel):
     map_png_url: str
 
 
+class YieldForecastResponse(BaseModel):
+    """API-53: прогноз урожайности по NDVI (docs/06 §7.4, docs/09 §8.3).
+
+    Линейная эмпирика по коэффициентам ref_culture:
+    forecast = yield_k_base + yield_k_ndvi_max·ndvi_max +
+    yield_k_ndvi_int·ndvi_integral (ц/га); интервал ±25 %.
+    """
+
+    field_id: uuid.UUID
+    cycle_year: int
+    culture_id: uuid.UUID
+    culture_name: str
+    method: str = Field(default="ndvi-empirical")
+    ndvi_max: float = Field(description="максимум средних NDVI чистых сцен сезона")
+    ndvi_integral: float = Field(description="Σ(ndvi − 0.2)+ по чистым сценам сезона / 100")
+    forecast_c_ha: float
+    low_c_ha: float = Field(description="forecast − 25 %")
+    high_c_ha: float = Field(description="forecast + 25 %")
+    disclaimer: str = Field(
+        default="оценка по спутниковым данным, точность растёт с числом сезонов"
+    )
+
+
 __all__ = [
     "INDICES",
     "NdviTimelineResponse",
@@ -79,4 +102,5 @@ __all__ = [
     "SourceMeta",
     "VraZoneItem",
     "VraZonesResponse",
+    "YieldForecastResponse",
 ]
