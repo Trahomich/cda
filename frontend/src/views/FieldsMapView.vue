@@ -80,7 +80,7 @@ function popupHtml(field: Field): string {
     `Статус: ${STATUS_LABELS[field.status]}<br/>` +
     // Пункт 1 (v2-fix-A): из попапа контура — в карточку поля, тот же роут,
     // что у клика по подписи и строке списка.
-    `<a href="/fields/${field.field_id}" class="field-popup__link">Открыть карточку поля →</a>` +
+    `<a href="/fields/${field.field_id}" data-field-id="${field.field_id}" class="field-popup__link">Открыть карточку поля →</a>` +
     `</div>`
   )
 }
