@@ -32,7 +32,6 @@ from app.models.references import Agrochem
 from app.modules.satellite.vra import VRA_MIN_IQR
 from app.modules.satellite.waterlog import (
     WATERLOG_NDWI_P90,
-    precip_sums_7d,
     waterlogged,
 )
 
@@ -150,7 +149,7 @@ def detect_ndvi_drop(scenes: Sequence[SceneStat]) -> InsightItem | None:
     window_from = scenes[-1].captured_at - timedelta(days=NDVI_DROP_WINDOW_DAYS)
     recent = [s for s in scenes if s.captured_at >= window_from]
     worst = None
-    for prev, cur in zip(recent, recent[1:]):
+    for prev, cur in zip(recent, recent[1:], strict=False):
         drop = round(prev.ndvi_mean - cur.ndvi_mean, 3)
         if drop >= NDVI_DROP_WARN and (worst is None or drop > worst[0]):
             worst = (drop, prev, cur)

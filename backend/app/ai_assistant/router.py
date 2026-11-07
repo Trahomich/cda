@@ -11,15 +11,15 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends
+from sqlalchemy.orm import Session
 
-from app.ai_assistant.schemas import InsightsResponse
 from app.ai_assistant import service
+from app.ai_assistant.schemas import InsightsResponse
 from app.core.config import Settings, get_settings
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
 from app.models.agronomy import Field
-from sqlalchemy.orm import Session
 
 DbSession = Annotated[Session, Depends(get_db)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
