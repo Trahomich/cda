@@ -24,6 +24,8 @@ class SceneItem(BaseModel):
     source_id: str
     trust: float
     anomaly_zones_ref: str | None = None
+    # PNG-рендеры обоих вариантов на диске (docs/06 §7.3, #83)
+    render_available: bool = False
 
 
 class SourceMeta(BaseModel):
