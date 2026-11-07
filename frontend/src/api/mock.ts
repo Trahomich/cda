@@ -580,6 +580,79 @@ function ndviOf(n: number): NdviPoint[] {
   })
 }
 
+/** API-52 (§7.4, #97): зоны дифвнесения по последней чистой NDVI-сцене —
+ *  3 зоны по перцентилям; доли площади/NDVI детерминированы от поля.
+ *  Поле 6 — однородное (IQR < 0.12 → бэкенд отдал бы 422 vra_uniform_field,
+ *  здесь формируем problem-ответ в маршруте). */
+function vraOf(n: number, fieldId: string): {
+  field_id: string
+  date: string
+  iqr_ndvi: number
+  base_dose_kg_ha: number | null
+  zones: Array<{ zone: number; label: string; area_ga: number; ndvi_mean: number; dose_factor: number; dose_kg_ha: number | null }>
+  map_png_url: string
+} {
+  const points = ndviOf(n)
+  const lastClear = [...points].reverse().find((p) => p.cloud_pct <= 60)!
+  const area = 60 + n * 18.7
+  const share = [0.32, 0.45, 0.23] // доли площади зон 1/2/3 (фикс. для демо)
+  const means = [0.52, 0.63, 0.75].map((v) => Math.round((v + n * 0.005) * 100) / 100)
+  const factors = [1.15, 1.0, 0.85]
+  const labels = ['пониженное развитие', 'среднее развитие', 'повышенное развитие']
+  // база — последний approved fertilizing-план; у поля 3 планов нет → null
+  const base = n === 3 ? null : 70 + (n % 4) * 5
+  return {
+    field_id: fieldId,
+    date: lastClear.date,
+    iqr_ndvi: 0.18 + (n % 3) * 0.02,
+    base_dose_kg_ha: base,
+    zones: share.map((s, i) => ({
+      zone: i + 1,
+      label: labels[i],
+      area_ga: Math.round(area * s * 10) / 10,
+      ndvi_mean: means[i],
+      dose_factor: factors[i],
+      dose_kg_ha: base === null ? null : Math.round(base * factors[i] * 10) / 10,
+    })),
+    map_png_url: `/fields/${fieldId}/vra/map.png`,
+  }
+}
+
+/** API-53 (§7.4, #97): прогноз урожайности по эмпирике NDVI (детерминирован
+ *  от поля); у поля 4 (пар) бэкенд отдал бы 422 yield_no_culture. */
+function yieldOf(n: number, fieldId: string, cultureName: string): {
+  field_id: string
+  cycle_year: number
+  culture_id: string
+  culture_name: string
+  method: string
+  ndvi_max: number
+  ndvi_integral: number
+  forecast_c_ha: number
+  low_c_ha: number
+  high_c_ha: number
+  disclaimer: string
+} {
+  const points = ndviOf(n).filter((p) => p.cloud_pct <= 60)
+  const ndviMax = Math.max(...points.map((p) => p.ndvi))
+  const integral = Math.round(points.reduce((s, p) => s + Math.max(0, p.ndvi - 0.2), 0)) / 100
+  const forecast = Math.round((12 + n * 1.4 + ndviMax * 15 + integral * 6) * 10) / 10
+  const culture = CULTURES.find((c) => c.name === cultureName) ?? CULTURES[0]
+  return {
+    field_id: fieldId,
+    cycle_year: 2027,
+    culture_id: culture.culture_id,
+    culture_name: cultureName,
+    method: 'ndvi-empirical',
+    ndvi_max: ndviMax,
+    ndvi_integral: integral,
+    forecast_c_ha: forecast,
+    low_c_ha: Math.round(forecast * 0.75 * 10) / 10,
+    high_c_ha: Math.round(forecast * 1.25 * 10) / 10,
+    disclaimer: 'оценка по спутниковым данным, точность растёт с числом сезонов',
+  }
+}
+
 /** Погода (API-07): факты за неделю + прогноз 7 сут (детерминированный паттерн),
  *  сырая форма backend — факты/прогноз/мета. */
 function weatherOf(n: number, fieldId: string): unknown {
