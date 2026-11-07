@@ -5,6 +5,11 @@ __pycache__/
 .DS_Store
 .scratch/
 .env
+# core-дампы (падения python/git) не коммитим: 07.11 два дампа случайно
+# попали в историю и блокировали push (в памяти дампов был приватный ключ)
+core.[0-9]*
+frontend/test-results/
+frontend/playwright-report/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
