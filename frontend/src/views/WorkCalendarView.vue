@@ -290,19 +290,27 @@ const planCount = computed(() => monthPlans.value.length)
                   >
                     <span class="cal__day-num">{{ Number(date.slice(8)) }}</span>
                     <span class="cal__chips">
-                      <span
-                        v-for="(e, j) in entriesOf(date).slice(0, 4)"
-                        :key="j"
-                        class="cal__chip"
-                        :class="e.kind === 'plan' ? 'cal__chip--plan' : 'cal__chip--fact'"
-                        :data-kind="e.kind"
-                      >{{ e.kind === 'plan'
-                        ? PLAN_OP_LABELS[e.plan!.operation_type]
-                        : OP_LABELS[e.op!.operation_type] }}</span>
-                      <span
-                        v-if="entriesOf(date).length > 4"
-                        class="cal__chip cal__chip--more"
-                      >+{{ entriesOf(date).length - 4 }}</span>
+                      <Skeleton
+                        v-if="loading"
+                        width="2.4rem"
+                        height="0.65rem"
+                        pill
+                      />
+                      <template v-else>
+                        <span
+                          v-for="(e, j) in entriesOf(date).slice(0, 4)"
+                          :key="j"
+                          class="cal__chip"
+                          :class="e.kind === 'plan' ? 'cal__chip--plan' : 'cal__chip--fact'"
+                          :data-kind="e.kind"
+                        >{{ e.kind === 'plan'
+                          ? PLAN_OP_LABELS[e.plan!.operation_type]
+                          : OP_LABELS[e.op!.operation_type] }}</span>
+                        <span
+                          v-if="entriesOf(date).length > 4"
+                          class="cal__chip cal__chip--more"
+                        >+{{ entriesOf(date).length - 4 }}</span>
+                      </template>
                     </span>
                   </button>
                 </template>
