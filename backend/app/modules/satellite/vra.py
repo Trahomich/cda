@@ -374,5 +374,6 @@ __all__ = [
     "VraZones",
     "base_dose_kg_ha",
     "compute_vra",
+    "peak_scenes",
     "vra_zones",
 ]
