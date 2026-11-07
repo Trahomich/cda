@@ -507,7 +507,8 @@ function fmtNum(v: number, digits = 1): string {
             >
               Фактов работ пока нет
             </li>
-          </ul>
+            </ul>
+          </template>
         </div>
       </div>
 
