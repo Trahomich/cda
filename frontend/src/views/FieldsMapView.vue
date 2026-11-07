@@ -12,6 +12,7 @@ import L from 'leaflet'
 import { getCultureReferences, getFields } from '@/api'
 import type { CultureReference, Field } from '@/api/types'
 import FieldsListPanel from '@/components/FieldsListPanel.vue'
+import Skeleton from '@/components/Skeleton.vue'
 
 const router = useRouter()
 const mapEl = ref<HTMLElement | null>(null)
