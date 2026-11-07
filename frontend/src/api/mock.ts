@@ -1202,6 +1202,7 @@ export class MockTransport implements Transport {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${ndviMatch[1]} не найдено`)
       }
       const ndviPoints = ndviOf(FIELD_N.get(field.field_id)!)
+      const n = FIELD_N.get(field.field_id)!
       const scenes = ndviPoints.map((p, i) => ({
         scene_id: `scene-${p.date}-${field.field_id.slice(-4)}`,
         field_id: field.field_id,
