@@ -77,7 +77,8 @@ def _http_error(status_code: int) -> Exception:
 
 
 def _catalog_assets(assets: dict) -> dict[str, str]:
-    """Канонические каналы → href: b04←red, b08←nir (ESA-имена каталога)."""
+    """Канонические каналы → href: b04←red, b08←nir, b02←blue, b03←green
+    (ESA-имена каталога earth-search)."""
     result: dict[str, str] = {}
     for band, names in CATALOG_ASSETS.items():
         for name in names:
