@@ -660,6 +660,103 @@ function yieldOf(n: number, fieldId: string, cultureName: string): {
   }
 }
 
+/** API-51 (§7.4, #96): «Выводы ассистента» — только числовые детекторы
+ *  (source='rules': Ollama недоступен → summary=null, UI покажет items);
+ *  состав детерминирован от поля. Поле 7 — без отклонений (пустые items),
+ *  поле 6 — однородное (без vra_heterogeneity), поле 4 — пар. */
+function insightsOf(
+  n: number,
+  fieldId: string,
+): {
+  field_id: string
+  generated_at: string
+  source: 'rules'
+  summary: null
+  items: Array<{
+    code: string
+    severity: 'info' | 'warn' | 'alert'
+    title: string
+    detail: string
+    data_refs: Array<Record<string, unknown>>
+  }>
+} {
+  const scene = { kind: 'satellite_scene', scene_id: `scene-2027-07-31-${fieldId.slice(-4)}` }
+  const sample = { kind: 'agrochem_sample', sample_date: '2026-09-12' }
+  const items: Array<{
+    code: string
+    severity: 'info' | 'warn' | 'alert'
+    title: string
+    detail: string
+    data_refs: Array<Record<string, unknown>>
+  }> = []
+  if (n === 1) {
+    items.push(
+      {
+        code: 'waterlogging',
+        severity: 'alert',
+        title: 'Вымокание посевов',
+        detail:
+          'NDWI p90 ≥ 0,10 на сцене 31.07.2027 при осадках 42 мм за 7 суток — проверьте переувлажнённые участки в северо-западной части поля',
+        data_refs: [scene],
+      },
+      {
+        code: 'ndvi_drop',
+        severity: 'warn',
+        title: 'Падение NDVI',
+        detail:
+          'NDVI снизился на 0,14 за 14 суток (17.07–31.07) — вероятен стресс посевов, нужна полевая проверка',
+        data_refs: [scene],
+      },
+      {
+        code: 'vra_heterogeneity',
+        severity: 'info',
+        title: 'Неоднородность NDVI',
+        detail: 'IQR 0,20 (≥ 0,12) — рекомендуются зоны дифференцированного внесения',
+        data_refs: [scene],
+      },
+      {
+        code: 'agrochem_low',
+        severity: 'info',
+        title: 'Низкий фосфор',
+        detail: 'P₂O₅ 4,2 мг/100 г почвы (проба 2026) — ниже оптимума для зерновых',
+        data_refs: [sample],
+      },
+    )
+  } else if (n === 4) {
+    items.push({
+      code: 'drought',
+      severity: 'warn',
+      title: 'Дефицит влаги',
+      detail:
+        'Осадков 6 мм за 14 суток, NDWI p90 −0,18 — почва подсохла; пар требует обработки для сохранения влаги',
+      data_refs: [scene],
+    })
+  } else if (n === 6) {
+    items.push({
+      code: 'agrochem_low',
+      severity: 'info',
+      title: 'Низкий калий',
+      detail: 'K₂O 8,1 мг/100 г почвы (проба 2026) — ниже оптимума',
+      data_refs: [sample],
+    })
+  } else if (n !== 7) {
+    items.push({
+      code: 'vra_heterogeneity',
+      severity: 'info',
+      title: 'Неоднородность NDVI',
+      detail: 'IQR ≥ 0,12 — рекомендуются зоны дифференцированного внесения',
+      data_refs: [scene],
+    })
+  }
+  return {
+    field_id: fieldId,
+    generated_at: '2027-07-31T10:00:00Z',
+    source: 'rules',
+    summary: null,
+    items,
+  }
+}
+
 /** Погода (API-07): факты за неделю + прогноз 7 сут (детерминированный паттерн),
  *  сырая форма backend — факты/прогноз/мета. */
 function weatherOf(n: number, fieldId: string): unknown {
