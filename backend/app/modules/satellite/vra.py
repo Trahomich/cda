@@ -19,7 +19,7 @@ import json
 import logging
 import math
 import uuid
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date
 
 import numpy as np
