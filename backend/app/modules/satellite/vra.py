@@ -121,9 +121,10 @@ def compute_vra(db: Session, field: Field, scene: SatelliteScene) -> VraZones:
     if not assets:
         raise _err_no_data(field.id, f"нет ассетов каталога за {scene.captured_at.isoformat()}")
 
-    contour_geojson = json.loads(
-        db.scalar(select(func.ST_AsGeoJSON(Field.contour)).where(Field.id == field.id))
-    )
+    geojson_str = db.scalar(select(func.ST_AsGeoJSON(Field.contour)).where(Field.id == field.id))
+    if geojson_str is None:
+        raise _err_no_data(field.id, "контур поля недоступен")
+    contour_geojson = json.loads(geojson_str)
     try:
         red_arr, red_transform, red_crs = _read_band_window(assets["b04"], contour_geojson)
         nir_arr, nir_transform, _ = _read_band_window(assets["b08"], contour_geojson)
