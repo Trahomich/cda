@@ -48,4 +48,35 @@ class NdviTimelineResponse(BaseModel):
     meta: SourceMeta
 
 
-__all__ = ["INDICES", "NdviTimelineResponse", "SceneItem", "SourceMeta"]
+class VraZoneItem(BaseModel):
+    """Зона дифференцированного внесения (docs/06 §7.4)."""
+
+    zone: int = Field(description="1 | 2 | 3")
+    label: str = Field(description="пониженное | среднее | повышенное развитие")
+    area_ga: float
+    ndvi_mean: float
+    dose_factor: float = Field(description="множитель дозы: 1.15 / 1.0 / 0.85")
+    dose_kg_ha: float | None = Field(
+        default=None, description="база × dose_factor; null — нет approved fertilizing-плана"
+    )
+
+
+class VraZonesResponse(BaseModel):
+    """API-52: зоны дифференцированного внесения по последнему чистому NDVI."""
+
+    field_id: uuid.UUID
+    date: date = Field(description="дата сцены, по которой построены зоны")
+    iqr_ndvi: float
+    base_dose_kg_ha: float | None = None
+    zones: list[VraZoneItem]
+    map_png_url: str
+
+
+__all__ = [
+    "INDICES",
+    "NdviTimelineResponse",
+    "SceneItem",
+    "SourceMeta",
+    "VraZoneItem",
+    "VraZonesResponse",
+]
