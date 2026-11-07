@@ -325,8 +325,18 @@ def seed_references(db: Session) -> dict[str, int]:
     """
     before = db.scalar(select(func.count()).select_from(Culture)) or 0
     # нормализация ключей: multi-values INSERT берёт набор колонок из первой
-    # строки, поэтому repeat_years задаём явно (default 3, 03 §3.1)
-    rows = [{**c, "repeat_years": c.get("repeat_years", 3)} for c in CULTURES]
+    # строки, поэтому repeat_years задаём явно (default 3, 03 §3.1), а
+    # yield-коэффициенты — NULL у культур без стартовой модели (09 §8.3)
+    rows = [
+        {
+            **c,
+            "repeat_years": c.get("repeat_years", 3),
+            "yield_k_base": c.get("yield_k_base"),
+            "yield_k_ndvi_max": c.get("yield_k_ndvi_max"),
+            "yield_k_ndvi_int": c.get("yield_k_ndvi_int"),
+        }
+        for c in CULTURES
+    ]
     db.execute(
         pg_insert(Culture)
         .values(rows)
@@ -337,6 +347,11 @@ def seed_references(db: Session) -> dict[str, int]:
                 # актуализация норматива возврата лет (RULE-AGRO-02): сид —
                 # источник правды справочника; рапс 4, картофель 5 (03 §3.1)
                 "repeat_years": pg_insert(Culture).excluded.repeat_years,
+                # v3-ai #95: стартовые коэффициенты эмпирики NDVI→урожайность
+                # актуализируются сидом (пересчёт по своим сезонам — не MVP)
+                "yield_k_base": pg_insert(Culture).excluded.yield_k_base,
+                "yield_k_ndvi_max": pg_insert(Culture).excluded.yield_k_ndvi_max,
+                "yield_k_ndvi_int": pg_insert(Culture).excluded.yield_k_ndvi_int,
             },
         )
     )
