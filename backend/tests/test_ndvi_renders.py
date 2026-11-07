@@ -77,7 +77,11 @@ class TestRenderScene:
 
         from shapely.geometry import box as sbox
 
-        assert sbox(*render.bbox).contains(sbox(*_contour_wgs_bounds(contour)))
+        # bbox — окно растра (≥ контура) с округлением до ~1 см (7 знаков)
+        w, s, e, n = render.bbox
+        cw, cs, ce, cn = _contour_wgs_bounds(contour)
+        assert w <= cw + 1e-5 and s <= cs + 1e-5 and e >= ce - 1e-5 and n >= cn - 1e-5
+        assert sbox(*render.bbox).area > 0
 
     def test_ndvi_variant_masks_clouds_and_outside(self, color_rasters):
         """ndvi: альфа=0 у облаков (SCL 9) и вне контура; внутри — непрозрачно."""
