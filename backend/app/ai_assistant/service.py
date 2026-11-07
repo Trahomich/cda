@@ -143,12 +143,29 @@ def _from_cache(data: dict, field_id: uuid.UUID) -> InsightsResponse | None:
 
 
 def get_insights(
-    db: Session, field: Field, background: BackgroundTasks, settings: Settings
+    db: Session,
+    field: Field,
+    background: BackgroundTasks,
+    settings: Settings,
+    *,
+    year: int | None = None,
 ) -> InsightsResponse:
-    """Ответ GET /fields/{id}/insights (§7.4): items синхронно, summary из кэша."""
-    scene = vra.latest_scene(db, field.id)
-    if scene is None:  # нет сцен — нет точки привязки кэша: считаем без него
-        items = build_items(db, field.id)
+    """Ответ GET /fields/{id}/insights (§7.4): items синхронно, summary из кэша.
+
+    year (§7.5) — сезон YYYY: точка привязки кэша — последняя сцена сезона;
+    сезона нет — 404 season_not_found. Ключ insights:{field}:{date} уже
+    содержит дату сезона, так что кэши сезонов не пересекаются.
+    """
+    scene = vra.latest_scene(db, field.id, year=year)
+    if scene is None:
+        if year is not None:
+            raise AppError(
+                f"У поля {field.id} нет NDVI-сцен сезона {year}",
+                code="season_not_found",
+                title="Сезон не найден",
+                status_code=404,
+            )
+        items = build_items(db, field.id)  # нет сцен — нет точки привязки кэша
         return InsightsResponse(
             field_id=field.id,
             generated_at=datetime.now(UTC),
@@ -163,10 +180,10 @@ def get_insights(
         if resp.summary is None and settings.ollama_base_url:
             # прошлая фоновая доработка не успела/не дождалась очереди (#101):
             # перезапускаем, пока в кэше rules-ответ без сводки
-            background.add_task(refresh_insights, field.id, day)
+            background.add_task(refresh_insights, field.id, day, year)
         return resp
 
-    vra_info = _vra_peak_cached(field.id)
+    vra_info = _vra_peak_cached(field.id, year)
     items = build_items(
         db,
         field.id,
