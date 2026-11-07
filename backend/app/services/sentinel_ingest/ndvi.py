@@ -507,6 +507,7 @@ __all__ = [
     "CLOUD_SCL_VALUES",
     "INDEX",
     "MAX_SCENE_CLOUD_PCT",
+    "NDWI_BAND_ASSET",
     "NdviReport",
     "NdviStats",
     "RESOLUTION_M",
