@@ -87,12 +87,13 @@ def wgs_box(xmin, ymin, xmax, ymax) -> dict:
 def make_field(db: Session, name="Вра-1") -> uuid.UUID:
     """Поле 1800×1800 м (324 га) внутри плашки, покрывает все три полосы."""
     field_id = uuid.uuid4()
+    geo = json.dumps(wgs_box(300100, 5760100, 301900, 5761900))
     db.execute(
         db_text(
             "INSERT INTO dat_field (id, name, contour, status) "
             "VALUES (:id, :name, ST_GeomFromGeoJSON(:geo)::geography, 'active')"
         ),
-        {"id": field_id, "name": name, "geo": json.dumps(wgs_box(300100, 5760100, 301900, 5761900))},
+        {"id": field_id, "name": name, "geo": geo},
     )
     db.commit()
     return field_id
