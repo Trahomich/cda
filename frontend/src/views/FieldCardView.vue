@@ -496,6 +496,7 @@ function load() {
   void loadWorks()
   void loadVra()
   void loadYield()
+  void loadInsights()
 }
 
 onMounted(load)
