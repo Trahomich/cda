@@ -63,9 +63,7 @@ class TestNdwiBackfill:
         assert report.scenes == 1 and report.updated == 1
         assert not report.unavailable and report.failed == 0 and report.gaps == 0
         db_session.expire_all()
-        scene = db_session.scalar(
-            select(SatelliteScene).where(SatelliteScene.field_id == field_id)
-        )
+        scene = db_session.scalar(select(SatelliteScene).where(SatelliteScene.field_id == field_id))
         expected = zonal_ndvi(item.assets, wgs_box(300100, 5760100, 301900, 5760900))
         assert scene.ndwi_mean == expected.ndwi_mean
         assert scene.ndwi_p90 == expected.ndwi_p90
@@ -95,9 +93,7 @@ class TestNdwiBackfill:
         assert report.scenes == 1 and report.no_b03 == 1 and report.updated == 0
         assert not report.unavailable and report.failed == 0
         db_session.expire_all()
-        scene = db_session.scalar(
-            select(SatelliteScene).where(SatelliteScene.field_id == field_id)
-        )
+        scene = db_session.scalar(select(SatelliteScene).where(SatelliteScene.field_id == field_id))
         assert scene.ndwi_mean is None and scene.ndwi_p90 is None
 
     def test_date_from_filters_scenes(self, db_session, scene_rasters, tmp_path):  # noqa: F811

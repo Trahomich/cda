@@ -86,12 +86,16 @@ def run_ndwi_backfill(
     catalog: dict[tuple[uuid.UUID, date], dict] = {}
     for fid, cap, assets in db.execute(
         select(
-            SatelliteCatalogItem.field_id, SatelliteCatalogItem.captured_at, SatelliteCatalogItem.assets
+            SatelliteCatalogItem.field_id,
+            SatelliteCatalogItem.captured_at,
+            SatelliteCatalogItem.assets,
         )
     ).all():
         key = (fid, cap)
         assets = dict(assets or {})
-        if key not in catalog or (NDWI_BAND_ASSET in assets and NDWI_BAND_ASSET not in catalog[key]):
+        if key not in catalog or (
+            NDWI_BAND_ASSET in assets and NDWI_BAND_ASSET not in catalog[key]
+        ):
             catalog[key] = assets
 
     lookup = contour_lookup_factory(db)
