@@ -26,6 +26,8 @@ class SceneItem(BaseModel):
     anomaly_zones_ref: str | None = None
     # PNG-рендеры обоих вариантов на диске (docs/06 §7.3, #83)
     render_available: bool = False
+    # Вымокание по NDWI + осадкам (docs/06 §7.4, #91); null — данных нет
+    waterlogged: bool | None = None
 
 
 class SourceMeta(BaseModel):
