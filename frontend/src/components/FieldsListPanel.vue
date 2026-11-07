@@ -154,7 +154,10 @@ function cultureOf(field: Field): string {
               colspan="4"
               class="fields-list__state"
             >
-              Загрузка…
+              <Skeleton
+                :lines="5"
+                height="1.1rem"
+              />
             </td>
           </tr>
           <tr v-else-if="failed">
