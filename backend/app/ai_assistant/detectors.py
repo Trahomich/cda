@@ -294,8 +294,11 @@ def detect_waterlogging(
     else:
         n = len(dates)
         ones, tens = n % 10, n % 100
-        plural = "эпизод" if ones == 1 and tens != 11 else "эпизода"
-        if not 2 <= ones <= 4 or 12 <= tens <= 14:
+        if ones == 1 and tens != 11:
+            plural = "эпизод"
+        elif 2 <= ones <= 4 and not 12 <= tens <= 14:
+            plural = "эпизода"
+        else:
             plural = "эпизодов"
         dates_str = f"с {dates[0].isoformat()} по {dates[-1].isoformat()} — {n} {plural}"
 
