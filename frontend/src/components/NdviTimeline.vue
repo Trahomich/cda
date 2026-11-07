@@ -140,7 +140,8 @@ const lastPoint = computed(() => props.points[lastClearIdx.value] ?? null)
         class="ndvi__line"
       />
 
-      <!-- Точки: облачные — ◌, последняя чистая — выделена -->
+      <!-- Точки: облачные — ◌, последняя чистая — выделена; даты со снимком
+           кликабельны (v2-fix-H) и обведены, выбранная — синим кольцом -->
       <g
         v-for="(dot, i) in layout.dots"
         :key="dot.date"
@@ -152,11 +153,33 @@ const lastPoint = computed(() => props.points[lastClearIdx.value] ?? null)
           r="7"
           class="ndvi__ring"
         />
+        <!-- Невидимая зона клика побольше точки -->
+        <circle
+          v-if="dot.selectable"
+          :cx="dot.cx"
+          :cy="dot.cy"
+          r="9"
+          class="ndvi__hit"
+          :data-date="dot.date"
+          role="button"
+          :aria-label="`Снимок ${dot.date}`"
+          @click="emit('select', dot.date)"
+        />
+        <circle
+          v-if="dot.selected"
+          :cx="dot.cx"
+          :cy="dot.cy"
+          r="6.5"
+          class="ndvi__ring--selected"
+        />
         <circle
           :cx="dot.cx"
           :cy="dot.cy"
           :r="dot.r"
-          :class="dot.cloudy ? 'ndvi__dot--cloud' : 'ndvi__dot'"
+          :class="[
+            dot.cloudy ? 'ndvi__dot--cloud' : 'ndvi__dot',
+            dot.selectable && !dot.cloudy ? 'ndvi__dot--selectable' : '',
+          ]"
         >
           <title>{{ dot.date }} · NDVI {{ dot.val }} · облачность {{ dot.cloudPct }} %<template v-if="dot.trust != null"> · доверие {{ dot.trust }}</template></title>
         </circle>
