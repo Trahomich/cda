@@ -105,12 +105,17 @@ services:
 # ssh -N -L 15432:127.0.0.1:5432 cda@192.168.99.201 + временная публикация
 # 127.0.0.1:5432:5432 у сервиса db (убрать после теста).
 
+  # 2026-11-07 (#86): Redis заменён на DragonflyDB (Redis-совместимый протокол,
+  # порт 6379). Используется только как APScheduler RedisJobStore; джобы
+  # перерегистрируются при старте (replace_existing=True), миграция данных не нужна.
   redis:
-    image: redis:7-alpine
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
+    command: ["dragonfly", "--logtostderr", "--dbfilename=dragonfly", "--dir=/data"]
     volumes:
-      - redisdata:/data
+      - dragonflydata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      # в образе нет redis-cli; проверяем TCP 6379 через bash /dev/tcp
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/127.0.0.1/6379'"]
       interval: 5s
       timeout: 3s
       retries: 10
