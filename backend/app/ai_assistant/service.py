@@ -230,18 +230,39 @@ VRA_NO_DATA_VERDICT = "Модель дифвнесения: нет расчёт�
 
 
 def _llm_context(
-    db: Session, field: Field, items: list[InsightItem], *, vra_verdict: str = VRA_NO_DATA_VERDICT
+    db: Session,
+    field: Field,
+    items: list[InsightItem],
+    *,
+    vra_verdict: str = VRA_NO_DATA_VERDICT,
+    year: int | None = None,
 ) -> str:
     """Контекст для LLM: поле, культура, агрохимия, работы, NDVI-динамика
-    и вердикты моделей вымокания/дифвнесения (§8.2, #105)."""
+    и вердикты моделей вымокания/дифвнесения (§8.2, #105).
+
+    year (§7.5) — сезон YYYY: культура — main-цикл года, NDVI-серия сезона.
+    """
     parts = [f"Поле «{field.name}», площадь {float(field.area_ga or 0):.1f} га."]
-    cycle = db.execute(
-        select(CropCycle, Culture.name)
-        .join(Culture, CropCycle.culture_id == Culture.id)
-        .where(CropCycle.field_id == field.id)
-        .order_by(CropCycle.year.desc())
-        .limit(1)
-    ).first()
+    if year is not None:
+        # сезонный контекст (§7.5): культура основного цикла года YYYY
+        cycle = db.execute(
+            select(CropCycle, Culture.name)
+            .join(Culture, CropCycle.culture_id == Culture.id)
+            .where(
+                CropCycle.field_id == field.id,
+                CropCycle.year == year,
+                CropCycle.kind == "main",
+            )
+            .limit(1)
+        ).first()
+    else:
+        cycle = db.execute(
+            select(CropCycle, Culture.name)
+            .join(Culture, CropCycle.culture_id == Culture.id)
+            .where(CropCycle.field_id == field.id)
+            .order_by(CropCycle.year.desc())
+            .limit(1)
+        ).first()
     if cycle is not None:
         parts.append(f"Культура текущего сезона: {cycle[1]} ({cycle[0].year}).")
     probe = detectors.latest_agrochem(db, field.id)
