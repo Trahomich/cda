@@ -99,7 +99,14 @@ def make_field(db: Session, name="Вра-1") -> uuid.UUID:
     return field_id
 
 
-def make_scene(db: Session, field_id: uuid.UUID, assets: dict, *, date_: date = SCENE_DATE) -> None:
+def make_scene(
+    db: Session,
+    field_id: uuid.UUID,
+    assets: dict,
+    *,
+    date_: date = SCENE_DATE,
+    index_avg: float = 0.58,
+) -> None:
     """Чистая NDVI-сцена + строка каталога с ассетами COG этой даты."""
     db.add(
         SatelliteScene(
@@ -107,9 +114,9 @@ def make_scene(db: Session, field_id: uuid.UUID, assets: dict, *, date_: date = 
             index="ndvi",
             captured_at=date_,
             resolution_m=10,
-            index_min=0.30,
-            index_avg=0.58,
-            index_max=0.82,
+            index_min=round(index_avg - 0.2, 3),
+            index_avg=index_avg,
+            index_max=round(min(1.0, index_avg + 0.1), 3),
             cloud_pct=5.0,
             composite_days=1,
             source_id=SATELLITE_SOURCE_ID,
