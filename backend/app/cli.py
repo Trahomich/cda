@@ -150,6 +150,24 @@ def cmd_seed_rotation(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_backfill_ndwi(args: argparse.Namespace) -> int:
+    import json
+    from datetime import date as Date
+
+    from app.services.sentinel_ingest.ndwi_backfill import run_ndwi_backfill
+
+    with SessionLocal() as db:
+        report = run_ndwi_backfill(
+            db, date_from=Date.fromisoformat(args.date_from), max_workers=args.workers
+        )
+    data = report.as_dict()
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+    if data["unavailable_count"]:
+        print("ВНИМАНИЕ: часть COG недоступна — повторный запуск доберёт эти сцены")
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="CLI ИС ЦДА")
     sub = parser.add_subparsers(dest="command", required=True)
