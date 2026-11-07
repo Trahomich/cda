@@ -53,6 +53,10 @@ _NDVI_LO, _NDVI_HI = -0.1, 0.8
 _TC_LO_PCT, _TC_HI_PCT = 2.0, 98.0
 
 
+#: индекс палитры NDVI (совпадает с ndvi.INDEX)
+INDEX_NAME = "ndvi"
+
+
 @dataclass(frozen=True, slots=True)
 class SceneRender:
     """Готовые PNG одной сцены: оба варианта + геопривязка окна."""
