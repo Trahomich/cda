@@ -85,9 +85,7 @@ def build_items(
 
     precip_7d = None
     if latest is not None:
-        precip_7d = detectors.precip_sums_7d(db, field_id, [latest.captured_at]).get(
-            latest.captured_at
-        )
+        precip_7d = precip_sums_7d(db, field_id, [latest.captured_at]).get(latest.captured_at)
     items.append(detectors.detect_waterlogging(latest, precip_7d))
 
     if latest is not None:
