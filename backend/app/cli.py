@@ -228,6 +228,20 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_rot.set_defaults(func=cmd_seed_rotation)
 
+    p_ndwi = sub.add_parser(
+        "backfill-ndwi",
+        help="дозаполнить ndwi_mean/ndwi_p90 исторических сцен (v3-12, docs/06 §7.4)",
+    )
+    p_ndwi.add_argument(
+        "--date-from",
+        required=True,
+        help="сцены с captured_at от этой даты включительно (YYYY-MM-DD)",
+    )
+    p_ndwi.add_argument(
+        "--workers", type=int, default=4, help="потоков чтения COG (по умолчанию 4)"
+    )
+    p_ndwi.set_defaults(func=cmd_backfill_ndwi)
+
     args = parser.parse_args(argv)
     return args.func(args)
 
