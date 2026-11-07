@@ -84,6 +84,8 @@ const layout = computed(() => {
       lowTrust: (p.trust ?? 1) < TRUST_LIMIT,
       last: i === lastClearIdx.value,
       val: fmtVal(p.ndvi),
+      selectable: (props.selectable ?? []).includes(p.date),
+      selected: props.selected != null && props.selected === p.date,
       date: p.date,
       dateShort: fmtDate(p.date),
       cloudPct: p.cloud_pct,
