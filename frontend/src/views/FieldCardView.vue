@@ -121,19 +121,26 @@ const lastSatelliteDate = computed(() => {
   return clear.length ? clear[clear.length - 1].date : ''
 })
 
-/** Контур в координатах SVG viewBox 200×120 (нормализация lon/lat в рамку). */
-const contourPoints = computed(() => {
+/** Рамка нормализации lon/lat → SVG viewBox 200×120 (для контура и слоя §7.3). */
+const mapFrame = computed(() => {
   const ring = card.value?.field.contour.coordinates[0]
-  if (!ring || ring.length < 3) return ''
+  if (!ring || ring.length < 3) return null
   const lons = ring.map((p) => p[0])
   const lats = ring.map((p) => p[1])
   const minLon = Math.min(...lons)
   const maxLon = Math.max(...lons)
   const minLat = Math.min(...lats)
   const maxLat = Math.max(...lats)
-  const sx = 180 / (maxLon - minLon || 1)
-  const sy = 100 / (maxLat - minLat || 1)
-  const s = Math.min(sx, sy)
+  const s = Math.min(180 / (maxLon - minLon || 1), 100 / (maxLat - minLat || 1))
+  return { minLon, minLat, s }
+})
+
+/** Контур в координатах SVG viewBox 200×120 (нормализация lon/lat в рамку). */
+const contourPoints = computed(() => {
+  const ring = card.value?.field.contour.coordinates[0]
+  const frame = mapFrame.value
+  if (!ring || !frame) return ''
+  const { minLon, minLat, s } = frame
   return ring
     .map(([lon, lat]) => {
       const x = 10 + (lon - minLon) * s
@@ -142,6 +149,79 @@ const contourPoints = computed(() => {
     })
     .join(' ')
 })
+
+/* ── Слой мини-карты (§7.3): NDVI-рендер / truecolor снимок / контур ── */
+
+/** Режим слоя: 'ndvi' | 'truecolor' — PNG-оверлей на контуре, 'none' — контур. */
+const layerMode = ref<'ndvi' | 'truecolor' | 'none'>('ndvi')
+/** Даты со свежими рендерами (render_available у API-06, §7.3). */
+const renderDates = computed(() => ndvi.value.filter((p) => p.render_available).map((p) => p.date))
+/** Выбранная дата слоя; по умолчанию — последняя с рендером. */
+const renderDate = ref('')
+/** Загруженный PNG (blob URL + геопривязка из X-Field-Bbox/X-Image-Size). */
+const layer = ref<NdviRender | null>(null)
+
+watch(
+  renderDates,
+  (dates) => {
+    if (!dates.length) {
+      renderDate.value = ''
+      return
+    }
+    if (!dates.includes(renderDate.value)) renderDate.value = dates[dates.length - 1]
+  },
+  { immediate: true },
+)
+
+let layerToken = 0
+
+async function loadLayer() {
+  const token = ++layerToken
+  if (layerMode.value === 'none' || !renderDate.value) {
+    const prev = layer.value
+    layer.value = null
+    if (prev) URL.revokeObjectURL(prev.url)
+    return
+  }
+  const variant = layerMode.value
+  const r = await getNdviRender(fieldId, renderDate.value, variant)
+  if (token !== layerToken) {
+    // Пользователь успел переключить режим/дату — этот ответ устарел.
+    if (r) URL.revokeObjectURL(r.url)
+    return
+  }
+  const prev = layer.value
+  layer.value = r
+  if (prev) URL.revokeObjectURL(prev.url)
+  if (!r) {
+    // Рендера нет (404) или заголовки битые — показываем просто контур.
+    layerMode.value = 'none'
+  }
+}
+
+watch([renderDate, layerMode], () => void loadLayer())
+
+onUnmounted(() => {
+  if (layer.value) URL.revokeObjectURL(layer.value.url)
+})
+
+/** Позиция PNG в SVG: bbox рендера (X-Field-Bbox) → координаты рамки мини-карты. */
+const layerRect = computed(() => {
+  const frame = mapFrame.value
+  const r = layer.value
+  if (!frame || !r) return null
+  const [minLon, minLat, maxLon, maxLat] = r.bbox
+  return {
+    x: 10 + (minLon - frame.minLon) * frame.s,
+    y: 110 - (maxLat - frame.minLat) * frame.s,
+    width: (maxLon - minLon) * frame.s,
+    height: (maxLat - minLat) * frame.s,
+  }
+})
+
+function fmtDate(iso: string): string {
+  return iso.split('-').reverse().join('.')
+}
 
 /** Загрузка по блокам (v2-fix-E): каждый блок карточки рендерится и
  *  заполняется независимо — структура страницы видна сразу, вместо общего
