@@ -141,34 +141,93 @@ const contourPoints = computed(() => {
     .join(' ')
 })
 
-async function load() {
-  loading.value = true
-  failed.value = false
+/** Загрузка по блокам (v2-fix-E): каждый блок карточки рендерится и
+ *  заполняется независимо — структура страницы видна сразу, вместо общего
+ *  гейта «Загрузка карточки поля…» скелетоны внутри блоков. Ошибка ядра
+ *  (API-05-композит) — сообщение, ошибки блока — внутри блока. */
+const coreLoading = ref(true)
+const coreFailed = ref(false)
+const historyLoading = ref(true)
+const ndviLoading = ref(true)
+const weatherLoading = ref(true)
+const weatherFailed = ref(false)
+const journalLoading = ref(true)
+const worksLoading = ref(true)
+
+async function loadCore() {
   try {
-    // Карточка догружает NDVI и погоду отдельными эндпоинтами (API-06/07),
-    // журнал поля — API-18 (фильтр field_id, последние записи), вкладка
-    // «Работы» — планы API-15 (field_id) + полный журнал поля (API-18).
-    const [c, h, n, w, ops, wplans, wops] = await Promise.all([
-      getFieldCard(fieldId),
-      getFieldCropCycles(fieldId),
-      getFieldNdvi(fieldId),
-      getFieldWeather(fieldId),
-      getOperations({ field_id: fieldId, limit: 5 }),
+    card.value = await getFieldCard(fieldId)
+  } catch {
+    coreFailed.value = true // тост с problem+json уже показал API-клиент
+  } finally {
+    coreLoading.value = false
+  }
+}
+
+async function loadHistory() {
+  try {
+    cropHistory.value = await getFieldCropCycles(fieldId)
+  } catch {
+    cropHistory.value = []
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+async function loadNdvi() {
+  try {
+    ndvi.value = await getFieldNdvi(fieldId)
+  } catch {
+    ndvi.value = []
+  } finally {
+    ndviLoading.value = false
+  }
+}
+
+async function loadWeather() {
+  try {
+    weather.value = await getFieldWeather(fieldId)
+  } catch {
+    weatherFailed.value = true
+  } finally {
+    weatherLoading.value = false
+  }
+}
+
+async function loadJournal() {
+  try {
+    operations.value = (await getOperations({ field_id: fieldId, limit: 5 })).items
+  } catch {
+    operations.value = []
+  } finally {
+    journalLoading.value = false
+  }
+}
+
+async function loadWorks() {
+  try {
+    // Вкладка «Работы» — планы API-15 (field_id) + полный журнал поля API-18.
+    const [wplans, wops] = await Promise.all([
       getTreatmentPlans({ field_id: fieldId }),
       getOperations({ field_id: fieldId, limit: 100 }),
     ])
-    card.value = c
-    cropHistory.value = h
-    ndvi.value = n
-    weather.value = w
-    operations.value = ops.items
     fieldPlans.value = wplans.items
     fieldOperations.value = wops.items
   } catch {
-    failed.value = true // тост с problem+json уже показал API-клиент
+    fieldPlans.value = []
+    fieldOperations.value = []
   } finally {
-    loading.value = false
+    worksLoading.value = false
   }
+}
+
+function load() {
+  void loadCore()
+  void loadHistory()
+  void loadNdvi()
+  void loadWeather()
+  void loadJournal()
+  void loadWorks()
 }
 
 onMounted(load)
