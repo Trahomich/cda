@@ -113,7 +113,9 @@ def _scene_counts_by_year(db: Session, year_from: int, year_to: int) -> dict[int
 
 
 def _active_field_ids(db: Session) -> list[str]:
-    return [str(row[0]) for row in db.execute(text("SELECT id FROM dat_field WHERE status = 'active'"))]
+    return [
+        str(row[0]) for row in db.execute(text("SELECT id FROM dat_field WHERE status = 'active'"))
+    ]
 
 
 def run_history_backfill(
