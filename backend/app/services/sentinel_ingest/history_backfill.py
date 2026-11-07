@@ -150,7 +150,9 @@ def run_history_backfill(
             report.catalog_new_rows += catalog.new_rows
             report.catalog_failed.extend(catalog.failed)
             if catalog.failed:
-                logger.warning("backfill-history: окно %s..%s пропущено: %s", start, end, catalog.failed)
+                logger.warning(
+                    "backfill-history: окно %s..%s пропущено: %s", start, end, catalog.failed
+                )
     report.assets_skipped = filtered_client.skipped
 
     # 2) расчёт NDVI/NDWI + рендеры по cataloged-строкам, батчами до исчерпания
