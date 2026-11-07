@@ -133,7 +133,6 @@ class TestYieldForecast:
 
         body = self._get().json()
         assert body["ndvi_max"] == 0.6
-        assert body["ndvi_max"] == round(0.6, 3)
         # вклад только сцен выше 0.2: (0.6 − 0.2) + (0.555 − 0.2) = 0.755 → 0.00755
         assert body["ndvi_integral"] == pytest.approx(0.00755, abs=1e-6)
         assert body["forecast_c_ha"] == pytest.approx(30 * 0.00755, abs=0.01)
