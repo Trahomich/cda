@@ -287,7 +287,23 @@ def field_yield_forecast(
         )
     )
     cycle = None
-    if last_scene_year is not None:
+    if year is not None:
+        # явный сезон (§7.5): только основной цикл года YYYY, без fallback
+        cycle = db.scalar(
+            select(CropCycle).where(
+                CropCycle.field_id == field.id,
+                CropCycle.year == year,
+                CropCycle.kind == "main",
+            )
+        )
+        if cycle is None:
+            raise AppError(
+                f"У поля {field.id} нет основного цикла сезона {year}",
+                code="yield_no_culture",
+                title="Прогноз недоступен",
+                status_code=422,
+            )
+    elif last_scene_year is not None:
         cycle = db.scalar(
             select(CropCycle).where(
                 CropCycle.field_id == field.id,
