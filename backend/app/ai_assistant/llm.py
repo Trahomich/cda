@@ -66,6 +66,8 @@ def summarize(
         "stream": False,
         "options": {"temperature": 0.3, "num_ctx": 4096},
     }
+    if num_predict is not None:
+        body["options"]["num_predict"] = num_predict
     if keep_alive:
         body["keep_alive"] = keep_alive
 
