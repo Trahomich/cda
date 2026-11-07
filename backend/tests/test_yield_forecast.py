@@ -45,7 +45,7 @@ def make_cycle(db: Session, field_id: uuid.UUID, culture: Culture, year: int, ki
     return cycle
 
 
-def make_scene(db: Session, field_id: uuid.UUID, day: date, avg: float):
+def make_scene(db: Session, field_id: uuid.UUID, day: date, avg: float, cloud_pct=0.0):
     db.add(
         SatelliteScene(
             field_id=field_id,
@@ -55,9 +55,23 @@ def make_scene(db: Session, field_id: uuid.UUID, day: date, avg: float):
             index_avg=avg,
             index_min=avg,
             index_max=avg,
-            cloud_pct=0.0,
+            cloud_pct=cloud_pct,
             source_id=SATELLITE_SOURCE_ID,
         )
+    )
+
+
+def make_cloudy_scene(db: Session, field_id: uuid.UUID, day: date, avg: float, cloud_pct=100.0):
+    """Сцена с cloud_pct > 60 — вне бизнес-порога; CHECK-констрейнт таблицы
+    (ck_dat_satellite_scene_cloud) на время теста снимается вызывающим."""
+    db.execute(
+        db_text(
+            "INSERT INTO dat_satellite_scene (id, field_id, index, captured_at, "
+            "resolution_m, index_avg, index_min, index_max, cloud_pct, source_id) "
+            "VALUES (gen_random_uuid(), :field, 'ndvi', :day, 10, :avg, :avg, :avg, "
+            ":cloud, :source)"
+        ),
+        {"field": field_id, "day": day, "avg": avg, "cloud": cloud_pct, "source": SATELLITE_SOURCE_ID},
     )
 
 
