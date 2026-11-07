@@ -26,6 +26,7 @@ import type {
   NdviPoint,
   TreatmentPlan,
   VraZoneItem,
+  VraZonesResponse,
   YieldForecastResponse,
 } from '@/api/types'
 import type { NdviRender } from '@/api'
