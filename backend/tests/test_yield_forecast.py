@@ -100,6 +100,8 @@ class TestYieldForecast:
         make_cycle(self.db, self.field_id, culture, 2026)
         for day, avg in [(date(2026, 5, 1), 0.5), (date(2026, 6, 1), 0.7), (date(2026, 7, 1), 0.8)]:
             make_scene(self.db, self.field_id, day, avg)
+        # граница «чистой» сцены: cloud = 60 входит в расчёт (§7.4: ≤ 60)
+        make_scene(self.db, self.field_id, date(2026, 8, 1), 0.4, cloud_pct=60.0)
         self.db.commit()
 
         resp = self._get()
