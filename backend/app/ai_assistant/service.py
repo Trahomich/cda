@@ -190,8 +190,15 @@ def _vra_peak_cached(field_id: uuid.UUID) -> tuple[date, float] | None:
     return None
 
 
-def _llm_context(db: Session, field: Field, items: list[InsightItem]) -> str:
-    """Контекст для LLM: поле, культура сезона, агрохимия, последние работы."""
+#: вердикт модели дифвнесения для контекста LLM (§8.2, #105), когда расчёта нет
+VRA_NO_DATA_VERDICT = "Модель дифвнесения: нет расчёта."
+
+
+def _llm_context(
+    db: Session, field: Field, items: list[InsightItem], *, vra_verdict: str = VRA_NO_DATA_VERDICT
+) -> str:
+    """Контекст для LLM: поле, культура, агрохимия, работы, NDVI-динамика
+    и вердикты моделей вымокания/дифвнесения (§8.2, #105)."""
     parts = [f"Поле «{field.name}», площадь {float(field.area_ga or 0):.1f} га."]
     cycle = db.execute(
         select(CropCycle, Culture.name)
@@ -221,6 +228,35 @@ def _llm_context(db: Session, field: Field, items: list[InsightItem]) -> str:
             for op in ops
         )
         parts.append(f"Последние работы: {works}.")
+
+    scenes = detectors.load_scenes(db, field.id)
+    if scenes:
+        last10 = scenes[-10:]
+        series = ", ".join(f"{s.captured_at.isoformat()}: {s.ndvi_mean:.3f}" for s in last10)
+        lo = min(s.ndvi_mean for s in scenes)
+        hi = max(s.ndvi_mean for s in scenes)
+        parts.append(
+            f"NDVI-динамика сезона (последние {len(last10)} чистых сцен, "
+            f"дата: среднее по полю, по возрастанию): {series}. "
+            f"За сезон min {lo:.3f} / max {hi:.3f}."
+        )
+        # вердикт модели вымокания — по всем чистым сценам сезона (§8.2, #103)
+        precip_map = precip_sums_7d(db, field.id, [s.captured_at for s in scenes])
+        flags = [
+            waterlogged(s.ndwi_p90, s.ndvi_mean, precip_map.get(s.captured_at)) for s in scenes
+        ]
+        episode_dates = [
+            s.captured_at.isoformat()
+            for s, flag in zip(scenes, flags, strict=True)
+            if flag is True
+        ]
+        checked = sum(1 for flag in flags if flag is not None)
+        if episode_dates:
+            parts.append(f"Модель вымокания: эпизоды по сценам {', '.join(episode_dates)}.")
+        else:
+            parts.append(f"Модель вымокания: признаков вымокания нет по {checked} сценам.")
+
+    parts.append(vra_verdict)
     parts.append(
         "Детекторы (items):\n"
         + json.dumps([item.model_dump(mode="json") for item in items], ensure_ascii=False)
@@ -228,8 +264,14 @@ def _llm_context(db: Session, field: Field, items: list[InsightItem]) -> str:
     return "\n".join(parts)
 
 
-def _checked_summary(summary: str | None, items: list[InsightItem]) -> str | None:
-    """Guardrail §8.2: числа сводки обязаны встречаться в items, иначе fallback."""
+def _checked_summary(
+    summary: str | None, items: list[InsightItem], context: str | None = None
+) -> str | None:
+    """Guardrail §8.2: числа сводки обязаны встречаться в items или контексте.
+
+    Контекст (#105): NDVI-средние, IQR, счётчики сцен/зон тоже допустимы —
+    LLM цитирует их при анализе, это не выдумка.
+    """
     if not summary:
         return None
     allowed = set(
@@ -239,6 +281,8 @@ def _checked_summary(summary: str | None, items: list[InsightItem]) -> str | Non
             ).replace(",", ".")
         )
     )
+    if context:
+        allowed |= set(_NUM_RE.findall(context.replace(",", ".")))
     found = set(_NUM_RE.findall(summary.replace(",", ".")))
     if found <= allowed:
         return summary
