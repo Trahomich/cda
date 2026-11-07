@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, date, datetime
 
-from sqlalchemy import select, true, update
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.integrations import DataGapError, DataQualityError, SourceUnavailableError
