@@ -241,6 +241,9 @@ def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     cloud_pct — доля пикселей SCL ∈ {8,9,10} полезной площади (пиксели внутри
     контура с данными каналов), docs/05 §2 v1. При облачности > 60 статистика
     не считается (сцене всё равно не сохраняться, 05 §5 п.2).
+
+    Вместе с NDVI считается NDWI (B03−B08)/(B03+B08) по тем же пикселям —
+    ndwi_mean/ndwi_p90 (docs/06 §7.4, #91); None, если канала b03 нет в активах.
     """
     from rasterio.warp import transform_geom
 
