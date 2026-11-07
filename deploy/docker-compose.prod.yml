@@ -110,7 +110,8 @@ services:
   # перерегистрируются при старте (replace_existing=True), миграция данных не нужна.
   redis:
     image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
-    command: ["dragonfly", "--logtostderr", "--dbfilename=dragonfly", "--dir=/data"]
+    # --proactor_threads=2: иначе dragonfly стартует по числу CPU (20) и требует ~5 GiB
+    command: ["dragonfly", "--logtostderr", "--dbfilename=dragonfly", "--dir=/data", "--proactor_threads=2"]
     volumes:
       - dragonflydata:/data
     healthcheck:
