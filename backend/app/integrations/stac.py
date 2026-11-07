@@ -18,6 +18,7 @@
 import logging
 from dataclasses import dataclass, field
 from datetime import date
+from typing import Protocol
 
 import httpx
 
