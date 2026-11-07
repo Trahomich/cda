@@ -5,11 +5,21 @@
 // снимок»), полоса min–max по сцене, последняя «чистая» точка выделена, облачные
 // снимки (cloud_pct > 80, 07-ux §3.2) — пустые кружки ◌ вне линии,
 // низкое доверие источника (trust < 0.9) — штрих под точкой.
+// Интерактивность (v2-fix-H): точки дат с PNG-снимком (selectable) кликабельны —
+// событие select выбирает дату слоя мини-карты; выбранная точка выделена.
 // SVG без зависимостей; доступность — role="img" + <title> у точек.
 import { computed } from 'vue'
 import type { NdviPoint } from '@/api/types'
 
-const props = defineProps<{ points: NdviPoint[] }>()
+const props = defineProps<{
+  points: NdviPoint[]
+  /** Даты, у которых есть PNG-рендер (§7.3) — кликабельны на графике. */
+  selectable?: string[]
+  /** Выбранная дата слоя (выделяется на графике). */
+  selected?: string
+}>()
+
+const emit = defineEmits<{ (e: 'select', date: string): void }>()
 
 const W = 340
 const H = 168
