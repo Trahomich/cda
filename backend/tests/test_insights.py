@@ -594,7 +594,7 @@ class TestBackgroundFix101:
         import app.core.cache as cache_mod
 
         key = f"insights:{fid}:{TODAY.isoformat()}"
-        cached = _json.loads(cache_mod.cache_get(key))
+        cached = cache_mod.cache_get(key)  # cache_get уже возвращает разобранный JSON
         cached["source"] = "rules+llm"
         cached["summary"] = "готово"
         cache_mod.cache_set(key, cached, 3600)
