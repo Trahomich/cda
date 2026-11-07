@@ -268,6 +268,7 @@ def refresh_insights(field_id: uuid.UUID, day: date) -> None:
         if scene is None or scene.captured_at != day:
             return  # появилась новая сцена — её ключ дорабатывается отдельно
 
+        vra_iqr: float | None = None
         vra_day: date | None = None
         try:
             # зоны по пиковым сценам (#106): iqr и дата — подтверждённой пиковой
