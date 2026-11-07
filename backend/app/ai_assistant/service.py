@@ -189,6 +189,7 @@ def get_insights(
         field.id,
         vra_iqr=vra_info[1] if vra_info else None,
         vra_day=vra_info[0] if vra_info else None,
+        year=year,
     )
     resp = InsightsResponse(
         field_id=field.id,
@@ -202,17 +203,19 @@ def get_insights(
     if settings.ollama_base_url and items:
         # фоновая доработка: VRA по COG + LLM-сводка (повторный запрос увидит).
         # В tests Ollama выключен — фон не запускается вовсе.
-        background.add_task(refresh_insights, field.id, day)
+        background.add_task(refresh_insights, field.id, day, year)
     return resp
 
 
-def _vra_peak_cached(field_id: uuid.UUID) -> tuple[date, float] | None:
+def _vra_peak_cached(field_id: uuid.UUID, year: int | None = None) -> tuple[date, float] | None:
     """(дата, IQR) пиковой сцены из кэша VRA (vra.py #106); нет — детектор молчит.
 
     VRA-зоны теперь строятся по пиковым сценам сезона — их даты отличаются
     от последней сцены, поэтому vra.py кладёт указатель текущих зон
-    отдельно (ключ vra:peak:{field_id}).
+    отдельно (ключ vra:peak:{field_id}; сезонный год — §7.5 — с суффиксом
+    :{year}, ключ текущего сезона не меняется).
     """
+    key = f"vra:peak:{field_id}" if year is None else f"vra:peak:{field_id}:{year}"
     data = cache_get(f"vra:peak:{field_id}")
     if isinstance(data, dict):
         try:
