@@ -96,10 +96,23 @@ def build_items(
     else:
         items.append(None)
 
-    items.append(detectors.detect_ndvi_lag_last_year(scenes))
-    items.append(detectors.detect_agrochem_low(detectors.latest_agrochem(db, field_id)))
-    items.append(detectors.detect_vra_heterogeneity(vra_iqr, vra_day))
-    return [item for item in items if item is not None]
+    drought: InsightItem | None = None
+    if latest is not None:
+        precip_14d, gdd_14d, gdd_days = detectors.weather_window_14d(
+            db, field_id, latest.captured_at
+        )
+        drought = detectors.detect_drought(precip_14d, gdd_14d, gdd_days, latest.captured_at)
+
+    candidates: list[InsightItem | None] = [
+        detectors.detect_ndvi_drop(scenes),
+        detectors.detect_ndvi_stagnation(scenes),
+        detectors.detect_waterlogging(latest, precip_7d),
+        drought,
+        detectors.detect_ndvi_lag_last_year(scenes),
+        detectors.detect_agrochem_low(detectors.latest_agrochem(db, field_id)),
+        detectors.detect_vra_heterogeneity(vra_iqr, vra_day),
+    ]
+    return [item for item in candidates if item is not None]
 
 
 def _from_cache(data: dict, field_id: uuid.UUID) -> InsightsResponse | None:
