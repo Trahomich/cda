@@ -80,7 +80,7 @@ def band_tiffs(tmp_path):
 def make_history_field(db: Session, name="Историческое-1") -> uuid.UUID:
     """Поле-контур в центре синтетической плашки (WGS84)."""
     field_id = uuid.uuid4()
-    utm_box = box(X0 + 80000, Y1 - 100000, X0 + 100000, Y1 - 80000)
+    utm_box = box(X0 + 200, Y1 - 1200, X0 + 800, Y1 - 600)
     geo = transform_geom(CRS, "EPSG:4326", mapping(utm_box))
     db.execute(
         db_text(
