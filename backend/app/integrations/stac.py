@@ -29,11 +29,14 @@ SATELLITE_SOURCE_ID = "satellite.sentinel2-l2a"
 COLLECTION = "sentinel-2-l2a"
 
 #: каналы, нужные для NDVI и маски облаков (05 §2: B04, B08, SCL);
+#: b02/b03 — только рендер truecolor (docs/06 §7.3, #83);
 #: ключ актива — каноническое имя, значения — возможные имена в каталоге
-#: (earth-search отдаёт ESA-имена red/nir, Copernicus — b04/b08)
+#: (earth-search отдаёт ESA-имена red/nir/green/blue, Copernicus — b04/b08)
 CATALOG_ASSETS: dict[str, tuple[str, ...]] = {
     "b04": ("b04", "red"),
     "b08": ("b08", "nir"),
+    "b02": ("b02", "blue"),
+    "b03": ("b03", "green"),
     "scl": ("scl",),
 }
 
