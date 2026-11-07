@@ -85,9 +85,7 @@ class Settings(BaseSettings):
     copernicus_auth_url: str = (
         "https://identity.dataspace.copernicus.eu/auth/realms/CDAS/protocol/openid-connect/token"
     )
-    copernicus_search_url: str = (
-        "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
-    )
+    copernicus_search_url: str = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
     copernicus_client_id: str = ""
     copernicus_client_secret: str = ""
 
