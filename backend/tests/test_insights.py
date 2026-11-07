@@ -470,7 +470,117 @@ class TestSummaryFallback:
         assert result == "Падение: NDVI упал с 0.72 до 0.55: −0.17."
 
 
+class TestLlmContext105:
+    """#105: контекст LLM — NDVI-динамика, вердикты моделей; guardrail ± контекст."""
+
+    def test_context_ndvi_series_and_verdicts(self, world, db_session) -> None:
+        """Контекст содержит NDVI-серию, min/max сезона и вердикты моделей."""
+        from app.ai_assistant import service
+        from app.models.agronomy import Field
+
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        for i, ndvi in enumerate((0.30, 0.55, 0.72)):
+            make_scene(db_session, fid, date(2026, 5, 1) + timedelta(days=10 * i), ndvi)
+        db_session.commit()
+        field = db_session.get(Field, fid)
+        assert field is not None
+        verdict = "Модель дифвнесения: поле однородно, IQR NDVI = 0.058 — зоны не строятся."
+        ctx = service._llm_context(db_session, field, [], vra_verdict=verdict)
+        assert "NDVI-динамика сезона (последние 3 чистых сцен" in ctx
+        assert "2026-05-01: 0.300" in ctx and "2026-05-21: 0.720" in ctx
+        assert "min 0.300 / max 0.720" in ctx
+        # сцен с NDWI и погодой нет — проверено 0 сцен
+        assert "Модель вымокания: признаков вымокания нет по 0 сценам." in ctx
+        assert verdict in ctx
+
+    def test_context_waterlogging_episodes(self, world, db_session) -> None:
+        """Эпизод вымокания (NDWI + осадки) попадает в вердикт модели датами."""
+        from app.ai_assistant import service
+        from app.models.agronomy import Field
+
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        make_scene(db_session, fid, date(2026, 6, 10), 0.40, ndwi_mean=0.12, ndwi_p90=0.15)
+        for back in range(7):  # ≥ 20 мм за 7 суток
+            make_obs(db_session, fid, date(2026, 6, 10) - timedelta(days=back), precip_mm=4.0)
+        db_session.commit()
+        field = db_session.get(Field, fid)
+        assert field is not None
+        ctx = service._llm_context(db_session, field, [])
+        assert "Модель вымокания: эпизоды по сценам 2026-06-10." in ctx
+
+    def test_checked_summary_allows_context_numbers(self) -> None:
+        """Число из контекста (IQR) не считается выдуманным — сводка проходит."""
+        from app.ai_assistant.schemas import InsightItem
+        from app.ai_assistant.service import _checked_summary
+
+        items = [
+            InsightItem(
+                code="ndvi_drop",
+                severity="warn",
+                title="Падение",
+                detail="NDVI упал с 0.72 до 0.50: −0.22.",
+                data_refs=[],
+            )
+        ]
+        context = "NDVI-динамика: min 0.300 / max 0.720. IQR NDVI = 0.145, 3 зон дифвнесения."
+        summary = "IQR NDVI = 0.145 — стоит построить зоны дифвнесения."
+        assert _checked_summary(summary, items, context) == summary
+
+    def test_checked_summary_alien_number_still_falls_back(self) -> None:
+        """Постороннего числа нет ни в items, ни в контексте — fallback."""
+        from app.ai_assistant.schemas import InsightItem
+        from app.ai_assistant.service import _checked_summary
+
+        items = [
+            InsightItem(
+                code="ndvi_drop",
+                severity="warn",
+                title="Падение",
+                detail="NDVI упал с 0.72 до 0.50: −0.22.",
+                data_refs=[],
+            )
+        ]
+        result = _checked_summary(
+            "Внесите 90 кг/га азота срочно!", items, "IQR NDVI = 0.145."
+        )
+        assert result == "Падение: NDVI упал с 0.72 до 0.50: −0.22."
+
+    def test_refresh_passes_context_with_verdicts(self, world, db_session, monkeypatch) -> None:
+        """refresh_insights передаёт LLM контекст с NDVI-серией и вердиктами
+        моделей (VRA без ассетов → «нет расчёта»)."""
+        from sqlalchemy.orm import sessionmaker
+
+        from app.ai_assistant import service
+
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        make_scene(db_session, fid, TODAY - timedelta(days=6), 0.72)
+        make_scene(db_session, fid, TODAY, 0.50)
+        db_session.commit()
+
+        store = TestBackgroundFix101._fake_redis(monkeypatch)
+        monkeypatch.setattr(service, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
+        captured: dict[str, str] = {}
+
+        def fake_summarize(prompt, context, **kwargs):
+            captured["context"] = context
+            return "NDVI упал на 0.22 — проверьте поле."
+
+        monkeypatch.setattr(service.llm, "summarize", fake_summarize)
+        db_session.close()
+
+        service.refresh_insights(fid, TODAY)
+        ctx = captured["context"]
+        assert "NDVI-динамика сезона" in ctx
+        assert "Модель вымокания" in ctx
+        assert service.VRA_NO_DATA_VERDICT in ctx
+
+
 class TestBackgroundFix101:
+    """#101: сессия БД не держится во время LLM-вызова; очередь LLM;
+    доработка перезапускается, пока в кэше rules-ответ без сводки."""
 
     @staticmethod
     def _fake_redis(monkeypatch) -> dict[str, str]:
