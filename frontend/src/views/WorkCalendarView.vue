@@ -240,7 +240,7 @@ const planCount = computed(() => monthPlans.value.length)
     <p class="cal__legend">
       <span class="cal__legend-item"><span class="cal__chip cal__chip--plan">план</span> плановая дата (API-15)</span>
       <span class="cal__legend-item"><span class="cal__chip cal__chip--fact">факт</span> выполнено (API-18)</span>
-      <span class="cal__muted">{{ monthTitle }}: планов {{ planCount }}, фактов {{ factCount }}</span>
+      <span class="cal__muted">{{ monthTitle }}: планов {{ loading ? '…' : planCount }}, фактов {{ loading ? '…' : factCount }}</span>
     </p>
 
     <p
