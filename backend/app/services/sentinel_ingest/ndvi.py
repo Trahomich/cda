@@ -148,12 +148,15 @@ def _read_band_window(href: str, contour_geojson: dict) -> tuple[np.ndarray, obj
         ds.close()
 
 
-def _read_scl_grid(assets: dict, transform, crs, out_shape) -> np.ndarray:
+def _read_scl_grid(
+    assets: dict, contour_geojson: dict, transform, crs, out_shape
+) -> np.ndarray:
     """SCL-канал (20 м) в сетку другого канала (10 м, nearest).
 
-    Отдельный COG открывается по своему окну (границы контура) и
-    перепроецируется в переданную сетку. Вне плашки — 0 (nodata, не облако).
-    Используется зональной статистикой и рендерами (#83).
+    SCL-окно читается по своему окну (границы контура) и перепроецируется
+    в переданную сетку по координатам — не read(out_shape=...), который
+    растягивает окно как картинку (граница облачной зоны уезжает на пиксель).
+    Вне плашки — 0 (nodata, не облако). Общая для статистики и рендеров (#83).
     """
     from rasterio.enums import Resampling
     from rasterio.warp import reproject, transform_geom
@@ -162,9 +165,28 @@ def _read_scl_grid(assets: dict, transform, crs, out_shape) -> np.ndarray:
 
     scl_ds = _open_cog(assets["scl"])
     try:
-        geom_scl = transform_geom("EPSG:4326", scl_ds.crs, assets["scl_contour"])  # не используется
+        geom_scl = transform_geom("EPSG:4326", scl_ds.crs, contour_geojson)
+        w = from_bounds(*shape(geom_scl).bounds, transform=scl_ds.transform)
+        window = Window(
+            col_off=math.floor(w.col_off),
+            row_off=math.floor(w.row_off),
+            width=math.ceil(w.col_off + w.width) - math.floor(w.col_off),
+            height=math.ceil(w.row_off + w.height) - math.floor(w.row_off),
+        )
+        scl_src = scl_ds.read(1, window=window, boundless=True, fill_value=0)
+        scl = np.zeros(out_shape, dtype=scl_src.dtype)
+        reproject(
+            source=scl_src,
+            destination=scl,
+            src_transform=scl_ds.window_transform(window),
+            src_crs=scl_ds.crs,
+            dst_transform=transform,
+            dst_crs=crs,
+            resampling=Resampling.nearest,
+        )
+        return scl
     finally:
-        pass
+        scl_ds.close()
 
 
 def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
