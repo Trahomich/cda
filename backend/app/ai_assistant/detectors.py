@@ -33,6 +33,8 @@ from app.models.references import Agrochem, Culture
 from app.modules.satellite.vra import VRA_MIN_IQR
 from app.modules.satellite.waterlog import (
     WATERLOG_NDWI_P90,
+    WATERLOG_NDVI_MEAN,
+    WATERLOG_PRECIP_MM_7D,
     waterlogged,
 )
 
