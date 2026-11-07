@@ -311,12 +311,21 @@ def process_catalog_row(db: Session, item: SatelliteCatalogItem, contour: dict) 
     return apply_row_result(db, item, zonal_ndvi(item.assets or {}, contour))
 
 
-def run_ndvi_cycle(db: Session, *, batch_limit: int = 200, max_workers: int = 4) -> NdviReport:
+def run_ndvi_cycle(
+    db: Session,
+    *,
+    batch_limit: int = 200,
+    max_workers: int = 4,
+    render_dir: str | None = None,
+) -> NdviReport:
     """Цикл расчёта: строки каталога status='cataloged' → NDVI → сцены.
 
     Чтение COG (сеть) выполняется пулом потоков (rasterio отпускает GIL),
     запись в БД — в основном потоке сессией. Прогресс — в логах; воркер
     не падает: недоступность COG — журнал error, строка ждёт повтора.
+
+    render_dir (#83, docs/06 §7.3): каталог PNG-рендеров сцены (ndvi/
+    truecolor); ошибки рендера не влияют на сцену — лог, рендера нет.
     """
     from app.modules.satellite.ingest import contour_lookup_factory
 
