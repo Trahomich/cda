@@ -402,6 +402,7 @@ def field_vra(field_id: uuid.UUID, db: DbSession, settings: SettingsDep) -> VraZ
         field_id=field.id,
         date=result.captured_at,
         iqr_ndvi=result.iqr_ndvi,
+        peak_dates=list(result.peak_dates),
         base_dose_kg_ha=base_dose,
         zones=[
             VraZoneItem(
