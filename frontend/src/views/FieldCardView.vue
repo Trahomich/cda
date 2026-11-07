@@ -366,7 +366,14 @@ function fmtNum(v: number, digits = 1): string {
             NDVI-таймлайн (сезон {{ currentCycle?.year ?? '—' }})
           </h2>
           <!-- Пустое состояние («снимков нет») рендерит сам компонент -->
-          <NdviTimeline :points="ndvi" />
+          <Skeleton
+            v-if="ndviLoading"
+            :lines="3"
+          />
+          <NdviTimeline
+            v-else
+            :points="ndvi"
+          />
           <p
             v-if="lastSatelliteDate"
             class="card360__muted"
