@@ -1810,6 +1810,31 @@ export class MockTransport implements Transport {
       headers: new Headers(),
     })
 
+    const vraMapMatch = /^\/fields\/([\w-]+)\/vra\/map\.png$/.exec(pathname)
+    if (vraMapMatch) {
+      const field = FIELDS.find((f) => f.field_id === vraMapMatch[1])
+      if (!field || FIELD_N.get(field.field_id) === 6) return empty(404)
+      const vra = vraOf(FIELD_N.get(field.field_id)!, field.field_id)
+      const blob = await vraMapPng(vra.zones)
+      const ring = field.contour?.coordinates[0] as number[][] | undefined
+      if (!ring || ring.length < 4) return empty(404)
+      const lons = ring.map((c) => c[0])
+      const lats = ring.map((c) => c[1])
+      const bbox = [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)]
+        .map((v) => v.toFixed(6))
+        .join(',')
+      return {
+        ok: true,
+        status: 200,
+        blob,
+        headers: new Headers({
+          'Content-Type': 'image/png',
+          'X-Field-Bbox': bbox,
+          'X-Image-Size': '200x100',
+        }),
+      }
+    }
+
     const renderMatch = /^\/fields\/([\w-]+)\/ndvi\/(\d{4}-\d{2}-\d{2})\/render\.png$/.exec(pathname)
     if (!renderMatch) return empty(404)
 
