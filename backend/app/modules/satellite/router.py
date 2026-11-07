@@ -244,14 +244,20 @@ def field_seasons(field_id: uuid.UUID, db: DbSession) -> SeasonsResponse:
     response_model=YieldForecastResponse,
     summary="API-53: прогноз урожайности по NDVI (§7.4, 09-ai §8.3)",
 )
-def field_yield_forecast(field_id: uuid.UUID, db: DbSession) -> YieldForecastResponse:
+def field_yield_forecast(
+    field_id: uuid.UUID,
+    db: DbSession,
+    *,
+    year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"),
+) -> YieldForecastResponse:
     """Прогноз урожайности по эмпирической модели NDVI→ц/га.
 
-    Логика выбора сезона: цикл года последней чистой NDVI-сцены поля;
-    если у поля есть сцены, но цикла этого года нет — последний основной
-    цикл по правилу current_cycles (API-01). ndvi_integral в ответе уже
-    поделён на 100 (docs/06 §7.4): forecast = yield_k_base +
-    yield_k_ndvi_max·ndvi_max + yield_k_ndvi_int·ndvi_integral, интервал ±25 %.
+    Логика выбора сезона: при явном year (§7.5) — основной цикл года YYYY
+    (нет цикла — 422 yield_no_culture); без year — цикл года последней чистой
+    NDVI-сцены поля, иначе последний основной цикл по правилу current_cycles
+    (API-01). ndvi_integral в ответе уже поделён на 100 (docs/06 §7.4):
+    forecast = yield_k_base + yield_k_ndvi_max·ndvi_max +
+    yield_k_ndvi_int·ndvi_integral, интервал ±25 %. year — год сезона расчёта.
     """
     field = _get_field(db, field_id)
 
