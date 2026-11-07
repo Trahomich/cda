@@ -251,14 +251,14 @@ class TestNdwiApi:
             _seed_observation(db_session, self.dry_field_id, SCENE_DATE - timedelta(days=back), 5.0)
         db_session.commit()
 
-        # старое поле: сцена без b03 (нет NDWI) и без рендеров
+        # старое поле: сцена без b03 (нет NDWI-статистики) и без рендеров
         self.old_field_id = make_ndvi_field(db_session, name="Старое-2")
         self.old_date = SCENE_DATE - timedelta(days=10)
         item = make_catalog_row(
-            db_session, self.old_field_id, scene_rasters_assets(ndwi_scene_rasters),
+            db_session,
+            self.old_field_id,
+            {k: v for k, v in ndwi_scene_rasters["assets"].items() if k != "b03"},
             item_id="OLD_NDWI",
-        ) if False else make_catalog_row(
-            db_session, self.old_field_id, _b03_only_less(ndwi_scene_rasters), item_id="OLD_NDWI"
         )
         item.captured_at = self.old_date
         db_session.commit()
