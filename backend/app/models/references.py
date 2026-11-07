@@ -47,6 +47,12 @@ class Culture(Base):
     # стабильный цвет культуры на карте (#rrggbb, v1-08 #54);
     # NULL — пользовательские культуры без назначенного цвета
     color_hex: Mapped[str | None] = mapped_column(String(7), nullable=True)
+    # Стартовые коэффициенты линейной эмпирики NDVI→урожайность (v3-ai #95,
+    # docs/06 §7.4 + docs/09 §8.3): forecast = k_base + k_ndvi_max·ndvi_max +
+    # k_ndvi_int·ndvi_integral, ц/га; NULL → 422 yield_no_model.
+    yield_k_base: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
+    yield_k_ndvi_max: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
+    yield_k_ndvi_int: Mapped[float | None] = mapped_column(Numeric(6, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
