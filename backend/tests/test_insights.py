@@ -542,9 +542,7 @@ class TestLlmContext105:
                 data_refs=[],
             )
         ]
-        result = _checked_summary(
-            "Внесите 90 кг/га азота срочно!", items, "IQR NDVI = 0.145."
-        )
+        result = _checked_summary("Внесите 90 кг/га азота срочно!", items, "IQR NDVI = 0.145.")
         assert result == "Падение: NDVI упал с 0.72 до 0.50: −0.22."
 
     def test_refresh_passes_context_with_verdicts(self, world, db_session, monkeypatch) -> None:

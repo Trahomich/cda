@@ -246,9 +246,7 @@ def _llm_context(
             waterlogged(s.ndwi_p90, s.ndvi_mean, precip_map.get(s.captured_at)) for s in scenes
         ]
         episode_dates = [
-            s.captured_at.isoformat()
-            for s, flag in zip(scenes, flags, strict=True)
-            if flag is True
+            s.captured_at.isoformat() for s, flag in zip(scenes, flags, strict=True) if flag is True
         ]
         checked = sum(1 for flag in flags if flag is not None)
         if episode_dates:
