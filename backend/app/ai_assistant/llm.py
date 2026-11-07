@@ -84,7 +84,10 @@ def summarize(
                 return text or None
             except (httpx.TimeoutException, httpx.TransportError) as exc:
                 logger.warning(
-                    "ollama: %s (попытка %d/%d)", type(exc).__name__, attempt, RETRY_ATTEMPTS
+                    "ollama: %s (попытка %d/%d)",
+                    type(exc).__name__,
+                    attempt,
+                    max_attempts,
                 )
         return None
     finally:
