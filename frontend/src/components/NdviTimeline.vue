@@ -271,6 +271,31 @@ const lastPoint = computed(() => props.points[lastClearIdx.value] ?? null)
   stroke-width: 1.5;
 }
 
+/* v2-fix-H: выбранная дата слоя — синее кольцо; кликабельные точки */
+.ndvi__ring--selected {
+  fill: none;
+  stroke: #1565c0;
+  stroke-width: 2;
+}
+
+.ndvi__hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.ndvi__dot--selectable {
+  stroke: #1b5e20;
+  stroke-width: 1.5;
+}
+
+.ndvi__lg-select {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2e7d32;
+  border: 1.5px solid #1565c0;
+}
+
 .ndvi__trust-mark {
   stroke: #ef6c00;
   stroke-width: 1.5;
