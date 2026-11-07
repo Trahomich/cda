@@ -116,33 +116,7 @@ services:
       - api
     restart: unless-stopped
 
-  # Обход DPI (задача #37): cloudflared ходит к edge через фрагментирующий
-  # SOCKS5-релей, который дробит ClientHello (DPI режет его TLS-сигнатуру).
-  fragrelay:
-    image: python:3.12-alpine
-    command: python /app/fragrelay.py
-    volumes:
-      - ./fragrelay.py:/app/fragrelay.py:ro
-    environment:
-      SOCKS_HOST: ${SOCKS_HOST:-192.168.99.45}
-      SOCKS_PORT: ${SOCKS_PORT:-1080}
-    restart: unless-stopped
-
-  # ВРЕМЕННО ОТКЛЮЧЁН по просьбе пользователя (2026-11-07): второй релей
-  # (region2) закомментирован, cloudflared работает только через fragrelay.
-  # Вернуть: раскомментировать сервис и --edge fragrelay2:7844 у cloudflared.
-  # fragrelay2:
-  #   image: python:3.12-alpine
-  #   command: python /app/fragrelay.py
-  #   volumes:
-  #     - ./fragrelay.py:/app/fragrelay.py:ro
-  #   environment:
-  #     SOCKS_HOST: ${SOCKS_HOST:-192.168.99.45}
-  #     SOCKS_PORT: ${SOCKS_PORT:-1080}
-  #     EDGE_HOST: region2.v2.argotunnel.com
-  #   restart: unless-stopped
-
-  cloudflared:
+  caddy:
     image: cloudflare/cloudflared:latest
     # ВРЕМЕННО (2026-11-07): SOCKS-прокси 192.168.99.45:1080 недоступен,
     # поэтому cloudflared подключается к edge напрямую, без fragrelay.
