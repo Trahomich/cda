@@ -178,4 +178,4 @@ def run_ndwi_backfill(
     return report
 
 
-__all__ = ["NdwiBackfillReport", "run_ndwi_backfill", "true"]
+__all__ = ["NdwiBackfillReport", "run_ndwi_backfill"]
