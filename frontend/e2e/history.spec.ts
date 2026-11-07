@@ -17,11 +17,16 @@ test('карточка поля: лента истории севооборот�
 
   const strip = page.locator('.strip')
   await expect(strip).toBeVisible({ timeout: 15_000 })
-  // Годы по убыванию: мок отдаёт 2027..2023 (план 2027–2031 + история).
+  // Ось времени слева направо по возрастанию года (v2-fix-A п.6, вариант А):
+  // мок отдаёт 2023..2031 (9 лет), окно 8 лет — скрыт самый старый 2023,
+  // слева счётчик «… +1», затем ячейки 2024..2031 по возрастанию.
+  const more = strip.locator('.strip__more')
+  await expect(more).toHaveText('… +1')
   const years = page.locator('.strip__year')
-  await expect(years.first()).toHaveText('2031')
+  await expect(years.first()).toHaveText('2024')
+  await expect(years.last()).toHaveText('2031')
   const count = await years.count()
-  expect(count).toBeGreaterThanOrEqual(5)
+  expect(count).toBe(8)
   // Свот цвета культуры есть и закрашен цветом справочника (не серый по умолчанию).
   const firstCell = strip.locator('.strip__cell').first()
   await expect(firstCell.locator('.strip__swatch')).toBeVisible()
