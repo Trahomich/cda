@@ -465,6 +465,8 @@ function load() {
   void loadWeather()
   void loadJournal()
   void loadWorks()
+  void loadVra()
+  void loadYield()
 }
 
 onMounted(load)
