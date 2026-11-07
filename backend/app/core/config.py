@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     ingest_satellite_retry_base_seconds: float = 60.0  # 0 — без пауз (тесты)
     ingest_satellite_ndvi_batch: int = 200  # строк каталога за цикл расчёта NDVI
     ingest_satellite_ndvi_workers: int = 4  # потоков чтения COG (окна полей, 05 §2)
+    # PNG-рендеры сцен (docs/06 §7.3, #83): пусто — рендеры выключены
+    # (render_available=false; на проде /var/lib/cda/ndvi-renders, volume)
+    ndvi_render_dir: str = ""
 
     # Спутник (MVP-10, docs/05 §2 IF-SATELLITE, §4: опрос каталога раз в 6 ч)
     satellite_enabled: bool = False  # true — нужны ключи Copernicus (см. ниже)
