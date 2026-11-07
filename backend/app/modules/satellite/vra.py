@@ -23,7 +23,7 @@ from dataclasses import asdict, dataclass
 from datetime import date
 
 import numpy as np
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.cache import cache_get, cache_set
