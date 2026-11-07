@@ -204,6 +204,11 @@ export interface NdviPoint {
   ndvi: number
   /** Доля облачности снимка, %: точки с cloud_pct > 80 показываются ◌. */
   cloud_pct: number
+  /** Мин/макс индекса по полю в сцене (API-06): полоса min–max на графике. */
+  index_min?: number | null
+  index_max?: number | null
+  /** Доверие источника сцены (API-06): < 1 — пометка на точке. */
+  trust?: number | null
 }
 
 /** Погода: факт сейчас + прогноз 7 сут — GET /fields/{id}/weather (API-07). */
