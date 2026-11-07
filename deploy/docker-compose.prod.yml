@@ -116,18 +116,17 @@ services:
       - api
     restart: unless-stopped
 
-  caddy:
+  # Прокси/fragrelay ИСКЛЮЧЕНЫ из схемы по решению пользователя (2026-11-07):
+  # cloudflared подключается к edge напрямую; исходящие httpx-запросы сервисов
+  # (api, weather-ingest, sentinel-ingest) тоже идут напрямую, без ALL_PROXY.
+  # История решения: docs/deploy/README.md (раздел про обход DPI).
+  cloudflared:
     image: cloudflare/cloudflared:latest
-    # ВРЕМЕННО (2026-11-07): SOCKS-прокси 192.168.99.45:1080 недоступен,
-    # поэтому cloudflared подключается к edge напрямую, без fragrelay.
-    # DPI-обход через релей вернуть при восстановлении прокси:
-    #   command: tunnel --no-autoupdate --protocol http2 --edge fragrelay:7844 run
     command: tunnel --no-autoupdate --protocol http2 run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN обязателен в .env}
     depends_on:
       - caddy
-      - fragrelay
     restart: unless-stopped
 
 volumes:
