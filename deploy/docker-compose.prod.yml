@@ -134,5 +134,5 @@ services:
 
 volumes:
   pgdata:
-  redisdata:
+  dragonflydata: # #86: данные DragonflyDB (снапшоты); старый redisdata удалён на стенде
   ndvi-renders: # §7.3 (#83): PNG-рендеры сцен; пишет sentinel-ingest, читает api (ro)
