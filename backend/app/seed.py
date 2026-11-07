@@ -81,6 +81,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "cereals",
         "color_hex": "#efe0a8",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -9.0,
+        "yield_k_ndvi_max": 36.0,
+        "yield_k_ndvi_int": 28.0,
     },
     {
         "name": "Тритикале",
