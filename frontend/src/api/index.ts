@@ -204,12 +204,12 @@ export interface NdviRender {
   height: number
 }
 
-/** §7.3: GET /fields/{id}/ndvi/{date}/render.png?variant= — PNG + заголовки
+/** §7.3/§7.4: GET /fields/{id}/ndvi/{date}/render.png?variant= — PNG + заголовки
  *  X-Field-Bbox/X-Image-Size; null, если рендера нет (404). */
 export async function getNdviRender(
   fieldId: string,
   date: string,
-  variant: 'ndvi' | 'truecolor',
+  variant: 'ndvi' | 'truecolor' | 'ndwi',
 ): Promise<NdviRender | null> {
   const res = await apiClient.raw(
     `/fields/${fieldId}/ndvi/${date}/render.png?variant=${variant}`,
