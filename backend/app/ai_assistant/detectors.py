@@ -115,6 +115,43 @@ def latest_agrochem(db: Session, field_id: uuid.UUID) -> Agrochem | None:
     ).first()
 
 
+def current_culture_name(db: Session, field_id: uuid.UUID, day: date) -> str | None:
+    """Культура текущего main-цикла поля на дату day (09 §8.2 v1.1).
+
+    У цикла в БД только год сезона. Допущение: год цикла — год уборки,
+    поэтому озимым, посеянным осенью Y−1, соответствует cycle.year = Y.
+    Сентябрь–декабрь —优先 next-year..., иначе текущий/прошлый:
+    - месяцы 9–12: сначала цикл day.year + 1 (озимые под будущий сезон),
+      затем day.year;
+    - месяцы 1–8: сначала day.year, затем day.year − 1 (озимые с осени).
+    Нет цикла — None (фолбэк «обычное» окно 4–10).
+    """
+    years = (day.year + 1, day.year) if day.month >= 9 else (day.year, day.year - 1)
+    for year in years:
+        name = db.scalar(
+            select(Culture.name)
+            .join(CropCycle, CropCycle.culture_id == Culture.id)
+            .where(
+                CropCycle.field_id == field_id,
+                CropCycle.year == year,
+                CropCycle.kind == "main",
+            )
+            .order_by(CropCycle.created_at.desc())
+            .limit(1)
+        )
+        if name is not None:
+            return name
+    return None
+
+
+def _is_winter_culture(culture_name: str | None) -> bool:
+    """Озимая культура по маркерам имени («озим», «рожь», «тритикале»)."""
+    if not culture_name:
+        return False
+    lowered = culture_name.lower()
+    return any(marker in lowered for marker in WINTER_CULTURE_MARKERS)
+
+
 def weather_window_14d(
     db: Session, field_id: uuid.UUID, day: date
 ) -> tuple[float | None, float | None, int]:
