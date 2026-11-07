@@ -198,14 +198,14 @@ class TestDetectorsApi:
         body = get_insights(client, hdr, fid)
         assert "ndvi_stagnation" not in codes(body["items"])
 
-    def test_ndvi_stagnation_winter_culture_august_silent(self, world, db_session) -> None:
-        """Август вне окна даже озимых (март–июнь, сентябрь–ноябрь): нет вывода."""
+    def test_ndvi_stagnation_winter_culture_july_silent(self, world, db_session) -> None:
+        """Июль вне окна даже озимых (март–июнь, сентябрь–ноябрь): нет вывода."""
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         culture = make_culture(db_session, name="Рожь озимая")
         make_cycle(db_session, field={"field_id": str(fid)}, culture=culture, year=2027)
         for i, ndvi in enumerate((0.45, 0.46, 0.47)):
-            make_scene(db_session, fid, date(2026, 8, 20) - timedelta(days=10 - 4 * i), ndvi)
+            make_scene(db_session, fid, date(2027, 7, 20) - timedelta(days=10 - 4 * i), ndvi)
         body = get_insights(client, hdr, fid)
         assert "ndvi_stagnation" not in codes(body["items"])
 
