@@ -4,7 +4,6 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Protocol
 
 from sqlalchemy import text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -14,6 +13,7 @@ from app.integrations import SourceUnavailableError
 from app.integrations.stac import (
     SATELLITE_SOURCE_ID,
     EarthSearchStacClient,
+    StacSearchClient,
     StacItem,
 )
 from app.models.integrations import SatelliteCatalogItem, SourceJournalEntry
