@@ -18,6 +18,7 @@ summary=null (REQ-NF-009). Если детекторы не сработали �
 import json
 import logging
 import re
+import threading
 import uuid
 from datetime import UTC, date, datetime
 
