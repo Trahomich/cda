@@ -347,8 +347,13 @@ class TestVraPeaks:
         field_id = make_field(db_session, name="Пик-1")
         self.add_scene(db_session, tmp_path, field_id, "s1", date(2026, 6, 25), striped_red(), 0.80)
         self.add_scene(
-            db_session, tmp_path, field_id, "s2", date(2026, 11, 5),
-            np.full((N, N), 800), 0.30,  # последняя по дате — однородная
+            db_session,
+            tmp_path,
+            field_id,
+            "s2",
+            date(2026, 11, 5),
+            np.full((N, N), 800),
+            0.30,  # последняя по дате — однородная
         )
         self.add_scene(db_session, tmp_path, field_id, "s3", date(2026, 6, 20), striped_red(), 0.82)
         resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
@@ -366,12 +371,22 @@ class TestVraPeaks:
         field_id = make_field(db_session, name="Один пик")
         self.add_scene(db_session, tmp_path, field_id, "s1", date(2026, 6, 20), striped_red(), 0.82)
         self.add_scene(
-            db_session, tmp_path, field_id, "s2", date(2026, 6, 25),
-            np.full((N, N), 800), 0.78,
+            db_session,
+            tmp_path,
+            field_id,
+            "s2",
+            date(2026, 6, 25),
+            np.full((N, N), 800),
+            0.78,
         )
         self.add_scene(
-            db_session, tmp_path, field_id, "s3", date(2026, 7, 2),
-            np.full((N, N), 900), 0.74,
+            db_session,
+            tmp_path,
+            field_id,
+            "s3",
+            date(2026, 7, 2),
+            np.full((N, N), 900),
+            0.74,
         )
         resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
         assert resp.status_code == 422, resp.text
@@ -384,12 +399,15 @@ class TestVraPeaks:
         """<3 сцен: подтверждение на всех, кроме максимум одной — 1 из 2 достаточно."""
         make_satellite_source(db_session)
         field_id = make_field(db_session, name="Две сцены")
+        self.add_scene(db_session, tmp_path, field_id, "s1", date(2026, 6, 20), striped_red(), 0.82)
         self.add_scene(
-            db_session, tmp_path, field_id, "s1", date(2026, 6, 20), striped_red(), 0.82
-        )
-        self.add_scene(
-            db_session, tmp_path, field_id, "s2", date(2026, 6, 25),
-            np.full((N, N), 800), 0.78,
+            db_session,
+            tmp_path,
+            field_id,
+            "s2",
+            date(2026, 6, 25),
+            np.full((N, N), 800),
+            0.78,
         )
         resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
         assert resp.status_code == 200, resp.text
@@ -417,12 +435,15 @@ class TestVraPeaks:
         make_satellite_source(db_session)
         field_id = make_field(db_session, name="Кэш пиков")
         self.add_scene(db_session, tmp_path, field_id, "s1", date(2026, 6, 20), striped_red(), 0.82)
+        self.add_scene(db_session, tmp_path, field_id, "s2", date(2026, 6, 25), striped_red(), 0.80)
         self.add_scene(
-            db_session, tmp_path, field_id, "s2", date(2026, 6, 25), striped_red(), 0.80
-        )
-        self.add_scene(
-            db_session, tmp_path, field_id, "s3", date(2026, 11, 5),
-            np.full((N, N), 800), 0.30,
+            db_session,
+            tmp_path,
+            field_id,
+            "s3",
+            date(2026, 11, 5),
+            np.full((N, N), 800),
+            0.30,
         )
 
         fake = FakeRedis()
