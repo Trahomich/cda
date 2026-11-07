@@ -16,9 +16,12 @@ services:
       REDIS_HOST: redis
       ENV: prod
       WEATHER_POLL_ENABLED: "false" # опрос погоды перенесён в воркер weather-ingest (ADR-09)
+      NDVI_RENDER_DIR: /var/lib/cda/ndvi-renders # §7.3: отдача PNG-рендеров сцен
       # 2026-11-07: SOCKS-прокси исключён по решению пользователя; исходящие
       # httpx-запросы идут напрямую. Если периметр снова начнёт резать
       # api.open-meteo.com / earth-search — вернуть ALL_PROXY (см. docs/deploy/README.md).
+    volumes:
+      - ndvi-renders:/var/lib/cda/ndvi-renders:ro # пишет sentinel-ingest (#83)
     ports:
       - "127.0.0.1:8000:8000" # только локально для проверок; наружу — через туннель
     depends_on:
