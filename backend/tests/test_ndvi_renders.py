@@ -47,7 +47,7 @@ SCENE_DATE = date(2026, 10, 31)
 
 
 @pytest.fixture()
-def color_rasters(scene_rasters, tmp_path):
+def color_rasters(scene_rasters, tmp_path):  # noqa: F811
     """К сцене добавляются b02/b03 (10 м): синий/зелёный слабее красного."""
     from tests.test_sentinel_ndvi import _write_tif
 
@@ -97,7 +97,7 @@ class TestRenderScene:
         assert not top.any()  # облачная зона прозрачна
         assert bottom.mean() > 200  # растительность непрозрачна
 
-    def test_no_visible_bands_returns_none(self, scene_rasters):
+    def test_no_visible_bands_returns_none(self, scene_rasters):  # noqa: F811
         """Активов без b02/b03 (каталог до #83): рендер пропускается, без ошибки."""
         contour = wgs_box(300100, 5760100, 301900, 5760900)
         assert render_scene(scene_rasters["assets"], contour) is None
@@ -129,7 +129,7 @@ class TestCycleRenders:
         assert meta["width"] > 0 and meta["height"] > 0
         assert renders_exist(tmp_path, field_id, SCENE_DATE)
 
-    def test_scene_saved_without_render_bands(self, db_session, scene_rasters, tmp_path):
+    def test_scene_saved_without_render_bands(self, db_session, scene_rasters, tmp_path):  # noqa: F811
         """Нет b02/b03 в активах: сцена сохраняется, рендеров нет, ошибок нет."""
         make_satellite_source(db_session)
         field_id = make_ndvi_field(db_session)
