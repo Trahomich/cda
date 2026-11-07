@@ -10,7 +10,7 @@ docs/06 §7.4, docs/09-ai §8.2 (задача #93): items — числовые �
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.ai_assistant import service
