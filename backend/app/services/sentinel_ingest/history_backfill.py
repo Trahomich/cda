@@ -88,7 +88,9 @@ def quarter_windows(year: int, today: date) -> list[tuple[date, date]]:
         start = date(year, quarter * 3 + 1, 1)
         end_month = quarter * 3 + 3
         end = (
-            date(year, 12, 31) if end_month == 12 else date(end_month + 1, 1, 1) - timedelta(days=1)
+            date(year, 12, 31)
+            if end_month == 12
+            else date(year, end_month + 1, 1) - timedelta(days=1)
         )
         if start > today:
             break
