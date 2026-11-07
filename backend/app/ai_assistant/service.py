@@ -268,15 +268,17 @@ def refresh_insights(field_id: uuid.UUID, day: date) -> None:
         if scene is None or scene.captured_at != day:
             return  # появилась новая сцена — её ключ дорабатывается отдельно
 
-        vra_iqr: float | None = None
+        vra_day: date | None = None
         try:
-            vra_iqr = vra.vra_zones(db, field).iqr_ndvi  # кэшируется у себя (24 ч)
+            # зоны по пиковым сценам (#106): iqr и дата — подтверждённой пиковой
+            result = vra.vra_zones(db, field)  # кэшируется у себя (24 ч)
+            vra_iqr, vra_day = result.iqr_ndvi, result.captured_at
         except AppError:
-            pass  # поле однородно (IQR < 0.12) или нет ассетов — детектор молчит
+            pass  # поле однородно по пиковым сценам или нет ассетов — детектор молчит
         except Exception:
             logger.warning("insights: VRA-расчёт не удался", exc_info=True)
 
-        items = build_items(db, field_id, vra_iqr=vra_iqr, vra_day=day)
+        items = build_items(db, field_id, vra_iqr=vra_iqr, vra_day=vra_day)
         context = _llm_context(db, field, items) if items else ""
     finally:
         db.close()  # вернуть соединение в пул ДО тяжёлого шага
