@@ -464,7 +464,7 @@ class TestBackgroundFix101:
             state["checkedout"] = test_engine.pool.checkedout()
             state["kwargs"] = kwargs
             assert "ndvi_drop" in context
-            return "NDVI упал на 0.17 — проверьте поле."
+            return "NDVI упал на 0.22 — проверьте поле."
 
         monkeypatch.setattr(service.llm, "summarize", fake_summarize)
         db_session.close()  # собственная сессия теста тоже не держит пул
@@ -479,7 +479,7 @@ class TestBackgroundFix101:
 
         updated = _json.loads(store[f"insights:{fid}:{TODAY.isoformat()}"])
         assert updated["source"] == "rules+llm"
-        assert updated["summary"] == "NDVI упал на 0.17 — проверьте поле."
+        assert updated["summary"] == "NDVI упал на 0.22 — проверьте поле."
 
     def test_llm_queue_timeout_defers_summary(self, world, db_session, monkeypatch):
         """Слот LLM занят и очередь истекла — задача уходит без инференса
