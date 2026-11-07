@@ -1337,6 +1337,66 @@ polygon.card360__polygon {
   border-bottom: 1px solid #e0e0e0;
 }
 
+/* ── Дифференцированное внесение (§7.4): карта зон + таблица ── */
+
+.card360__vra-map {
+  width: 100%;
+  max-width: 280px;
+  background: #f1f8e9;
+  border: 1px solid #c5e1a5;
+  border-radius: 6px;
+}
+
+.card360__vra-contour {
+  fill: none;
+  stroke: #33691e;
+  stroke-width: 1.5;
+}
+
+.card360__vra-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.card360__vra-table th,
+.card360__vra-table td {
+  text-align: left;
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* Цветной маркер зоны слева (зона 1 — красная, 3 — зелёная) */
+.card360__vra-table tbody td:first-child {
+  box-shadow: inset 3px 0 0 #ccc;
+}
+
+.card360__vra-row--1 td:first-child {
+  box-shadow: inset 3px 0 0 #e57373;
+}
+
+.card360__vra-row--2 td:first-child {
+  box-shadow: inset 3px 0 0 #fff176;
+}
+
+.card360__vra-row--3 td:first-child {
+  box-shadow: inset 3px 0 0 #81c784;
+}
+
+/* ── Прогноз урожайности (§7.4) ── */
+
+.card360__yield-value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0.2rem 0;
+}
+
+.card360__yield-range {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #616161;
+}
+
 .card360__plans {
   list-style: none;
   margin: 0 0 0.4rem;
