@@ -360,6 +360,7 @@ def refresh_insights(field_id: uuid.UUID, day: date) -> None:
                     timeout=LLM_BACKGROUND_TIMEOUT_SECONDS,
                     attempts=1,
                     keep_alive=LLM_KEEP_ALIVE,
+                    num_predict=LLM_NUM_PREDICT,
                 ),
                 items,
                 context,
