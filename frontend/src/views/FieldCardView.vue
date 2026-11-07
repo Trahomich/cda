@@ -486,14 +486,60 @@ function fmtNum(v: number, digits = 1): string {
             v-if="!card"
             :lines="3"
           />
-          <svg
+          <div
             v-else
-            class="card360__contour"
-            :class="{ 'card360__contour--layered': !!layerRect }"
-            viewBox="0 0 200 120"
-            role="img"
-            aria-label="Контур поля"
+            class="card360__map-wrap"
           >
+            <!-- Зум мини-карты (v2-fix-I): кнопки, колесо, перетаскивание -->
+            <div
+              class="card360__zoom"
+              role="group"
+              aria-label="Масштаб мини-карты"
+            >
+              <button
+                type="button"
+                class="card360__zoom-btn"
+                title="Приблизить"
+                aria-label="Приблизить"
+                @click="zoomBy(1.6)"
+              >
+                +
+              </button>
+              <button
+                type="button"
+                class="card360__zoom-btn"
+                title="Отдалить"
+                aria-label="Отдалить"
+                @click="zoomBy(1 / 1.6)"
+              >
+                −
+              </button>
+              <button
+                type="button"
+                class="card360__zoom-btn"
+                title="Сбросить масштаб"
+                aria-label="Сбросить масштаб"
+                @click="resetView"
+              >
+                ⤢
+              </button>
+            </div>
+            <svg
+              ref="contourSvg"
+              class="card360__contour"
+              :class="{
+                'card360__contour--layered': !!layerRect,
+                'card360__contour--dragging': dragging,
+              }"
+              :viewBox="vbStr"
+              role="img"
+              aria-label="Контур поля (колесо мыши — масштаб, перетаскивание — сдвиг)"
+              @wheel="onWheel"
+              @pointerdown="onPanStart"
+              @pointermove="onPanMove"
+              @pointerup="onPanEnd"
+              @pointercancel="onPanEnd"
+            >
             <image
               v-if="layer && layerRect"
               class="card360__ndvi-layer"
