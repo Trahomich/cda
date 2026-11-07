@@ -158,12 +158,11 @@ def detect_ndvi_drop(scenes: Sequence[SceneStat]) -> InsightItem | None:
         return None
     drop, prev, cur = worst
     severity = "alert" if drop >= NDVI_DROP_ALERT else "warn"
+    title = "Резкое падение NDVI" + (" (критическое)" if severity == "alert" else "")
     return InsightItem(
         code="ndvi_drop",
         severity=severity,  # type: ignore[arg-type]
-        title=f"Резкое падение NDVI ({' критическое' if severity == 'alert' else ''})".replace(
-            "NDVI ( критическое)", "NDVI (критическое)"
-        ),
+        title=title,
         detail=(
             f"NDVI упал с {prev.ndvi_mean:.2f} ({prev.captured_at.isoformat()}) "
             f"до {cur.ndvi_mean:.2f} ({cur.captured_at.isoformat()}): −{drop:.2f} "
