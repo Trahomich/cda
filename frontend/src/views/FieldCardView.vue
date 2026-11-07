@@ -267,13 +267,7 @@ function fmtNum(v: number, digits = 1): string {
     </header>
 
     <p
-      v-if="loading"
-      class="card360__state"
-    >
-      Загрузка карточки поля…
-    </p>
-    <p
-      v-else-if="failed || !card"
+      v-if="coreFailed"
       class="card360__state card360__state--error"
     >
       Не удалось загрузить карточку поля
