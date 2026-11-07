@@ -280,7 +280,8 @@ def detect_waterlogging(
         return None
 
     dates = [scene.captured_at for scene in episodes]  # сцены по возрастанию даты
-    max_p90 = max(float(scene.ndwi_p90) for scene in episodes)
+    # эпизоды гарантированно с NDWI (waterlogged требует ndwi_p90)
+    max_p90 = max(v for v in (scene.ndwi_p90 for scene in episodes) if v is not None)
     on_latest = bool(scenes) and dates[-1] == scenes[-1].captured_at
     wide = any(
         scene.ndwi_mean is not None and scene.ndwi_mean >= WATERLOG_NDWI_P90 for scene in episodes
