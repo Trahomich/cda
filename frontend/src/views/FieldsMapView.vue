@@ -148,14 +148,18 @@ async function loadFields(layer: L.FeatureGroup) {
       onEachFeature: (feature, featureLayer) => {
         const field = feature.properties as Field
         featureLayer.bindPopup(popupHtml(field))
-        // Краткий номер поля в центроиде (#55): постоянная подпись, не ловит клики.
+        // Краткий номер поля в центроиде (#55): постоянная подпись.
+        // Пункт 1 (v2-fix-A): подпись интерактивна — клик открывает карточку
+        // поля (тот же роут, что клик по строке списка).
         featureLayer.bindTooltip(shortFieldNumber(field.name), {
           permanent: true,
           direction: 'center',
           className: 'field-label',
-          interactive: false,
+          interactive: true,
           opacity: 1,
         })
+        featureLayer.getTooltip()?.on('click', () => openFieldCard(field))
+        featureLayer.on('click', () => openFieldCard(field))
         const { name, color } = cultureColorOf(field)
         legendMap.set(name, color)
       },
