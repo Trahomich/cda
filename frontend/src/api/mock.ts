@@ -899,6 +899,37 @@ function windowsOf(n: number, type: WindowOperationType, fieldId: string) {
 
 /* ───────────────────────── Транспорт ───────────────────────── */
 
+/** Отрисовка демо-PNG 200×100 (canvas) для raw(): ndvi — палитра
+ *  коричневый→жёлтый→зелёный (как бэкенд), truecolor — оливково-зелёные
+ *  тона; «пятно» детерминировано от индекса даты, чтобы сцены различались. */
+async function renderScenePng(variant: 'ndvi' | 'truecolor', sceneIdx: number): Promise<Blob> {
+  const canvas = document.createElement('canvas')
+  canvas.width = 200
+  canvas.height = 100
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new Blob()
+  if (variant === 'ndvi') {
+    const grad = ctx.createLinearGradient(0, 100, 0, 0)
+    grad.addColorStop(0, '#8a5a2b')
+    grad.addColorStop(0.5, '#d9c34a')
+    grad.addColorStop(1, '#2e7d32')
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, 200, 100)
+  } else {
+    ctx.fillStyle = '#6f7d3c'
+    ctx.fillRect(0, 0, 200, 100)
+    ctx.fillStyle = '#8d9a52'
+    for (let i = 0; i < 8; i++) {
+      ctx.fillRect((i * 37 + sceneIdx * 11) % 190, (i * 53 + sceneIdx * 7) % 90, 10, 8)
+    }
+  }
+  ctx.fillStyle = variant === 'ndvi' ? 'rgba(46,125,50,0.5)' : 'rgba(59,69,31,0.5)'
+  ctx.beginPath()
+  ctx.arc(60 + (sceneIdx * 13) % 80, 40 + (sceneIdx * 7) % 30, 18, 0, Math.PI * 2)
+  ctx.fill()
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b ?? new Blob()), 'image/png'))
+}
+
 export class MockTransport implements Transport {
   async request(method: string, path: string, body?: unknown): Promise<TransportResponse> {
     // Имитация сети; задержку можно переопределить из e2e через
