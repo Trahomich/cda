@@ -72,6 +72,9 @@ services:
       STAC_API_URL: https://earth-search.aws.element84.com/v1
       INGEST_SATELLITE_CATALOG_HOURS: "6"
       INGEST_SATELLITE_BACKFILL_DAYS: "365"
+      # Годовой backfill (#265): больше строк за цикл и потоков чтения COG
+      INGEST_SATELLITE_NDVI_BATCH: "500"
+      INGEST_SATELLITE_NDVI_WORKERS: "8"
       NDVI_RENDER_DIR: /var/lib/cda/ndvi-renders # §7.3: PNG-рендеры сцен (ndvi/truecolor)
       # 2026-11-07: SOCKS-прокси исключён по решению пользователя; исходящие
       # httpx-запросы идут напрямую (см. docs/deploy/README.md).
