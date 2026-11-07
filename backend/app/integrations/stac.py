@@ -202,7 +202,11 @@ class FakeStacClient:
     ) -> list[StacItem]:
         self.calls += 1
         threshold = MAX_CATALOG_CLOUD_PCT if max_cloud_pct is None else max_cloud_pct
-        return [i for i in self.items if i.cloud_pct <= threshold]
+        return [
+            i
+            for i in self.items
+            if i.cloud_pct <= threshold and date_from <= i.captured_at <= date_to
+        ]
 
 
 __all__ = [
