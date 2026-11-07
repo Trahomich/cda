@@ -145,7 +145,7 @@ class TestNdwiRender:
         rgb, alpha = _read_png_rgba(png)
 
         top = alpha[: alpha.shape[0] // 4]
-        bottom = alpha[-alpha.shape[0] // 4:]
+        bottom = alpha[-alpha.shape[0] // 4 :]
         assert not top.any()  # облачная зона (SCL 9) прозрачна
         assert bottom.mean() > 200  # полезная площадь непрозрачна
 
