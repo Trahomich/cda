@@ -314,6 +314,22 @@ const hasWaterlogged = computed(() => props.points.some((p) => p.waterlogged ===
   stroke-width: 1.5;
 }
 
+/* Вымокание (§7.4): синее пунктирное кольцо вокруг точки сцены */
+.ndvi__water-ring {
+  fill: none;
+  stroke: #1976d2;
+  stroke-width: 1.5;
+  stroke-dasharray: 2.5 2;
+}
+
+.ndvi__lg-water {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px dashed #1976d2;
+  background: transparent;
+}
+
 .ndvi__date {
   font-size: 9px;
   fill: #9e9e9e;
