@@ -807,12 +807,6 @@ function fmtNum(v: number, digits = 1): string {
             </div>
             <span class="card360__layer-date-label">
               Снимок за {{ renderDate ? fmtDate(renderDate) : '—' }}
-              <!-- §7.4: NDWI-детектор зафиксировал вымокание на этой сцене -->
-              <span
-                v-if="selectedWaterlogged"
-                class="card360__waterlogged"
-                title="NDWI p90 ≥ 0,10 при осадках ≥ 20 мм за 7 суток"
-              >◉ вымокание</span>
             </span>
           </div>
           <p
