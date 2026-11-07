@@ -13,8 +13,8 @@ from app.integrations import SourceUnavailableError
 from app.integrations.stac import (
     SATELLITE_SOURCE_ID,
     EarthSearchStacClient,
-    StacSearchClient,
     StacItem,
+    StacSearchClient,
 )
 from app.models.integrations import SatelliteCatalogItem, SourceJournalEntry
 from app.models.references import Source
