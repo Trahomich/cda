@@ -126,13 +126,13 @@ class TestYieldForecast:
         assert body["culture_name"] == "Озимая пшеница"
         assert body["method"] == "ndvi-empirical"
         assert body["disclaimer"]
-        # ndvi_max = max средних; integral = Σ(ndvi − 0.2)+/100 = 1.4/100
+        # ndvi_max = max средних; integral = Σ(ndvi − 0.2)+/100 = 1.6/100
         assert body["ndvi_max"] == 0.8
-        assert body["ndvi_integral"] == pytest.approx(0.014, abs=1e-6)
-        # forecast = −10 + 40·0.8 + 30·0.014 = 22.42; ±25 %
-        assert body["forecast_c_ha"] == pytest.approx(22.42, abs=0.01)
-        assert body["low_c_ha"] == pytest.approx(22.42 * 0.75, abs=0.01)
-        assert body["high_c_ha"] == pytest.approx(22.42 * 1.25, abs=0.01)
+        assert body["ndvi_integral"] == pytest.approx(0.016, abs=1e-6)
+        # forecast = −10 + 40·0.8 + 30·0.016 = 22.48; ±25 %
+        assert body["forecast_c_ha"] == pytest.approx(22.48, abs=0.01)
+        assert body["low_c_ha"] == pytest.approx(22.48 * 0.75, abs=0.01)
+        assert body["high_c_ha"] == pytest.approx(22.48 * 1.25, abs=0.01)
 
     def test_integral_skips_values_below_02(self):
         """NDVI ниже 0.2 не даёт вклада в интеграл (Σ (ndvi − 0.2)+)."""
