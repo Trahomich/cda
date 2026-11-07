@@ -149,6 +149,33 @@ class TestDetectorsApi:
         body = get_insights(client, hdr, fid)
         assert "ndvi_stagnation" not in codes(body["items"])
 
+    def test_ndvi_stagnation_silent_out_of_season(self, world, db_session) -> None:
+        """Ноябрь — вне сезона вегетации: тот же ряд, но вывода нет (09 §8.2 v1.1)."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        for i, ndvi in enumerate((0.45, 0.46, 0.47)):
+            make_scene(db_session, fid, date(2026, 11, 20) - timedelta(days=10 - 4 * i), ndvi)
+        body = get_insights(client, hdr, fid)
+        assert "ndvi_stagnation" not in codes(body["items"])
+
+    def test_ndvi_stagnation_in_season(self, world, db_session) -> None:
+        """Тот же ряд в мае (сезон, среднее ≥ 0.3) — детектор работает."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        for i, ndvi in enumerate((0.45, 0.46, 0.47)):
+            make_scene(db_session, fid, date(2026, 5, 20) - timedelta(days=10 - 4 * i), ndvi)
+        body = get_insights(client, hdr, fid)
+        assert item(body, "ndvi_stagnation")["severity"] == "info"
+
+    def test_ndvi_stagnation_silent_low_vegetation(self, world, db_session) -> None:
+        """Май (сезон), но средний NDVI < 0.3 — вегетации нет, стагнация не о чём."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        for i, ndvi in enumerate((0.18, 0.19, 0.19)):  # среднее 0.187 < 0.3
+            make_scene(db_session, fid, date(2026, 5, 20) - timedelta(days=10 - 4 * i), ndvi)
+        body = get_insights(client, hdr, fid)
+        assert "ndvi_stagnation" not in codes(body["items"])
+
     def test_waterlogging_warn_and_alert(self, world, db_session) -> None:
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
