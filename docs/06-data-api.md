@@ -387,13 +387,17 @@ approve (API-16) ответ (200/201) дополняется объектом `w
   <30-й, 30–70-й, >70-й) и PNG строятся по одной пиковой сцене —
   сцене с максимальным index_avg среди подтверждённых.
 - `GET /fields/{id}/vra` → VraZones:
-  `{field_id, date, iqr_ndvi, base_dose_kg_ha (последний approved план
+  `{field_id, date, iqr_ndvi, peak_dates: [даты топ-3 пиковых сцен],
+  base_dose_kg_ha (последний approved план
   типа fertilizing, иначе null), zones: [{zone: 1|2|3, label: "пониженное|
   среднее|повышенное развитие", area_ga, ndvi_mean, dose_factor
   (1.15 / 1.0 / 0.85), dose_kg_ha | null}], map_png_url}`
   где map_png_url — `GET /fields/{id}/vra/map.png`: PNG зон (заливка
   3 оттенками красного→жёлтого→зелёного по zone), геопривязка теми же
-  заголовками X-Field-Bbox/X-Image-Size (§7.3). Кэш 24 ч по (field_id, date).
+  заголовками X-Field-Bbox/X-Image-Size (§7.3). Кэш 24 ч по
+  (field_id, дата пиковой сцены). `date` — дата сцены, по которой
+  построены зоны; фронт показывает её (зоны пика вегетации, могут быть
+  раньше последней сцены).
   Дозы — рекомендация, а не план: корректировка применяется агрономом при
   создании плана API-15 (создание VRA-плана одной кнопкой — не MVP).
 
