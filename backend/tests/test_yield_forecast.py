@@ -109,6 +109,7 @@ class TestYieldForecast:
         }
         assert body["field_id"] == str(self.field_id)
         assert body["cycle_year"] == 2026
+        assert body["year"] == 2026
         assert body["culture_id"] == str(culture.id)
         assert body["culture_name"] == "Озимая пшеница"
         assert body["method"] == "ndvi-empirical"
