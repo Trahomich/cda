@@ -126,6 +126,7 @@ def field_ndvi(
             .offset(offset)
         )
     )
+    render_dir = settings.ndvi_render_dir or None
     items = [
         SceneItem(
             scene_id=s.id,
@@ -141,6 +142,10 @@ def field_ndvi(
             source_id=s.source_id,
             trust=float(s.trust),
             anomaly_zones_ref=s.anomaly_zones_ref,
+            # §7.3: рендер есть, если на диске оба PNG; каталог не задан — false
+            render_available=bool(
+                render_dir and renders_exist(render_dir, s.field_id, s.captured_at)
+            ),
         )
         for s in scenes
     ]
