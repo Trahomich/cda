@@ -15,10 +15,11 @@ PNG зон (3 оттенка красный→жёлтый→зелёный) к�
 """
 
 import base64
+import json
 import logging
 import math
 import uuid
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date
 
 import numpy as np
