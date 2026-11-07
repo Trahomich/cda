@@ -210,8 +210,9 @@ class TestDetectorsApi:
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         make_scene(db_session, fid, TODAY, 0.35)
         for back in range(14):  # 4 мм осадков, GDD ~12.5/сут (норма 10)
-            make_obs(db_session, fid, TODAY - timedelta(days=back), precip_mm=0.3,
-                     t_min=14.0, t_max=19.0)
+            make_obs(
+                db_session, fid, TODAY - timedelta(days=back), precip_mm=0.3, t_min=14.0, t_max=19.0
+            )
         db_session.commit()
         body = get_insights(client, hdr, fid)
         drought = item(body, "drought")
@@ -224,8 +225,9 @@ class TestDetectorsApi:
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         make_scene(db_session, fid, TODAY, 0.35)
         for back in range(14):
-            make_obs(db_session, fid, TODAY - timedelta(days=back), precip_mm=0.3,
-                     t_min=6.0, t_max=15.0)  # GDD (6+15)/2-5 = 5.5 < 10
+            make_obs(
+                db_session, fid, TODAY - timedelta(days=back), precip_mm=0.3, t_min=6.0, t_max=15.0
+            )  # GDD (6+15)/2-5 = 5.5 < 10
         db_session.commit()
         body = get_insights(client, hdr, fid)
         assert "drought" not in codes(body["items"])
@@ -242,9 +244,7 @@ class TestDetectorsApi:
     def test_agrochem_low(self, world, db_session) -> None:
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
-        db_session.add(
-            Agrochem(field_id=fid, sample_date=date(2026, 9, 1), ph=4.9, humus_pct=1.8)
-        )
+        db_session.add(Agrochem(field_id=fid, sample_date=date(2026, 9, 1), ph=4.9, humus_pct=1.8))
         db_session.commit()
         body = get_insights(client, hdr, fid)
         low = item(body, "agrochem_low")
@@ -254,9 +254,7 @@ class TestDetectorsApi:
     def test_agrochem_normal_silent(self, world, db_session) -> None:
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
-        db_session.add(
-            Agrochem(field_id=fid, sample_date=date(2026, 9, 1), ph=6.2, humus_pct=3.4)
-        )
+        db_session.add(Agrochem(field_id=fid, sample_date=date(2026, 9, 1), ph=6.2, humus_pct=3.4))
         db_session.commit()
         body = get_insights(client, hdr, fid)
         assert "agrochem_low" not in codes(body["items"])
@@ -353,9 +351,7 @@ class TestInsightsContract:
         from tests.test_auth import auth_header
 
         op_hdr = auth_header(client, "op_ins", "pw-op")
-        resp = client.get(
-            f"{API}/fields/{field['field_id']}/insights", headers=op_hdr
-        )
+        resp = client.get(f"{API}/fields/{field['field_id']}/insights", headers=op_hdr)
         assert resp.status_code == 403
 
 
@@ -484,8 +480,8 @@ class TestBackgroundFix101:
 
     def _get_with_ollama(self, client, monkeypatch, ollama="http://ollama:11434"):
         """GET /insights с включённым Ollama (settings через DI) и шпионом фона."""
-        from app.core.config import get_settings
         from app.ai_assistant import service
+        from app.core.config import get_settings
 
         settings = get_settings().model_copy(update={"ollama_base_url": ollama})
         client.app.dependency_overrides[get_settings] = lambda: settings
@@ -507,12 +503,13 @@ class TestBackgroundFix101:
         spy = self._get_with_ollama(client, monkeypatch)
         from app.core.config import get_settings
 
-        first = get_insights(client, hdr, fid)
+        get_insights(client, hdr, fid)
         assert spy["n"] == 1  # свежий расчёт — фон запланирован
-        second = get_insights(client, hdr, fid)  # кэш rules без сводки — повтор
+        get_insights(client, hdr, fid)  # кэш rules без сводки — повтор
         assert spy["n"] == 2
 
         import json as _json
+
         import app.core.cache as cache_mod
 
         key = f"insights:{fid}:{TODAY.isoformat()}"
@@ -520,6 +517,6 @@ class TestBackgroundFix101:
         cached["source"] = "rules+llm"
         cached["summary"] = "готово"
         cache_mod.cache_set(key, cached, 3600)
-        third = get_insights(client, hdr, fid)
+        get_insights(client, hdr, fid)
         assert spy["n"] == 2  # сводка есть — фон не нужен
         client.app.dependency_overrides.pop(get_settings, None)
