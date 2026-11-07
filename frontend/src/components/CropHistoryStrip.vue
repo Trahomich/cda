@@ -31,9 +31,17 @@ const KIND_LABELS: Record<string, string> = {
   fallow: ' · пар',
 }
 
-/** Годы по убыванию; в ленту — последние maxYears, скрытые — счётчиком. */
-const visible = computed(() => props.items.slice(0, props.maxYears))
-const hidden = computed(() => Math.max(0, props.items.length - visible.value.length))
+/** Окно лет: скрываем самые старые годы (свежие важнее), в ленте —
+ *  maxYears годов по возрастанию слева направо (ось времени, v2-fix-A п.6;
+ *  пользователь выбрал вариант А: слева 2022 … справа 2030). */
+const visibleAsc = computed(() =>
+  [...props.items.slice(0, props.maxYears)].sort((a, b) => a.year - b.year),
+)
+const hidden = computed(
+  () => Math.max(0, props.items.length - Math.min(props.items.length, props.maxYears)),
+)
+/** Скрытые (самые старые) годы — для подсказки счётчика слева. */
+const hiddenItems = computed(() => props.items.slice(props.maxYears))
 
 /** Краткое имя культуры для узкой ячейки: первое слово, до 12 символов. */
 function shortName(name: string): string {
