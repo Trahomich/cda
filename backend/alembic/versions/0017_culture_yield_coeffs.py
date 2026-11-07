@@ -9,8 +9,8 @@ NULL у культуры → GET /fields/{id}/yield-forecast отвечает 42
 подсолнечник, рапс), существующие строки актуализируются через
 ON CONFLICT DO UPDATE; пересчёт по накопленным сезонам — не MVP (09 §8.3).
 
-Revision ID: 0016_culture_yield_coeffs
-Revises: 0015_forecast_precip_prob
+Revision ID: 0017_culture_yield_coeffs
+Revises: 0016_ndwi_scene_stats
 Create Date: 2026-11-07
 """
 
@@ -19,8 +19,8 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-revision = "0016_culture_yield_coeffs"
-down_revision = "0015_forecast_precip_prob"
+revision = "0017_culture_yield_coeffs"
+down_revision = "0016_ndwi_scene_stats"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
