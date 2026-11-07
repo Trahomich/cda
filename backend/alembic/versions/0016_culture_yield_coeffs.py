@@ -25,3 +25,14 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 _COLUMNS = ("yield_k_base", "yield_k_ndvi_max", "yield_k_ndvi_int")
+
+
+def upgrade() -> None:
+    for name in _COLUMNS:
+        op.add_column("ref_culture", sa.Column(name, sa.Numeric(6, 2), nullable=True))
+
+
+def downgrade() -> None:
+    for name in reversed(_COLUMNS):
+        op.drop_column("ref_culture", name)
+
