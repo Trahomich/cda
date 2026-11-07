@@ -175,11 +175,20 @@ def detect_ndvi_drop(scenes: Sequence[SceneStat]) -> InsightItem | None:
 
 
 def detect_ndvi_stagnation(scenes: Sequence[SceneStat]) -> InsightItem | None:
-    """info: прирост NDVI < 0.05 за 3 чистые сцены при среднем NDVI < 0.7."""
+    """info: прирост NDVI < 0.05 за 3 чистые сцены в активной вегетации.
+
+    Только в сезон (апрель–октябрь по последней сцене) и при среднем NDVI
+    трёх сцен ≥ 0.3 (09 §8.2 v1.1): вне сезона вегетации и без вегетации
+    стагнация — норма, детектор молчит.
+    """
     if len(scenes) < 3:
         return None
     last3 = scenes[-3:]
+    if last3[-1].captured_at.month not in NDVI_STAGNATION_SEASON_MONTHS:
+        return None  # ноябрь–март: «рост остановился» — не совет
     mean3 = round(sum(s.ndvi_mean for s in last3) / 3, 3)
+    if mean3 < NDVI_STAGNATION_MIN_MEAN:
+        return None  # вегетации нет
     gain = round(last3[-1].ndvi_mean - last3[0].ndvi_mean, 3)
     if mean3 >= NDVI_STAGNATION_MAX_MEAN or gain >= NDVI_STAGNATION_MAX_GAIN:
         return None
