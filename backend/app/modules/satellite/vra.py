@@ -113,7 +113,31 @@ def _scene_assets(db: Session, field_id: uuid.UUID, captured_at: date) -> dict:
 
 
 def compute_vra(db: Session, field: Field, scene: SatelliteScene) -> VraZones:
-    """Расчёт зон по COG последней чистой сцены (§7.4): окно как в §7.3."""
+    """Расчёт зон по COG сцены (§7.4): окно как в §7.3; однородность — 422."""
+    iqr, zones = _analyze_scene(db, field, scene)
+    if zones is None:
+        raise _uniform_error(iqr, (scene.captured_at,))
+    return zones
+
+
+def _uniform_error(iqr: float, peak_dates: tuple[date, ...] | list[date]) -> AppError:
+    """422 vra_uniform_field: IQR ниже порога на пиковых сценах (§7.4 v1.4)."""
+    dates_str = ", ".join(d.isoformat() for d in peak_dates)
+    return AppError(
+        f"Поле однородно по пиковым сценам ({dates_str}): IQR NDVI < {VRA_MIN_IQR} "
+        "— зоны внесения не строятся",
+        code="vra_uniform_field",
+        title="Поле однородно",
+        status_code=422,
+    )
+
+
+def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> tuple[float, VraZones | None]:
+    """IQR NDVI сцены и (если поле неоднородно) полные зоны; None — однородно.
+
+    Общий путь чтения COG для пиковых сцен: IQR нужен каждой сцене для
+    подтверждения стабильности (§7.4 v1.4), зоны — только выбранной.
+    """
     from rasterio.transform import Affine
     from rasterio.warp import transform_bounds, transform_geom
 
