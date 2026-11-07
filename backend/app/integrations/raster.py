@@ -113,6 +113,7 @@ __all__ = [
     "INDEX_BANDS",
     "SAVI_L",
     "compute_index_array",
+    "compute_ndwi_array",
     "contour_mask",
     "stats_over_mask",
     "validate_index_values",
