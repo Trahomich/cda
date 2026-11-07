@@ -4,6 +4,7 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 from datetime import date
+from typing import Protocol
 
 from sqlalchemy import text, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
