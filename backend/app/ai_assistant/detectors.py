@@ -44,7 +44,12 @@ NDVI_DROP_WINDOW_DAYS = 30
 NDVI_STAGNATION_MAX_GAIN = 0.05
 NDVI_STAGNATION_MAX_MEAN = 0.7
 NDVI_STAGNATION_MIN_MEAN = 0.3  # ниже — вегетации нет, стагнация не о чём
-NDVI_STAGNATION_SEASON_MONTHS = frozenset(range(4, 11))  # апрель–октябрь (09 §8.2 v1.1)
+#: окно вегетации (09 §8.2 v1.1): обычные культуры — апрель–октябрь,
+#: озимые (осенний сев + весенне-раннелетнее развитие) — март–июнь и сентябрь–ноябрь
+NDVI_STAGNATION_SEASON_MONTHS = frozenset(range(4, 11))
+NDVI_STAGNATION_WINTER_MONTHS = frozenset({3, 4, 5, 6, 9, 10, 11})
+#: маркеры озимых в имени культуры ref_culture.name (09 §8.2 v1.1)
+WINTER_CULTURE_MARKERS = ("озим", "рожь", "тритикале")
 
 #: drought: осадки за 14 сут и норма среднесуточного GDD (см. докстринг)
 DROUGHT_WINDOW_DAYS = 14
