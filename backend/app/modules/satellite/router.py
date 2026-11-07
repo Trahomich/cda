@@ -6,17 +6,26 @@ CONTRACTS §8. Сцены с cloud_pct > 60 % в БД не попадают (05 
 в таймлайне их не бывает. meta.stale — нет свежей сцены в окне композита
 14 суток (05 §2) при непустом источнике.
 
+GET /fields/{field_id}/ndvi/{date}/render.png?variant=ndvi|truecolor
+(docs/06 §7.3, #83): PNG-рендер сцены окна поля; заголовки X-Field-Bbox
+(границы окна растра, WGS84) и X-Image-Size — для позиционирования
+оверлея на мини-карте контура в карточке поля.
+
 Права (07-ux §5, E-09): группа «satellite» — агроном, руководитель, админ.
 """
 
+import json
 import uuid
 from datetime import UTC, date, timedelta
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.core.config import Settings, get_settings
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
@@ -29,8 +38,15 @@ from app.modules.satellite.schemas import (
     SceneItem,
     SourceMeta,
 )
+from app.services.sentinel_ingest.renders import (
+    RENDER_VARIANTS,
+    meta_path,
+    render_path,
+    renders_exist,
+)
 
 DbSession = Annotated[Session, Depends(get_db)]
+SettingsDep = Annotated[Settings, Depends(get_settings)]
 SATELLITE_SOURCE_ID = "satellite.sentinel2-l2a"
 COMPOSITE_WINDOW_DAYS = 14  # окно композита (05 §2): нет сцены — stale
 
