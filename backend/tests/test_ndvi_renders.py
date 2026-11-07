@@ -17,7 +17,7 @@ from datetime import date
 
 import numpy as np
 import pytest
-from app.models.integrations import SatelliteCatalogItem, SatelliteScene
+from app.models.integrations import SatelliteScene
 from app.services.sentinel_ingest.ndvi import run_ndvi_cycle
 from app.services.sentinel_ingest.renders import (
     MAX_SIDE_PX,
@@ -32,12 +32,11 @@ from sqlalchemy import select
 from tests.test_satellite import make_satellite_source
 from tests.test_sentinel_ndvi import (
     CRS,
-    N,
     X0,
     Y1,
+    N,
     make_catalog_row,
     make_ndvi_field,
-    scene_rasters,
     wgs_box,
 )
 
