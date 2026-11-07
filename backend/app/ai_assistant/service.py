@@ -140,6 +140,10 @@ def get_insights(
     day = scene.captured_at
     key = _key(field.id, day)
     if (cached := cache_get(key)) is not None and (resp := _from_cache(cached, field.id)):
+        if resp.summary is None and settings.ollama_base_url:
+            # прошлая фоновая доработка не успела/не дождалась очереди (#101):
+            # перезапускаем, пока в кэше rules-ответ без сводки
+            background.add_task(refresh_insights, field.id, day)
         return resp
 
     vra_iqr = _vra_iqr_cached(field.id, day)
