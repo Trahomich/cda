@@ -173,6 +173,122 @@ def field_ndvi(
 
 
 @router.get(
+    "/fields/{field_id}/yield-forecast",
+    response_model=YieldForecastResponse,
+    summary="API-53: прогноз урожайности по NDVI (§7.4, 09-ai §8.3)",
+)
+def field_yield_forecast(field_id: uuid.UUID, db: DbSession) -> YieldForecastResponse:
+    """Прогноз урожайности по эмпирической модели NDVI→ц/га.
+
+    Логика выбора сезона: цикл года последней чистой NDVI-сцены поля;
+    если у поля есть сцены, но цикла этого года нет — последний основной
+    цикл по правилу current_cycles (API-01). ndvi_integral в ответе уже
+    поделён на 100 (docs/06 §7.4): forecast = yield_k_base +
+    yield_k_ndvi_max·ndvi_max + yield_k_ndvi_int·ndvi_integral, интервал ±25 %.
+    """
+    from sqlalchemy import case
+
+    from app.models.agronomy import CropCycle
+    from app.models.references import Culture
+
+    field = _get_field(db, field_id)
+
+    def _scenes_of_year(year: int) -> list[SatelliteScene]:
+        return list(
+            db.scalars(
+                select(SatelliteScene)
+                .where(
+                    SatelliteScene.field_id == field.id,
+                    SatelliteScene.index == "ndvi",
+                    func.extract("year", SatelliteScene.captured_at) == year,
+                )
+                .order_by(SatelliteScene.captured_at)
+            )
+        )
+
+    # сезон = год последней NDVI-сцены поля; сцен нет — берём цикл по правилу
+    # current_cycles (сцены года цикла всё равно потребуются для проверки 422)
+    last_scene_year = db.scalar(
+        select(func.extract("year", func.max(SatelliteScene.captured_at))).where(
+            SatelliteScene.field_id == field.id, SatelliteScene.index == "ndvi"
+        )
+    )
+    cycle = None
+    if last_scene_year is not None:
+        cycle = db.scalar(
+            select(CropCycle).where(
+                CropCycle.field_id == field.id,
+                CropCycle.year == int(last_scene_year),
+                CropCycle.kind == "main",
+            )
+        )
+    if cycle is None:
+        # fallback: последний основной цикл (is_past DESC, year DESC) — как API-01
+        current_year = date.today().year
+        cycle = db.scalar(
+            select(CropCycle)
+            .where(CropCycle.field_id == field.id, CropCycle.kind == "main")
+            .order_by(
+                case((CropCycle.year <= current_year, 1), else_=0).desc(),
+                CropCycle.year.desc(),
+            )
+        )
+    if cycle is None:
+        raise AppError(
+            f"Цикл культуры для поля {field.id} не найден",
+            code="cycle_not_found",
+            title="Не найдено",
+            status_code=404,
+        )
+
+    scenes = _scenes_of_year(cycle.year)
+    if len(scenes) < 3:
+        raise AppError(
+            f"В сезоне {cycle.year} меньше 3 чистых сцен NDVI (найдено {len(scenes)})",
+            code="yield_no_season_data",
+            title="Прогноз недоступен",
+            status_code=422,
+        )
+
+    culture = db.get(Culture, cycle.culture_id)
+    # пары (kind='fallow') и отсутствующие культуры урожайность не дают
+    if culture is None or culture.kind == "fallow":
+        raise AppError(
+            f"Цикл {cycle.year} поля {field.id} без культуры (пар)",
+            code="yield_no_culture",
+            title="Прогноз недоступен",
+            status_code=422,
+        )
+
+    coeffs = (culture.yield_k_base, culture.yield_k_ndvi_max, culture.yield_k_ndvi_int)
+    if any(k is None for k in coeffs):
+        raise AppError(
+            f"Для культуры «{culture.name}» нет коэффициентов модели (ref_culture)",
+            code="yield_no_model",
+            title="Прогноз недоступен",
+            status_code=422,
+        )
+
+    avgs = [float(s.index_avg) for s in scenes]
+    ndvi_max = round(max(avgs), 3)
+    ndvi_integral = round(sum(max(v - 0.2, 0.0) for v in avgs) / 100, 3)
+    forecast = (
+        float(coeffs[0]) + float(coeffs[1]) * ndvi_max + float(coeffs[2]) * ndvi_integral
+    )
+    return YieldForecastResponse(
+        field_id=field.id,
+        cycle_year=cycle.year,
+        culture_id=culture.id,
+        culture_name=culture.name,
+        ndvi_max=ndvi_max,
+        ndvi_integral=ndvi_integral,
+        forecast_c_ha=round(forecast, 2),
+        low_c_ha=round(forecast * 0.75, 2),
+        high_c_ha=round(forecast * 1.25, 2),
+    )
+
+
+@router.get(
     "/fields/{field_id}/ndvi/{captured_at}/render.png",
     response_class=FileResponse,
     summary="§7.3: PNG-рендер сцены (NDVI-карта / true-color) окна поля",
