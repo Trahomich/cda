@@ -311,7 +311,12 @@ function fmtNum(v: number, digits = 1): string {
           <h2 class="card360__block-title">
             Контур поля
           </h2>
+          <Skeleton
+            v-if="!card"
+            :lines="3"
+          />
           <svg
+            v-else
             class="card360__contour"
             viewBox="0 0 200 120"
             role="img"
@@ -326,7 +331,13 @@ function fmtNum(v: number, digits = 1): string {
           <h2 class="card360__block-title">
             Севооборот по годам
           </h2>
+          <Skeleton
+            v-if="historyLoading"
+            height="2.2rem"
+            pill
+          />
           <CropHistoryStrip
+            v-else
             :items="cropHistory"
             :yields="cycleYields"
           />
