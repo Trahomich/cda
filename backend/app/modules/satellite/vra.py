@@ -244,6 +244,7 @@ def _to_cache(vra: VraZones) -> dict:
         "width": vra.width,
         "height": vra.height,
         "bbox": list(vra.bbox),
+        "peak_dates": [d.isoformat() for d in vra.peak_dates],
     }
 
 
