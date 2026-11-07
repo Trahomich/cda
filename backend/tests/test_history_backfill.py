@@ -270,6 +270,7 @@ class TestRunHistoryBackfill:
         assert report.fields == 1
 
     def test_no_fields_no_cache_hits(self, db_session, monkeypatch):
+        make_satellite_source(db_session)  # ref_source есть, полей — нет
         calls = []
         monkeypatch.setattr(
             "app.services.sentinel_ingest.history_backfill.cache_delete",
