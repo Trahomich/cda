@@ -16,6 +16,7 @@ import {
 import type {
   CropCycleHistoryItem,
   FieldCard,
+  FieldCycle,
   FieldOperation,
   FieldWeather,
   NdviPoint,
