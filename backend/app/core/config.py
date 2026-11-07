@@ -85,9 +85,17 @@ class Settings(BaseSettings):
     copernicus_auth_url: str = (
         "https://identity.dataspace.copernicus.eu/auth/realms/CDAS/protocol/openid-connect/token"
     )
-    copernicus_search_url: str = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+    copernicus_search_url: str = (
+        "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
+    )
     copernicus_client_id: str = ""
     copernicus_client_secret: str = ""
+
+    # ИИ-ассистент (ADR-08, docs/09 §8.1, v3): внешний Ollama; пустой base URL —
+    # ИИ-текст выключен (summarize сразу None, без сети). Модель — тест на
+    # сервере пользователя 201:11434 от 2026-11-07 (qwen3.5:9b — русский ок).
+    ollama_base_url: str = ""
+    ollama_model: str = "qwen3.5:9b"
 
     @property
     def sqlalchemy_database_uri(self) -> str:
