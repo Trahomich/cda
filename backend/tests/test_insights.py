@@ -624,9 +624,10 @@ class TestBackgroundFix101:
 
         service.refresh_insights(fid, TODAY)
         assert state["checkedout"] == 0  # соединение возвращено до LLM
-        assert state["kwargs"]["timeout"] == 300.0
+        assert state["kwargs"]["timeout"] == 600.0
         assert state["kwargs"]["attempts"] == 1
         assert state["kwargs"]["keep_alive"] == "30m"
+        assert state["kwargs"]["num_predict"] == 256  # лимит генерации (#112)
 
         import json as _json
 
