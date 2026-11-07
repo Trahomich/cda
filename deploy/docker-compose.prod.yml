@@ -128,20 +128,23 @@ services:
       SOCKS_PORT: ${SOCKS_PORT:-1080}
     restart: unless-stopped
 
-  fragrelay2:
-    image: python:3.12-alpine
-    command: python /app/fragrelay.py
-    volumes:
-      - ./fragrelay.py:/app/fragrelay.py:ro
-    environment:
-      SOCKS_HOST: ${SOCKS_HOST:-192.168.99.45}
-      SOCKS_PORT: ${SOCKS_PORT:-1080}
-      EDGE_HOST: region2.v2.argotunnel.com
-    restart: unless-stopped
+  # ВРЕМЕННО ОТКЛЮЧЁН по просьбе пользователя (2026-11-07): второй релей
+  # (region2) закомментирован, cloudflared работает только через fragrelay.
+  # Вернуть: раскомментировать сервис и --edge fragrelay2:7844 у cloudflared.
+  # fragrelay2:
+  #   image: python:3.12-alpine
+  #   command: python /app/fragrelay.py
+  #   volumes:
+  #     - ./fragrelay.py:/app/fragrelay.py:ro
+  #   environment:
+  #     SOCKS_HOST: ${SOCKS_HOST:-192.168.99.45}
+  #     SOCKS_PORT: ${SOCKS_PORT:-1080}
+  #     EDGE_HOST: region2.v2.argotunnel.com
+  #   restart: unless-stopped
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --protocol http2 --edge fragrelay:7844 --edge fragrelay2:7844 run
+    command: tunnel --no-autoupdate --protocol http2 --edge fragrelay:7844 run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN обязателен в .env}
     depends_on:
