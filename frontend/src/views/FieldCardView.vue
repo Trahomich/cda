@@ -253,6 +253,7 @@ function fmtNum(v: number, digits = 1): string {
             <polygon
               :points="contourPoints"
               class="card360__polygon"
+              :style="contourColor ? { fill: contourColor } : undefined"
             />
           </svg>
           <h2 class="card360__block-title">
