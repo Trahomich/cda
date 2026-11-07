@@ -14,7 +14,6 @@ import {
   getOperations,
   getTreatmentPlans,
 } from '@/api'
-} from '@/api'
 import type {
   CropCycleHistoryItem,
   FieldCard,
