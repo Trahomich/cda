@@ -89,6 +89,8 @@ class YieldForecastResponse(BaseModel):
 
     field_id: uuid.UUID
     cycle_year: int
+    #: год сезона расчёта (§7.5: = year запроса или год выбранного сезона)
+    year: int
     culture_id: uuid.UUID
     culture_name: str
     method: str = Field(default="ndvi-empirical")
@@ -102,10 +104,33 @@ class YieldForecastResponse(BaseModel):
     )
 
 
+class SeasonItem(BaseModel):
+    """Сезон NDVI поля (§7.5): год-агрегат чистых сцен + культура цикла."""
+
+    year: int = Field(description="календарный год captured_at сцен")
+    scenes: int = Field(description="число чистых NDVI-сцен сезона")
+    first_date: date
+    last_date: date
+    culture_name: str | None = Field(
+        default=None, description="культура основного (main) цикла года; null — цикла нет"
+    )
+    is_current: bool = Field(description="год последней чистой сцены поля")
+
+
+class SeasonsResponse(BaseModel):
+    """API-54: список сезонов NDVI поля по убыванию года (§7.5)."""
+
+    field_id: uuid.UUID
+    items: list[SeasonItem]
+    total: int
+
+
 __all__ = [
     "INDICES",
     "NdviTimelineResponse",
     "SceneItem",
+    "SeasonItem",
+    "SeasonsResponse",
     "SourceMeta",
     "VraZoneItem",
     "VraZonesResponse",
