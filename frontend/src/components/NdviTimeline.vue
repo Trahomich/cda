@@ -205,6 +205,7 @@ const lastPoint = computed(() => props.points[lastClearIdx.value] ?? null)
       <span><i class="ndvi__lg-dot" /> NDVI (средн. по полю)</span>
       <span><i class="ndvi__lg-band" /> min–max</span>
       <span><i class="ndvi__lg-cloud" /> облачный снимок</span>
+      <span v-if="selectable && selectable.length"><i class="ndvi__lg-select" /> клик — снимок этой даты</span>
     </div>
     <p
       v-if="lastPoint"
