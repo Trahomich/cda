@@ -178,6 +178,10 @@ erDiagram
 | API-47 | GET /auth/me | текущий пользователь по JWT → {id, name, role} | 01 §2 |
 | API-48 | GET /references/cultures | справочник культур: фильтры crop_group, q; элементы — name, kind, forage_flag, crop_group, repeat_years, color_hex; группа прав «references» (07-ux §5, экран E-15) | REQ-F-006; карта v1 #55 |
 | API-49 | GET /fields/{id}/crop-cycles?year_from&year_to | история севооборота поля: items {year, culture_id, culture_name, kind, status, color_hex} по убыванию года; без фильтров — все годы; права как у карточки поля (API-05) | REQ-F-005, 006; v1 «история по полям» |
+| API-50 | GET /fields/{id}/ndvi/{date}/render.png?variant=ndvi\|truecolor\|ndwi | PNG-рендер сцены на контуре поля (§7.3 NDVI/true-color, §7.4 NDWI-вымокания); заголовки X-Field-Bbox/X-Image-Size; 404 если сцены с рендером нет; кэш immutable | REQ-F-028 |
+| API-51 | GET /fields/{id}/insights | «Выводы ассистента» в карточке поля: числовые детекторы (всегда) + LLM-сводка при доступном Ollama (§7.4; 09-ai §8.2), source=rules+llm\|rules | REQ-F-035, 037 |
+| API-52 | GET /fields/{id}/vra; GET /fields/{id}/vra/map.png | зоны дифференцированного внесения (3 зоны по перцентилям NDVI) и карта зон PNG; 422 vra_uniform_field (§7.4) | REQ-F-010 |
+| API-53 | GET /fields/{id}/yield-forecast | оценка урожайности по кривой NDVI (эмпирика, интервал ±25 %, §7.4; 09-ai §8.3); 422 yield_no_season_data/yield_no_culture/yield_no_model | REQ-F-028 |
 
 Пост-MVP (описаны в своих документах, здесь — только индекс): API-36..39 —
 агроскаутинг (docs/11-agroscouting.md §5), API-40..45 — экономика
