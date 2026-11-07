@@ -479,35 +479,35 @@ function fmtNum(v: number, digits = 1): string {
                 v-for="plan in card.treatment_plans"
                 :key="plan.plan_id"
               >
-              • {{ plan.input_name }} — {{ fmtNum(plan.dose, 2) }}
-              {{ plan.unit === 'l_ha' ? 'л/га' : plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }},
-              {{ plan.planned_date }} — {{ PLAN_STATUS_LABELS[plan.status] ?? plan.status }}
-            </li>
-            <li
-              v-if="card.treatment_plans.length === 0"
-              class="card360__muted"
-            >
-              Планов внесения нет
-            </li>
-          </ul>
-          <h3 class="card360__block-title">
-            Журнал (факты)
-          </h3>
-          <ul class="card360__plans">
-            <li
-              v-for="op in operations"
-              :key="op.operation_id"
-            >
-              ✓ {{ op.date }} · {{ op.operation_type }} ·
-              {{ fmtNum(op.actual_area_ga, 2) }} га
-              <span v-if="op.performer">· {{ op.performer }}</span>
-            </li>
-            <li
-              v-if="operations.length === 0"
-              class="card360__muted"
-            >
-              Фактов работ пока нет
-            </li>
+                • {{ plan.input_name }} — {{ fmtNum(plan.dose, 2) }}
+                {{ plan.unit === 'l_ha' ? 'л/га' : plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }},
+                {{ plan.planned_date }} — {{ PLAN_STATUS_LABELS[plan.status] ?? plan.status }}
+              </li>
+              <li
+                v-if="card.treatment_plans.length === 0"
+                class="card360__muted"
+              >
+                Планов внесения нет
+              </li>
+            </ul>
+            <h3 class="card360__block-title">
+              Журнал (факты)
+            </h3>
+            <ul class="card360__plans">
+              <li
+                v-for="op in operations"
+                :key="op.operation_id"
+              >
+                ✓ {{ op.date }} · {{ op.operation_type }} ·
+                {{ fmtNum(op.actual_area_ga, 2) }} га
+                <span v-if="op.performer">· {{ op.performer }}</span>
+              </li>
+              <li
+                v-if="operations.length === 0"
+                class="card360__muted"
+              >
+                Фактов работ пока нет
+              </li>
             </ul>
           </template>
         </div>
