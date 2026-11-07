@@ -307,19 +307,19 @@ class TestVraCache:
         monkeypatch.setattr(cache_mod, "_redis", fake)
 
         calls = {"n": 0}
-        real_compute = vra.compute_vra
+        real_analyze = vra._analyze_scene
 
         def counted(db, field, scene):
             calls["n"] += 1
-            return real_compute(db, field, scene)
+            return real_analyze(db, field, scene)
 
-        monkeypatch.setattr(vra, "compute_vra", counted)
+        monkeypatch.setattr(vra, "_analyze_scene", counted)
 
         first = client.get(f"/api/v1/fields/{vra_world}/vra", headers=agro_headers)
         assert first.status_code == 200, first.text
         assert calls["n"] == 1
-        assert len(fake.store) == 1
         assert f"vra:{vra_world}:{SCENE_DATE.isoformat()}" in fake.store
+        assert f"vra:peak:{vra_world}" in fake.store  # указатель для insights
 
         second = client.get(f"/api/v1/fields/{vra_world}/vra", headers=agro_headers)
         assert second.status_code == 200, second.text
