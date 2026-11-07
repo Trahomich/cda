@@ -181,7 +181,7 @@ def _llm_context(db: Session, field: Field, items: list[InsightItem]) -> str:
         humus = (
             f"гумус {float(probe.humus_pct):.1f} %" if probe.humus_pct is not None else "гумус нет"
         )
-        parts.append(f"Агрохимия (поба {probe.sample_date.isoformat()}): {ph}, {humus}.")
+        parts.append(f"Агрохимия (проба {probe.sample_date.isoformat()}): {ph}, {humus}.")
     ops = db.scalars(
         select(FieldOperation)
         .where(FieldOperation.field_id == field.id)
