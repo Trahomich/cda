@@ -330,3 +330,120 @@ class TestVraCache:
         map2 = client.get(f"/api/v1/fields/{vra_world}/vra/map.png", headers=agro_headers)
         assert map2.status_code == 200
         assert calls["n"] == 1
+
+
+class TestVraPeaks:
+    """Зоны по пиковым сценам сезона (§7.4 v1.4, #106): топ-3 по index_avg,
+    подтверждение IQR ≥ 0.12 на ≥2 из 3, зоны — по максимальному index_avg."""
+
+    def add_scene(self, db, tmp_path, field_id, sub, day, red, index_avg):
+        assets = make_vra_rasters(tmp_path / sub, red, seed=abs(hash(sub)) % 1000)
+        make_scene(db, field_id, assets, date_=day, index_avg=index_avg)
+
+    def test_zones_from_peak_not_latest(self, client, db_session, tmp_path, agro_headers):
+        """Пик вегетации 06-20/06-25 разнороден, ноябрьская сцена однородна:
+        зоны по 06-20 (макс index_avg), последняя сцена не используется."""
+        make_satellite_source(db_session)
+        field_id = make_field(db_session, name="Пик-1")
+        self.add_scene(db_session, tmp_path, field_id, "s1", date(2026, 6, 25), striped_red(), 0.80)
+        self.add_scene(
+            db_session, tmp_path, field_id, "s2", date(2026, 11, 5),
+            np.full((N, N), 800), 0.30,  # последняя по дате — однородная
+        )
+        self.add_scene(db_session, tmp_path, field_id, "s3", date(2026, 6, 20), striped_red(), 0.82)
+        resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["date"] == "2026-06-20"  # макс index_avg среди подтверждённых
+        assert body["peak_dates"] == ["2026-06-20", "2026-06-25", "2026-11-05"]
+        assert body["iqr_ndvi"] >= 0.12
+        assert len(body["zones"]) == 3
+
+    def test_single_heterogeneous_peak_422(self, client, db_session, tmp_path, agro_headers):
+        """IQR ≥ 0.12 только на 1 из 3 пиковых сцен: стабильности нет — 422,
+        сообщение упоминает пиковые сцены и их даты."""
+        make_satellite_source(db_session)
+        field_id = make_field(db_session, name="Один пик")
+        self.add_scene(db_session, tmp_path, field_id, "s1", date(2026, 6, 20), striped_red(), 0.82)
+        self.add_scene(
+            db_session, tmp_path, field_id, "s2", date(2026, 6, 25),
+            np.full((N, N), 800), 0.78,
+        )
+        self.add_scene(
+            db_session, tmp_path, field_id, "s3", date(2026, 7, 2),
+            np.full((N, N), 900), 0.74,
+        )
+        resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
+        assert resp.status_code == 422, resp.text
+        body = resp.json()
+        assert body["code"] == "vra_uniform_field"
+        assert "пиковым сценам" in body["detail"]
+        assert "2026-06-20" in body["detail"]
+
+    def test_two_scenes_one_peak_enough(self, client, db_session, tmp_path, agro_headers):
+        """<3 сцен: подтверждение на всех, кроме максимум одной — 1 из 2 достаточно."""
+        make_satellite_source(db_session)
+        field_id = make_field(db_session, name="Две сцены")
+        self.add_scene(
+            db_session, tmp_path, field_id, "s1", date(2026, 6, 20), striped_red(), 0.82
+        )
+        self.add_scene(
+            db_session, tmp_path, field_id, "s2", date(2026, 6, 25),
+            np.full((N, N), 800), 0.78,
+        )
+        resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["date"] == "2026-06-20"
+        assert body["peak_dates"] == ["2026-06-20", "2026-06-25"]
+
+    def test_two_uniform_scenes_422(self, client, db_session, tmp_path, agro_headers):
+        make_satellite_source(db_session)
+        field_id = make_field(db_session, name="Ровный сезон")
+        for sub, day in (("s1", date(2026, 6, 20)), ("s2", date(2026, 6, 25))):
+            self.add_scene(db_session, tmp_path, field_id, sub, day, np.full((N, N), 800), 0.7)
+        resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
+        assert resp.status_code == 422, resp.text
+        assert resp.json()["code"] == "vra_uniform_field"
+
+    def test_peak_cache_and_uniform_iqr_cached(
+        self, client, db_session, tmp_path, agro_headers, monkeypatch
+    ):
+        """Кэш: полный расчёт — по дате пиковой сцены, IQR однородных — отдельным
+        ключом; повторный запрос не перечитывает COG."""
+        import app.core.cache as cache_mod
+        from app.modules.satellite import vra
+
+        make_satellite_source(db_session)
+        field_id = make_field(db_session, name="Кэш пиков")
+        self.add_scene(db_session, tmp_path, field_id, "s1", date(2026, 6, 20), striped_red(), 0.82)
+        self.add_scene(
+            db_session, tmp_path, field_id, "s2", date(2026, 6, 25), striped_red(), 0.80
+        )
+        self.add_scene(
+            db_session, tmp_path, field_id, "s3", date(2026, 11, 5),
+            np.full((N, N), 800), 0.30,
+        )
+
+        fake = FakeRedis()
+        monkeypatch.setattr(cache_mod, "_redis", fake)
+        calls = {"n": 0}
+        real_analyze = vra._analyze_scene
+
+        def counted(db, field, scene):
+            calls["n"] += 1
+            return real_analyze(db, field, scene)
+
+        monkeypatch.setattr(vra, "_analyze_scene", counted)
+
+        first = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
+        assert first.status_code == 200, first.text
+        assert calls["n"] == 3  # по одному чтению COG на пиковую сцену
+        assert f"vra:{field_id}:2026-06-20" in fake.store  # полный расчёт — по пику
+        assert f"vra:iqr:{field_id}:2026-11-05" in fake.store  # однородная — только IQR
+        assert f"vra:peak:{field_id}" in fake.store
+
+        second = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
+        assert second.status_code == 200, second.text
+        assert calls["n"] == 3  # всё из кэша
+        assert second.json() == first.json()
