@@ -8,6 +8,9 @@ Docs/05 §2 (IF-SATELLITE): индексы ndvi/ndre/ndmi/savi, разрешен
 - ndmi = (B8A − B11) / (B8A + B11)                NIR / SWIR;
 - savi = 1.5·(NIR − RED)/(NIR + RED + 0.5)         с поправкой на почву (L=0.5).
 
+Вспомогательный канал NDWI = (B03 − B08)/(B03 + B08) (McFeeters) — для детектора
+вымоканий docs/06 §7.4: compute_ndwi_array (не входит в INDICES).
+
 Валидация 05 §5: значение индекса вне [−1; 1] → DataQualityError.
 Обработка растров идёт вне БД, в БД — только выжимки (ADR-02).
 """
