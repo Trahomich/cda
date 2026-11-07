@@ -69,7 +69,9 @@ def cache_delete(*patterns: str) -> int:
             if keys:
                 deleted += int(client_local.delete(*keys))
     except Exception:  # сеть/отсутствие сервера — работаем без кэша
-        logger.debug("кэш: не удалось удалить по %s — ключи истекут по TTL", patterns, exc_info=True)
+        logger.debug(
+            "кэш: не удалось удалить по %s — ключи истекут по TTL", patterns, exc_info=True
+        )
     return deleted
 
 
