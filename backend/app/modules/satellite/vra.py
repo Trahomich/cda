@@ -138,7 +138,9 @@ def _uniform_error(iqr: float, peak_dates: tuple[date, ...] | list[date]) -> App
     )
 
 
-def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> tuple[float, VraZones | None]:
+def _analyze_scene(
+    db: Session, field: Field, scene: SatelliteScene
+) -> tuple[float, VraZones | None]:
     """IQR NDVI сцены и (если поле неоднородно) полные зоны; None — однородно.
 
     Общий путь чтения COG для пиковых сцен: IQR нужен каждой сцене для
