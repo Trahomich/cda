@@ -72,8 +72,6 @@ const layout = computed(() => {
       cloudy: isCloudy(p),
       lowTrust: (p.trust ?? 1) < TRUST_LIMIT,
       last: i === lastClearIdx.value,
-      // Значение подписываем у «чистых» точек; облачная — не в линии.
-      showVal: !isCloudy(p),
       val: fmtVal(p.ndvi),
       date: p.date,
       dateShort: fmtDate(p.date),
