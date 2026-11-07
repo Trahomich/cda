@@ -369,6 +369,7 @@ def field_yield_forecast(
     return YieldForecastResponse(
         field_id=field.id,
         cycle_year=cycle.year,
+        year=cycle.year,
         culture_id=culture.id,
         culture_name=culture.name,
         ndvi_max=ndvi_max,
