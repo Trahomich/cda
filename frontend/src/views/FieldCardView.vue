@@ -298,21 +298,13 @@ function fmtNum(v: number, digits = 1): string {
           <h2 class="card360__block-title">
             NDVI-таймлайн (сезон {{ currentCycle?.year ?? '—' }})
           </h2>
-          <NdviTimeline
-            v-if="ndvi.length"
-            :points="ndvi"
-          />
-          <p
-            v-else
-            class="card360__muted"
-          >
-            Спутниковых снимков за сезон нет
-          </p>
+          <!-- Пустое состояние («снимков нет») рендерит сам компонент -->
+          <NdviTimeline :points="ndvi" />
           <p
             v-if="lastSatelliteDate"
             class="card360__muted"
           >
-            Дата последнего снимка: {{ lastSatelliteDate }} · ◌ — облачные точки
+            Дата последнего снимка: {{ lastSatelliteDate }}
           </p>
         </div>
 
