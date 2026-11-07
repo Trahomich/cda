@@ -98,7 +98,8 @@ class TestRenderScene:
 
     def test_no_visible_bands_returns_none(self, scene_rasters):
         """Активов без b02/b03 (каталог до #83): рендер пропускается, без ошибки."""
-        assert render_scene(scene_rasters["assets"], wgs_box(300100, 5760100, 301900, 5760900)) is None
+        contour = wgs_box(300100, 5760100, 301900, 5760900)
+        assert render_scene(scene_rasters["assets"], contour) is None
 
 
 def _contour_wgs_bounds(contour: dict) -> tuple[float, float, float, float]:
