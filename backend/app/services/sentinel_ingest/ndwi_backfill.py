@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session
 
 from app.integrations import DataGapError, DataQualityError, SourceUnavailableError
 from app.models.integrations import SatelliteCatalogItem, SatelliteScene
-from app.services.sentinel_ingest.ndvi import NDWI_BAND_ASSET, zonal_ndvi
+from app.services.sentinel_ingest.ndvi import NDWI_BAND_ASSET, NdviStats, zonal_ndvi
 
 logger = logging.getLogger(__name__)
 
