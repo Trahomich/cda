@@ -123,6 +123,10 @@ class SatelliteScene(Base):
     index_max: Mapped[float] = mapped_column(Numeric(4, 3), nullable=False)
     anomaly_zones_ref: Mapped[str | None] = mapped_column(String(500), nullable=True)
     cloud_pct: Mapped[float] = mapped_column(Numeric(4, 1), nullable=False)
+    # NDWI той же сцены (docs/06 §7.4, #91): NULL — канал b03 не считался
+    # (строки, каталогизированные до #83, не имели b02/b03 в активах)
+    ndwi_mean: Mapped[float | None] = mapped_column(Numeric(4, 3), nullable=True)
+    ndwi_p90: Mapped[float | None] = mapped_column(Numeric(4, 3), nullable=True)
     composite_days: Mapped[int] = mapped_column(Integer, nullable=False, server_default="1")
     source_id: Mapped[str] = mapped_column(
         String(100),
