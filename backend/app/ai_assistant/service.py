@@ -314,17 +314,27 @@ def refresh_insights(field_id: uuid.UUID, day: date) -> None:
 
         vra_iqr: float | None = None
         vra_day: date | None = None
+        vra_verdict = VRA_NO_DATA_VERDICT
         try:
             # зоны по пиковым сценам (#106): iqr и дата — подтверждённой пиковой
             result = vra.vra_zones(db, field)  # кэшируется у себя (24 ч)
             vra_iqr, vra_day = result.iqr_ndvi, result.captured_at
-        except AppError:
-            pass  # поле однородно по пиковым сценам или нет ассетов — детектор молчит
+            vra_verdict = (
+                f"Модель дифвнесения: поле неоднородно, {len(result.zones)} зон дифвнесения, "
+                f"IQR NDVI = {result.iqr_ndvi:.3f} (пиковая сцена {result.captured_at.isoformat()})."
+            )
+        except AppError as exc:
+            if exc.code == "vra_uniform_field":
+                # IQR достаём из detail: «…IQR NDVI = 0.058 < 0.120…» (vra.py)
+                m = re.search(r"IQR NDVI = (\d+\.\d+)", exc.detail or "")
+                iqr_str = f", IQR NDVI = {m.group(1)}" if m else ""
+                vra_verdict = f"Модель дифвнесения: поле однородно{iqr_str} — зоны не строятся."
+            # прочие AppError (нет ассетов/сцен) — вердикт «нет расчёта»
         except Exception:
             logger.warning("insights: VRA-расчёт не удался", exc_info=True)
 
         items = build_items(db, field_id, vra_iqr=vra_iqr, vra_day=vra_day)
-        context = _llm_context(db, field, items) if items else ""
+        context = _llm_context(db, field, items, vra_verdict=vra_verdict) if items else ""
     finally:
         db.close()  # вернуть соединение в пул ДО тяжёлого шага
 
