@@ -170,7 +170,7 @@ class TestYieldForecast:
         assert resp.json()["code"] == "field_not_found"
 
     def test_no_cycle_404(self):
-        culture = make_culture(self.db)
+        make_culture(self.db)
         for day, avg in [(date(2026, 5, 1), 0.5), (date(2026, 6, 1), 0.7), (date(2026, 7, 1), 0.8)]:
             make_scene(self.db, self.field_id, day, avg)
         self.db.commit()
