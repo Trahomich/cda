@@ -9,10 +9,13 @@ import {
   getFieldCard,
   getFieldCropCycles,
   getFieldNdvi,
+  getFieldVra,
+  getFieldVraMap,
   getFieldWeather,
   getNdviRender,
   getOperations,
   getTreatmentPlans,
+  getYieldForecast,
 } from '@/api'
 import type {
   CropCycleHistoryItem,
