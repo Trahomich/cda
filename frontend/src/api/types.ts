@@ -608,6 +608,30 @@ export interface YieldForecastResponse {
   disclaimer: string
 }
 
+/** Градация важности числового детектора (API-51, §7.4; 09-ai §8.2). */
+export type InsightSeverity = 'info' | 'warn' | 'alert'
+
+/** Один числовой детектор — элемент items[] ответа API-51. */
+export interface InsightItem {
+  /** Код детектора, например ndvi_drop / waterlogging / vra_heterogeneity. */
+  code: string
+  severity: InsightSeverity
+  title: string
+  detail: string
+  /** Ссылки на входные данные (сцены/пробы, 03 §1.5); в UI не показываются. */
+  data_refs: Array<Record<string, unknown>>
+}
+
+/** Ответ GET /fields/{id}/insights (API-51, §7.4): items считаются всегда,
+ *  summary — LLM-сводка (null при source=rules, UI показывает только items). */
+export interface InsightsResponse {
+  field_id: string
+  generated_at: string
+  source: 'rules+llm' | 'rules'
+  summary: string | null
+  items: InsightItem[]
+}
+
 /** Факт погоды — элемент facts[] API-07. */
 export interface WeatherFactItem {
   observed_at: string
