@@ -302,6 +302,10 @@ CULTURES: list[dict] = [
         "crop_group": "other",
         "color_hex": "#c5e1a5",
         "repeat_years": 3,
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га зелёной массы
+        "yield_k_base": -40.0,
+        "yield_k_ndvi_max": 200.0,
+        "yield_k_ndvi_int": 150.0,
     },
     # пары (RULE-AGRO-03)
     {
