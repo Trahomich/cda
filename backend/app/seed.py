@@ -172,6 +172,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "legumes",
         "color_hex": "#8bc34a",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -7.0,
+        "yield_k_ndvi_max": 32.0,
+        "yield_k_ndvi_int": 22.0,
     },
     {
         "name": "Горох",
