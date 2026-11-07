@@ -88,9 +88,10 @@ def build_items(
     scenes = detectors.load_scenes(db, field_id)
     latest = scenes[-1] if scenes else None
 
-    precip_7d = None
-    if latest is not None:
-        precip_7d = precip_sums_7d(db, field_id, [latest.captured_at]).get(latest.captured_at)
+    # осадки 7 суток к дате каждой сцены: waterlogging смотрит все сцены (§8.2)
+    precip_map: dict[date, float | None] = (
+        precip_sums_7d(db, field_id, [s.captured_at for s in scenes]) if scenes else {}
+    )
 
     drought: InsightItem | None = None
     if latest is not None:
