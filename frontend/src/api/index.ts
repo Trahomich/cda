@@ -224,7 +224,57 @@ export async function getNdviRender(
   }
 }
 
-/** API-49: GET /fields/{id}/crop-cycles — история севооборота поля (годы по
+/** API-52: GET /fields/{id}/vra — зоны дифференцированного внесения (§7.4).
+ *  Результат: ok — зоны; uniform — поле однородно (422 vra_uniform_field,
+ *  IQR < 0.12); empty — прочие ошибки (404 нет сцен, сеть). */
+export async function getFieldVra(
+  fieldId: string,
+): Promise<{ kind: 'ok'; data: VraZonesResponse } | { kind: 'uniform' } | { kind: 'empty' }> {
+  try {
+    const data = await apiClient.request<VraZonesResponse>(`/fields/${fieldId}/vra`)
+    return { kind: 'ok', data }
+  } catch (error) {
+    if (
+      error instanceof ApiError &&
+      error.status === 422 &&
+      error.problem?.code === 'vra_uniform_field'
+    ) {
+      return { kind: 'uniform' }
+    }
+    return { kind: 'empty' }
+  }
+}
+
+/** API-52: GET /fields/{id}/vra/map.png — PNG-карта зон (§7.4) с
+ *  геопривязкой X-Field-Bbox/X-Image-Size (как §7.3); null, если нет. */
+export async function getFieldVraMap(fieldId: string): Promise<NdviRender | null> {
+  const res = await apiClient.raw(`/fields/${fieldId}/vra/map.png`)
+  if (!res.ok) return null
+  const bboxRaw = (res.headers.get('X-Field-Bbox') ?? '').split(',').map(Number)
+  if (bboxRaw.length !== 4 || bboxRaw.some((v) => !Number.isFinite(v))) return null
+  const size = (res.headers.get('X-Image-Size') ?? '0x0').split('x').map(Number)
+  if (!size[0] || !size[1]) return null
+  return {
+    url: URL.createObjectURL(res.blob),
+    bbox: bboxRaw as [number, number, number, number],
+    width: size[0],
+    height: size[1],
+  }
+}
+
+/** API-53: GET /fields/{id}/yield-forecast — прогноз урожайности (§7.4).
+ *  Результат: данные; 'insufficient' — 422 (нет сцен сезона/культуры/
+ *  модели) → «данных сезона недостаточно»; null — прочие ошибки. */
+export async function getYieldForecast(
+  fieldId: string,
+): Promise<YieldForecastResponse | 'insufficient' | null> {
+  try {
+    return await apiClient.request<YieldForecastResponse>(`/fields/${fieldId}/yield-forecast`)
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 422) return 'insufficient'
+    return null
+  }
+}
  *  убыванию, culture_name и color_hex отдаёт бэкенд из справочника API-48);
  *  year_from/year_to — необязательный фильтр, без них — все годы. */
 export async function getFieldCropCycles(
