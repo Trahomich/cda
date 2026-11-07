@@ -268,8 +268,9 @@ class TestVraMap:
         width, _, height = resp.headers["X-Image-Size"].partition("x")
         with MemoryFile(resp.content) as mem, mem.open() as src:
             assert (src.width, src.height) == (int(width), int(height))
-        # окно 1800 м при пикселе 10 м: стороны до 180 px (прореживание не нужно)
-        assert 170 < int(width) <= 181 and 170 < int(height) <= 181
+        # окно 1800 м при пикселе 10 м: ~180 px (±1 на округление границ контура
+        # при перепроекции в UTM), прореживание до 1024 не срабатывает
+        assert 178 < int(width) <= 184 and 178 < int(height) <= 184
 
     def test_machine_operator_403(self, client, db_session, vra_world):
         make_user(db_session, login="vra-op2", role=UserRole.MACHINE_OPERATOR, password="pw-op")
