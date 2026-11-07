@@ -467,8 +467,12 @@ function fmtNum(v: number, digits = 1): string {
           <NdviTimeline
             v-else
             :points="ndvi"
+            :selectable="renderDates"
+            :selected="renderDate"
+            @select="onDotSelect"
           />
-          <!-- §7.3: слой мини-карты — выбор даты и варианта рендера -->
+          <!-- §7.3: слой мини-карты — вариант рендера; дата выбирается
+               кликом по точке графика (v2-fix-H) -->
           <div
             v-if="!ndviLoading && renderDates.length"
             class="card360__layers"
@@ -506,21 +510,9 @@ function fmtNum(v: number, digits = 1): string {
                 Контур
               </button>
             </div>
-            <label class="card360__layer-date-label">
-              Дата снимка
-              <select
-                v-model="renderDate"
-                class="card360__layer-date"
-              >
-                <option
-                  v-for="d in renderDates"
-                  :key="d"
-                  :value="d"
-                >
-                  {{ fmtDate(d) }}
-                </option>
-              </select>
-            </label>
+            <span class="card360__layer-date-label">
+              Снимок за {{ renderDate ? fmtDate(renderDate) : '—' }}
+            </span>
           </div>
           <p
             v-if="lastSatelliteDate"
