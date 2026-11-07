@@ -40,9 +40,11 @@ NDVI_DROP_WARN = 0.15
 NDVI_DROP_ALERT = 0.25
 NDVI_DROP_WINDOW_DAYS = 30
 
-#: ndvi_stagnation: прирост за 3 сцены и потолок «активной вегетации»
+#: ndvi_stagnation: прирост за 3 сцены, потолок «активной вегетации» и сезон
 NDVI_STAGNATION_MAX_GAIN = 0.05
 NDVI_STAGNATION_MAX_MEAN = 0.7
+NDVI_STAGNATION_MIN_MEAN = 0.3  # ниже — вегетации нет, стагнация не о чём
+NDVI_STAGNATION_SEASON_MONTHS = frozenset(range(4, 11))  # апрель–октябрь (09 §8.2 v1.1)
 
 #: drought: осадки за 14 сут и норма среднесуточного GDD (см. докстринг)
 DROUGHT_WINDOW_DAYS = 14
