@@ -260,41 +260,66 @@ def detect_ndvi_stagnation(
 
 
 def detect_waterlogging(
-    scene: SceneStat | None, precip_mm_7d: float | None
+    scenes: Sequence[SceneStat], precip_by_date: Mapping[date, float | None]
 ) -> InsightItem | None:
-    """warn/alert: правило вымокания §7.4 (пороги — waterlog.py, #91).
+    """warn/alert: правило вымокания §7.4 по ВСЕМ чистым сценам сезона (§8.2).
 
-    alert — прокси «доля ≥ 30 % пикселей»: ndwi_mean ≥ 0.10 (среднее по полю
-    у порога — высокая доля влажных пикселей; зональная статистика долю
-    напрямую не хранит, см. докстринг модуля).
+    Эпизод — сцена с waterlogged=true (ndwi_p90 и осадки 7 суток есть);
+    выводится при наличии эпизодов, даже если последняя сцена чистая.
+    Сцены с waterlogged=null (нет NDWI/погоды) эпизодами не считаются.
+    alert — эпизод на последней сцене или ndwi_mean эпизода ≥ порога p90
+    (прокси «доли ≥ 30 % пикселей», см. докстринг модуля).
     """
-    if scene is None:
+    episodes = [
+        scene
+        for scene in scenes
+        if waterlogged(
+            scene.ndwi_p90, scene.ndvi_mean, precip_by_date.get(scene.captured_at)
+        )
+        is True
+    ]
+    if not episodes:
         return None
-    if waterlogged(scene.ndwi_p90, scene.ndvi_mean, precip_mm_7d) is not True:
-        return None
-    alert = scene.ndwi_mean is not None and scene.ndwi_mean >= WATERLOG_NDWI_P90
+
+    dates = [scene.captured_at for scene in episodes]  # сцены по возрастанию даты
+    max_p90 = max(float(scene.ndwi_p90) for scene in episodes)
+    on_latest = bool(scenes) and dates[-1] == scenes[-1].captured_at
+    wide = any(
+        scene.ndwi_mean is not None and scene.ndwi_mean >= WATERLOG_NDWI_P90
+        for scene in episodes
+    )
+
+    if len(dates) <= 3:
+        dates_str = ", ".join(d.isoformat() for d in dates)
+    else:
+        n = len(dates)
+        ones, tens = n % 10, n % 100
+        word = "эпизод" if ones == 1 and tens != 11 else "эпизода" if 2 <= ones <= 4 and not 12 <= tens <= 14 else "эпизодов"
+        dates_str = f"с {dates[0].isoformat()} по {dates[-1].isoformat()} — {n} {word}"
+
     return InsightItem(
         code="waterlogging",
-        severity="alert" if alert else "warn",  # type: ignore[arg-type]
+        severity="alert" if (alert := on_latest or wide) else "warn",  # type: ignore[arg-type]
         title="Признаки вымокания поля",
         detail=(
-            f"NDWI p90 {scene.ndwi_p90:.2f} ≥ {WATERLOG_NDWI_P90:.2f} при NDVI "
-            f"{scene.ndvi_mean:.2f} и осадках {precip_mm_7d:.0f} мм за 7 суток "
-            f"(сцена {scene.captured_at.isoformat()})"
-            + (
-                "; влажных пикселей заметно больше порога"
-                if alert
-                else ""
-            )
+            f"Эпизоды вымокания ({dates_str}): NDWI p90 до {max_p90:.2f} ≥ "
+            f"{WATERLOG_NDWI_P90:.2f} при NDVI < {WATERLOG_NDVI_MEAN:.2f} и осадках "
+            f"≥ {WATERLOG_PRECIP_MM_7D:.0f} мм за 7 суток"
+            + ("; влажных пикселей заметно больше порога" if wide else "")
+            + ("; актуально на последней сцене" if on_latest else "")
             + ". Оцените дренаж и отложите полевые работы."
         ),
         data_refs=[
-            _scene_ref(scene),
-            {
-                "source": "weather",
-                "precip_mm_7d": precip_mm_7d,
-                "date": scene.captured_at.isoformat(),
-            },
+            ref
+            for scene in episodes
+            for ref in (
+                _scene_ref(scene),
+                {
+                    "source": "weather",
+                    "precip_mm_7d": precip_by_date.get(scene.captured_at),
+                    "date": scene.captured_at.isoformat(),
+                },
+            )
         ],
     )
 
