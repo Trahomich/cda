@@ -529,7 +529,8 @@ class TestBackgroundFix101:
         ставит фоновую задачу; готовая rules+llm-сводка — не ставит."""
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
-        make_scene(db_session, fid, TODAY, 0.5)
+        make_scene(db_session, fid, TODAY - timedelta(days=6), 0.72)
+        make_scene(db_session, fid, TODAY, 0.50)  # drop → items непустые, summary=null
         db_session.commit()
 
         self._fake_redis(monkeypatch)
