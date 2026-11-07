@@ -226,6 +226,86 @@ const layerRect = computed(() => {
   }
 })
 
+/* ── Зум и панорамирование мини-карты (v2-fix-I): динамический viewBox
+ *  рамки 200×120; зум 1×–8× (w от 200 до 25), рамку не покидаем. ── */
+const contourSvg = ref<SVGSVGElement | null>(null)
+const VB_FULL = { w: 200, h: 120 }
+const ZOOM_MAX = 8
+const vb = ref({ ...VB_FULL, x: 0, y: 0 })
+const vbStr = computed(() => `${vb.value.x} ${vb.value.y} ${vb.value.w} ${vb.value.h}`)
+
+function resetView(): void {
+  vb.value = { ...VB_FULL, x: 0, y: 0 }
+}
+
+// Смена поля — исходный масштаб.
+watch(
+  () => card.value?.field.field_id,
+  () => resetView(),
+)
+
+function clampView(): void {
+  const v = vb.value
+  v.w = Math.min(v.w, VB_FULL.w)
+  v.h = v.w * (VB_FULL.h / VB_FULL.w)
+  v.x = Math.min(Math.max(v.x, 0), VB_FULL.w - v.w)
+  v.y = Math.min(Math.max(v.y, 0), VB_FULL.h - v.h)
+}
+
+/** Зум с сохранением точки (px, py) в координатах viewBox; factor > 1 — ближе. */
+function zoomAt(px: number, py: number, factor: number): void {
+  const v = { ...vb.value }
+  const w = Math.min(Math.max(v.w / factor, VB_FULL.w / ZOOM_MAX), VB_FULL.w)
+  const k = w / v.w
+  vb.value = { x: px - (px - v.x) * k, y: py - (py - v.y) * k, w, h: w * (VB_FULL.h / VB_FULL.w) }
+  clampView()
+}
+
+/** Координаты курсорного события в системе viewBox. */
+function eventPoint(e: MouseEvent): { x: number; y: number } {
+  const rect = contourSvg.value?.getBoundingClientRect()
+  if (!rect) return { x: vb.value.x + vb.value.w / 2, y: vb.value.y + vb.value.h / 2 }
+  return {
+    x: vb.value.x + ((e.clientX - rect.left) / rect.width) * vb.value.w,
+    y: vb.value.y + ((e.clientY - rect.top) / rect.height) * vb.value.h,
+  }
+}
+
+/** Кнопки зума — к центру видимой рамки. */
+function zoomBy(factor: number): void {
+  zoomAt(vb.value.x + vb.value.w / 2, vb.value.y + vb.value.h / 2, factor)
+}
+
+function onWheel(e: WheelEvent): void {
+  e.preventDefault()
+  const p = eventPoint(e)
+  zoomAt(p.x, p.y, e.deltaY < 0 ? 1.25 : 1 / 1.25)
+}
+
+/* Панорамирование перетаскиванием (Pointer Events + capture). */
+const dragging = ref(false)
+let dragStart: { sx: number; sy: number; vx: number; vy: number } | null = null
+
+function onPanStart(e: PointerEvent): void {
+  if (e.pointerType === 'mouse' && e.button !== 0) return
+  dragging.value = true
+  dragStart = { sx: e.clientX, sy: e.clientY, vx: vb.value.x, vy: vb.value.y }
+  ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+}
+
+function onPanMove(e: PointerEvent): void {
+  const rect = contourSvg.value?.getBoundingClientRect()
+  if (!dragging.value || !dragStart || !rect) return
+  vb.value.x = dragStart.vx - ((e.clientX - dragStart.sx) / rect.width) * vb.value.w
+  vb.value.y = dragStart.vy - ((e.clientY - dragStart.sy) / rect.height) * vb.value.h
+  clampView()
+}
+
+function onPanEnd(): void {
+  dragging.value = false
+  dragStart = null
+}
+
 function fmtDate(iso: string): string {
   return iso.split('-').reverse().join('.')
 }
