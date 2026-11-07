@@ -71,7 +71,10 @@ def summarize(
                 resp = client.post(f"{url_root.rstrip('/')}/api/generate", json=body)
                 if resp.status_code >= 500:  # сервер перегружен — повтор
                     logger.warning(
-                        "ollama: HTTP %d (попытка %d/%d)", resp.status_code, attempt, RETRY_ATTEMPTS
+                        "ollama: HTTP %d (попытка %d/%d)",
+                        resp.status_code,
+                        attempt,
+                        max_attempts,
                     )
                     continue
                 if resp.status_code != 200:
