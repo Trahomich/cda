@@ -31,11 +31,14 @@ from app.core.rbac import group_checker
 from app.models.agronomy import Field
 from app.models.integrations import SatelliteScene
 from app.models.references import Source
+from app.modules.satellite import vra
 from app.modules.satellite.schemas import (
     INDICES,
     NdviTimelineResponse,
     SceneItem,
     SourceMeta,
+    VraZoneItem,
+    VraZonesResponse,
 )
 from app.services.sentinel_ingest.renders import (
     RENDER_VARIANTS,
