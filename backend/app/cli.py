@@ -191,7 +191,7 @@ def cmd_backfill_history(args: argparse.Namespace) -> int:
             client=client,
             years=args.years,
             batch_limit=settings.ingest_satellite_ndvi_batch,
-            max_workers=settings.ingest_satellite_ndvi_workers,
+            max_workers=args.workers or settings.ingest_satellite_ndvi_workers,
             render_dir=settings.ndvi_render_dir or None,
         )
     data = report.as_dict()
