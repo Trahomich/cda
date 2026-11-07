@@ -521,7 +521,14 @@ function fmtNum(v: number, digits = 1): string {
         <h2 class="card360__block-title">
           Работы по полю (план и факт)
         </h2>
-        <ul class="card360__works-list">
+        <Skeleton
+          v-if="worksLoading"
+          :lines="5"
+        />
+        <ul
+          v-else
+          class="card360__works-list"
+        >
           <li
             v-for="entry in works"
             :key="entry.key"
