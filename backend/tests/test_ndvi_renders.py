@@ -176,8 +176,10 @@ class TestRenderApi:
     @pytest.fixture(autouse=True)
     def _seed_scene(self, db_session, render_client, color_rasters):
         """Сцена с рендерами + сцена без (историческая, без b02/b03)."""
+        from app.models.auth import UserRole
         from tests.test_auth import auth_header, make_user
 
+        make_user(db_session, login="sat-agro", role=UserRole.AGRONOMIST, password="pw-sat")
         self.client, self.render_dir = render_client
         self.auth = auth_header(self.client, "sat-agro", "pw-sat")
         make_satellite_source(db_session)
