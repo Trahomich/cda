@@ -61,6 +61,10 @@ MAX_SCENE_CLOUD_PCT = 60.0
 #: ключи активов каталога (канонические, маппинг ESA-имён — STAC-клиент #50)
 BAND_ASSETS = ("b04", "b08", "scl")
 
+#: ключ канала B03: нужен для NDWI (docs/06 §7.4, #91); отсутствует в строках,
+#: каталогизированных до #83, — тогда ndwi_mean/ndwi_p90 остаются NULL
+NDWI_BAND_ASSET = "b03"
+
 
 @dataclass(frozen=True, slots=True)
 class NdviStats:
@@ -71,6 +75,9 @@ class NdviStats:
     index_max: float
     std: float  # внутренний контроль (в БД не пишется)
     cloud_pct: float
+    # NDWI тех же пикселей (docs/06 §7.4, #91): None — канала b03 нет в активах
+    ndwi_mean: float | None = None
+    ndwi_p90: float | None = None
 
 
 @dataclass(slots=True)
