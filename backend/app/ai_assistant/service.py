@@ -234,9 +234,15 @@ def _checked_summary(summary: str | None, items: list[InsightItem]) -> str | Non
 def refresh_insights(field_id: uuid.UUID, day: date) -> None:
     """Фоновая доработка (BackgroundTasks): VRA-неоднородность + LLM-сводка.
 
-    Своя сессия БД (запрос уже вернулся), любые ошибки — только в лог:
-    пользователь получит rules-ответ из кэша, повторный запрос — доработанный.
+    Любые ошибки — только в лог: пользователь получает rules-ответ из кэша,
+    повторный запрос перезапустит доработку, пока summary в кэше null (#101).
+
+    Соединение БД НЕ держится во время инференса (#101): сессия закрывается
+    до вызова LLM (до 300 с), иначе параллельные фоновые задачи исчерпывают
+    QueuePool Postgres («idle in transaction» на всё время вызова). После
+    LLM нужна только запись в кэш (Redis) — БД не открывается.
     """
+    # 1) сбор данных и контекста — с сессией БД
     db = SessionLocal()
     try:
         field = db.get(Field, field_id)
@@ -255,31 +261,45 @@ def refresh_insights(field_id: uuid.UUID, day: date) -> None:
             logger.warning("insights: VRA-расчёт не удался", exc_info=True)
 
         items = build_items(db, field_id, vra_iqr=vra_iqr, vra_day=day)
-        summary: str | None = None
-        if items:
+        context = _llm_context(db, field, items) if items else ""
+    finally:
+        db.close()  # вернуть соединение в пул ДО тяжёлого шага
+
+    # 2) инференс LLM — без БД, с ограничением параллелизма (CPU, #101)
+    summary: str | None = None
+    if items:
+        if not _llm_semaphore.acquire(timeout=LLM_QUEUE_TIMEOUT_SECONDS):
+            logger.warning(
+                "insights: очередь LLM (>%s c) — сводка поля %s отложена до повторного запроса",
+                LLM_QUEUE_TIMEOUT_SECONDS,
+                field_id,
+            )
+            return
+        try:
             summary = _checked_summary(
                 llm.summarize(
                     PROMPT,
-                    _llm_context(db, field, items),
+                    context,
                     timeout=LLM_BACKGROUND_TIMEOUT_SECONDS,
                     attempts=1,
                     keep_alive=LLM_KEEP_ALIVE,
                 ),
                 items,
             )
-        else:
-            summary = NO_DEVIATIONS_SUMMARY
+        finally:
+            _llm_semaphore.release()
+    else:
+        summary = NO_DEVIATIONS_SUMMARY
 
-        resp = InsightsResponse(
-            field_id=field_id,
-            generated_at=datetime.now(UTC),
-            source="rules+llm" if summary is not None else "rules",
-            summary=summary,
-            items=items,
-        )
-        cache_set(_key(field_id, day), resp.model_dump(mode="json"), INSIGHTS_TTL_SECONDS)
-    finally:
-        db.close()
+    # 3) публикация — только Redis, сессия БД не нужна
+    resp = InsightsResponse(
+        field_id=field_id,
+        generated_at=datetime.now(UTC),
+        source="rules+llm" if summary is not None else "rules",
+        summary=summary,
+        items=items,
+    )
+    cache_set(_key(field_id, day), resp.model_dump(mode="json"), INSIGHTS_TTL_SECONDS)
 
 
 __all__ = [
