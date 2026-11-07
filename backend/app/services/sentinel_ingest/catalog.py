@@ -135,7 +135,7 @@ def log_source(db: Session, status: str, reason: str | None) -> None:
 
 def run_catalog_cycle(
     db: Session,
-    client: EarthSearchStacClient,
+    client: StacSearchClient,
     *,
     date_from: date,
     date_to: date,
