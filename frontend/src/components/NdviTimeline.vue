@@ -239,16 +239,6 @@ const lastPoint = computed(() => props.points[lastClearIdx.value] ?? null)
   stroke-width: 1.5;
 }
 
-.ndvi__val {
-  font-size: 9px;
-  fill: #616161;
-}
-
-.ndvi__val--last {
-  font-weight: 700;
-  fill: #2e7d32;
-}
-
 .ndvi__date {
   font-size: 9px;
   fill: #9e9e9e;
