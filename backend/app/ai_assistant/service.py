@@ -203,7 +203,13 @@ def _checked_summary(summary: str | None, items: list[InsightItem]) -> str | Non
     """Guardrail §8.2: числа сводки обязаны встречаться в items, иначе fallback."""
     if not summary:
         return None
-    allowed = set(_NUM_RE.findall(json.dumps(items, ensure_ascii=False).replace(",", ".")))
+    allowed = set(
+        _NUM_RE.findall(
+            json.dumps(
+                [item.model_dump(mode="json") for item in items], ensure_ascii=False
+            ).replace(",", ".")
+        )
+    )
     found = set(_NUM_RE.findall(summary.replace(",", ".")))
     if found <= allowed:
         return summary
