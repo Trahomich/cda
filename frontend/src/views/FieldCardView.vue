@@ -285,6 +285,29 @@ async function loadYield() {
   }
 }
 
+/* ── «Выводы ассистента» (API-51, §7.4): детекторы + LLM-сводка ── */
+
+const insights = ref<InsightsResponse | null>(null)
+const insightsLoading = ref(true)
+
+async function loadInsights() {
+  // null (404 поля/прочее) — блок покажет «недоступны»; кэша на клиенте нет.
+  insights.value = await getInsights(fieldId)
+  insightsLoading.value = false
+}
+
+/** Значок важности детектора (§7.4): info ℹ / warn ⚠ / alert ⛔. */
+const SEVERITY_MARKS: Record<InsightSeverity, string> = {
+  info: 'ℹ',
+  warn: '⚠',
+  alert: '⛔',
+}
+
+/** Сцена выбранной даты слоя с вымоканием (§7.4) — бейдж у даты. */
+const selectedWaterlogged = computed(
+  () => ndvi.value.find((p) => p.date === renderDate.value)?.waterlogged === true,
+)
+
 
 /** Позиция PNG в SVG: bbox рендера (X-Field-Bbox) → координаты рамки мини-карты. */
 const layerRect = computed(() => {
