@@ -79,22 +79,9 @@ def build_items(
     scenes = detectors.load_scenes(db, field_id)
     latest = scenes[-1] if scenes else None
 
-    items: list[InsightItem] = []
-    items.append(detectors.detect_ndvi_drop(scenes))
-    items.append(detectors.detect_ndvi_stagnation(scenes))
-
     precip_7d = None
     if latest is not None:
         precip_7d = precip_sums_7d(db, field_id, [latest.captured_at]).get(latest.captured_at)
-    items.append(detectors.detect_waterlogging(latest, precip_7d))
-
-    if latest is not None:
-        precip_14d, gdd_14d, gdd_days = detectors.weather_window_14d(
-            db, field_id, latest.captured_at
-        )
-        items.append(detectors.detect_drought(precip_14d, gdd_14d, gdd_days, latest.captured_at))
-    else:
-        items.append(None)
 
     drought: InsightItem | None = None
     if latest is not None:
