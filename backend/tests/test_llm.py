@@ -5,8 +5,9 @@ OLLAMA_BASE_URL — None без единого запроса; таймаут/н
 1 повтора — None; успех — текст «response».
 """
 
+import json
+
 import httpx
-import pytest
 from app.ai_assistant.llm import DEFAULT_MODEL, summarize
 
 
@@ -29,9 +30,7 @@ def test_summarize_success_returns_response_text() -> None:
     assert len(seen) == 1
     req = seen[0]
     assert str(req.url) == "http://ollama.local:11434/api/generate"
-    body = httpx.Request("POST", req.url, content=req.read()).json() if False else __import__(
-        "json"
-    ).loads(req.read().decode())
+    body = json.loads(req.read().decode())
     assert body["model"] == DEFAULT_MODEL  # qwen3.5:9b (09 §8.1)
     assert body["stream"] is False
     assert body["options"] == {"temperature": 0.3, "num_ctx": 4096}
@@ -39,24 +38,20 @@ def test_summarize_success_returns_response_text() -> None:
 
 
 def test_summarize_empty_base_url_returns_none_without_network() -> None:
-    """Пустой OLLAMA_BASE_URL → None, запросов нет вовсе (REQ-NF-009)."""
+    """Пустой OLLAMA_BASE_URL → None, запросов нет вовсе (REQ-NF-009).
+
+    Handler кидает AssertionError — если бы запрос случился, тест упал бы
+    (исключение из MockTransport не глотается деградацией).
+    """
 
     def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
         raise AssertionError("запрос не должен выполняться при пустом base URL")
 
-    with pytest.raises(AssertionError, match="не должен"):
-        summarize(
-            "p",
-            "c",
-            http=_client(handler),
-            base_url="",
-        )
-    assert (
-        summarize("p", "c", http=_client(handler), base_url="   ") is None
-    )  # пробелы = пусто
+    for empty in ("", "   "):
+        assert summarize("p", "c", http=_client(handler), base_url=empty) is None
 
 
-def test_summarize_timeout_retries_once_then_none(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_summarize_timeout_retries_once_then_none() -> None:
     """Таймаут: 1 повтор, затем None (деградация)."""
     calls: list[int] = []
 
@@ -75,25 +70,23 @@ def test_summarize_timeout_retries_once_then_none(monkeypatch: pytest.MonkeyPatc
 
 def test_summarize_server_error_retries_then_none() -> None:
     """HTTP 5xx → повтор → None; HTTP 4xx → None без повтора."""
-    calls5xx: list[int] = []
+    calls_5xx: list[int] = []
 
-    def handler5xx(request: httpx.Request) -> httpx.Response:
-        calls5xx.append(1)
+    def handler_5xx(request: httpx.Request) -> httpx.Response:
+        calls_5xx.append(1)
         return httpx.Response(503, text="overloaded")
 
-    assert (
-        summarize("p", "c", http=_client(handler5xx), base_url="http://o:11434") is None
-    )
-    assert len(calls5xx) == 2
+    assert summarize("p", "c", http=_client(handler_5xx), base_url="http://o:11434") is None
+    assert len(calls_5xx) == 2
 
-    calls4xx: list[int] = []
+    calls_4xx: list[int] = []
 
-    def handler4xx(request: httpx.Request) -> httpx.Response:
-        calls4xx.append(1)
+    def handler_4xx(request: httpx.Request) -> httpx.Response:
+        calls_4xx.append(1)
         return httpx.Response(404, json={"error": "model not found"})
 
-    assert summarize("p", "c", http=_client(handler4xx), base_url="http://o:11434") is None
-    assert len(calls4xx) == 1  # клиентская ошибка не повторяется
+    assert summarize("p", "c", http=_client(handler_4xx), base_url="http://o:11434") is None
+    assert len(calls_4xx) == 1  # клиентская ошибка не повторяется
 
 
 def test_summarize_empty_response_is_none() -> None:
@@ -102,24 +95,18 @@ def test_summarize_empty_response_is_none() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"response": "   ", "done": True})
 
-    assert (
-        summarize("p", "c", http=_client(handler), base_url="http://o:11434") is None
-    )
+    assert summarize("p", "c", http=_client(handler), base_url="http://o:11434") is None
 
 
 def test_summarize_model_override() -> None:
     """Явная модель переопределяет настройку (проверяется в payload)."""
 
     def handler(request: httpx.Request) -> httpx.Response:
-        import json
-
         body = json.loads(request.read().decode())
         assert body["model"] == "llama3:8b"
         return httpx.Response(200, json={"response": "ok"})
 
     assert (
-        summarize(
-            "p", "c", http=_client(handler), base_url="http://o:11434", model="llama3:8b"
-        )
+        summarize("p", "c", http=_client(handler), base_url="http://o:11434", model="llama3:8b")
         == "ok"
     )
