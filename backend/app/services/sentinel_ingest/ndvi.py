@@ -148,6 +148,25 @@ def _read_band_window(href: str, contour_geojson: dict) -> tuple[np.ndarray, obj
         ds.close()
 
 
+def _read_scl_grid(assets: dict, transform, crs, out_shape) -> np.ndarray:
+    """SCL-канал (20 м) в сетку другого канала (10 м, nearest).
+
+    Отдельный COG открывается по своему окну (границы контура) и
+    перепроецируется в переданную сетку. Вне плашки — 0 (nodata, не облако).
+    Используется зональной статистикой и рендерами (#83).
+    """
+    from rasterio.enums import Resampling
+    from rasterio.warp import reproject, transform_geom
+    from rasterio.windows import Window, from_bounds
+    from shapely.geometry import shape
+
+    scl_ds = _open_cog(assets["scl"])
+    try:
+        geom_scl = transform_geom("EPSG:4326", scl_ds.crs, assets["scl_contour"])  # не используется
+    finally:
+        pass
+
+
 def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     """Зональная статистика NDVI поля по COG-активам сцены (b04/b08/scl).
 
