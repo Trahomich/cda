@@ -1,5 +1,8 @@
 # Прод-стек ЦДА (сервер cda@192.168.99.201, каталог ~/cda).
-# Секреты — в ../.env на сервере (вне git): POSTGRES_PASSWORD, JWT_SECRET, TUNNEL_TOKEN.
+# Секреты — в ../.env на сервере (вне git): POSTGRES_PASSWORD, JWT_SECRET.
+# 2026-11-07: туннель Cloudflare, fragrelay-релеи и SOCKS-прокси исключены из
+# схемы по решению пользователя; публикация — LAN http://192.168.99.201:8080
+# (новый способ публикации наружу определяется отдельно).
 # Запуск: docker compose -f docker-compose.prod.yml --env-file ../.env up -d --build
 # Подробности: docs/deploy/README.md
 
