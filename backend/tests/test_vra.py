@@ -224,9 +224,7 @@ class TestVraZones:
         """Однородное поле (IQR NDVI < 0.12): 422 vra_uniform_field, без зон."""
         make_satellite_source(db_session)
         field_id = make_field(db_session, name="Ровное-1")
-        make_scene(
-            db_session, field_id, make_vra_rasters(tmp_path, np.full((N, N), 800), seed=11)
-        )
+        make_scene(db_session, field_id, make_vra_rasters(tmp_path, np.full((N, N), 800), seed=11))
         resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
         assert resp.status_code == 422, resp.text
         assert resp.json()["code"] == "vra_uniform_field"
