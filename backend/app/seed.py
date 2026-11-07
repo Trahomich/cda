@@ -223,6 +223,10 @@ CULTURES: list[dict] = [
         "crop_group": "tubers",
         "color_hex": "#e57373",
         "repeat_years": 5,
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га
+        "yield_k_base": -60.0,
+        "yield_k_ndvi_max": 350.0,
+        "yield_k_ndvi_int": 250.0,
     },
     {
         "name": "Свёкла сахарная",
