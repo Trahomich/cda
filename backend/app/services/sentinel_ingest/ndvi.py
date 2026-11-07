@@ -197,6 +197,43 @@ def _read_scl_grid(
         scl_ds.close()
 
 
+def _zonal_ndwi(
+    assets: dict,
+    contour_geojson: dict,
+    nir_arr,
+    nir_transform,
+    valid,
+) -> tuple[float, float] | None:
+    """(ndwi_mean, ndwi_p90) по каналу B03 на сетке NIR (docs/06 §7.4, #91).
+
+    None — активов без b03 (строки каталога до #83) или сетка канала не совпала
+    с окном: сцена сохраняется как раньше, NDWI-колонки остаются NULL.
+    Пиксели — те же, что у NDVI (контур, маска SCL облаков).
+    """
+    href = assets.get(NDWI_BAND_ASSET)
+    if not href:
+        return None
+    try:
+        green_arr, green_transform, _ = _read_band_window(href, contour_geojson)
+    except DataGapError:
+        logger.warning("sentinel-ndvi: NDWI пропущен — поле вне плашки b03", exc_info=True)
+        return None
+    if green_arr.shape != nir_arr.shape or green_transform != nir_transform:
+        logger.warning("sentinel-ndvi: NDWI пропущен — b03 на другой сетке (окно не совпало)")
+        return None
+
+    ndwi = compute_ndwi_array(green_arr.astype("float32"), nir_arr.astype("float32"))
+    pixels = ndwi[valid & np.isfinite(ndwi)]
+    if pixels.size == 0:
+        logger.warning("sentinel-ndvi: NDWI пропущен — нет валидных пикселей")
+        return None
+    validate_index_values("ndwi", pixels)
+    return (
+        round(float(pixels.mean()), 3),
+        round(float(np.percentile(pixels, 90)), 3),
+    )
+
+
 def zonal_ndvi(assets: dict, contour_geojson: dict) -> NdviStats:
     """Зональная статистика NDVI поля по COG-активам сцены (b04/b08/scl).
 
