@@ -92,7 +92,9 @@ def _err_no_data(field_id: uuid.UUID, reason: str) -> AppError:
     )
 
 
-def latest_scene(db: Session, field_id: uuid.UUID, *, year: int | None = None) -> SatelliteScene | None:
+def latest_scene(
+    db: Session, field_id: uuid.UUID, *, year: int | None = None
+) -> SatelliteScene | None:
     """Последняя чистая NDVI-сцена поля (в БД только cloud ≤ 60, 05 §5).
 
     year — сцены только сезона YYYY (§7.5).
