@@ -1068,7 +1068,8 @@ export class MockTransport implements Transport {
       if (!field) {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${ndviMatch[1]} не найдено`)
       }
-      const scenes = ndviOf(FIELD_N.get(field.field_id)!).map((p) => ({
+      const ndviPoints = ndviOf(FIELD_N.get(field.field_id)!)
+      const scenes = ndviPoints.map((p, i) => ({
         scene_id: `scene-${p.date}-${field.field_id.slice(-4)}`,
         field_id: field.field_id,
         index: 'ndvi',
@@ -1082,6 +1083,8 @@ export class MockTransport implements Transport {
         source_id: 'satellite.sentinel2-l2a',
         trust: 0.9,
         anomaly_zones_ref: null,
+        // §7.3: рендеры есть у последних дат сезона (старые — как исторические)
+        render_available: i >= ndviPoints.length - 3,
       }))
       return ok({
         items: scenes,
