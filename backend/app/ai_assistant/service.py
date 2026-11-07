@@ -286,7 +286,7 @@ def _llm_context(
         )
         parts.append(f"Последние работы: {works}.")
 
-    scenes = detectors.load_scenes(db, field.id)
+    scenes = detectors.load_scenes(db, field.id, year=year)
     if scenes:
         last10 = scenes[-10:]
         series = ", ".join(f"{s.captured_at.isoformat()}: {s.ndvi_mean:.3f}" for s in last10)
