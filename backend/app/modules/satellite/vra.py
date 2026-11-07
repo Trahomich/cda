@@ -222,7 +222,7 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> tuple[fl
     )
     bbox = tuple(round(v, 7) for v in (west, south, east, north))
 
-    return VraZones(
+    return iqr, VraZones(
         captured_at=scene.captured_at,
         iqr_ndvi=iqr,
         zones=zones,
