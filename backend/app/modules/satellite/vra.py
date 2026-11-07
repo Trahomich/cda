@@ -217,7 +217,7 @@ def _to_cache(vra: VraZones) -> dict:
     return {
         "captured_at": vra.captured_at.isoformat(),
         "iqr_ndvi": vra.iqr_ndvi,
-        "zones": [z.__dict__ | {"label": z.label} for z in vra.zones],
+        "zones": [asdict(z) for z in vra.zones],
         "png": base64.b64encode(vra.png).decode("ascii"),
         "width": vra.width,
         "height": vra.height,
