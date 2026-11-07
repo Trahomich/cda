@@ -257,6 +257,10 @@ CULTURES: list[dict] = [
         "forage_flag": True,
         "crop_group": "grasses",
         "color_hex": "#43a047",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га сена
+        "yield_k_base": -25.0,
+        "yield_k_ndvi_max": 160.0,
+        "yield_k_ndvi_int": 130.0,
     },
     {
         "name": "Люцерна",
