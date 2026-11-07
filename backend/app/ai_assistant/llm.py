@@ -34,12 +34,18 @@ def summarize(
     base_url: str | None = None,
     model: str | None = None,
     timeout: float = REQUEST_TIMEOUT_SECONDS,
+    keep_alive: str | None = None,
+    attempts: int | None = None,
 ) -> str | None:
     """Свести контекст данных хозяйства в короткий текст через Ollama.
 
     ``None`` — Ollama не сконфигурирован (пустой OLLAMA_BASE_URL), недоступен,
     превысил таймаут после повтора или вернул пустой текст: вызывающий код
     работает дальше без ИИ-сводки (деградация, §8.1).
+
+    Фоновые вызовы (#93, §8.1): ``timeout=300`` + ``attempts=1`` (без
+    повтора) и ``keep_alive="30m"`` — модель не выгружается между сводками
+    (холодный старт qwen3.5:9b ~114 с, 2026-11-07).
     """
     settings = get_settings()
     url_root = (settings.ollama_base_url if base_url is None else base_url).strip()
@@ -47,17 +53,20 @@ def summarize(
         return None  # ИИ-текст выключен: без единого сетевого запроса
     chosen_model = (model or settings.ollama_model or DEFAULT_MODEL).strip() or DEFAULT_MODEL
 
-    body = {
+    max_attempts = RETRY_ATTEMPTS if attempts is None else max(1, int(attempts))
+    body: dict = {
         "model": chosen_model,
         "prompt": f"{prompt}\n\nДанные хозяйства (context):\n{context}",
         "stream": False,
         "options": {"temperature": 0.3, "num_ctx": 4096},
     }
+    if keep_alive:
+        body["keep_alive"] = keep_alive
 
     own_client = http is None
     client = http or httpx.Client(timeout=timeout)
     try:
-        for attempt in range(1, RETRY_ATTEMPTS + 1):
+        for attempt in range(1, max_attempts + 1):
             try:
                 resp = client.post(f"{url_root.rstrip('/')}/api/generate", json=body)
                 if resp.status_code >= 500:  # сервер перегружен — повтор
