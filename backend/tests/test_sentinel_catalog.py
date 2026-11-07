@@ -150,7 +150,7 @@ class TestStacClient:
             assert item.asset(band).endswith(f"/{band}.tif")
 
     def test_esa_asset_names_mapped(self):
-        """earth-search отдаёт ESA-имена red/nir → канонические b04/b08."""
+        """earth-search отдаёт ESA-имена red/nir/blue/green → канонические."""
 
         def handler(request: httpx.Request) -> httpx.Response:
             feature = stac_feature("S2C_37UFT_20261031_0_L2A")
@@ -159,6 +159,7 @@ class TestStacClient:
                 "nir": {"href": "https://x/nir.tif"},
                 "scl": {"href": "https://x/scl.tif"},
                 "blue": {"href": "https://x/blue.tif"},
+                "green": {"href": "https://x/green.tif"},
             }
             return httpx.Response(200, json={"features": [feature]})
 
@@ -166,6 +167,8 @@ class TestStacClient:
         assert item.assets == {
             "b04": "https://x/red.tif",
             "b08": "https://x/nir.tif",
+            "b02": "https://x/blue.tif",
+            "b03": "https://x/green.tif",
             "scl": "https://x/scl.tif",
         }
 
