@@ -901,7 +901,10 @@ function windowsOf(n: number, type: WindowOperationType, fieldId: string) {
 
 export class MockTransport implements Transport {
   async request(method: string, path: string, body?: unknown): Promise<TransportResponse> {
-    await delay(200) // имитация сети
+    // Имитация сети; задержку можно переопределить из e2e через
+    // window.__CDA_MOCK_DELAY__ (v2-fix-E: проверка скелетонов).
+    const hook = globalThis as { __CDA_MOCK_DELAY__?: number }
+    await delay(hook.__CDA_MOCK_DELAY__ ?? 200)
     const [pathname, search = ''] = path.split('?')
     const params = new URLSearchParams(search)
 
