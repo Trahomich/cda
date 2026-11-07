@@ -347,7 +347,7 @@ def run_ndvi_cycle(
     # Данные строк — плоскими значениями ДО rollback: он экспирит ORM-объекты,
     # и ленивая перезагрузка атрибутов в рабочих потоках била бы по сессии
     # из нескольких потоков сразу (InvalidRequestError: concurrent operations).
-    payload: dict[int, tuple[uuid.UUID, dict]] = {}
+    payload: dict[int, tuple[uuid.UUID, dict, str, date]] = {}
     for row in rows:
         if row.field_id not in contours:
             contours[row.field_id] = lookup(str(row.field_id))
