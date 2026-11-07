@@ -6,12 +6,14 @@
 // складная легенда культур (#55, замечания пользователя №3–4). Панель «Список» —
 // таблица полей с фильтрами (вкладки).
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Map as LeafletMap } from 'leaflet'
 import L from 'leaflet'
 import { getCultureReferences, getFields } from '@/api'
 import type { CultureReference, Field } from '@/api/types'
 import FieldsListPanel from '@/components/FieldsListPanel.vue'
 
+const router = useRouter()
 const mapEl = ref<HTMLElement | null>(null)
 const loading = ref(true)
 const failed = ref(false)
