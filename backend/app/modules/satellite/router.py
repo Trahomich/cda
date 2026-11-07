@@ -40,6 +40,7 @@ from app.modules.satellite.schemas import (
     VraZoneItem,
     VraZonesResponse,
 )
+from app.modules.satellite.waterlog import precip_sums_7d, waterlogged
 from app.services.sentinel_ingest.renders import (
     RENDER_VARIANTS,
     meta_path,
