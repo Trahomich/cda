@@ -402,10 +402,21 @@ function fmtNum(v: number, digits = 1): string {
           <svg
             v-else
             class="card360__contour"
+            :class="{ 'card360__contour--layered': !!layerRect }"
             viewBox="0 0 200 120"
             role="img"
             aria-label="Контур поля"
           >
+            <image
+              v-if="layer && layerRect"
+              class="card360__ndvi-layer"
+              :href="layer.url"
+              :x="layerRect.x"
+              :y="layerRect.y"
+              :width="layerRect.width"
+              :height="layerRect.height"
+              preserveAspectRatio="none"
+            />
             <polygon
               :points="contourPoints"
               class="card360__polygon"
