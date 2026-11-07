@@ -198,17 +198,22 @@ def field_yield_forecast(field_id: uuid.UUID, db: DbSession) -> YieldForecastRes
                 .where(
                     SatelliteScene.field_id == field.id,
                     SatelliteScene.index == "ndvi",
+                    # только чистые сцены (docs/06 §7.4); констрейнт БД уже
+                    # гарантирует cloud ≤ 60, фильтр — явно, на случай его ослабления
+                    SatelliteScene.cloud_pct <= CLEAN_CLOUD_PCT,
                     func.extract("year", SatelliteScene.captured_at) == year,
                 )
                 .order_by(SatelliteScene.captured_at)
             )
         )
 
-    # сезон = год последней NDVI-сцены поля; сцен нет — берём цикл по правилу
-    # current_cycles (сцены года цикла всё равно потребуются для проверки 422)
+    # сезон = год последней чистой NDVI-сцены поля; сцен нет — берём цикл по
+    # правилу current_cycles (сцены года цикла потребуются для проверки 422)
     last_scene_year = db.scalar(
         select(func.extract("year", func.max(SatelliteScene.captured_at))).where(
-            SatelliteScene.field_id == field.id, SatelliteScene.index == "ndvi"
+            SatelliteScene.field_id == field.id,
+            SatelliteScene.index == "ndvi",
+            SatelliteScene.cloud_pct <= CLEAN_CLOUD_PCT,
         )
     )
     cycle = None
