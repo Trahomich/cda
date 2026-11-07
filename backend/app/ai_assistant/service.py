@@ -46,6 +46,14 @@ INSIGHTS_TTL_SECONDS = 24 * 3600
 LLM_BACKGROUND_TIMEOUT_SECONDS = 300.0
 LLM_KEEP_ALIVE = "30m"
 
+#: параллелизм фоновых LLM-вызовов (CPU-инференс: конкурентные вызовы
+#: перегружают сервер и рвутся по таймауту, #101) и ожидание очереди.
+#: Не дождались — сводка появится при следующем GET (get_insights
+#: перезапускает доработку, пока summary в кэше null).
+LLM_PARALLELISM = 1
+LLM_QUEUE_TIMEOUT_SECONDS = 600.0
+_llm_semaphore = threading.BoundedSemaphore(LLM_PARALLELISM)
+
 #: пустой набор детекторов — сводка фиксированная, LLM не зовётся (§8.2)
 NO_DEVIATIONS_SUMMARY = "Отклонений по данным детекторов не выявлено."
 
