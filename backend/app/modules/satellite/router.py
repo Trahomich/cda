@@ -516,9 +516,14 @@ def field_vra(
     response_class=Response,
     summary="API-52: PNG-карта зон внесения (геопривязка — как §7.3)",
 )
-def field_vra_map(field_id: uuid.UUID, db: DbSession) -> Response:
+def field_vra_map(
+    field_id: uuid.UUID,
+    db: DbSession,
+    *,
+    year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"),
+) -> Response:
     field = _get_field(db, field_id)
-    result = vra.vra_zones(db, field)
+    result = vra.vra_zones(db, field, year=year)
     return Response(
         content=result.png,
         media_type="image/png",
