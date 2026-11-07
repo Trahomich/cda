@@ -190,6 +190,7 @@ export async function getFieldNdvi(fieldId: string): Promise<NdviPoint[]> {
       index_max: s.index_max,
       trust: s.trust,
       render_available: s.render_available ?? false,
+      waterlogged: s.waterlogged ?? null,
     }))
     .sort((a, b) => a.date.localeCompare(b.date))
 }
