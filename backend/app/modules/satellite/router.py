@@ -108,6 +108,7 @@ def field_ndvi(
     settings: SettingsDep,
     *,
     index: str = Query(default="ndvi", description=f"Индекс: {', '.join(INDICES)}"),
+    year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"),
     date_from: date | None = Query(default=None, description="Начало периода (включительно)"),
     date_to: date | None = Query(default=None, description="Конец периода (включительно)"),
     limit: int = Query(default=50, ge=1, le=366),
@@ -122,6 +123,8 @@ def field_ndvi(
             status_code=422,
         )
     filters = [SatelliteScene.field_id == field.id, SatelliteScene.index == index]
+    if year is not None:
+        filters.append(func.extract("year", SatelliteScene.captured_at) == year)
     if date_from is not None:
         filters.append(SatelliteScene.captured_at >= date_from)
     if date_to is not None:
