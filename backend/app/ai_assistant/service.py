@@ -88,10 +88,19 @@ def _key(field_id: uuid.UUID, day: date) -> str:
 
 
 def build_items(
-    db: Session, field_id: uuid.UUID, *, vra_iqr: float | None = None, vra_day: date | None = None
+    db: Session,
+    field_id: uuid.UUID,
+    *,
+    vra_iqr: float | None = None,
+    vra_day: date | None = None,
+    year: int | None = None,
 ) -> list[InsightItem]:
-    """Все детекторы по данным поля (чистые функции над собранными данными)."""
-    scenes = detectors.load_scenes(db, field_id)
+    """Все детекторы по данным поля (чистые функции над собранными данными).
+
+    year (§7.5) — сцены сезона YYYY (исторические выводы); без него — вся
+    история (текущее поведение).
+    """
+    scenes = detectors.load_scenes(db, field_id, year=year)
     latest = scenes[-1] if scenes else None
 
     # осадки 7 суток к дате каждой сцены: waterlogging смотрит все сцены (§8.2)
