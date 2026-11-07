@@ -159,18 +159,6 @@ def field_ndvi(
     )
 
 
-def _render_meta_or_none(
-    db: DbSession, field: Field, captured_at: date
-) -> tuple[str, int, int] | None:
-    """(bbox, width, height) рендера: сайдкар ингеста, иначе контур поля.
-
-    Фолбэк по контуру: сайдкар писался до #83-формата или утерян — оверлей
-    займёт рамку контура (грубее окна растра, но без 500).
-    """
-    meta_file = meta_path("", field.id, captured_at)  # только имя, без каталога
-    raise NotImplementedError  # заменяется вызовом ниже
-
-
 @router.get(
     "/fields/{field_id}/ndvi/{captured_at}/render.png",
     response_class=FileResponse,
