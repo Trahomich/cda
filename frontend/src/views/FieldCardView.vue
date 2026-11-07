@@ -92,11 +92,10 @@ const currentSeason = computed(
 )
 
 const currentCycle = computed(() => {
-  const bySeason = currentSeason.value
-    ? card.value?.cycles.find((c) => c.year === currentSeason.value.year)
-    : undefined
+  const season = currentSeason.value
+  const bySeason = season ? card.value?.cycles.find((c) => c.year === season.year) : undefined
   // Поля seasons у API-08 и API-49 совпадают (year/culture_name/kind).
-  return bySeason ?? (currentSeason.value as FieldCycle | null) ?? card.value?.cycles[0] ?? null
+  return bySeason ?? (season as FieldCycle | null) ?? card.value?.cycles[0] ?? null
 })
 
 /** Цвет контура (п.5, v2-fix-A): color_hex культуры текущего цикла из
