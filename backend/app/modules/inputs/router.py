@@ -100,9 +100,7 @@ def _plan_window(db: Session, cycle: CropCycle, plan: TreatmentPlan) -> WeatherW
     и approve (API-16). null — не spraying (без даты) или нет прогноза в кэше."""
     if plan.operation_type != "spraying" or plan.planned_date is None:
         return None
-    result = weather_window_for_plan(
-        db, field_id=cycle.field_id, planned_date=plan.planned_date
-    )
+    result = weather_window_for_plan(db, field_id=cycle.field_id, planned_date=plan.planned_date)
     if result is None:
         return None
     return WeatherWindow(

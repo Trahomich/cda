@@ -103,7 +103,9 @@ def renders_exist(render_dir: Path | str, field_id, captured_at: date) -> bool:
     )
 
 
-def _palette_rgb(t: np.ndarray, palette: tuple[tuple[float, tuple[int, int, int]], ...]) -> np.ndarray:
+def _palette_rgb(
+    t: np.ndarray, palette: tuple[tuple[float, tuple[int, int, int]], ...]
+) -> np.ndarray:
     """t ∈ [0,1] → RGB по опорным точкам палитры (линейная интерполяция)."""
     stops = np.array([s for s, _ in palette], dtype="float32")
     colors = np.array([c for _, c in palette], dtype="float32")
@@ -194,9 +196,7 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
 
     # --- вариант truecolor: композит B04/B03/B02, перцентильная нормировка
     lo, hi = np.percentile(
-        np.concatenate(
-            [a[inside].ravel() for a in (red_d, green_d, blue_d) if a[inside].size]
-        ),
+        np.concatenate([a[inside].ravel() for a in (red_d, green_d, blue_d) if a[inside].size]),
         (_TC_LO_PCT, _TC_HI_PCT),
     )
     span = float(hi - lo) or 1.0
@@ -224,9 +224,7 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     )
 
 
-def write_renders(
-    render_dir: Path | str, field_id, captured_at: date, render: SceneRender
-) -> None:
+def write_renders(render_dir: Path | str, field_id, captured_at: date, render: SceneRender) -> None:
     """Сохранить PNG обоих вариантов + сайдкар геопривязки (атомарно по датам)."""
     meta = meta_path(render_dir, field_id, captured_at)
     meta.parent.mkdir(parents=True, exist_ok=True)

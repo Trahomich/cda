@@ -156,9 +156,7 @@ def _read_band_window(href: str, contour_geojson: dict) -> tuple[np.ndarray, obj
         ds.close()
 
 
-def _read_scl_grid(
-    assets: dict, contour_geojson: dict, transform, crs, out_shape
-) -> np.ndarray:
+def _read_scl_grid(assets: dict, contour_geojson: dict, transform, crs, out_shape) -> np.ndarray:
     """SCL-канал (20 м) в сетку другого канала (10 м, nearest).
 
     SCL-окно читается по своему окну (границы контура) и перепроецируется

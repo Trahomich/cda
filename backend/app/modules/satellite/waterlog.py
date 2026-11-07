@@ -47,9 +47,7 @@ def waterlogged(
     )
 
 
-def precip_sums_7d(
-    db: Session, field_id, dates: Iterable[date]
-) -> dict[date, float | None]:
+def precip_sums_7d(db: Session, field_id, dates: Iterable[date]) -> dict[date, float | None]:
     """Сумма осадков за 7 суток до каждой даты (мм) по фактам погоды поля.
 
     None — наблюдений в окне нет (данных нет → waterlogged=null). NULL

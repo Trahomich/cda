@@ -133,9 +133,7 @@ def field_ndvi(
     render_dir = settings.ndvi_render_dir or None
     # осадки 7 сут для флага вымокания (§7.4): один запрос на страницу,
     # только для сцен с NDWI-статистикой (старые строки — NULL)
-    precip = precip_sums_7d(
-        db, field.id, [s.captured_at for s in scenes if s.ndwi_p90 is not None]
-    )
+    precip = precip_sums_7d(db, field.id, [s.captured_at for s in scenes if s.ndwi_p90 is not None])
     items = [
         SceneItem(
             scene_id=s.id,
@@ -269,9 +267,7 @@ def field_yield_forecast(field_id: uuid.UUID, db: DbSession) -> YieldForecastRes
     avgs = [float(s.index_avg) for s in scenes]
     ndvi_max = round(max(avgs), 3)
     ndvi_integral = round(sum(max(v - 0.2, 0.0) for v in avgs) / 100, 3)
-    forecast = (
-        float(coeffs[0]) + float(coeffs[1]) * ndvi_max + float(coeffs[2]) * ndvi_integral
-    )
+    forecast = float(coeffs[0]) + float(coeffs[1]) * ndvi_max + float(coeffs[2]) * ndvi_integral
     return YieldForecastResponse(
         field_id=field.id,
         cycle_year=cycle.year,

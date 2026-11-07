@@ -76,11 +76,7 @@ def weather_window_for_plan(
         return None
 
     reasons = _day_reasons(on_date)
-    detail = (
-        ""
-        if not reasons
-        else f"{planned_date.isoformat()}: " + ", ".join(reasons)
-    )
+    detail = "" if not reasons else f"{planned_date.isoformat()}: " + ", ".join(reasons)
 
     horizon = db.scalars(
         select(Forecast)
