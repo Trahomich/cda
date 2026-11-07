@@ -144,7 +144,11 @@ services:
 
   cloudflared:
     image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate --protocol http2 --edge fragrelay:7844 run
+    # ВРЕМЕННО (2026-11-07): SOCKS-прокси 192.168.99.45:1080 недоступен,
+    # поэтому cloudflared подключается к edge напрямую, без fragrelay.
+    # DPI-обход через релей вернуть при восстановлении прокси:
+    #   command: tunnel --no-autoupdate --protocol http2 --edge fragrelay:7844 run
+    command: tunnel --no-autoupdate --protocol http2 run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN обязателен в .env}
     depends_on:
