@@ -13,6 +13,7 @@ import type {
   TreatmentPlan,
   TreatmentPlanStatus,
 } from '@/api/types'
+import Skeleton from '@/components/Skeleton.vue'
 
 const fields = ref<Field[]>([])
 /** Операции-факты показанного месяца (API-18, date_from/date_to). */
