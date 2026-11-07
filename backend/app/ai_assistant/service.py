@@ -216,7 +216,7 @@ def _vra_peak_cached(field_id: uuid.UUID, year: int | None = None) -> tuple[date
     :{year}, ключ текущего сезона не меняется).
     """
     key = f"vra:peak:{field_id}" if year is None else f"vra:peak:{field_id}:{year}"
-    data = cache_get(f"vra:peak:{field_id}")
+    data = cache_get(key)
     if isinstance(data, dict):
         try:
             return date.fromisoformat(data["date"]), float(data["iqr_ndvi"])
