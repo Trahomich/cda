@@ -348,7 +348,7 @@ class TestSummaryFallback:
                 data_refs=[],
             )
         ]
-        assert _checked_summary("NDVI упал на 0.17 — проверьте поле 15 мая.", items) is not None
+        assert _checked_summary("NDVI упал на 0.17 — проверьте поле.", items) is not None
 
     def test_alien_number_falls_back(self) -> None:
         from app.ai_assistant.schemas import InsightItem
