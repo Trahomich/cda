@@ -62,7 +62,8 @@ test('календарь работ: сетка месяца сразу, чип�
 })
 
 test('список полей: скелетоны строк вместо «Загрузка…» (v2-fix-E)', async ({ page }) => {
-  await page.goto('/fields/list')
+  await page.goto('/fields/map')
+  await page.locator('.map-screen__tab', { hasText: 'Список' }).click()
 
   const rows = page.locator('.fields-list__state .skeleton')
   await expect(rows.first()).toBeVisible({ timeout: 10_000 })
