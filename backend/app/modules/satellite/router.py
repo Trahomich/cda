@@ -296,7 +296,7 @@ def field_ndvi_render(
     db: DbSession,
     settings: SettingsDep,
     *,
-    variant: str = Query(default="ndvi", description="ndvi | truecolor"),
+    variant: str = Query(default="ndvi", description="ndvi | truecolor | ndwi"),
 ) -> FileResponse:
     if variant not in RENDER_VARIANTS:
         raise AppError(
