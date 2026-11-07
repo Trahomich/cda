@@ -369,8 +369,9 @@ approve (API-16) ответ (200/201) дополняется объектом `w
   (index=ndwi), сайдкар тот же механизм.
 - `GET /fields/{id}/ndvi/{date}/render.png?variant=ndvi|truecolor|ndwi` —
   расширение варианта из §7.3; 404/кэш/заголовки без изменений.
-- Детектор вымокания (в статистике сцены, таблица dat_scene_stats расширяется
-  колонками `ndwi_mean`, `ndwi_p90` — decimal, NULL для старых строк):
+- Детектор вымокания (в статистике сцены: таблица dat_satellite_scene —
+  06 §2 — расширяется колонками `ndwi_mean`, `ndwi_p90` — decimal, NULL для
+  старых строк):
   вымокание фиксируется, если `ndwi_p90 ≥ 0.10` И `ndvi_mean < 0.45`
   И осадки за 7 суток по полю ≥ 20 мм (данные IF-WEATHER уже в БД);
   API-06 item дополняется `waterlogged: bool | null` (null — данных нет).
