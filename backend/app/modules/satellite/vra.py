@@ -184,12 +184,7 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> tuple[fl
     p25, p30, p70, p75 = np.percentile(values, (25.0, 30.0, 70.0, 75.0))
     iqr = round(float(p75 - p25), 3)
     if iqr < VRA_MIN_IQR:
-        raise AppError(
-            f"Поле однородно: IQR NDVI = {iqr:.3f} < {VRA_MIN_IQR} — зоны внесения не строятся",
-            code="vra_uniform_field",
-            title="Поле однородно",
-            status_code=422,
-        )
+        return iqr, None  # однородная сцена: зон нет, IQR нужен для стабильности
 
     zone_masks = (
         valid & (ndvi < p30),  # 1 — пониженное развитие
