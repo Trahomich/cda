@@ -268,6 +268,10 @@ CULTURES: list[dict] = [
         "forage_flag": True,
         "crop_group": "grasses",
         "color_hex": "#558b2f",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га сена
+        "yield_k_base": -30.0,
+        "yield_k_ndvi_max": 200.0,
+        "yield_k_ndvi_int": 160.0,
     },
     {
         "name": "Клевер с тимофеевкой",
