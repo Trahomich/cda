@@ -246,7 +246,7 @@ class TestDetectorsApi:
         dates = [TODAY - timedelta(days=4 * back) for back in range(5)]  # 5 сцен
         for day in dates:
             make_scene(db_session, fid, day, 0.40, ndwi_mean=0.02, ndwi_p90=0.12)
-        mid = dates[2]  # ländert в середине
+        mid = dates[2]  # сцена в середине сезона
         for back in range(7):  # 25 мм за 7 суток к дате mid
             make_obs(db_session, fid, mid - timedelta(days=back), precip_mm=25 / 7)
         db_session.commit()
