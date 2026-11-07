@@ -24,7 +24,6 @@ import type {
   FieldWeather,
   FieldWeatherDetail,
   ForecastPage,
-  InsightSeverity,
   InsightsResponse,
   Machine,
   MachineJob,
