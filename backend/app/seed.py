@@ -234,6 +234,10 @@ CULTURES: list[dict] = [
         "forage_flag": False,
         "crop_group": "root_crops",
         "color_hex": "#ba68c8",
+        # v3-ai #95: стартовая эмпирика NDVI→урожайность (09 §8.3), ц/га корней
+        "yield_k_base": -80.0,
+        "yield_k_ndvi_max": 380.0,
+        "yield_k_ndvi_int": 300.0,
     },
     {
         "name": "Овощи открытого грунта",
