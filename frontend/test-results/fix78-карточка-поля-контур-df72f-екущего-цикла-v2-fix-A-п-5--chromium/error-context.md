@@ -12,14 +12,10 @@
 # Error details
 
 ```
-Test timeout of 60000ms exceeded.
-```
+Error: expect(received).toBe(expected) // Object.is equality
 
-```
-Error: locator.evaluate: Test timeout of 60000ms exceeded.
-Call log:
-  - waiting for locator('.card360__polygon polygon')
-
+Expected: "rgb(232, 196, 107)"
+Received: "rgb(239, 224, 168)"
 ```
 
 # Page snapshot
@@ -212,10 +208,10 @@ Call log:
   47 | 
   48 |   // …совпадает с заливкой контура на мини-карте карточки.
   49 |   const polygonFill = await page
-  50 |     .locator('.card360__polygon polygon')
-> 51 |     .evaluate((el) => getComputedStyle(el).fill)
-     |      ^ Error: locator.evaluate: Test timeout of 60000ms exceeded.
-  52 |   expect(polygonFill).toBe(expected)
+  50 |     .locator('polygon.card360__polygon')
+  51 |     .evaluate((el) => getComputedStyle(el).fill)
+> 52 |   expect(polygonFill).toBe(expected)
+     |                       ^ Error: expect(received).toBe(expected) // Object.is equality
   53 | })
   54 | 
 ```
