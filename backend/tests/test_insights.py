@@ -392,3 +392,134 @@ class TestSummaryFallback:
         ]
         result = _checked_summary("Внесите 90 кг/га азота срочно!", items)
         assert result == "Падение: NDVI упал с 0.72 до 0.55: −0.17."
+
+
+class TestBackgroundFix101:
+    """#101: сессия БД не держится во время LLM-вызова; очередь LLM;
+    доработка перезапускается, пока в кэше rules-ответ без сводки."""
+
+    @staticmethod
+    def _fake_redis(monkeypatch) -> dict[str, str]:
+        import app.core.cache as cache_mod
+
+        store: dict[str, str] = {}
+
+        class FakeRedis:
+            def get(self, key):
+                return store.get(key)
+
+            def setex(self, key, ttl, value):
+                store[key] = value
+
+        monkeypatch.setattr(cache_mod, "_redis", FakeRedis())
+        return store
+
+    def test_db_released_before_llm_and_cache_updated(self, world, db_session, monkeypatch):
+        """На момент инференса пул не занят сессией фоновой задачи; параметры
+        вызова LLM — timeout=300/attempts=1/keep_alive=30m; кэш дорабатывается."""
+        from app.ai_assistant import service
+        from sqlalchemy.orm import sessionmaker
+
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        make_scene(db_session, fid, TODAY - timedelta(days=6), 0.72)
+        make_scene(db_session, fid, TODAY, 0.50)
+        db_session.commit()
+
+        store = self._fake_redis(monkeypatch)
+        test_engine = db_session.get_bind()
+        monkeypatch.setattr(service, "SessionLocal", sessionmaker(bind=test_engine))
+        state = {}
+
+        def fake_summarize(prompt, context, **kwargs):
+            state["checkedout"] = test_engine.pool.checkedout()
+            state["kwargs"] = kwargs
+            assert "ndvi_drop" in context
+            return "NDVI упал на 0.17 — проверьте поле."
+
+        monkeypatch.setattr(service.llm, "summarize", fake_summarize)
+        db_session.close()  # собственная сессия теста тоже не держит пул
+
+        service.refresh_insights(fid, TODAY)
+        assert state["checkedout"] == 0  # соединение возвращено до LLM
+        assert state["kwargs"]["timeout"] == 300.0
+        assert state["kwargs"]["attempts"] == 1
+        assert state["kwargs"]["keep_alive"] == "30m"
+
+        import json as _json
+
+        updated = _json.loads(store[f"insights:{fid}:{TODAY.isoformat()}"])
+        assert updated["source"] == "rules+llm"
+        assert updated["summary"] == "NDVI упал на 0.17 — проверьте поле."
+
+    def test_llm_queue_timeout_defers_summary(self, world, db_session, monkeypatch):
+        """Слот LLM занят и очередь истекла — задача уходит без инференса
+        и без перезаписи кэша; сводка появится при повторном запросе."""
+        from app.ai_assistant import service
+
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        make_scene(db_session, fid, TODAY - timedelta(days=6), 0.72)
+        make_scene(db_session, fid, TODAY, 0.50)
+        db_session.commit()
+
+        store = self._fake_redis(monkeypatch)
+        from sqlalchemy.orm import sessionmaker
+
+        monkeypatch.setattr(service, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
+        monkeypatch.setattr(service, "LLM_QUEUE_TIMEOUT_SECONDS", 0.1)
+        called = {"llm": False}
+        monkeypatch.setattr(
+            service.llm, "summarize", lambda *a, **k: called.__setitem__("llm", True)
+        )
+        db_session.close()
+
+        assert service._llm_semaphore.acquire(timeout=1)  # слот занят «другой» задачей
+        try:
+            service.refresh_insights(fid, TODAY)  # не падает, тихо откладывается
+        finally:
+            service._llm_semaphore.release()
+        assert called["llm"] is False
+        assert f"insights:{fid}:{TODAY.isoformat()}" not in store
+
+    def _get_with_ollama(self, client, monkeypatch, ollama="http://ollama:11434"):
+        """GET /insights с включённым Ollama (settings через DI) и шпионом фона."""
+        from app.core.config import get_settings
+        from app.ai_assistant import service
+
+        settings = get_settings().model_copy(update={"ollama_base_url": ollama})
+        client.app.dependency_overrides[get_settings] = lambda: settings
+        spy = {"n": 0}
+        monkeypatch.setattr(
+            service, "refresh_insights", lambda *a: spy.__setitem__("n", spy["n"] + 1)
+        )
+        return spy
+
+    def test_rules_response_retried_on_next_get(self, world, db_session, monkeypatch):
+        """Кэш с summary=null (доработка не успела) → повторный GET снова
+        ставит фоновую задачу; готовая rules+llm-сводка — не ставит."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        make_scene(db_session, fid, TODAY, 0.5)
+        db_session.commit()
+
+        self._fake_redis(monkeypatch)
+        spy = self._get_with_ollama(client, monkeypatch)
+        from app.core.config import get_settings
+
+        first = get_insights(client, hdr, fid)
+        assert spy["n"] == 1  # свежий расчёт — фон запланирован
+        second = get_insights(client, hdr, fid)  # кэш rules без сводки — повтор
+        assert spy["n"] == 2
+
+        import json as _json
+        import app.core.cache as cache_mod
+
+        key = f"insights:{fid}:{TODAY.isoformat()}"
+        cached = _json.loads(cache_mod.cache_get(key))
+        cached["source"] = "rules+llm"
+        cached["summary"] = "готово"
+        cache_mod.cache_set(key, cached, 3600)
+        third = get_insights(client, hdr, fid)
+        assert spy["n"] == 2  # сводка есть — фон не нужен
+        client.app.dependency_overrides.pop(get_settings, None)
