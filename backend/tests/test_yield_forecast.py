@@ -67,18 +67,14 @@ class TestYieldForecast:
         self.client = client
         self.db = db_session
         make_user(db_session, login="yf-agro", role=UserRole.AGRONOMIST, password="pw-yf")
-        make_user(
-            db_session, login="yf-mach", role=UserRole.MACHINE_OPERATOR, password="pw-yf2"
-        )
+        make_user(db_session, login="yf-mach", role=UserRole.MACHINE_OPERATOR, password="pw-yf2")
         self.auth = auth_header(client, "yf-agro", "pw-yf")
         self.field_id = make_field(db_session)
         make_satellite_source(db_session)
         yield
 
     def _get(self):
-        return self.client.get(
-            f"{API}/fields/{self.field_id}/yield-forecast", headers=self.auth
-        )
+        return self.client.get(f"{API}/fields/{self.field_id}/yield-forecast", headers=self.auth)
 
     def test_forecast_formula_and_interval(self):
         """Формула §7.4 по подставным коэффициентам и сценам; интервал ±25 %."""
