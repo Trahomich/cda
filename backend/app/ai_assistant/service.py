@@ -321,7 +321,8 @@ def refresh_insights(field_id: uuid.UUID, day: date) -> None:
             vra_iqr, vra_day = result.iqr_ndvi, result.captured_at
             vra_verdict = (
                 f"Модель дифвнесения: поле неоднородно, {len(result.zones)} зон дифвнесения, "
-                f"IQR NDVI = {result.iqr_ndvi:.3f} (пиковая сцена {result.captured_at.isoformat()})."
+                f"IQR NDVI = {result.iqr_ndvi:.3f} "
+                f"(пиковая сцена {result.captured_at.isoformat()})."
             )
         except AppError as exc:
             if exc.code == "vra_uniform_field":
