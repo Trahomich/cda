@@ -9,6 +9,7 @@
 
 from datetime import date
 
+import pytest
 from app.models.integrations import SatelliteScene
 from app.services.sentinel_ingest.ndvi import run_ndvi_cycle, zonal_ndvi
 from app.services.sentinel_ingest.ndwi_backfill import run_ndwi_backfill
