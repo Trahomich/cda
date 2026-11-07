@@ -216,18 +216,27 @@ def detect_ndvi_drop(scenes: Sequence[SceneStat]) -> InsightItem | None:
     )
 
 
-def detect_ndvi_stagnation(scenes: Sequence[SceneStat]) -> InsightItem | None:
+def detect_ndvi_stagnation(
+    scenes: Sequence[SceneStat], culture_name: str | None = None
+) -> InsightItem | None:
     """info: прирост NDVI < 0.05 за 3 чистые сцены в активной вегетации.
 
-    Только в сезон (апрель–октябрь по последней сцене) и при среднем NDVI
-    трёх сцен ≥ 0.3 (09 §8.2 v1.1): вне сезона вегетации и без вегетации
-    стагнация — норма, детектор молчит.
+    Окно сезона зависит от культуры текущего цикла (09 §8.2 v1.1):
+    озимые («озим», «Рожь», «Тритикале») — март–июнь и сентябрь–ноябрь,
+    остальные (и поле без цикла) — апрель–октябрь. Плюс средний NDVI трёх
+    сцен ≥ 0.3: вне сезона и без вегетации стагнация — норма, детектор
+    молчит.
     """
     if len(scenes) < 3:
         return None
     last3 = scenes[-3:]
-    if last3[-1].captured_at.month not in NDVI_STAGNATION_SEASON_MONTHS:
-        return None  # ноябрь–март: «рост остановился» — не совет
+    months = (
+        NDVI_STAGNATION_WINTER_MONTHS
+        if _is_winter_culture(culture_name)
+        else NDVI_STAGNATION_SEASON_MONTHS
+    )
+    if last3[-1].captured_at.month not in months:
+        return None  # вне сезона вегетации этой культуры
     mean3 = round(sum(s.ndvi_mean for s in last3) / 3, 3)
     if mean3 < NDVI_STAGNATION_MIN_MEAN:
         return None  # вегетации нет
