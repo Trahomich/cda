@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import date, datetime
+from datetime import date as Date  # noqa: F401 — алиас: поле `date: Date` в VraZonesResponse
 
 from pydantic import BaseModel, Field
 
