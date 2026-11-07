@@ -1201,6 +1201,44 @@ export class MockTransport implements Transport {
       })
     }
 
+    /* ── Зоны дифвнесения (API-52, §7.4, #97); поле 6 — однородное ── */
+    const vraMatch = /^\/fields\/([\w-]+)\/vra$/.exec(pathname)
+    if (method === 'GET' && vraMatch) {
+      const field = FIELDS.find((f) => f.field_id === vraMatch[1])
+      if (!field) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${vraMatch[1]} не найдено`)
+      }
+      const n = FIELD_N.get(field.field_id)!
+      if (n === 6) {
+        return problem(
+          422,
+          'https://cda.example/errors/uniform-field',
+          'Прогноз недоступен',
+          'Поле однородно по NDVI (IQR < 0,12): зоны дифференцированного внесения не выделяются',
+        ) // code? см. vra_uniform_field ниже
+      }
+      return ok(vraOf(n, field.field_id))
+    }
+
+    /* ── Прогноз урожайности (API-53, §7.4, #97); поле 4 — пар (без культуры) ── */
+    const yieldMatch = /^\/fields\/([\w-]+)\/yield-forecast$/.exec(pathname)
+    if (method === 'GET' && yieldMatch) {
+      const field = FIELDS.find((f) => f.field_id === yieldMatch[1])
+      if (!field) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${yieldMatch[1]} не найдено`)
+      }
+      const n = FIELD_N.get(field.field_id)!
+      if (field.current_cycle?.kind === 'fallow') {
+        return problem(
+          422,
+          'https://cda.example/errors/yield-no-culture',
+          'Прогноз недоступен',
+          'Цикл 2027 поля — пар: культура для прогноза отсутствует',
+        )
+      }
+      return ok(yieldOf(n, field.field_id, field.current_cycle?.culture_name ?? 'Пшеница озимая'))
+    }
+
     /* ── Погода (API-07): факты + прогноз + мета, как backend ── */
     const weatherMatch = /^\/fields\/([\w-]+)\/weather$/.exec(pathname)
     if (method === 'GET' && weatherMatch) {
