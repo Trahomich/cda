@@ -96,6 +96,7 @@ class TestYieldForecast:
         assert set(body) == {
             "field_id",
             "cycle_year",
+            "year",
             "culture_id",
             "culture_name",
             "method",
