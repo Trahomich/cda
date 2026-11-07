@@ -211,6 +211,8 @@ export interface NdviPoint {
   trust?: number | null
   /** PNG-рендеры обоих вариантов на диске (§7.3): дата доступна как слой. */
   render_available?: boolean
+  /** Вымокание по NDWI-детектору (§7.4): true/false; null — данных нет. */
+  waterlogged?: boolean | null
 }
 
 /** Погода: факт сейчас + прогноз 7 сут — GET /fields/{id}/weather (API-07). */
