@@ -16,6 +16,7 @@ POSTGRES_PASSWORD=<openssl rand -hex 16>
 JWT_SECRET=<openssl rand -hex 32>
 FARM_NAME=КФХ «Восход»
 OLLAMA_BASE_URL=            # ADR-08: внешний Ollama; пусто — ИИ-функции выключены (REQ-NF-009)
+OLLAMA_MODEL=qwen3.5:9b     # выбор по тесту на 201:11434 2026-11-07 (docs/09 §8.1)
 SATELLITE_ENABLED=false     # включить при наличии кредов Copernicus
 TUNNEL_TOKEN=<JSON-токен туннеля Cloudflare>
 ```
