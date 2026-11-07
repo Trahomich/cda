@@ -39,13 +39,12 @@ test('карточка поля: график NDVI — оси, значения,
 
   // Облачные снимки (3-я и 7-я сцены) — пустые кружки ◌, вне линии.
   await expect(page.locator('.ndvi__dot--cloud')).toHaveCount(2)
-  // Значения подписаны у «чистых» точек (9 − 2 облачные = 7).
-  await expect(page.locator('.ndvi__val')).toHaveCount(7)
+  // Числовых подписей у точек нет — график без мусора (v2-fix-G).
+  await expect(page.locator('.ndvi__val')).toHaveCount(0)
 
-  // Последняя «чистая» точка выделена кольцом, значение подписано жирным.
+  // Последняя «чистая» точка выделена кольцом; значение — в строке под
+  // графиком и в подсказке <title> точки.
   await expect(page.locator('.ndvi__ring')).toHaveCount(1)
-  const lastVal = page.locator('.ndvi__val--last')
-  await expect(lastVal).toHaveText('0,18')
   await expect(page.locator('.ndvi__last')).toContainText('Последний снимок: 31.07 · NDVI 0,18')
 
   // Легенда поясняет элементы графика.
