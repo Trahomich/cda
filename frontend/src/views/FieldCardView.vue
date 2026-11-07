@@ -9,7 +9,6 @@ import {
   getFieldCard,
   getFieldCropCycles,
   getFieldNdvi,
-  getFieldInsightsPlaceholder,
   getFieldVra,
   getFieldVraMap,
   getFieldWeather,
