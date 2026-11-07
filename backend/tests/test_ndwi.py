@@ -28,7 +28,12 @@ from sqlalchemy import select
 from tests.test_auth import auth_header, make_user
 from tests.test_ndvi_renders import SCENE_DATE, color_rasters  # noqa: F401
 from tests.test_satellite import make_satellite_source
-from tests.test_sentinel_ndvi import make_catalog_row, make_ndvi_field, wgs_box
+from tests.test_sentinel_ndvi import (  # noqa: F401 — фикстура scene_rasters
+    make_catalog_row,
+    make_ndvi_field,
+    scene_rasters,
+    wgs_box,
+)
 from tests.test_weather import make_weather_source
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
