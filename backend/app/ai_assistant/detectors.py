@@ -294,12 +294,15 @@ def detect_waterlogging(
     else:
         n = len(dates)
         ones, tens = n % 10, n % 100
-        word = "эпизод" if ones == 1 and tens != 11 else "эпизода" if 2 <= ones <= 4 and not 12 <= tens <= 14 else "эпизодов"
-        dates_str = f"с {dates[0].isoformat()} по {dates[-1].isoformat()} — {n} {word}"
+        plural = "эпизод" if ones == 1 and tens != 11 else "эпизода"
+        if not 2 <= ones <= 4 or 12 <= tens <= 14:
+            plural = "эпизодов"
+        dates_str = f"с {dates[0].isoformat()} по {dates[-1].isoformat()} — {n} {plural}"
 
+    alert = on_latest or wide
     return InsightItem(
         code="waterlogging",
-        severity="alert" if (alert := on_latest or wide) else "warn",  # type: ignore[arg-type]
+        severity="alert" if alert else "warn",  # type: ignore[arg-type]
         title="Признаки вымокания поля",
         detail=(
             f"Эпизоды вымокания ({dates_str}): NDWI p90 до {max_p90:.2f} ≥ "
