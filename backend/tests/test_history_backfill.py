@@ -18,7 +18,7 @@ from datetime import date
 import numpy as np
 import pytest
 from app.integrations import SourceUnavailableError
-from app.integrations.stac import CATALOG_ASSETS, FakeStacClient, StacItem
+from app.integrations.stac import FakeStacClient, StacItem
 from app.models.integrations import SatelliteCatalogItem, SatelliteScene
 from app.services.sentinel_ingest.history_backfill import (
     HistoryBackfillReport,
