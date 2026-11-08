@@ -411,6 +411,14 @@ def _is_dot_date(token: str, allowed_pairs: set[tuple[int, int]]) -> bool:
     return 1 <= d <= 31 and 1 <= m <= 12 and (d, m) in allowed_pairs
 
 
+def _is_day_component(token: str, allowed_pairs: set[tuple[int, int]]) -> bool:
+    """Целое 1–31 — день месяца из дат контекста («…08 и 09 осадки»)."""
+    if not token.isdigit():
+        return False
+    day = int(token)
+    return 1 <= day <= 31 and any(d == day for d, _ in allowed_pairs)
+
+
 def _numbers_within(text: str, allowed_nums: set[str], allowed_pairs: set[tuple[int, int]]) -> bool:
     """Guardrail §9.2 (#144): числа и даты ответа обязаны быть из контекста.
 
