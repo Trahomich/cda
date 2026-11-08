@@ -22,7 +22,7 @@ test('карточка поля: выводы ассистента — пунк�
 
   const block = page.locator('.card360__block--insights')
   await expect(block).toBeVisible({ timeout: 15_000 })
-  await expect(block.locator('.card360__block-title')).toContainText('Выводы ассистента')
+  await expect(block.locator('.card360__block-title')).toContainText('Выводы и рекомендации')
 
   // 4 пункта детекторов; первый — alert «Вымокание посевов»
   const items = block.locator('.card360__insight')
