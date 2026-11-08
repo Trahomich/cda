@@ -212,7 +212,9 @@ class TestNdviCycle:
                 select(SatelliteScene.id).where(SatelliteScene.field_id == field_id)
             ).all()
         )
-        assert count == 1
+        # ndvi + savi (savi требует только b04/b08 — §7.7 #128; остальные
+        # индексы этой сцене недоступны: в активах нет b02/b03/b05/b11)
+        assert count == 2
 
     def test_cloud_over_60_scene_not_saved(self, db_session, scene_rasters):
         """Честная облачность > 60 (05 §5 п.2): сцена не сохраняется, строка processed."""

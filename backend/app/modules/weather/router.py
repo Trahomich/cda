@@ -28,6 +28,12 @@ from app.models.agronomy import Field
 from app.models.integrations import Forecast, WeatherObservation
 from app.models.references import Source, WeatherRule
 from app.modules.weather import ingest as ingest_module
+from app.modules.weather.rules import (
+    GDD_BASE_C,
+    OPERATION_TYPES,
+    DayMetrics,
+    evaluate_window,
+)
 from app.modules.weather.schemas import (
     FactItem,
     FieldWeatherResponse,
@@ -40,12 +46,6 @@ from app.modules.weather.schemas import (
     SourceMeta,
     WindowDayItem,
     WindowResponse,
-)
-from app.modules.weather.rules import (
-    GDD_BASE_C,
-    OPERATION_TYPES,
-    DayMetrics,
-    evaluate_window,
 )
 
 DbSession = Annotated[Session, Depends(get_db)]
@@ -214,8 +214,7 @@ def _gdd_curve(
             gdd_day = round(
                 max(
                     0.0,
-                    (float(obs.temperature_min_c) + float(obs.temperature_max_c)) / 2
-                    - GDD_BASE_C,
+                    (float(obs.temperature_min_c) + float(obs.temperature_max_c)) / 2 - GDD_BASE_C,
                 ),
                 1,
             )
@@ -262,16 +261,11 @@ def weather_gdd(
     if len(past_years) >= 2:
         # кумулятив каждого прошлого года, ключ — календарная дата (день+месяц)
         past_curves = [
-            {(d.month, d.day): cum for d, _gdd, cum in _gdd_curve(by_date, y)}
-            for y in past_years
+            {(d.month, d.day): cum for d, _gdd, cum in _gdd_curve(by_date, y)} for y in past_years
         ]
         norm_items = []
         for day, _gdd, _cum in curve:
-            values = [
-                pc[(day.month, day.day)]
-                for pc in past_curves
-                if (day.month, day.day) in pc
-            ]
+            values = [pc[(day.month, day.day)] for pc in past_curves if (day.month, day.day) in pc]
             norm_items.append(
                 GddNormItem(
                     date=day,

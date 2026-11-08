@@ -464,7 +464,7 @@ class TestApi06:
         assert resp.status_code == 200 and resp.json()["total"] == 0
         resp = self.client.get(
             f"{API}/fields/{self.field_id}/ndvi",
-            params={"index": "evi"},
+            params={"index": "lai"},  # evi стал валидным индексом (§7.7 #128)
             headers=self.auth,
         )
         assert resp.status_code == 422
