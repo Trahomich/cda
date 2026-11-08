@@ -161,12 +161,19 @@ def _draw_text(rgb: np.ndarray, alpha: np.ndarray, text: str, x0: int, y0: int, 
         x0 += 4 * k
 
 
-def _legend_panel(alpha: np.ndarray, pw: int, ph: int) -> tuple[int, int] | None:
+def _legend_scale(w: int, h: int) -> int:
+    """Масштаб легенды k: по ширине (~1 на 200 px), но контент ≤ высоты канвы."""
+    return max(1, min(round(w / 200), h // 13))
+
+
+def _legend_panel(
+    alpha: np.ndarray, pw: int, ph: int, k: int
+) -> tuple[int, int] | None:
     """Координаты панели легенды в левом нижнем углу; None, если не помещается."""
     h, w = alpha.shape
     if pw > w or ph > h:
         return None
-    return max(1, w // 200), h - ph - max(1, w // 200)
+    return k, h - ph - k
 
 
 def draw_gradient_legend(
@@ -178,18 +185,18 @@ def draw_gradient_legend(
 ) -> bool:
     """Шкала-легенда NDVI (§7.3, #123): градиент палитры + подписи min/max.
 
-    Рисуется поверх растра в левом нижнем углу БЕЗ изменения размеров
-    канвы — геопривязка (X-Field-Bbox/X-Image-Size) и растяжка палитры
-    не меняются. False — канва слишком мала, легенда пропущена.
+    Рисуется в левом нижнем углу канвы — в полосе легенды ПОД растром,
+    вне контура поля (уточнение #385); растяжка палитры не меняется.
+    False — канва слишком мала, легенда пропущена.
     """
     h, w = alpha.shape
-    k = max(1, round(w / 200))
+    k = _legend_scale(w, h)
     pad, bar_h, gap = 2 * k, 3 * k, k
     bar_w = max(bar_h * 8, int(w * 0.3))
     lo_px, hi_px = _text_px(lo_label, k), _text_px(hi_label, k)
     inner = max(bar_w, lo_px + hi_px)
     pw, ph = 2 * pad + inner, 2 * pad + bar_h + gap + 5 * k
-    pos = _legend_panel(alpha, pw, ph)
+    pos = _legend_panel(alpha, pw, ph, k)
     if pos is None:
         return False
     x0, y0 = pos
