@@ -389,20 +389,24 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
 
     rgb_tc = np.stack([_stretch(red_d), _stretch(green_d), _stretch(blue_d)], axis=-1)
     alpha_tc = np.where(inside, 255, 0).astype("uint8")
-    png_tc = _png_rgba(rgb_tc, alpha_tc)
+    png_tc = _canvas_png(rgb_tc, alpha_tc)
 
-    # bbox окна растра в WGS84 (для позиционирования оверлея, §7.3)
+    # bbox окна растра в WGS84 (для позиционирования оверлея, §7.3);
+    # полоса легенды — часть канвы: юг расширяется пропорционально полосе,
+    # отображение пиксель↔градус остаётся равномерным — поле в оверлее
+    # совпадает с контуром, легенда оказывается под полем (#123)
     left, top = transform * (0, 0)
     right, bottom = transform * (nir_d.shape[1], nir_d.shape[0])
     west, south, east, north = transform_bounds(
         str(red_crs), "EPSG:4326", left, bottom, right, top, densify_pts=21
     )
+    south -= (north - south) * strip_h / nir_d.shape[0]
     bbox = tuple(round(v, 7) for v in (west, south, east, north))
 
     return SceneRender(
         png={"ndvi": png_ndvi, "truecolor": png_tc, "ndwi": png_ndwi},
         width=nir_d.shape[1],
-        height=nir_d.shape[0],
+        height=nir_d.shape[0] + strip_h,
         bbox=bbox,  # type: ignore[arg-type]
     )
 
