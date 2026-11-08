@@ -699,7 +699,6 @@ function insightsOf(
   // §7.5: прошлый сезон — те же детекторы по сценам своего года (даты в
   // текстах заменяются на год сезона, чтобы e2e различал сезоны).
   const lastScene = `${year}-07-31`
-  const withYear = (text: string): string => text.replaceAll('2027', String(year))
   const scene = { kind: 'satellite_scene', scene_id: `scene-${lastScene}-${fieldId.slice(-4)}` }
   const sample = { kind: 'agrochem_sample', sample_date: '2026-09-12' }
   const items: Array<{
