@@ -25,6 +25,7 @@ import {
 } from '@/api'
 import type {
   CropCycleHistoryItem,
+  FieldAdvice,
   FieldCard,
   FieldCycle,
   FieldOperation,
