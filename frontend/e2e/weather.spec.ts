@@ -63,11 +63,11 @@ test('погода: график истории с диапазонами 90 д�
   const chart = page.locator('svg[aria-label*="История погоды"]')
   await expect(chart).toBeVisible({ timeout: 15_000 })
 
-  // Столбцы осадков (сухие дни — нулевой высоты) и линии температур на месте.
+  // Столбцы осадков (сухие дни — нулевой высоты) и плавные кривые температур.
   const bars = chart.locator('rect.whist__bar')
   expect(await bars.count()).toBeGreaterThan(50)
-  await expect(chart.locator('polyline.whist__line--max')).toBeVisible()
-  await expect(chart.locator('polyline.whist__line--min')).toBeVisible()
+  await expect(chart.locator('path.whist__line--max')).toBeVisible()
+  await expect(chart.locator('path.whist__line--min')).toBeVisible()
 
   // Сезон: появляется выбор года, график обновляется.
   await page.locator('.wx__range', { hasText: 'Сезон' }).click()
