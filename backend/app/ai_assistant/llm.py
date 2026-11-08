@@ -23,7 +23,9 @@
 сконфигурированного провайдера; промпт строит только бэкенд.
 """
 
+import base64
 import logging
+from collections.abc import Sequence
 
 import httpx
 
