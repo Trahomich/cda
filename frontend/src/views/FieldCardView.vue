@@ -849,6 +849,7 @@ function load() {
   void loadYield()
   void loadInsights()
   void loadAdvice()
+  void loadIndexLayers()
 }
 
 onMounted(load)
