@@ -122,17 +122,137 @@ function popupHtml(field: Field): string {
   const cycle = field.current_cycle
   const culture = cycle ? `${cycle.culture_name} (${cycle.year})` : 'нет посева'
   const area = field.area_ga.toLocaleString('ru-RU', { maximumFractionDigits: 2 })
+  // В режиме погоды — строка со значением метрики поля (API-61, #143).
+  const weatherLine = weatherMode.value
+    ? `<br/>${metricLabel()}: <strong>${weatherValueText(field)}</strong>`
+    : ''
   return (
     `<div class="field-popup">` +
     // Заголовок балуна (название поля) — кликабельный: открывает карточку
     // поля (фидбек #368): отдельная ссылка «Открыть карточку поля» убрана.
     `<a href="/fields/${field.field_id}" data-field-id="${field.field_id}" class="field-popup__title">${field.name}</a><br/>` +
     `Площадь: ${area} га<br/>` +
-    `Культура сезона: ${culture}<br/>` +
-    `Статус: ${STATUS_LABELS[field.status]}` +
+    `Культура сезона: ${culture}` +
+    weatherLine +
+    `<br/>Статус: ${STATUS_LABELS[field.status]}` +
     `</div>`
   )
 }
+
+/* ── Режим погодной карты (API-61, §7.8, #143): заливка полей по метрике ── */
+
+const WEATHER_METRICS: Array<{
+  value: WeatherMapMetric
+  label: string
+  unit: string
+  from: string
+  to: string
+  digits: number
+}> = [
+  { value: 'precip_7d', label: 'Осадки 7 сут', unit: 'мм', from: '#e3f2fd', to: '#1565c0', digits: 1 },
+  { value: 'precip_14d', label: 'Осадки 14 сут', unit: 'мм', from: '#e3f2fd', to: '#0d47a1', digits: 1 },
+  { value: 't_now', label: 'Температура', unit: '°C', from: '#90caf9', to: '#e53935', digits: 1 },
+  { value: 'gdd_ytd', label: 'GDD с 1 января', unit: '°C·сут', from: '#f0f4c3', to: '#2e7d32', digits: 0 },
+]
+
+const weatherMode = ref(false)
+const weatherMetric = ref<WeatherMapMetric>('precip_7d')
+const weatherValues = ref(new Map<string, number | null>())
+const weatherLoading = ref(false)
+/** Метрика недоступна (до деплоя API-61): режим не включаем, подсказка. */
+const weatherFailed = ref(false)
+const weatherUpdated = ref<string | null>(null)
+
+const weatherMetricMeta = computed(
+  () => WEATHER_METRICS.find((m) => m.value === weatherMetric.value)!,
+)
+
+const weatherStats = computed(() => {
+  const vals = [...weatherValues.value.values()].filter((v): v is number => v != null)
+  if (!vals.length) return { min: 0, max: 0 }
+  return { min: Math.min(...vals), max: Math.max(...vals) }
+})
+
+function metricLabel(): string {
+  return weatherMetricMeta.value.label
+}
+
+function weatherValueText(field: Field): string {
+  const v = weatherValues.value.get(field.field_id)
+  if (v === undefined) return '…'
+  if (v === null) return 'нет данных'
+  return `${v.toLocaleString('ru-RU', { maximumFractionDigits: weatherMetricMeta.value.digits })} ${weatherMetricMeta.value.unit}`
+}
+
+/** Интерполяция цвета from→to по позиции значения в [min, max]. */
+function weatherColor(v: number): string {
+  const { from, to } = weatherMetricMeta.value
+  const { min, max } = weatherStats.value
+  const t = max > min ? (v - min) / (max - min) : 0.5
+  const hx = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+  const [r1, g1, b1] = hx(from)
+  const [r2, g2, b2] = hx(to)
+  const mix = (a: number, b: number) => Math.round(a + (b - a) * t)
+  return `#${[mix(r1, r2), mix(g1, g2), mix(b1, b2)]
+    .map((c) => c.toString(16).padStart(2, '0'))
+    .join('')}`
+}
+
+/** Стиль контура: культуры (обычный) или метрика погоды (#143). */
+function styleFor(field: Field): L.PathOptions {
+  const base: L.PathOptions = {
+    color: STATUS_COLORS[field.status],
+    weight: 1.5,
+    fillColor: cultureColorOf(field).color,
+    fillOpacity: 0.45,
+  }
+  if (!weatherMode.value) return base
+  const v = weatherValues.value.get(field.field_id)
+  if (v === undefined) return base // значения ещё грузятся — прежняя заливка
+  if (v === null) {
+    // Нет наблюдений: нейтральная штриховка (§7.8), подпись в балуне.
+    return { ...base, fillColor: '#eeeeee', fillOpacity: 0.55, dashArray: '4 3' }
+  }
+  return { color: '#37474f', weight: 1.5, fillColor: weatherColor(v), fillOpacity: 0.7 }
+}
+
+/** Перекрасить контуры и балуны (смена режима/метрики/данных). */
+function restyleLayer(): void {
+  contoursLayer?.eachLayer((layer) => {
+    const feature = (layer as L.GeoJSON.Layer).feature
+    const field = feature?.properties as Field | undefined
+    if (!field) return
+    layer.setStyle(styleFor(field))
+    if ('setPopupContent' in layer) {
+      ;(layer as L.Layer & { setPopupContent(html: string): unknown }).setPopupContent(popupHtml(field))
+    }
+  })
+}
+
+async function loadWeatherMap(): Promise<void> {
+  weatherLoading.value = true
+  weatherFailed.value = false
+  try {
+    const data = await getWeatherMap(weatherMetric.value)
+    weatherValues.value = new Map(data.items.map((it) => [it.field_id, it.value]))
+    weatherUpdated.value = data.items[0]?.updated_at ?? null
+  } catch {
+    weatherValues.value = new Map()
+    weatherFailed.value = true
+    weatherMode.value = false
+  } finally {
+    weatherLoading.value = false
+    restyleLayer()
+  }
+}
+
+watch(weatherMode, (on) => {
+  if (on) void loadWeatherMap()
+  else restyleLayer()
+})
+watch(weatherMetric, () => {
+  if (weatherMode.value) void loadWeatherMap()
+})
 
 /** Переход в карточку поля (пункт 1, v2-fix-A): тот же роут, что у строки списка. */
 function openFieldCard(field: Field): void {
