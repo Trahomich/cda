@@ -1049,7 +1049,7 @@ function fmtNum(v: number, digits = 1): string {
                 {{ advice.answer }}
               </p>
               <p class="card360__muted card360__insights-meta">
-                Рассчитано {{ fmtDateTime(advice.created_at) }} · {{ advice.model }}{{
+                Рассчитано {{ fmtDateTime(advice.created_at) }}{{
                   advice.status === 'fallback' ? ' · упрощённый расчёт' : ''
                 }}
               </p>
