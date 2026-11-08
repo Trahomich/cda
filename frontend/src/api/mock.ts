@@ -604,7 +604,7 @@ function seasonCultureName(n: number, year: number): string | null {
  *  3 зоны по перцентилям; доли площади/NDVI детерминированы от поля.
  *  Поле 6 — однородное (IQR < 0.12 → бэкенд отдал бы 422 vra_uniform_field,
  *  здесь формируем problem-ответ в маршруте). */
-function vraOf(n: number, fieldId: string): {
+function vraOf(n: number, fieldId: string, year = 2027): {
   field_id: string
   date: string
   iqr_ndvi: number
@@ -612,7 +612,7 @@ function vraOf(n: number, fieldId: string): {
   zones: Array<{ zone: number; label: string; area_ga: number; ndvi_mean: number; dose_factor: number; dose_kg_ha: number | null }>
   map_png_url: string
 } {
-  const points = ndviOf(n)
+  const points = ndviOf(n, year)
   const lastClear = [...points].reverse().find((p) => p.cloud_pct <= 60)!
   const area = 60 + n * 18.7
   const share = [0.32, 0.45, 0.23] // доли площади зон 1/2/3 (фикс. для демо)
