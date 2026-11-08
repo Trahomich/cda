@@ -188,14 +188,14 @@ test('выгрузка без базовой дозы: 422 → форма вво
   const doseField = vraBlock.locator('.card360__vra-export-dose')
   await expect(doseField).toBeVisible({ timeout: 10_000 })
 
-  // Повтор с дозой: запрос уходит с base_dose_kg_ha=90, файл скачивается
-  const seen: string[] = []
-  page.on('request', (req) => {
-    if (req.url().includes('/vra/export')) seen.push(req.url())
-  })
+  // Повтор с дозой: мок-транспорт не делает сетевых запросов, поэтому
+  // параметры проверяем через тест-хук мока (__CDA_VRA_EXPORT__)
   await doseField.locator('input').fill('90')
   const dl = page.waitForEvent('download')
   await btn.click()
   expect((await dl).suggestedFilename()).toMatch(/\.geojson$|\.zip$/)
-  expect(seen.some((url) => url.includes('base_dose_kg_ha=90'))).toBe(true)
+  const lastExport = await page.evaluate(
+    () => (globalThis as { __CDA_VRA_EXPORT__?: string }).__CDA_VRA_EXPORT__ ?? '',
+  )
+  expect(lastExport).toContain('base_dose_kg_ha=90')
 })
