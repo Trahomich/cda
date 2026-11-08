@@ -177,6 +177,40 @@ function fmtDate(iso: string): string {
   return RU_DATE.format(new Date(iso))
 }
 
+/* ─── Опасные явления (ОЯ) прогноза — #139, docs/06 §7.8 ─── */
+
+const HAZARD_LABELS: Record<string, string> = {
+  frost: 'Заморозки',
+  high_wind: 'Сильный ветер',
+  heavy_rain: 'Ливень',
+}
+const HAZARD_RANK: Record<string, number> = { info: 0, warn: 1, alert: 2 }
+
+/** Самое сильное ОЯ прогноза (warn/alert) для баннера вверху вкладки. */
+const hazardBanner = computed(() => {
+  let best: { date: string; label: string; text: string; severity: string } | null = null
+  for (const day of forecast.value?.days ?? []) {
+    for (const h of day.hazards ?? []) {
+      if (!HAZARD_RANK[h.severity]) continue // info — баннер не поднимает
+      if (!best || HAZARD_RANK[h.severity] > HAZARD_RANK[best.severity]) {
+        best = { date: day.date, label: HAZARD_LABELS[h.code] ?? h.code, text: h.text, severity: h.severity }
+      }
+    }
+  }
+  return best
+})
+
+/** Строка таблицы прогноза подсвечивается при warn/alert явлениях суток. */
+function dayHazardClass(iso: string): string | null {
+  const day = forecast.value?.days.find((d) => d.date === iso)
+  const top = day?.hazards?.reduce(
+    (acc, h) => (HAZARD_RANK[h.severity] > HAZARD_RANK[acc] ? h.severity : acc),
+    'info',
+  )
+  return top === 'alert' ? 'wx__row--alert' : top === 'warn' ? 'wx__row--warn' : null
+}
+
+
 onMounted(async () => {
   try {
     recent.value = JSON.parse(localStorage.getItem(LS_RECENT) ?? '[]') as string[]
