@@ -421,7 +421,7 @@ class TestStripMarkdown131:
         client, hdr = world
         fid, _ = _season_world(db_session, client, hdr)
         _anthropic_settings(monkeypatch)
-        TestGenerateAdvice._patch_db(monkeypatch, db_session)
+        TestGenerateAdvice()._patch_db(monkeypatch, db_session)
 
         md_answer = (
             "# Рекомендации\n**Проверьте поле:** NDVI 0.410 на 2026-10-20.\n"
