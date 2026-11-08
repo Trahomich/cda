@@ -179,6 +179,27 @@ class WindowsListResponse(BaseModel):
     hint: str | None = None
 
 
+class WeatherMapItem(BaseModel):
+    """Поле на карте погоды (API-61, §7.8): контур + значение метрики."""
+
+    field_id: uuid.UUID
+    name: str
+    contour: dict = Field(description="Упрощённый контур поля (GeoJSON Polygon)")
+    value: float | None = Field(
+        default=None, description="Значение метрики; null — нет наблюдений"
+    )
+    updated_at: date | None = Field(
+        default=None, description="Дата последнего наблюдения поля (сутки)"
+    )
+
+
+class WeatherMapResponse(BaseModel):
+    """Карта погоды хозяйства (API-61): заливка полей по метрике."""
+
+    metric: str = Field(description="precip_7d | precip_14d | t_now | gdd_ytd")
+    items: list[WeatherMapItem]
+
+
 __all__ = [
     "FactItem",
     "FieldWeatherResponse",
@@ -189,6 +210,8 @@ __all__ = [
     "GddResponse",
     "HistoryListResponse",
     "SourceMeta",
+    "WeatherMapItem",
+    "WeatherMapResponse",
     "WindowDayItem",
     "WindowResponse",
     "WindowsListResponse",
