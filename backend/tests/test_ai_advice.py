@@ -119,8 +119,6 @@ class TestAdviceAPI:
         """POST 202 {status: queued} и ставит поле в фоновую очередь."""
         queued: list[uuid.UUID] = []
         monkeypatch.setattr(advice, "queue_advice", lambda fid, **kw: queued.append(fid))
-        from app.ai_assistant import advice
-
         resp = self.client.post(f"{API}/fields/{self.field_id}/ai/advice", headers=self.auth)
         assert resp.status_code == 202
         assert resp.json() == {"status": "queued"}
