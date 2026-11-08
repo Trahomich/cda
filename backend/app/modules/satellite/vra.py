@@ -84,7 +84,7 @@ class VraZone:
 
 @dataclass(frozen=True, slots=True)
 class VraZones:
-    """Расчёт зон поля: сцена, зоны, PNG и геопривязка (§7.4)."""
+    """Расчёт зон поля: сцена, метрики, зоны, PNG и геопривязка (§7.4)."""
 
     captured_at: date
     iqr_ndvi: float
@@ -93,8 +93,10 @@ class VraZones:
     width: int
     height: int
     bbox: tuple[float, float, float, float]  # WGS84: minLon, minLat, maxLon, maxLat
-    #: даты топ-3 пиковых сцен сезона, по которым подтверждалась стабильность
+    #: даты топ-3 пиковых сцен сезона (метрики для детектора §8.2, #121)
     peak_dates: tuple[date, ...] = ()
+    #: p90−p10 средних ячеек сетки ~20×20 пиковой сцены (§7.4 v1.7)
+    spatial_spread: float = 0.0
 
 
 def _err_no_data(field_id: uuid.UUID, reason: str) -> AppError:
