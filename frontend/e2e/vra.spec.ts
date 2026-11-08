@@ -193,7 +193,7 @@ test('выгрузка без базовой дозы: 422 → форма вво
   page.on('request', (req) => {
     if (req.url().includes('/vra/export')) seen.push(req.url())
   })
-  await doseField.getByRole('textbox').fill('90')
+  await doseField.locator('input').fill('90')
   const dl = page.waitForEvent('download')
   await btn.click()
   expect((await dl).suggestedFilename()).toMatch(/\.geojson$|\.zip$/)
