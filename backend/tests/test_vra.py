@@ -579,6 +579,11 @@ class TestVraSpatialSpread:
 
         assert re.search(r"\bоднородно\b", item.detail) is None
         assert "дифференцированного внесения" in item.detail
+        # #138 (фидбек #425): пользовательский текст без внутренних API-путей
+        # и подстановок — фронт показывает detail как есть
+        assert "GET /" not in item.detail
+        assert "{" not in item.detail and "}" not in item.detail
+        assert "Дифференцированное внесение" in item.detail
         assert len(item.data_refs) == 3
         assert {"iqr_ndvi", "spatial_spread"} <= set(item.data_refs[0])
 
