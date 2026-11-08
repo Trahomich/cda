@@ -112,7 +112,7 @@ const monthTicks = computed(() => {
         x="26"
         y="0"
         class="gdd__tick"
-      >{{ items.at(-1)?.date }} — факт</text>
+      >{{ items[items.length - 1]?.date }} — факт</text>
       <line
         v-if="normPath"
         x1="110"
