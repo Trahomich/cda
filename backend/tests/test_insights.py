@@ -845,10 +845,10 @@ class TestVisionRenders117:
         monkeypatch.setattr(service.llm, "summarize", lambda p, c, **k: "Внесите 90 кг/га!")
         service.refresh_insights(fid, TODAY)
 
-        import json as _json
+        import json as _json  # noqa: F401 — cache_get уже отдаёт разобранный JSON
 
         from app.core.cache import cache_get
 
-        updated = _json.loads(cache_get(f"insights:{fid}:{TODAY.isoformat()}"))
+        updated = cache_get(f"insights:{fid}:{TODAY.isoformat()}")
         assert updated["source"] == "rules"
         assert updated["summary"].startswith("Резкое падение NDVI")
