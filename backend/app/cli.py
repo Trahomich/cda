@@ -37,6 +37,7 @@ import argparse
 import logging
 import sys
 import uuid
+from datetime import date
 
 from sqlalchemy import select
 
