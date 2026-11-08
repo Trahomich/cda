@@ -919,6 +919,86 @@ function fmtNum(v: number, digits = 1): string {
           </template>
         </div>
 
+        <!-- Что делать сейчас: AI-рекомендация (API-55/56, §9.3, #137) -->
+        <div class="card360__block">
+          <h2 class="card360__block-title">
+            Что делать сейчас
+          </h2>
+          <Skeleton
+            v-if="adviceLoading"
+            :lines="3"
+          />
+          <template v-else>
+            <template v-if="advice">
+              <p class="card360__advice-text">
+                {{ advice.answer }}
+              </p>
+              <p class="card360__muted card360__insights-meta">
+                Рассчитано {{ fmtDateTime(advice.created_at) }} · {{ advice.model }}{{
+                  advice.status === 'fallback' ? ' · упрощённый расчёт' : ''
+                }}
+              </p>
+            </template>
+            <p
+              v-else
+              class="card360__muted"
+            >
+              Рекомендация ещё не рассчитана.
+            </p>
+            <p
+              v-if="adviceError"
+              class="card360__advice-error"
+              role="alert"
+            >
+              Не удалось {{ advice ? 'пересчитать' : 'рассчитать' }} рекомендацию — попробуйте ещё раз
+            </p>
+            <div class="card360__advice-actions">
+              <button
+                type="button"
+                class="card360__advice-btn"
+                :disabled="adviceBusy"
+                @click="recalcAdvice"
+              >
+                {{ adviceBusy ? 'Пересчитываем…' : advice ? 'Пересчитать' : 'Рассчитать' }}
+              </button>
+              <span
+                v-if="adviceBusy"
+                class="card360__muted"
+              >Это занимает до минуты</span>
+            </div>
+            <div class="card360__advice-history">
+              <button
+                type="button"
+                class="card360__advice-toggle"
+                @click="adviceHistoryOpen = !adviceHistoryOpen"
+              >
+                История рекомендаций {{ adviceHistory.length ? `(${adviceTotal})` : '' }}
+                {{ adviceHistoryOpen ? '▴' : '▾' }}
+              </button>
+              <ul
+                v-if="adviceHistoryOpen"
+                class="card360__advice-list"
+              >
+                <li
+                  v-for="item in adviceHistory"
+                  :key="item.created_at"
+                >
+                  <span class="card360__advice-date">{{ fmtDate(item.created_at.slice(0, 10)) }}</span>
+                  <span class="card360__advice-item-text">{{ item.answer }}</span>
+                </li>
+              </ul>
+              <button
+                v-if="adviceHistoryOpen && adviceHistory.length < adviceTotal"
+                type="button"
+                class="card360__advice-more"
+                @click="loadAdviceHistory"
+              >
+                Показать ещё
+              </button>
+            </div>
+          </template>
+        </div>
+
         <!-- NDVI -->
         <div class="card360__block">
           <h2 class="card360__block-title">
