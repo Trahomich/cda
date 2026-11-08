@@ -84,14 +84,7 @@ class AdviceContext:
     images: list[bytes] = field(default_factory=list)
 
 
-def _season_scenes(db: Session, field_id: uuid.UUID_alias if False else object, year: int) -> list:
-    return []  # placeholder — заменяется ниже (см. _season_scene_rows)
-
-
-import uuid  # noqa: E402  (используется в сигнатурах ниже)
-
-
-def _season_scene_rows(db: Session, field_id: uuid.UUID, year: int) -> list[SatelliteScene]:(db: Session, field_id: uuid.UUID, year: int) -> list[SatelliteScene]:
+def _season_scene_rows(db: Session, field_id: uuid.UUID, year: int) -> list[SatelliteScene]:
     """Чистые NDVI-сцены сезона year по возрастанию даты (§7.5)."""
     return list(
         db.scalars(
