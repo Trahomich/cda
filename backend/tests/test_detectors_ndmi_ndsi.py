@@ -19,8 +19,9 @@ from rasterio.transform import Affine
 from sqlalchemy import text as db_text
 from sqlalchemy.orm import Session
 from tests.test_auth import auth_header, make_user
-from tests.test_satellite import make_field, make_satellite_source
-from tests.test_vra import CRS, X0, Y1, N, _write_tif
+from tests.test_satellite import make_satellite_source
+from tests.test_vra import CRS, N, X0, Y1, _write_tif
+from tests.test_vra import make_field as make_vra_field
 
 SATELLITE_SOURCE_ID = "satellite.sentinel2-l2a"
 API = "/api/v1"
