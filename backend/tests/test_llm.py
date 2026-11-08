@@ -178,7 +178,7 @@ def test_anthropic_thinking_then_text_returns_text() -> None:
     assert req.headers["anthropic-version"] == "2023-06-01"
     body = json.loads(req.read().decode())
     assert body["model"] == ANTHROPIC_DEFAULT_MODEL  # glm-5.3-flash
-    assert body["max_tokens"] == 1024  # с запасом: thinking съедает малые лимиты
+    assert body["max_tokens"] == 3072  # thinking glm варьируется: 1024 съедал бюджет (#116)
     assert body["messages"] == [
         {
             "role": "user",
