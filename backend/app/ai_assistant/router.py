@@ -8,9 +8,11 @@ docs/06 §7.4, docs/09-ai §8.2 (задача #93): items — числовые �
 """
 
 import uuid
+from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Query, status as http_status
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from fastapi import status as http_status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,8 +22,8 @@ from app.core.config import Settings, get_settings
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
-from app.models.agronomy import Field
 from app.models.ai import AIFieldAdvice
+from app.models.agronomy import Field
 
 DbSession = Annotated[Session, Depends(get_db)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
