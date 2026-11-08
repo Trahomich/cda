@@ -209,7 +209,7 @@ def shapefile_zip(data: ExportedVra, field_name: str) -> bytes:
     w.field("dose_kg_ha", "N", size=10, decimal=2)
     for z in data.zones:
         rings: list[list[list[float]]] = []
-        for poly in z.geometry.geoms:
+        for poly in _as_multi(z.geometry):
             rings.append([[round(x, 7), round(y, 7)] for x, y in poly.exterior.coords])
             rings.extend(
                 [[round(x, 7), round(y, 7)] for x, y in interior.coords]
