@@ -780,15 +780,15 @@ class TestVisionRenders117:
         service = self._anthropic(monkeypatch, ndvi_render_dir=str(tmp_path))
         fid = self._prepare(world, db_session, monkeypatch)
 
-        real_vra_zones = service.vra.vra_zones
+        class _FakeZones:  # заглушка результата vra_zones (без COG)
+            captured_at = peak_day
+            iqr_ndvi = 0.1
+            spatial_spread = 0.1
+            zones = []
 
-        def fake_vra_zones(db, field, *, year=None):
-            result = real_vra_zones(db, field, year=year)
-            result.captured_at = peak_day
-            return result
-
-        # без ассетов vra_zones бросит AppError — подменяем только дату пика
-        monkeypatch.setattr(service.vra, "vra_zones", fake_vra_zones)
+        monkeypatch.setattr(
+            service.vra, "vra_zones", lambda db, field, *, year=None: _FakeZones()
+        )
         for day, variants in ((TODAY, ("ndvi", "truecolor", "ndwi")), (peak_day, ("ndvi",))):
             for variant in variants:
                 path = render_path(tmp_path, fid, variant, day)
