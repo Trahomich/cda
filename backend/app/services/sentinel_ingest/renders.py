@@ -68,6 +68,14 @@ _NDVI_LO, _NDVI_HI = -0.1, 0.8
 #: NDWI отображаемого диапазона (§7.4): < −0.3 сухо, > 0.5 открытая вода
 _NDWI_LO, _NDWI_HI = -0.3, 0.5
 
+#: отображаемые диапазоны индексов §7.7 (#128)
+_NDRE_LO, _NDRE_HI = -0.1, 0.6
+_NDMI_LO, _NDMI_HI = -0.5, 0.5
+_NDSI_LO, _NDSI_HI = -0.1, 0.8
+_EVI_LO, _EVI_HI = 0.0, 1.0
+_SAVI_LO, _SAVI_HI = -0.1, 0.8
+_BSI_LO, _BSI_HI = -0.5, 0.5
+
 #: опорные точки палитры NDWI (§7.4): сухо → влажно → вода
 PALETTE_NDWI: tuple[tuple[float, tuple[int, int, int]], ...] = (
     (0.0, (224, 196, 68)),  # сухо — жёлтый
