@@ -24,21 +24,37 @@ from app.integrations import DataQualityError
 if TYPE_CHECKING:  # только для аннотаций — не тянем rasterio в импорт модуля
     from rasterio.transform import Affine
 
-# (NIR-канал, второй канал) для каждого индекса (05 §2)
+# (NIR-канал, второй канал) для каждого индекса (05 §2; §7.7 #128)
 INDEX_BANDS: dict[str, tuple[str, str]] = {
     "ndvi": ("B08", "B04"),
+    "ndwi": ("B03", "B08"),
     "ndre": ("B08", "B05"),
-    "ndmi": ("B8A", "B11"),
+    "ndmi": ("B08", "B11"),
+    "ndsi": ("B03", "B11"),
     "savi": ("B08", "B04"),
 }
 
-INDICES: tuple[str, ...] = tuple(INDEX_BANDS)
+#: EVI и BSI — не нормализованная разность: свои формулы (§7.7),
+#: отдельные функции compute_evi_array / compute_bsi_array
+FORMULA_INDICES: tuple[str, ...] = ("evi", "bsi")
+
+INDICES: tuple[str, ...] = tuple(INDEX_BANDS) + FORMULA_INDICES
+
+#: диапазон валидации (05 §5 п.4; EVI физически до ~2.5 — §7.7 #128)
+INDEX_BOUNDS: dict[str, tuple[float, float]] = {
+    "evi": (-1.0, 3.0),
+}
 
 SAVI_L = 0.5  # поправка на яркость почвы (Huete, 1988)
+
+EVI_G, EVI_C1, EVI_C2 = 2.5, 6.0, 7.5  # коэффициенты EVI (§7.7)
 
 
 def compute_index_array(index: str, nir: np.ndarray, other: np.ndarray) -> np.ndarray:
     """Массив индекса по каналам; пиксели без данных → NaN.
+
+    Поддерживаются нормализованные разности (INDEX_BANDS, в т.ч. ndwi/ndsi)
+    и SAVI. EVI/BSI — compute_evi_array / compute_bsi_array (§7.7).
 
     NaN: хотя бы один канал NaN, либо сумма каналов = 0 (нет отражения —
     вне плашки снимка; после маскирования контуром такие пиксели отбрасываются).
@@ -52,6 +68,24 @@ def compute_index_array(index: str, nir: np.ndarray, other: np.ndarray) -> np.nd
         else:
             denom = nir + other
             array = (nir - other) / np.where(denom == 0, np.nan, denom)
+    return np.where(np.isfinite(array), array, np.nan)
+
+
+def compute_evi_array(nir: np.ndarray, red: np.ndarray, blue: np.ndarray) -> np.ndarray:
+    """EVI = 2.5·(B08−B04)/(B08+6·B04−7.5·B02+1), §7.7 #128; нет данных → NaN."""
+    with np.errstate(divide="ignore", invalid="ignore"):
+        denom = nir + EVI_C1 * red - EVI_C2 * blue + 1.0
+        array = EVI_G * (nir - red) / np.where(denom == 0, np.nan, denom)
+    return np.where(np.isfinite(array), array, np.nan)
+
+
+def compute_bsi_array(nir: np.ndarray, red: np.ndarray, blue: np.ndarray, swir: np.ndarray):
+    """BSI = ((B11+B04)−(B08+B02))/((B11+B04)+(B08+B02)), §7.7; нет данных → NaN."""
+    with np.errstate(divide="ignore", invalid="ignore"):
+        soil = swir + red
+        veg = nir + blue
+        denom = soil + veg
+        array = (soil - veg) / np.where(denom == 0, np.nan, denom)
     return np.where(np.isfinite(array), array, np.nan)
 
 
