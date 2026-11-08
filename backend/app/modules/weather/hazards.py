@@ -91,8 +91,11 @@ def forecast_hazards(
 ) -> list[list[dict[str, str]]]:
     """hazards для каждого элемента прогноза (по порядку forecasts).
 
-    Культура сезона — один запрос к БД (§8.2 current_culture_name).
+    Культура сезона — один запрос к БД; current_culture_name импортируется
+    лениво: detectors → weather.rules дают цикл при импорте на уровне модуля.
     """
+    from app.ai_assistant.detectors import current_culture_name
+
     culture = current_culture_name(db, field_id, date.today())
     return [
         day_hazards(f.forecast_for, f.temperature_min_c, f.precipitation_mm, f.wind_max_ms, culture)
