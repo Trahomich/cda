@@ -343,6 +343,14 @@ onUnmounted(() => {
         aria-label="Карта контуров полей хозяйства"
       />
       <div
+        v-if="loading"
+        class="map-screen__loading-overlay"
+        role="status"
+        aria-live="polite"
+      >
+        Загружаем поля…
+      </div>
+      <div
         v-if="!loading && !failed && legend.length"
         class="map-legend"
         :class="{ 'map-legend--open': legendOpen }"
