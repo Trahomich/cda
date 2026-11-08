@@ -305,17 +305,13 @@ def _yield_verdict(
     if row is None:
         return None
     _, culture = row
-    coeffs = (culture.yield_k_base, culture.yield_k_ndvi_max, culture.yield_k_ndvi_int)
-    if culture is None or culture.kind == "fallow" or any(v is None for v in coeffs):
+    k_base, k_max, k_int = culture.yield_k_base, culture.yield_k_ndvi_max, culture.yield_k_ndvi_int
+    if culture.kind == "fallow" or k_base is None or k_max is None or k_int is None:
         return None
     avgs = [float(s.index_avg) for s in scenes]
     ndvi_max = max(avgs)
     ndvi_integral = sum(max(v - 0.2, 0.0) for v in avgs) / 100
-    forecast = (
-        float(culture.yield_k_base)
-        + float(culture.yield_k_ndvi_max) * ndvi_max
-        + float(culture.yield_k_ndvi_int) * ndvi_integral
-    )
+    forecast = k_base + k_max * ndvi_max + k_int * ndvi_integral
     return (
         f"Прогноз урожайности ({culture.name}, {year}): {forecast:.2f} "
         f"ц/га (интервал {forecast * 0.75:.2f}–{forecast * 1.25:.2f})."
