@@ -358,6 +358,40 @@ def _llm_context(
     return "\n".join(parts)
 
 
+def _vision_renders(
+    field_id: uuid.UUID, latest_day: date, peak_day: date | None
+) -> list[tuple[str, bytes]]:
+    """PNG-рендеры для vision-сводки (§8.5, #117): последняя чистая сцена
+    (ndvi/truecolor/ndwi) + NDVI пика вегетации, ≤ VISION_MAX_IMAGES.
+
+    Нет render_dir или файлов (рендер не строился, сцена старая) — пустой
+    список: сводка уйдёт текстовым PROMPT (деградация как при ollama).
+    """
+    render_dir = get_settings().ndvi_render_dir
+    if not render_dir:
+        return []
+    out: list[tuple[str, bytes]] = []
+    seen_days: set[date] = set()
+    for day, variants in (
+        (latest_day, ("ndvi", "truecolor", "ndwi")),
+        (peak_day, ("ndvi",)),
+    ):
+        if day is None or day in seen_days:
+            continue
+        seen_days.add(day)
+        for variant in variants:
+            if len(out) >= VISION_MAX_IMAGES:
+                break
+            path = render_path(render_dir, field_id, variant, day)
+            if not path.is_file():
+                continue
+            try:
+                out.append((f"{variant} за {day.isoformat()}", path.read_bytes()))
+            except OSError:
+                logger.warning("insights: рендер %s не читается", path)
+    return out
+
+
 def _checked_summary(
     summary: str | None, items: list[InsightItem], context: str | None = None
 ) -> str | None:
