@@ -110,11 +110,25 @@ class TestWeatherMapApi:
         assert resp.json()["items"][0]["value"] == 3.0
 
     def test_dedupe_by_trust(self, client, db_session):
-        """Дубль (поле, дата) — берётся запись с большей trust, как API-58."""
+        """Дубль (поле, дата) от разных источников — берётся большая trust (API-58)."""
+        from app.models.references import Source
+
+        db_session.add(Source(source_id="weather.manual", kind="weather"))
+        db_session.commit()
         today = date.today()
         f1 = make_field(db_session, name="A")
         make_obs(db_session, f1, today - timedelta(days=1), precip=1.0, trust=1.0)
         make_obs(db_session, f1, today - timedelta(days=1), precip=7.0, trust=0.5)
+        # вторая запись — другой источник (UQ: поле+дата+источник)
+        db_session.execute(
+            text(
+                "INSERT INTO dat_weather_observation "
+                "(id, field_id, observed_at, precipitation_mm, source_id, trust) "
+                "VALUES (gen_random_uuid(), :fid, :day, 7.0, 'weather.manual', 0.5)"
+            ),
+            {"fid": f1, "day": today - timedelta(days=1)},
+        )
+        db_session.commit()
         headers = api_headers(client, db_session)
 
         resp = client.get(f"{API}/weather/map", params={"metric": "precip_7d"}, headers=headers)
