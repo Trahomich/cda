@@ -23,7 +23,6 @@ p90−p10 средних ячеек сетки ~20×20 той же сцены (�
 дозу выше), база — последний approved план fertilizing (units kg_ha).
 """
 
-
 import base64
 import json
 import logging
@@ -372,8 +371,7 @@ def vra_zones(db: Session, field: Field, *, year: int | None = None) -> VraZones
                 status_code=404,
             )
         raise AppError(
-            f"Зоны внесения недоступны для поля {field.id}: "
-            "нет чистых NDVI-сцен текущего сезона",
+            f"Зоны внесения недоступны для поля {field.id}: нет чистых NDVI-сцен текущего сезона",
             code="vra_no_season_data",
             title="Нет данных сезона",
             status_code=422,
