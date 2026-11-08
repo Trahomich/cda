@@ -706,3 +706,151 @@ class TestBackgroundFix101:
         get_insights(client, hdr, fid)
         assert spy["n"] == 2  # сводка есть — фон не нужен
         client.app.dependency_overrides.pop(get_settings, None)
+
+
+class TestVisionRenders117:
+    """#117: vision-сводка — рендеры поля уходят в LLM только при
+    anthropic-провайдере и наличии файлов; guardrail §8.2 не ослабляется."""
+
+    @staticmethod
+    def _anthropic(monkeypatch, **update):
+        from app.ai_assistant import service
+
+        base = {"llm_provider": "anthropic", "anthropic_api_key": "test-key"}
+        base.update(update)
+        settings = type(service.get_settings())(**base)
+        monkeypatch.setattr(service, "get_settings", lambda: settings)
+        return service
+
+    @staticmethod
+    def _prepare(world, db_session, monkeypatch):
+        from app.ai_assistant import service
+        from sqlalchemy.orm import sessionmaker
+
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        make_scene(db_session, fid, TODAY - timedelta(days=6), 0.72)
+        make_scene(db_session, fid, TODAY, 0.50)  # ndvi_drop → items непустые
+        db_session.commit()
+        TestBackgroundFix101._fake_redis(monkeypatch)
+        monkeypatch.setattr(
+            service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
+        )
+        db_session.close()
+        return fid
+
+    def test_anthropic_renders_passed(self, world, db_session, monkeypatch, tmp_path):
+        """Anthropic + файловые рендеры: VISION_PROMPT, подпись в context,
+        PNG последней чистой сцены (ndvi/truecolor/ndwi) в images."""
+        from app.services.sentinel_ingest.renders import render_path
+
+        service = self._anthropic(monkeypatch, ndvi_render_dir=str(tmp_path))
+        fid = self._prepare(world, db_session, monkeypatch)
+        for variant in ("ndvi", "truecolor", "ndwi"):
+            path = render_path(tmp_path, fid, variant, TODAY)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"\x89PNG-fake")
+
+        calls: dict = {}
+
+        def fake_summarize(prompt, context, **kwargs):
+            calls.update(prompt=prompt, context=context, kwargs=kwargs)
+            return "NDVI упал на 0.22 — на снимках видно пятно в северной части."
+
+        monkeypatch.setattr(service.llm, "summarize", fake_summarize)
+        service.refresh_insights(fid, TODAY)
+
+        assert calls["prompt"] == service.VISION_PROMPT
+        assert f"Приложены рендеры поля (изображения): ndvi за {TODAY.isoformat()}" in (
+            calls["context"]
+        )
+        assert "truecolor" in calls["context"] and "ndwi" in calls["context"]
+        images = calls["kwargs"]["images"]
+        assert images is not None and len(images) == 3
+        assert all(png == b"\x89PNG-fake" for png in images)
+
+    def test_peak_render_appended(self, world, db_session, monkeypatch, tmp_path):
+        """Рендер NDVI пика вегетации добавляется к трём вариантам
+        последней сцены (всего ≤ VISION_MAX_IMAGES)."""
+        from datetime import date as _date
+
+        from app.services.sentinel_ingest.renders import render_path
+
+        peak_day = _date(2026, 7, 1)
+        service = self._anthropic(monkeypatch, ndvi_render_dir=str(tmp_path))
+        fid = self._prepare(world, db_session, monkeypatch)
+
+        real_vra_zones = service.vra.vra_zones
+
+        def fake_vra_zones(db, field, *, year=None):
+            result = real_vra_zones(db, field, year=year)
+            result.captured_at = peak_day
+            return result
+
+        # без ассетов vra_zones бросит AppError — подменяем только дату пика
+        monkeypatch.setattr(service.vra, "vra_zones", fake_vra_zones)
+        for day, variants in ((TODAY, ("ndvi", "truecolor", "ndwi")), (peak_day, ("ndvi",))):
+            for variant in variants:
+                path = render_path(tmp_path, fid, variant, day)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"png")
+
+        calls: dict = {}
+        monkeypatch.setattr(
+            service.llm, "summarize", lambda p, c, **k: calls.update(k) or "ok 0.22"
+        )
+        service.refresh_insights(fid, TODAY)
+        assert calls["images"] is not None and len(calls["images"]) == 4
+
+    def test_ollama_no_images(self, world, db_session, monkeypatch, tmp_path):
+        """Ollama-провайдер — деградация: текстовый PROMPT, images не
+        передаются (текущее поведение §8.2 до #117)."""
+        from app.ai_assistant import service
+
+        settings = type(service.get_settings())(
+            llm_provider="ollama", ollama_base_url="http://ollama:11434",
+            ndvi_render_dir=str(tmp_path),
+        )
+        monkeypatch.setattr(service, "get_settings", lambda: settings)
+        fid = self._prepare(world, db_session, monkeypatch)
+        calls: dict = {}
+        monkeypatch.setattr(
+            service.llm, "summarize", lambda p, c, **k: calls.update(prompt=p, kwargs=k) or "ok"
+        )
+        service.refresh_insights(fid, TODAY)
+        assert calls["prompt"] == service.PROMPT
+        assert calls["kwargs"].get("images") is None
+
+    def test_no_render_files_text_prompt(self, world, db_session, monkeypatch, tmp_path):
+        """Anthropic, но файлов рендеров нет (render_dir пуст) — текстовый
+        PROMPT без изображений."""
+        service = self._anthropic(monkeypatch, ndvi_render_dir=str(tmp_path))
+        fid = self._prepare(world, db_session, monkeypatch)
+        calls: dict = {}
+        monkeypatch.setattr(
+            service.llm, "summarize", lambda p, c, **k: calls.update(prompt=p, kwargs=k) or "ok"
+        )
+        service.refresh_insights(fid, TODAY)
+        assert calls["prompt"] == service.PROMPT
+        assert calls["kwargs"].get("images") is None
+
+    def test_vision_guardrail_not_weakened(self, world, db_session, monkeypatch, tmp_path):
+        """Vision-сводка с посторонним числом — fallback на items §8.2
+        (guardrail общий, oслабления нет)."""
+        from app.services.sentinel_ingest.renders import render_path
+
+        service = self._anthropic(monkeypatch, ndvi_render_dir=str(tmp_path))
+        fid = self._prepare(world, db_session, monkeypatch)
+        path = render_path(tmp_path, fid, "ndvi", TODAY)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"png")
+        monkeypatch.setattr(service.llm, "summarize", lambda p, c, **k: "Внесите 90 кг/га!")
+        service.refresh_insights(fid, TODAY)
+
+        import json as _json
+
+        from app.core.cache import cache_get
+
+        updated = _json.loads(cache_get(f"insights:{fid}:{TODAY.isoformat()}"))
+        assert updated["source"] == "rules"
+        assert updated["summary"].startswith("Падение NDVI")
