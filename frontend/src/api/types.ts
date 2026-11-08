@@ -406,6 +406,16 @@ export interface TreatmentPlanRequest {
 
 /* ─── Погода: прогноз и окна операций (API-29, /weather/windows; E-10) ─── */
 
+/** Опасное погодное явление суток прогноза (#139, docs/06 §7.8). */
+export interface WeatherHazard {
+  /** frost | high_wind | heavy_rain */
+  code: 'frost' | 'high_wind' | 'heavy_rain'
+  /** info | warn | alert */
+  severity: 'info' | 'warn' | 'alert'
+  /** Краткое описание явления для пользователя. */
+  text: string
+}
+
 /** Сутки прогноза — GET /weather/forecast?field_id&days (API-29, кэш 3 ч). */
 export interface WeatherForecastDay {
   date: string
@@ -416,6 +426,8 @@ export interface WeatherForecastDay {
   precip_prob_pct?: number
   wind_ms: number
   humidity_pct: number
+  /** Опасные явления суток (#139); пусто/undefined — явлений нет. */
+  hazards?: WeatherHazard[]
 }
 
 /** Прогноз на горизонт days суток; stale — данные из кэша при недоступности
