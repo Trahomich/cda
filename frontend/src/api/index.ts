@@ -676,6 +676,39 @@ function windowsFromRaw(raw: WindowsResponse, operationType: WindowOperationType
   }
 }
 
+/* ─── AI-рекомендации «что делать сейчас» (API-55/56, docs/09 §9.3, #137) ─── */
+
+/** API-55: GET /fields/{id}/ai/advice — последняя рекомендация или null
+ *  (404 advice_not_found — нормальное пустое состояние, без тоста). */
+export async function getFieldAdvice(fieldId: string): Promise<FieldAdvice | null> {
+  try {
+    return await apiClient.request<FieldAdvice>(`/fields/${fieldId}/ai/advice`, { silent: true })
+  } catch {
+    return null
+  }
+}
+
+/** POST /fields/{id}/ai/advice — принудительный пересчёт: 202 queued;
+ *  результат — поллингом того же GET (§9.3). */
+export async function refreshFieldAdvice(fieldId: string): Promise<boolean> {
+  const res = await apiClient.request<{ status: string }>(`/fields/${fieldId}/ai/advice`, {
+    method: 'POST',
+  })
+  return res.status === 'queued'
+}
+
+/** API-56: GET /fields/{id}/ai/advice/history?limit&offset — история
+ *  рекомендаций по убыванию created_at (только items). */
+export async function getFieldAdviceHistory(
+  fieldId: string,
+  params: { limit?: number; offset?: number } = {},
+): Promise<FieldAdviceHistory> {
+  return apiClient.request<FieldAdviceHistory>(`/fields/${fieldId}/ai/advice/history`, {
+    query: { limit: params.limit ?? 20, offset: params.offset ?? 0 },
+    silent: true,
+  })
+}
+
 /* ─── Экран E-14 «Источники данных» (API-28) ─── */
 
 const ADAPTER_STATES: AdapterState[] = ['ok', 'degraded', 'error']
