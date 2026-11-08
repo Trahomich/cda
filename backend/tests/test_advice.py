@@ -183,6 +183,45 @@ class TestBuildContext:
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         assert advice.build_advice_context(db_session, fid, ADVICE_DAY) is None
 
+    def test_vra_verdict_from_cache(self, world, db_session, monkeypatch) -> None:
+        """§9.1 п.7: IQR + пространственный разброс из указателя пиков,
+        число зон — из кэша зон; нет кэша зон — «нет расчёта зон»."""
+        client, hdr = world
+        fid, _ = _season_world(db_session, client, hdr)
+        pointer = {
+            "date": "2026-07-01",
+            "iqr_ndvi": 0.082,
+            "spatial_spread": 0.12,
+            "peaks": [
+                {"date": "2026-06-01", "iqr_ndvi": 0.05, "spatial_spread": 0.1},
+                {"date": "2026-07-01", "iqr_ndvi": 0.082, "spatial_spread": 0.12},
+            ],
+        }
+        zones_cache = {"zones": [{}, {}, {}, {}]}  # 4 зоны дифвнесения
+
+        def fake_cache_get(key: str):
+            if key == f"vra:peak:{fid}:2026":
+                return pointer
+            if key == f"vra:{fid}:2026-07-01":
+                return zones_cache
+            return None
+
+        monkeypatch.setattr(advice, "cache_get", fake_cache_get)
+        ctx = advice.build_advice_context(db_session, fid, ADVICE_DAY)
+        assert ctx is not None
+        assert "пиковые сцены 2026-06-01, 2026-07-01" in ctx.context
+        assert "IQR NDVI = 0.082" in ctx.context
+        assert "пространственный разброс = 0.120" in ctx.context
+        assert "зон дифвнесения 4 (/vra)" in ctx.context
+
+        def fake_no_zones(key: str):
+            return pointer if key == f"vra:peak:{fid}:2026" else None
+
+        monkeypatch.setattr(advice, "cache_get", fake_no_zones)
+        ctx2 = advice.build_advice_context(db_session, fid, ADVICE_DAY)
+        assert ctx2 is not None
+        assert "нет расчёта зон" in ctx2.context
+
     def test_render_images_read_from_disk(self, world, db_session, tmp_path, monkeypatch) -> None:
         """Файловые NDVI-рендеры §7.3 (последняя + пик) попадают в images (≤2)."""
         from app.services.sentinel_ingest.renders import render_path
