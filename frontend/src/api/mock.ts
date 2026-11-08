@@ -2345,6 +2345,8 @@ export class MockTransport implements Transport {
 
     const vraExportMatch = /^\/fields\/([\w-]+)\/vra\/export$/.exec(pathname)
     if (vraExportMatch) {
+      // тест-хук для e2e (#140): последний запрос выгрузки с параметрами
+      ;(globalThis as { __CDA_VRA_EXPORT__?: string }).__CDA_VRA_EXPORT__ = pathname + '?' + search
       const field = FIELDS.find((f) => f.field_id === vraExportMatch[1])
       if (!field) return empty(404)
       const year = Number(params.get('year') ?? 0)
