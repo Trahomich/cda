@@ -21,6 +21,7 @@ import logging
 import re
 import threading
 import uuid
+from collections.abc import Sequence
 from datetime import UTC, date, datetime
 
 from fastapi import BackgroundTasks
