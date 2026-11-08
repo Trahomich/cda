@@ -17,6 +17,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """Старт/остановка фоновых подсистем (погода, спутник, алерты)."""
     schedulers = []
     alert_engine = None
+    advice_unsub: Callable[[], None] | None = None
     try:
         # импорт внутри lifespan: не тянуть APScheduler в тесты без необходимости
         from app.modules.alerts.engine import AlertEngine
