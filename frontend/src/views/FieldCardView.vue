@@ -450,6 +450,7 @@ function selectSeason(year: number): void {
   void loadVra()
   void loadYield()
   void loadInsights()
+  void loadIndexLayers()
 }
 
 async function loadVra() {
