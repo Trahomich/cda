@@ -35,7 +35,11 @@ class SourceCapabilities:
 
 @dataclass(frozen=True, slots=True)
 class Observation:
-    """Нормализованный факт погоды: сутки × поле (ENT-WEATHER-OBSERVATION, 05 §3)."""
+    """Нормализованный факт погоды: сутки × поле (ENT-WEATHER-OBSERVATION, 05 §3).
+
+    cloud_cover_mean_pct / snowfall_cm / snow_depth_cm / precipitation_hours —
+    облачность/снег/часы осадков (#126): источник может не отдавать (None).
+    """
 
     field_id: str  # UUID строкой — чтобы не тянуть зависимость от БД
     observed_at: date
@@ -47,6 +51,10 @@ class Observation:
     humidity_avg_pct: float | None
     source_id: str
     trust: float = 1.0
+    cloud_cover_mean_pct: float | None = None
+    snowfall_cm: float | None = None
+    snow_depth_cm: float | None = None
+    precipitation_hours: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
