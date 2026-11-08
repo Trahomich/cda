@@ -46,6 +46,7 @@ from app.modules.weather.schemas import (
     GddDayItem,
     GddNormItem,
     GddResponse,
+    HazardItem,
     HistoryListResponse,
     SourceMeta,
     WindowDayItem,
