@@ -105,7 +105,7 @@ class SatelliteScene(Base):
     __tablename__ = "dat_satellite_scene"
     __table_args__ = (
         CheckConstraint(
-            "\"index\" IN ('ndvi', 'ndre', 'ndmi', 'savi')",
+            "\"index\" IN ('ndvi', 'ndwi', 'ndre', 'ndmi', 'ndsi', 'evi', 'savi', 'bsi')",
             name="ck_dat_satellite_scene_index",
         ),
         CheckConstraint("cloud_pct <= 60", name="ck_dat_satellite_scene_cloud"),
