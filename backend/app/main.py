@@ -28,6 +28,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         alert_engine = AlertEngine()
         alert_engine.subscribe()
 
+        # событийный пересчёт AI-рекомендаций: новая чистая NDVI-сцена (09 §9.4)
+        from app.ai_assistant.advice_scheduler import (
+            create_advice_scheduler,
+            subscribe_advice,
+            unsubscribe_advice,
+        )
+
+        subscribe_advice()
+
         weather = create_scheduler(get_settings())
         if weather is not None:
             schedulers.append(weather)
@@ -37,6 +46,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         alerts = create_alerts_scheduler(get_settings())
         if alerts is not None:
             schedulers.append(alerts)
+        advice_sched = create_advice_scheduler(get_settings())
+        if advice_sched is not None:
+            schedulers.append(advice_sched)
         for scheduler in schedulers:
             scheduler.start()
     except Exception as exc:  # noqa: BLE001 — сбой планировщика не должен ронять API
@@ -46,6 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
     if alert_engine is not None:
         alert_engine.unsubscribe()
+    unsubscribe_advice()
     for scheduler in schedulers:
         scheduler.shutdown(wait=False)
 
