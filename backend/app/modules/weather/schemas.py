@@ -115,6 +115,7 @@ __all__ = [
     "FieldWeatherResponse",
     "ForecastDayItem",
     "ForecastListResponse",
+    "HistoryListResponse",
     "SourceMeta",
     "WindowDayItem",
     "WindowResponse",
