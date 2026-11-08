@@ -61,9 +61,7 @@ def day_hazards(
     hazards: list[dict[str, str]] = []
     if tmin is not None and tmin <= FROST_WARN_C:
         in_season = culture_name is not None and day.month in (
-            NDVI_STAGNATION_WINTER_MONTHS
-            if _winter_culture(culture_name)
-            else NDVI_STAGNATION_SEASON_MONTHS
+            VEGETATION_WINTER_MONTHS if _winter_culture(culture_name) else VEGETATION_SEASON_MONTHS
         )
         severity = "info" if not in_season else ("warn" if tmin > FROST_ALERT_C else "alert")
         hazards.append({"code": "frost", "severity": severity, "text": _frost_text(tmin)})
