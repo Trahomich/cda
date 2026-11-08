@@ -21,6 +21,7 @@ import type {
   FieldCardPlan,
   FieldCycle,
   FieldAdvice,
+  FieldAdviceHistory,
   FieldOperation,
   FieldStatus,
   FieldWeather,
