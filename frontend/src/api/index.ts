@@ -273,13 +273,18 @@ export async function getFieldVraMap(fieldId: string, year?: number): Promise<Nd
 }
 
 /** API-53: GET /fields/{id}/yield-forecast — прогноз урожайности (§7.4).
- *  Результат: данные; 'insufficient' — 422 (нет сцен сезона/культуры/
- *  модели) → «данных сезона недостаточно»; null — прочие ошибки. */
+ *  year (§7.5) — цикл года YYYY; нет цикла — 422 yield_no_culture,
+ *  нет сцен — 422 yield_no_season_data (оба → 'insufficient' — «данных
+ *  сезона недостаточно»); null — прочие ошибки. */
 export async function getYieldForecast(
   fieldId: string,
+  year?: number,
 ): Promise<YieldForecastResponse | 'insufficient' | null> {
+  const yearQuery = year ? `?year=${year}` : ''
   try {
-    return await apiClient.request<YieldForecastResponse>(`/fields/${fieldId}/yield-forecast`)
+    return await apiClient.request<YieldForecastResponse>(
+      `/fields/${fieldId}/yield-forecast${yearQuery}`,
+    )
   } catch (error) {
     if (error instanceof ApiError && error.status === 422) return 'insufficient'
     return null
@@ -288,14 +293,26 @@ export async function getYieldForecast(
 
 /** API-51: GET /fields/{id}/insights — «Выводы ассистента» (§7.4):
  *  items — числовые детекторы (всегда), summary — LLM-сводка
- *  (null при source=rules); null — поле не найдено или прочая ошибка
- *  (блок в карточке скрывается, кэш на клиенте не делаем). */
-export async function getInsights(fieldId: string): Promise<InsightsResponse | null> {
+ *  (null при source=rules); year (§7.5) — детекторы и сводка по сезону
+ *  YYYY; null — поле не найдено или прочая ошибка (блок в карточке
+ *  скрывается, кэш на клиенте не делаем). */
+export async function getInsights(
+  fieldId: string,
+  year?: number,
+): Promise<InsightsResponse | null> {
+  const yearQuery = year ? `?year=${year}` : ''
   try {
-    return await apiClient.request<InsightsResponse>(`/fields/${fieldId}/insights`)
+    return await apiClient.request<InsightsResponse>(`/fields/${fieldId}/insights${yearQuery}`)
   } catch {
     return null
   }
+}
+
+/** API-54: GET /fields/{id}/seasons — сезоны NDVI поля (§7.5): годы по
+ *  убыванию, is_current у текущего; переключатель сезонов в паспорте поля. */
+export async function getFieldSeasons(fieldId: string): Promise<SeasonItem[]> {
+  const data = await apiClient.request<SeasonsResponse>(`/fields/${fieldId}/seasons`)
+  return data.items
 }
 
 /** API-49: GET /fields/{id}/crop-cycles — история севооборота поля (годы по
