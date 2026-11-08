@@ -58,12 +58,14 @@ def test_post_bad_day_ok_false_with_detail_and_suggestions(client, db_session) -
     item = make_ppp(db_session)
     fid = uuid.UUID(field["field_id"])
 
-    make_forecast(db_session, field_id=fid, day=PLANNED, t_min=10.0, t_max=42.0, wind=6.2,
-                  precip_prob=70)  # все три критерия нарушены
+    make_forecast(
+        db_session, field_id=fid, day=PLANNED, t_min=10.0, t_max=42.0, wind=6.2, precip_prob=70
+    )  # все три критерия нарушены
     # горизон planned+1..+6: ветер/осадки ок через день
     for delta, wind in ((1, 5.0), (2, 3.5), (3, 3.0), (4, 4.5), (5, 2.0), (6, 3.0)):
-        make_forecast(db_session, field_id=fid, day=PLANNED.replace(day=PLANNED.day + delta),
-                      wind=wind)
+        make_forecast(
+            db_session, field_id=fid, day=PLANNED.replace(day=PLANNED.day + delta), wind=wind
+        )
 
     resp = post_plan(client, hdr, cycle, item, planned_date=PLANNED.isoformat())
     assert resp.status_code == 201, resp.text  # окно НЕ блокирует
@@ -101,8 +103,15 @@ def test_null_metrics_do_not_block(client, db_session) -> None:
     field = make_field(client, hdr)
     cycle = make_cycle(db_session, field=field, year=2027)
     item = make_ppp(db_session)
-    make_forecast(db_session, field_id=uuid.UUID(field["field_id"]), day=PLANNED,
-                  t_min=10.0, t_max=None, wind=None, precip_prob=None)
+    make_forecast(
+        db_session,
+        field_id=uuid.UUID(field["field_id"]),
+        day=PLANNED,
+        t_min=10.0,
+        t_max=None,
+        wind=None,
+        precip_prob=None,
+    )
 
     resp = post_plan(client, hdr, cycle, item, planned_date=PLANNED.isoformat())
     assert resp.status_code == 201, resp.text
@@ -118,8 +127,9 @@ def test_no_forecast_on_date_window_null(client, db_session) -> None:
     cycle = make_cycle(db_session, field=field, year=2027)
     item = make_ppp(db_session)
     # прогноз есть, но только на другие сутки
-    make_forecast(db_session, field_id=uuid.UUID(field["field_id"]),
-                  day=PLANNED.replace(day=PLANNED.day + 2))
+    make_forecast(
+        db_session, field_id=uuid.UUID(field["field_id"]), day=PLANNED.replace(day=PLANNED.day + 2)
+    )
 
     resp = post_plan(client, hdr, cycle, item, planned_date=PLANNED.isoformat())
     assert resp.status_code == 201, resp.text
@@ -145,10 +155,15 @@ def test_approve_same_window_as_post(client, db_session) -> None:
     field = make_field(client, hdr)
     cycle = make_cycle(db_session, field=field, year=2027)
     item = make_ppp(db_session)
-    make_forecast(db_session, field_id=uuid.UUID(field["field_id"]), day=PLANNED,
-                  wind=6.0, precip_prob=60)
-    make_forecast(db_session, field_id=uuid.UUID(field["field_id"]),
-                  day=PLANNED.replace(day=PLANNED.day + 3), wind=2.0)
+    make_forecast(
+        db_session, field_id=uuid.UUID(field["field_id"]), day=PLANNED, wind=6.0, precip_prob=60
+    )
+    make_forecast(
+        db_session,
+        field_id=uuid.UUID(field["field_id"]),
+        day=PLANNED.replace(day=PLANNED.day + 3),
+        wind=2.0,
+    )
 
     resp = post_plan(client, hdr, cycle, item, planned_date=PLANNED.isoformat())
     assert resp.status_code == 201, resp.text

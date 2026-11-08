@@ -115,9 +115,7 @@ def _text_px(text: str, k: int) -> int:
     return max(0, len(text) * 4 * k - k)
 
 
-def _draw_text(
-    rgb: np.ndarray, alpha: np.ndarray, text: str, x0: int, y0: int, *, k: int
-) -> None:
+def _draw_text(rgb: np.ndarray, alpha: np.ndarray, text: str, x0: int, y0: int, *, k: int) -> None:
     """Нарисовать строку мини-шрифтом 3×5 (символ = 4k × 5k), in-place.
 
     Вызывающая сторона гарантирует, что глифы помещаются в растр.

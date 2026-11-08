@@ -97,7 +97,7 @@ class TestRenderScene:
                 assert ds.count == 4 and ds.dtypes[0] == "uint8"
                 alpha = ds.read(4)
         top = alpha[: alpha.shape[0] // 4]
-        bottom = alpha[-alpha.shape[0] // 4:]
+        bottom = alpha[-alpha.shape[0] // 4 :]
         assert not top.any()  # облачная зона прозрачна
         assert bottom.mean() > 200  # растительность непрозрачна
 
@@ -277,8 +277,8 @@ class TestLegendHelpers:
     def test_draw_gradient_legend(self):
         """Градиент палитры + подписи; концы бара = цвета краёв палитры."""
         from app.services.sentinel_ingest.renders import (
-            PALETTE,
             _LEGEND_PANEL_ALPHA,
+            PALETTE,
             draw_gradient_legend,
         )
 

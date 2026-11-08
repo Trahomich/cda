@@ -23,12 +23,12 @@ from app.models.agronomy import AgroInput, CropCycle, TreatmentPlan
 from app.models.auth import UserRole
 from app.models.integrations import SatelliteCatalogItem, SatelliteScene
 from app.models.references import Culture
+from app.modules.satellite.vra import ZONE_COLORS
 from rasterio.transform import Affine
 from rasterio.warp import transform_geom
 from shapely.geometry import box, mapping
 from sqlalchemy import text as db_text
 from sqlalchemy.orm import Session
-from app.modules.satellite.vra import ZONE_COLORS
 from tests.test_auth import auth_header, make_user
 from tests.test_satellite import make_satellite_source
 

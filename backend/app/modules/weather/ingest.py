@@ -377,7 +377,6 @@ class WeatherIngest:
         )
         return report_result
 
-
     def backfill_history(self, db: Session, date_from: date, date_to: date) -> IngestReport:
         """Полный бэкфилл истории по всем активным полям (#126, docs/06 §7.5).
 
