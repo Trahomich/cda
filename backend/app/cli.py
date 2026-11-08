@@ -47,6 +47,8 @@ from app.modules.weather.rules import seed_weather_rules
 from app.seed import seed_references
 from app.seed_inputs import seed_inputs
 
+logger = logging.getLogger(__name__)
+
 
 def cmd_create_admin(args: argparse.Namespace) -> int:
     with SessionLocal() as db:
