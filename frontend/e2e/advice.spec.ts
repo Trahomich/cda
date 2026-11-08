@@ -74,9 +74,10 @@ test('рекомендация: история с пагинацией «Пок�
   await block.locator('.card360__advice-toggle').click()
   const items = block.locator('.card360__advice-list li')
   await expect(items).toHaveCount(20, { timeout: 10_000 })
-  await expect(block.locator('.card360__advice-toggle')).toContainText('(22)')
+  await expect(block.locator('.card360__advice-toggle')).toContainText('(20)')
 
   await block.locator('.card360__advice-more').click()
   await expect(items).toHaveCount(22, { timeout: 10_000 })
   await expect(block.locator('.card360__advice-more')).toHaveCount(0)
+  await expect(block.locator('.card360__advice-toggle')).toContainText('(22)')
 })
