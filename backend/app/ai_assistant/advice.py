@@ -257,15 +257,7 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
             "Активные рекомендации системы: "
             + "; ".join(f"[{r.rule_id}] {r.action}" for r in active_recs)
         )
-    vra_peaks = service._vra_peaks_cached(field_id, season_year)  # noqa: SLF001 — общий кэш VRA (#106)
-    if vra_peaks:
-        peak_dates = ", ".join(d.isoformat() for d, _, _ in vra_peaks)
-        parts.append(
-            f"Модель дифвнесения: пиковые сцены {peak_dates}, "
-            f"IQR NDVI последнего пика = {vra_peaks[-1][1]:.3f} (зоны — /vra)."
-        )
-    else:
-        parts.append("Модель дифвнесения: нет расчёта.")
+    parts.append(_vra_verdict_line(field_id, season_year))
     yield_line = _yield_verdict(db, field_id, season_year, scenes)
     if yield_line:
         parts.append(yield_line)
