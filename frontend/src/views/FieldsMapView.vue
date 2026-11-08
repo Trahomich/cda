@@ -465,6 +465,22 @@ onUnmounted(() => {
   height: 60dvh;
 }
 
+/* Оверлей загрузки (#136/#437): пока у карты нет вьюпорта (нет
+   сохранённого вида, поля ещё не пришли) — не показываем произвольную
+   точку, а нейтральную плашку поверх серой канвы. */
+.map-screen__loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 700; /* выше тайлов, ниже легенды */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8f5e9;
+  color: var(--cda-green-dark, #1b5e20);
+  font-size: 1.05rem;
+  pointer-events: none;
+}
+
 .map-screen__list {
   flex: 1;
   overflow-y: auto;
