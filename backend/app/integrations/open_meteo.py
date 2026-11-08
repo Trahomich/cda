@@ -191,7 +191,7 @@ class OpenMeteoAdapter:
             {
                 "latitude": lat,
                 "longitude": lon,
-                "daily": ",".join(_DAILY_METRICS),
+                "daily": ",".join(_DAILY_METRICS + _FORECAST_ONLY_METRICS),
                 "timezone": "auto",
                 "windspeed_unit": "ms",
                 "forecast_days": days,
