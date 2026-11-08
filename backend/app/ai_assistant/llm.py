@@ -69,6 +69,7 @@ def summarize(
     num_predict: int | None = None,
     provider: str | None = None,
     api_key: str | None = None,
+    images: Sequence[bytes] | None = None,
 ) -> str | None:
     """Свести контекст данных хозяйства в короткий текст (§8.1).
 
