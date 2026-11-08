@@ -441,6 +441,9 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
         )
 
     png_extra: dict[str, bytes] = {}
+    # EVI/SAVI — по отражениям 0–1 (DN/10000): константы формул этого требуют
+    dn = 10000.0
+    nir_s, red_s, blue_s = nir_f / dn, red_f / dn, blue_f / dn
     if swir_f is not None:
         png_extra["ndmi"] = _index_png(
             compute_index_array("ndmi", nir_f, swir_f), _NDMI_LO, _NDMI_HI, PALETTE
@@ -453,11 +456,10 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
         png_extra["ndsi"] = _index_png(
             compute_index_array("ndsi", green_f, swir_f), _NDSI_LO, _NDSI_HI, PALETTE_NDSI
         )
-    png_extra["evi"] = _index_png(
-        compute_evi_array(nir_f, red_f, blue_f), _EVI_LO, _EVI_HI, PALETTE
-    )
+    evi_arr = compute_evi_array(nir_s, red_s, blue_s)
+    png_extra["evi"] = _index_png(evi_arr, _EVI_LO, _EVI_HI, PALETTE)
     png_extra["savi"] = _index_png(
-        compute_index_array("savi", nir_f, red_f), _SAVI_LO, _SAVI_HI, PALETTE
+        compute_index_array("savi", nir_s, red_s), _SAVI_LO, _SAVI_HI, PALETTE
     )
     if swir_f is not None:
         png_extra["bsi"] = _index_png(
