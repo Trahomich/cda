@@ -13,8 +13,9 @@ import uuid
 import zipfile
 from xml.etree.ElementTree import fromstring
 
-import pytest
+import numpy as np
 from app.models.auth import UserRole
+from rasterio.transform import Affine
 from shapely.geometry import shape
 from tests.test_auth import auth_header, make_user
 from tests.test_satellite import make_satellite_source
