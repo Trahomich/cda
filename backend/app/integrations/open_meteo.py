@@ -291,6 +291,8 @@ class OpenMeteoAdapter:
             hazard = "wind"
         else:
             hazard = "none"
+        # вероятность осадков отдаёт только forecast-API (архив — None)
+        prob = m.get("precipitation_probability_max")
         return ForecastItem(
             field_id=field_id,
             forecast_for=day,
@@ -300,11 +302,7 @@ class OpenMeteoAdapter:
             precipitation_mm=precip,
             wind_max_ms=wind,
             humidity_avg_pct=m["relative_humidity_2m_mean"],
-            precip_prob_pct=(
-                None
-                if m.get("precipitation_probability_max") is None  # архив не отдаёт
-                else int(m["precipitation_probability_max"])  # type: ignore[arg-type]
-            ),
+            precip_prob_pct=None if prob is None else int(prob),
             hazard=hazard,
             source_id=OpenMeteoAdapter.source_id,
         )
