@@ -555,7 +555,9 @@ export async function getWeatherWindowsPlanned(
     operation_type: it.operation_type as WindowOperationType,
     rule_text: it.rule_text,
     window_open: it.window_open,
-    nearest_window_date: it.days.find((d) => d.ok)?.day ?? null,
+    nearest_window_date: it.nearest_window_date
+      ?? it.days.find((d) => d.ok)?.day
+      ?? null,
     days: it.days.map((d) => ({
       date: d.day,
       is_window: d.ok,
