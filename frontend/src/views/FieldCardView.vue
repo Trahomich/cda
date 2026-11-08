@@ -222,7 +222,6 @@ function onDotSelect(date: string): void {
 
 onUnmounted(() => {
   if (layer.value) URL.revokeObjectURL(layer.value.url)
-  if (vraMap.value) URL.revokeObjectURL(vraMap.value.url)
 })
 
 /* ── Дифференцированное внесение (API-52, §7.4): зоны + карта ── */
