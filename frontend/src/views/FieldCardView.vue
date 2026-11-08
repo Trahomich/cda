@@ -166,16 +166,86 @@ const contourPoints = computed(() => {
     .join(' ')
 })
 
-/* ── Слой мини-карты (§7.3): NDVI-рендер / truecolor снимок / контур ── */
+/* ── Слой мини-карты (§7.3): NDVI-рендер / truecolor снимок / контур.
+ *  #130 (§7.7): индексные слои NDRE/NDMI/NDSI/EVI/BSI — те же PNG-рендеры
+ *  API-50 ?variant={index}; SAVI не включаем (дублирует EVI). ── */
 
-/** Режим слоя: 'ndvi' | 'truecolor' — PNG-оверлей на контуре, 'none' — контур. */
-const layerMode = ref<'ndvi' | 'truecolor' | 'none'>('ndvi')
-/** Даты со свежими рендерами (render_available у API-06, §7.3). */
-const renderDates = computed(() => ndvi.value.filter((p) => p.render_available).map((p) => p.date))
+/** Индексные слои: краткая метка кнопки + русская подсказка (§7.7). */
+const INDEX_LAYERS = [
+  { key: 'ndvi', label: 'NDVI', hint: 'вегетация' },
+  { key: 'ndre', label: 'NDRE', hint: 'азотный статус' },
+  { key: 'ndmi', label: 'NDMI', hint: 'влажность биомассы' },
+  { key: 'ndsi', label: 'NDSI', hint: 'снежный покров' },
+  { key: 'evi', label: 'EVI', hint: 'вегетация, устойчивая к почве' },
+  { key: 'bsi', label: 'BSI', hint: 'голая почва' },
+] as const
+
+type IndexLayerKey = (typeof INDEX_LAYERS)[number]['key']
+/** Режим слоя: индекс — PNG-оверлей на контуре, 'none' — контур. */
+type LayerMode = IndexLayerKey | 'truecolor' | 'none'
+
+const layerMode = ref<LayerMode>('ndvi')
+
+/** Даты со свежими рендерами (render_available у API-06, §7.3):
+ *  NDVI — из основного таймлайна, прочие индексы — из ?index= (§7.7). */
+type ExtraIndexKey = Exclude<IndexLayerKey, 'ndvi'>
+const EXTRA_INDEX_KEYS: readonly ExtraIndexKey[] = ['ndre', 'ndmi', 'ndsi', 'evi', 'bsi']
+
+const indexDates = ref<Record<ExtraIndexKey, string[]>>({
+  ndre: [],
+  ndmi: [],
+  ndsi: [],
+  evi: [],
+  bsi: [],
+})
+const indexLoading = ref(true)
+
+/** Доступность индексного слоя: сцены с рендерами сезона (API-06 ?index=).
+ *  Ошибки/пусто — слой недоступен (кнопка задизейблена). */
+async function loadIndexLayers(): Promise<void> {
+  const token = seasonToken
+  indexLoading.value = true
+  const loaded = await Promise.all(
+    EXTRA_INDEX_KEYS.map(async (key) => {
+      try {
+        const points = await getFieldNdvi(fieldId, seasonQueryYear.value, key)
+        return [key, points.filter((p) => p.render_available).map((p) => p.date).sort()] as const
+      } catch {
+        return [key, []] as const
+      }
+    }),
+  )
+  if (token !== seasonToken) return
+  indexDates.value = Object.fromEntries(loaded) as Record<ExtraIndexKey, string[]>
+  // Выбранный индекс в новом сезоне недоступен — возвращаем NDVI.
+  const mode = layerMode.value
+  if (mode !== 'ndvi' && mode !== 'truecolor' && mode !== 'none' && !indexDates.value[mode].length) {
+    layerMode.value = 'ndvi'
+  }
+  indexLoading.value = false
+}
+
+/** Кнопка индексного слоя недоступна, пока сцены не загружены или их нет. */
+function indexLayerDisabled(key: IndexLayerKey): boolean {
+  if (key === 'ndvi') return false
+  return indexLoading.value || indexDates.value[key].length === 0
+}
+
+const renderDates = computed(() => {
+  const mode = layerMode.value
+  if (mode !== 'ndvi' && mode !== 'truecolor' && mode !== 'none') {
+    return indexDates.value[mode]
+  }
+  return ndvi.value.filter((p) => p.render_available).map((p) => p.date)
+})
 /** Выбранная дата слоя; по умолчанию — последняя с рендером. */
 const renderDate = ref('')
 /** Загруженный PNG (blob URL + геопривязка из X-Field-Bbox/X-Image-Size). */
 const layer = ref<NdviRender | null>(null)
+/** Русская подсказка активного индексного слоя (#130). */
+const activeIndexHint = computed(
+  () => INDEX_LAYERS.find((l) => l.key === layerMode.value)?.hint ?? '',
+)
 
 watch(
   renderDates,
