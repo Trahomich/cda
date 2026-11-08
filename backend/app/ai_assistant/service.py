@@ -487,14 +487,33 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
             )
             return
         try:
+            # vision-сводка (§8.5, #117): рендеры приложены только облачному
+            # провайдеру (REQ-F-036); ollama/нет файлов — текстовый PROMPT
+            prompt = PROMPT
+            images: list[bytes] = []
+            settings = get_settings()
+            if settings.llm_provider.strip().lower() == "anthropic" and llm.llm_enabled(
+                settings
+            ):
+                renders = _vision_renders(field_id, day, peak_day)
+                if renders:
+                    images = [png for _, png in renders]
+                    # подпись рендеров в context — их даты легальны для guardrail
+                    context += (
+                        "\nПриложены рендеры поля (изображения): "
+                        + ", ".join(label for label, _ in renders)
+                        + "."
+                    )
+                    prompt = VISION_PROMPT
             summary = _checked_summary(
                 llm.summarize(
-                    PROMPT,
+                    prompt,
                     context,
                     timeout=LLM_BACKGROUND_TIMEOUT_SECONDS,
                     attempts=1,
                     keep_alive=LLM_KEEP_ALIVE,
                     num_predict=LLM_NUM_PREDICT,
+                    images=images or None,
                 ),
                 items,
                 context,
