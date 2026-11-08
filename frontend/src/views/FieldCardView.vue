@@ -692,7 +692,10 @@ async function loadNdvi() {
   ndviLoading.value = true
   ndvi.value = []
   try {
-    const points = await getFieldNdvi(fieldId, seasonQueryYear.value)
+    // Текущему сезону — явный ?year: без него API-06 отдаёт последние сцены
+    // ВСЕХ лет (бэкфилл 2023+), и график «текущего сезона» мешает годы (#495).
+    const year = seasonQueryYear.value ?? currentSeasonYear.value ?? undefined
+    const points = await getFieldNdvi(fieldId, year)
     if (token !== seasonToken) return // сезон уже переключили — ответ устарел
     // API-06 отдаёт desc (свежая первой); фронту нужен asc: график слева-направо
     // по времени и «последний снимок»/дефолт слоя мини-карты = свежая сцена (#142).
