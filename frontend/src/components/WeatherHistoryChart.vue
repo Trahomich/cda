@@ -73,8 +73,6 @@ const monthTicks = computed(() => {
   return out
 })
 
-const MONTHS_RU = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
-void MONTHS_RU
 </script>
 
 <template>
