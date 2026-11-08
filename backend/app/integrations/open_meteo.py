@@ -74,7 +74,7 @@ class OpenMeteoAdapter:
         history=True,
         current=True,
         forecast_days=16,
-        metrics=("temperature", "precipitation", "wind", "humidity"),
+        metrics=("temperature", "precipitation", "wind", "humidity", "cloud", "snow"),
     )
 
     def __init__(
