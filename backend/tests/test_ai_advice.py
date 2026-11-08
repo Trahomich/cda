@@ -215,6 +215,7 @@ class TestAdviceTriggers:
     def test_scene_ingested_ndvi_queues(self, monkeypatch):
         """Новая чистая NDVI-сцена → поле в очередь (§9.4 п.2)."""
         queued = self._spy_queue(monkeypatch)
+        advice_scheduler.subscribe_advice()
         events.publish(
             SCENE_INGESTED_EVENT,
             {"field_id": self.field_id, "index": "ndvi", "cloud_pct": 10.0},
