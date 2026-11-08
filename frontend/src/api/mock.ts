@@ -1549,44 +1549,55 @@ export class MockTransport implements Transport {
     }
 
     /* ── NDVI-таймлайн (API-06): пагинация + мета источника, как backend;
-       ?year=YYYY (§7.5) — сцены сезона; неизвестный сезон — пустой список ── */
+       ?year=YYYY (§7.5) — сцены сезона; неизвестный сезон — пустой список;
+       ?index= (§7.7 #128) — сцены индекса; NDSI — пусто (нет зимних сцен) ── */
     const ndviMatch = /^\/fields\/([\w-]+)\/ndvi$/.exec(pathname)
     if (method === 'GET' && ndviMatch) {
       const field = FIELDS.find((f) => f.field_id === ndviMatch[1])
       if (!field) {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${ndviMatch[1]} не найдено`)
       }
+      const indexParam = (params.get('index') ?? 'ndvi') as MockIndex
+      if (!MOCK_INDEX_NAMES.includes(indexParam)) {
+        return problem(422, 'https://cda.example/errors/validation', 'Некорректный запрос', `Неизвестный индекс «${indexParam}»`)
+      }
       const yearParam = Number(params.get('year') ?? 0)
       const seasonUnknown = yearParam !== 0 && !SEASON_YEARS.includes(yearParam)
       const ndviPoints = ndviOf(FIELD_N.get(field.field_id)!, yearParam || 2027)
       const n = FIELD_N.get(field.field_id)!
-      const scenes = seasonUnknown ? [] : ndviPoints.map((p, i) => ({
-        scene_id: `scene-${p.date}-${field.field_id.slice(-4)}`,
-        field_id: field.field_id,
-        index: 'ndvi',
-        captured_at: p.date,
-        resolution_m: 10,
-        index_avg: p.ndvi,
-        index_min: Math.round((p.ndvi - 0.06) * 100) / 100,
-        index_max: Math.round((p.ndvi + 0.06) * 100) / 100,
-        cloud_pct: p.cloud_pct,
-        composite_days: 1,
-        source_id: 'satellite.sentinel2-l2a',
-        trust: 0.9,
-        anomaly_zones_ref: null,
-        // §7.3: рендеры есть у последних дат сезона (старые — как исторические),
-        // но не у облачных сцен (cloud ≤ 60, как в ingest).
-        render_available: i >= ndviPoints.length - 3 && p.cloud_pct <= 60,
-        // §7.4: NDWI-детектор — вымокание у отдельных сцен (у поля 1 —
-        // и на последней рендерной дате, для бейджа по умолчанию).
-        waterlogged: i === 4 || (n === 1 && i === 8),
-      }))
+      const scenes =
+        seasonUnknown || indexParam === 'ndsi'
+          ? []
+          : ndviPoints.map((p, i) => {
+              const avg = mockIndexValue(indexParam, p.ndvi)
+              return {
+                scene_id: `scene-${p.date}-${field.field_id.slice(-4)}`,
+                field_id: field.field_id,
+                index: indexParam,
+                captured_at: p.date,
+                resolution_m: 10,
+                index_avg: avg,
+                index_min: Math.round((avg - 0.06) * 100) / 100,
+                index_max: Math.round((avg + 0.06) * 100) / 100,
+                cloud_pct: p.cloud_pct,
+                composite_days: 1,
+                source_id: 'satellite.sentinel2-l2a',
+                trust: 0.9,
+                anomaly_zones_ref: null,
+                // §7.3: рендеры есть у последних дат сезона (старые — как исторические),
+                // но не у облачных сцен (cloud ≤ 60, как в ingest).
+                render_available: i >= ndviPoints.length - 3 && p.cloud_pct <= 60,
+                // §7.4: NDWI-детектор — вымокание у отдельных сцен (у поля 1 —
+                // и на последней рендерной дате, для бейджа по умолчанию).
+                waterlogged: i === 4 || (n === 1 && i === 8),
+              }
+            })
       return ok({
         items: scenes,
         total: scenes.length,
         limit: 50,
         offset: 0,
-        index: 'ndvi',
+        index: indexParam,
         meta: { source_id: 'satellite.sentinel2-l2a', status: 'ok', last_success_at: null, stale: false },
       })
     }
