@@ -100,7 +100,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           class="vra-lb__btn vra-lb__btn--close"
           aria-label="Закрыть"
           @click="emit('close')"
-        >✕</button>
+        >
+          ✕
+        </button>
       </div>
       <div
         class="vra-lb__stage"

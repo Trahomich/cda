@@ -1181,16 +1181,24 @@ function fmtNum(v: number, digits = 1): string {
                   <th
                     scope="col"
                     title="Номер зоны"
-                  >№</th>
+                  >
+                    №
+                  </th>
                   <th
                     scope="col"
                     title="Площадь зоны"
-                  >га</th>
-                  <th scope="col">NDVI</th>
+                  >
+                    га
+                  </th>
+                  <th scope="col">
+                    NDVI
+                  </th>
                   <th
                     scope="col"
                     title="Доза удобрения"
-                  >кг/га</th>
+                  >
+                    кг/га
+                  </th>
                 </tr>
               </thead>
               <tbody>
