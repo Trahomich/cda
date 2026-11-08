@@ -50,6 +50,52 @@ function shortFieldNumber(name: string): string {
   return head || name
 }
 
+/* ── Ретентивный вьюпорт карты (#136, фидбек #437): последний вид карты
+ * запоминается и восстанавливается при открытии — пользователь никогда
+ * не видит произвольную точку России. Без сохранённого вида карта
+ * получает его от fitBounds по полям, до того — оверлей «Загружаем». ── */
+
+const MAP_VIEW_KEY = 'cda.map.view'
+
+interface SavedMapView {
+  center: [number, number]
+  zoom: number
+}
+
+/** Сохранённый вид карты; null — нет или битый (тогда старт по полям). */
+function loadMapView(): SavedMapView | null {
+  try {
+    const raw = localStorage.getItem(MAP_VIEW_KEY)
+    if (!raw) return null
+    const v = JSON.parse(raw) as Partial<SavedMapView>
+    const [lat, lng] = Array.isArray(v.center) ? v.center : []
+    if (
+      typeof lat === 'number' && Number.isFinite(lat) &&
+      typeof lng === 'number' && Number.isFinite(lng) &&
+      typeof v.zoom === 'number' && v.zoom >= 1 && v.zoom <= 19
+    ) {
+      return { center: [lat, lng], zoom: v.zoom }
+    }
+  } catch {
+    // нет доступа к localStorage / битый JSON — не критично
+  }
+  return null
+}
+
+/** Запомнить текущий вид карты (moveend покрывает и зум). */
+function saveMapView(): void {
+  if (!map) return
+  try {
+    const c = map.getCenter()
+    localStorage.setItem(
+      MAP_VIEW_KEY,
+      JSON.stringify({ center: [c.lat, c.lng], zoom: map.getZoom() } satisfies SavedMapView),
+    )
+  } catch {
+    // приватный режим и т.п. — вид просто не запомнится
+  }
+}
+
 /** Культуры → цвет из справочника (API-48). */
 const cultureColors = ref(new Map<string, string>())
 const legendOpen = ref(true)
