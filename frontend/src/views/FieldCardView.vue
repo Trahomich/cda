@@ -642,6 +642,16 @@ function fmtDate(iso: string): string {
   return iso.split('-').reverse().join('.')
 }
 
+/** Дата+время для created_at рекомендаций (§9.3): «08.11.2026 14:02». */
+function fmtDateTime(iso: string): string {
+  const d = new Date(iso)
+  const dd = String(d.getDate()).padStart(2, '0')
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mi = String(d.getMinutes()).padStart(2, '0')
+  return `${dd}.${mm}.${d.getFullYear()} ${hh}:${mi}`
+}
+
 /** Загрузка по блокам (v2-fix-E): каждый блок карточки рендерится и
  *  заполняется независимо — структура страницы видна сразу, вместо общего
  *  гейта «Загрузка карточки поля…» скелетоны внутри блоков. Ошибка ядра
