@@ -91,7 +91,7 @@ class TestWindowsList:
     def test_list_only_planned_spraying(self, setup):
         """План опрыскивания approved → в списке только spraying (default true)."""
         c, s = setup["client"], setup
-        make_plan(s["cycle"] if hasattr(s, "__getitem__") else s["cycle"])
+        make_plan(s["cycle"])
         resp = c.get(
             f"{API}/weather/windows", headers=s["auth"], params={"field_id": s["field_id"]}
         )
