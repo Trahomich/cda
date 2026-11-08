@@ -62,6 +62,14 @@ VRA_MIN_IQR = 0.12
 #: ячеек сетки ≥ 0.06 — мелкие пятна ~1 га (детектор §8.2, #121)
 VRA_SPREAD_MIN = 0.06
 
+#: индексы, по которым можно строить зоны дифвнесения (§7.7 #129):
+#: NDRE не насыщается на поздних фазах вегетации — дифвнесение азота
+VRA_INDICES = ("ndvi", "ndre")
+
+#: каналы, нужные для расчёта зон по индексу (§7.7 #129)
+VRA_BANDS = ("b04", "b08", "scl")
+VRA_BANDS_NDRE = ("b08", "b05", "scl")
+
 #: сетка пространственного разброса: ~20×20 ячеек, ячейка ≥ 30 валидных px
 SPREAD_GRID = 20
 SPREAD_CELL_MIN_PX = 30
@@ -119,13 +127,13 @@ def _err_no_data(field_id: uuid.UUID, reason: str) -> AppError:
 
 
 def latest_scene(
-    db: Session, field_id: uuid.UUID, *, year: int | None = None
+    db: Session, field_id: uuid.UUID, *, year: int | None = None, index: str = "ndvi"
 ) -> SatelliteScene | None:
-    """Последняя чистая NDVI-сцена поля (в БД только cloud ≤ 60, 05 §5).
+    """Последняя чистая сцена поля выбранного индекса (cloud ≤ 60, 05 §5).
 
-    year — сцены только сезона YYYY (§7.5).
+    year — сцены только сезона YYYY (§7.5); index — индекс сцен (§7.7 #129).
     """
-    filters = [SatelliteScene.field_id == field_id, SatelliteScene.index == "ndvi"]
+    filters = [SatelliteScene.field_id == field_id, SatelliteScene.index == index]
     if year is not None:
         filters.append(func.extract("year", SatelliteScene.captured_at) == year)
     return db.scalars(
@@ -136,8 +144,10 @@ def latest_scene(
     ).first()
 
 
-def _scene_assets(db: Session, field_id: uuid.UUID, captured_at: date) -> dict:
-    """Ассеты COG каталога для даты сцены (первая строка с каналами)."""
+def _scene_assets(
+    db: Session, field_id: uuid.UUID, captured_at: date, bands: tuple[str, ...] = VRA_BANDS
+) -> dict:
+    """Ассеты COG каталога для даты сцены (первая строка со всеми каналами)."""
     items = db.scalars(
         select(SatelliteCatalogItem)
         .where(
@@ -147,14 +157,16 @@ def _scene_assets(db: Session, field_id: uuid.UUID, captured_at: date) -> dict:
         .order_by(SatelliteCatalogItem.created_at)
     ).all()
     for item in items:
-        if all(item.assets.get(band) for band in ("b04", "b08", "scl")):
+        if all(item.assets.get(band) for band in bands):
             return item.assets
     return {}
 
 
-def compute_vra(db: Session, field: Field, scene: SatelliteScene) -> VraZones:
+def compute_vra(
+    db: Session, field: Field, scene: SatelliteScene, *, index: str = "ndvi"
+) -> VraZones:
     """Расчёт зон по COG сцены (§7.4 v1.7): окно как в §7.3, зоны — всегда."""
-    return _analyze_scene(db, field, scene)
+    return _analyze_scene(db, field, scene, index=index)
 
 
 def _spatial_spread(ndvi: np.ndarray, valid: np.ndarray) -> float:
@@ -183,7 +195,9 @@ def _spatial_spread(ndvi: np.ndarray, valid: np.ndarray) -> float:
     return round(float(np.percentile(means, 90) - np.percentile(means, 10)), 3)
 
 
-def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones:
+def _analyze_scene(
+    db: Session, field: Field, scene: SatelliteScene, *, index: str = "ndvi"
+) -> VraZones:
     """Зоны по COG сцены (§7.4 v1.7): всегда — кластеризация на 3 по
     перцентилям, метрики iqr_ndvi и spatial_spread той же сцены.
 
