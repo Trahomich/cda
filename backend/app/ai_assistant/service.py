@@ -540,6 +540,8 @@ __all__ = [
     "LLM_NUM_PREDICT",
     "NO_DEVIATIONS_SUMMARY",
     "PROMPT",
+    "VISION_PROMPT",
+    "VISION_MAX_IMAGES",
     "build_items",
     "get_insights",
     "refresh_insights",
