@@ -365,11 +365,10 @@ class TestAdviceCli:
 
     def test_cli_empty_season(self, monkeypatch):
         """Пустой сезон (build_advice_context → None) — empty, без генерации."""
-        from app.ai_assistant import advice
         from app.cli import main as cli_main
 
         monkeypatch.setattr(advice, "build_advice_context", lambda db, fid, today: None)
-        report_ctx = self._patched_session(monkeypatch)
+        self._patched_session(monkeypatch)
         code = cli_main(["advice-refresh", "--field-id", str(self.field_id)])
         assert code == 0
         import json
