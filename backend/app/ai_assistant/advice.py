@@ -32,11 +32,11 @@ from sqlalchemy.orm import Session, aliased
 
 from app.ai_assistant import detectors, llm, service
 from app.ai_assistant.schemas import InsightItem
-from app.core.config import Settings, get_settings
+from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.models.agronomy import CropCycle, Field, FieldOperation, Recommendation
 from app.models.ai import AIFieldAdvice
-from app.models.integrations import Forecast, SatelliteScene, WeatherObservation
+from app.models.integrations import Forecast, SatelliteScene
 from app.models.references import AgroInput, Culture
 from app.modules.satellite.waterlog import precip_sums_7d, waterlogged
 from app.services.sentinel_ingest.renders import render_path
