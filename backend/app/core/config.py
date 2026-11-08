@@ -108,6 +108,10 @@ class Settings(BaseSettings):
     # не формируется — §9 деградация).
     ai_advice_parallelism: int = 3
 
+    # суточный прогон AI-рекомендаций (09 §9.4): «HH:MM» локального времени
+    # контейнера; при ошибке формата — fallback 05:00 (warning в логе)
+    ai_advice_daily_at: str = "05:00"
+
     @property
     def sqlalchemy_database_uri(self) -> str:
         """DSN для SQLAlchemy (psycopg 3)."""
