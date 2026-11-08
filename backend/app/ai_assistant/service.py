@@ -448,10 +448,12 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
 
         vra_peaks: list[tuple[date, float, float]] = []
         vra_verdict = VRA_NO_DATA_VERDICT
+        peak_day: date | None = None
         try:
             # зоны по пиковым сценам (#106): ворота однородности удалены (§7.4
             # v1.7) — вердикт всегда о построенных зонах и метриках пиков
             result = vra.vra_zones(db, field, year=year)  # кэшируется у себя (24 ч)
+            peak_day = result.captured_at
             vra_peaks = _vra_peaks_cached(field_id, year) or [
                 (result.captured_at, result.iqr_ndvi, result.spatial_spread)
             ]
