@@ -110,7 +110,7 @@ test('погода: окна только по типам из планов по
   await expect(page.locator('.wx__window', { hasText: 'Опрыскивание' })).toHaveCount(0)
   await expect(page.locator('.wx__windows')).toBeVisible()
 
-  // Поле 4 (мок): активных планов нет → нейтрельный hint вместо списка.
+  // Поле 4 (мок): активных планов нет → нейтральный hint вместо списка.
   await page.locator('.fcombo__btn').click()
   await page.locator('.fcombo__search').fill('4')
   await page.locator('.fcombo__option', { hasText: '4/ВОСХОД' }).click()
