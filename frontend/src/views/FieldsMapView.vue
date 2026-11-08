@@ -306,7 +306,7 @@ async function loadFields(layer: L.FeatureGroup) {
         geometry: field.contour,
       }))
     const legendMap = new Map<string, string>()
-    L.geoJSON(features as unknown as GeoJSON.Feature[], {
+    fieldsGeoLayer = L.geoJSON(features as unknown as GeoJSON.Feature[], {
       style: (feature) => styleFor(feature?.properties as Field | undefined),
       onEachFeature: (feature, featureLayer) => {
         const field = feature.properties as Field
