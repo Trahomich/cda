@@ -24,7 +24,7 @@ test('рекомендация: последняя запись с датой и
   const block = adviceBlock(page)
   await expect(block).toBeVisible({ timeout: 15_000 })
 
-  await expect(block.locator('.card360__advice-text')).toContainText(/кормк|обследов|окно|план/, {
+  await expect(block.locator('.card360__advice-text')).toContainText(/подкормк|обследов|окно|вегетация/, {
     timeout: 10_000,
   })
   await expect(block.locator('.card360__insights-meta')).toContainText('Рассчитано')
