@@ -612,9 +612,7 @@ def field_vra_export(
             title="Некорректный запрос",
             status_code=422,
         )
-    data = vra_export.build_export(
-        db, field, year=year, base_dose=base_dose_kg_ha
-    )
+    data = vra_export.build_export(db, field, year=year, base_dose=base_dose_kg_ha)
     stem = f"vra_{field.id.hex[:8]}_{data.captured_at.isoformat()}"
     if fmt == "geojson":
         return Response(

@@ -113,8 +113,7 @@ def build_export(
                 status_code=404,
             )
         raise AppError(
-            f"Зоны внесения недоступны для поля {field.id}: "
-            "нет чистых NDVI-сцен текущего сезона",
+            f"Зоны внесения недоступны для поля {field.id}: нет чистых NDVI-сцен текущего сезона",
             code="vra_no_season_data",
             title="Нет данных сезона",
             status_code=422,
