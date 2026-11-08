@@ -247,7 +247,7 @@ def _pnt(lsg: Element, lon: float, lat: float) -> None:
 def _polygon_xml(parent: Element, geometry: BaseGeometry, polygon_type: str) -> None:
     """PLN(type)>LSG>PNT*: внешний контур каждого полигона (кольца — свои LSG)."""
     for poly in geometry.geoms:
-        rings = [("1", poly.exterior), *(( "2", i) for i in poly.interiors)]
+        rings = [("1", poly.exterior), *(("2", i) for i in poly.interiors)]
         for lsg_type, ring in rings:
             pln = SubElement(parent, "PLN", {"A": polygon_type})
             lsg = SubElement(pln, "LSG", {"A": lsg_type})
