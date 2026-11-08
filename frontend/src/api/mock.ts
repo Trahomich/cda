@@ -1182,13 +1182,16 @@ function gddOfCache(n: number, year: number): GddPoint[] {
   const key = `${n}/${year}`
   let v = gddCache.get(key)
   if (!v) {
-    const days = historyAll(n).filter((d) => d.date.startsWith(String(year)))
+    const days = historyAll(n).filter((d) => d.observed_at.startsWith(String(year)))
     let cum = 0
     v = days.map((d) => {
-      const tMean = ((d.temp_max_c ?? 0) + (d.temp_min_c ?? 0)) / 2
-      const gddDay = Math.max(0, Number((tMean - 5).toFixed(1)))
-      cum = Number((cum + gddDay).toFixed(1))
-      return { date: d.date, gdd_day: gddDay, gdd_cum: cum }
+      const tMean =
+        d.temperature_max_c != null && d.temperature_min_c != null
+          ? (d.temperature_max_c + d.temperature_min_c) / 2
+          : null
+      const gddDay = tMean == null ? null : Math.max(0, Number((tMean - 5).toFixed(1)))
+      cum = Number((cum + (gddDay ?? 0)).toFixed(1))
+      return { date: d.observed_at, gdd_day: gddDay ?? 0, gdd_cum: cum }
     })
     gddCache.set(key, v)
   }
