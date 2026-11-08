@@ -1660,7 +1660,7 @@ export class MockTransport implements Transport {
       const pending = advicePending.get(field.field_id)
       if (pending != null && Date.now() - pending >= 1500) {
         advicePending.delete(field.field_id)
-        adviceStore.set(field.field_id, makeAdvice(FIELD_N.get(field.field_id)!, true))
+        adviceStore.set(field.field_id, makeAdvice(FIELD_N.get(field.field_id)!, 1))
       }
       const list = adviceStore.get(field.field_id)
       if (!list?.length) {
