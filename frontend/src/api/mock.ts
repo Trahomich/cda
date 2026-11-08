@@ -1117,7 +1117,8 @@ function dayRand(n: number, date: string): number {
 }
 
 /** Дневной факт истории поля n: сезонная волна температур (ср. ~5…25 °C,
- *  широта 48.7°) и осадки с «дождливыми сериями». */
+ *  широта 48.7°) и осадки с «дождливыми сериями». Имена полей — как в API-07
+ *  (§7.8 API-57, #126). */
 function historyDay(n: number, date: string): WeatherHistoryItem {
   const ms = new Date(`${date}T00:00:00Z`).getTime()
   const doy = Math.round((ms - Date.parse(`${date.slice(0, 4)}-01-01T00:00:00Z`)) / DAY) + 1
@@ -1128,12 +1129,16 @@ function historyDay(n: number, date: string): WeatherHistoryItem {
   const wet = seasonal > -0.2 && r > 0.72 // вегетация — чаще дожди
   const precip = wet ? Number((1 + dayRand(n + 5, date) * 14).toFixed(1)) : 0
   return {
-    date,
-    temp_max_c: Number((tMean + spread).toFixed(1)),
-    temp_min_c: Number((tMean - spread).toFixed(1)),
-    precip_mm: precip,
-    cloud_pct: Math.round(r * 100),
-    snow_mm: seasonal < -0.55 && precip > 0 ? Number((precip * 0.8).toFixed(1)) : 0,
+    observed_at: date,
+    temperature_avg_c: Number(tMean.toFixed(1)),
+    temperature_max_c: Number((tMean + spread).toFixed(1)),
+    temperature_min_c: Number((tMean - spread).toFixed(1)),
+    precipitation_mm: precip,
+    wind_max_ms: Number((2 + r * 6).toFixed(1)),
+    humidity_avg_pct: Math.round(45 + r * 45),
+    cloud_cover_mean_pct: Math.round(r * 100),
+    snowfall_cm: seasonal < -0.55 && precip > 0 ? Number((precip * 0.08).toFixed(1)) : 0,
+    snow_depth_cm: 0,
   }
 }
 
