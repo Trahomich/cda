@@ -1134,43 +1134,59 @@ function fmtNum(v: number, digits = 1): string {
               неоднородность NDVI (IQR): {{ fmtNum(vra.iqr_ndvi, 2) }} ·
               пространственная: {{ fmtNum(vra.spatial_spread, 2) }}
             </p>
-            <!-- SVG-превью карты зон: PNG-оверлей в рамке контура (§7.4) -->
-            <svg
-              class="card360__vra-map"
-              viewBox="0 0 200 120"
-              role="img"
-              aria-label="Карта зон дифференцированного внесения"
+            <!-- SVG-превью карты зон: PNG-оверлей в рамке контура (§7.4);
+                 клик — полноэкранный лайтбокс с зумом (#141, #447) -->
+            <button
+              type="button"
+              class="card360__vra-map-btn"
+              :disabled="!vraMap"
+              :title="vraMap ? 'Открыть карту на весь экран' : 'Карта недоступна'"
+              @click="vraLightbox = vraMap !== null"
             >
-              <image
-                v-if="vraMap && vraMapRect"
-                class="card360__vra-layer"
-                :href="vraMap.url"
-                :x="vraMapRect.x"
-                :y="vraMapRect.y"
-                :width="vraMapRect.width"
-                :height="vraMapRect.height"
-                preserveAspectRatio="none"
-              />
-              <polygon
-                :points="contourPoints"
-                class="card360__vra-contour"
-              />
-            </svg>
+              <svg
+                class="card360__vra-map"
+                viewBox="0 0 200 120"
+                role="img"
+                aria-label="Карта зон дифференцированного внесения"
+              >
+                <image
+                  v-if="vraMap && vraMapRect"
+                  class="card360__vra-layer"
+                  :href="vraMap.url"
+                  :x="vraMapRect.x"
+                  :y="vraMapRect.y"
+                  :width="vraMapRect.width"
+                  :height="vraMapRect.height"
+                  preserveAspectRatio="none"
+                />
+                <polygon
+                  :points="contourPoints"
+                  class="card360__vra-contour"
+                />
+              </svg>
+            </button>
+            <VraLightbox
+              v-if="vraLightbox && vraMap"
+              :url="vraMap.url"
+              :caption="`Зоны дифвнесения · сцена ${fmtDate(vra.date)}`"
+              @close="vraLightbox = false"
+            />
             <table class="card360__vra-table">
               <thead>
                 <tr>
-                  <th scope="col">
-                    Зона
-                  </th>
-                  <th scope="col">
-                    Площадь, га
-                  </th>
-                  <th scope="col">
-                    Ср. NDVI
-                  </th>
-                  <th scope="col">
-                    Доза
-                  </th>
+                  <th
+                    scope="col"
+                    title="Номер зоны"
+                  >№</th>
+                  <th
+                    scope="col"
+                    title="Площадь зоны"
+                  >га</th>
+                  <th scope="col">NDVI</th>
+                  <th
+                    scope="col"
+                    title="Доза удобрения"
+                  >кг/га</th>
                 </tr>
               </thead>
               <tbody>
@@ -1178,14 +1194,18 @@ function fmtNum(v: number, digits = 1): string {
                   v-for="zone in vra.zones"
                   :key="zone.zone"
                   :class="`card360__vra-row--${zone.zone}`"
+                  :title="`Зона ${zone.zone} — ${zone.label}`"
                 >
-                  <td>{{ zone.zone }} · {{ zone.label }}</td>
+                  <td>{{ zone.zone }}</td>
                   <td>{{ fmtNum(zone.area_ga) }}</td>
                   <td>{{ fmtNum(zone.ndvi_mean, 2) }}</td>
                   <td>{{ doseLabel(zone) }}</td>
                 </tr>
               </tbody>
             </table>
+            <p class="card360__muted card360__vra-legend">
+              1 — пониженное · 2 — среднее · 3 — повышенное развитие
+            </p>
             <p class="card360__muted">
               Дозы — рекомендация, не план. Базовая доза:
               {{
