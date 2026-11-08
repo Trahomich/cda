@@ -84,8 +84,21 @@ class TestAdviceAPI:
 
     def test_get_last_advice(self):
         """GET отдаёт последнюю по created_at запись со всеми полями §9.3."""
-        make_advice(self.db, self.field_id, advice_date=TODAY - timedelta(days=1), created_at=datetime(2026, 11, 6, 5, 0, tzinfo=UTC))
-        last = make_advice(self.db, self.field_id, advice_date=TODAY, created_at=datetime(2026, 11, 7, 5, 0, tzinfo=UTC), context_hash="hash-2", answer="Провести боронование.", status="fallback")
+        make_advice(
+            self.db,
+            self.field_id,
+            advice_date=TODAY - timedelta(days=1),
+            created_at=datetime(2026, 11, 6, 5, 0, tzinfo=UTC),
+        )
+        last = make_advice(
+            self.db,
+            self.field_id,
+            advice_date=TODAY,
+            created_at=datetime(2026, 11, 7, 5, 0, tzinfo=UTC),
+            context_hash="hash-2",
+            answer="Провести боронование.",
+            status="fallback",
+        )
         resp = self.client.get(f"{API}/fields/{self.field_id}/ai/advice", headers=self.auth)
         assert resp.status_code == 200
         data = resp.json()
@@ -177,9 +190,7 @@ class TestAdviceAPI:
             ("post", "/ai/advice"),
             ("get", "/ai/advice/history"),
         ):
-            resp = getattr(self.client, method)(
-                f"{API}/fields/{self.field_id}{path}", headers=auth
-            )
+            resp = getattr(self.client, method)(f"{API}/fields/{self.field_id}{path}", headers=auth)
             assert resp.status_code == 403
 
     def test_no_auth_401(self):
@@ -271,7 +282,11 @@ class TestAdviceTriggers:
         from app.core.config import get_settings
 
         settings = get_settings().model_copy(
-            update={"llm_provider": "anthropic", "anthropic_api_key": "test-key", "ai_advice_daily_at": "06:30"}
+            update={
+                "llm_provider": "anthropic",
+                "anthropic_api_key": "test-key",
+                "ai_advice_daily_at": "06:30",
+            }
         )
         scheduler = advice_scheduler.create_advice_scheduler(settings)
         assert scheduler is not None
