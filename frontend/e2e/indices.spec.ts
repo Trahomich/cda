@@ -71,7 +71,33 @@ test('карточка поля: переключение слоёв NDRE→NDMI
   await expect(layer).toBeVisible()
 })
 
-test('карточка поля: индексный слой следует выбранному сезону (§7.5/§7.7)', async ({
+test('карточка поля: перечень индексов на 360px — лента с прокруткой, без выхода за экран (#468)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 800 })
+  await page.goto(`/fields/${FIRST_FIELD}`)
+  const switcher = page.locator('.card360__layer-switch')
+  await expect(switcher).toBeVisible({ timeout: 15_000 })
+
+  // Лента не шире экрана, содержимое прокручивается горизонтально.
+  const box = await switcher.boundingBox()
+  expect(box).not.toBeNull()
+  expect(box!.width).toBeLessThanOrEqual(360)
+  const scrollable = await switcher.evaluate((el) => el.scrollWidth > el.clientWidth)
+  expect(scrollable).toBe(true)
+  await expect(page.locator('.card360__layer-btn--ndsi')).toBeDisabled({ timeout: 10_000 })
+
+  // Прокрутка доводит BSI (последний индекс) до видимости — тач-свайп
+  // эмулируем программной прокруткой ленты.
+  await switcher.evaluate((el) => (el.scrollLeft = el.scrollWidth))
+  await expect(page.locator('.card360__layer-btn--bsi')).toBeVisible()
+  await page.locator('.card360__layer-btn--bsi').click()
+  await expect(page.locator('.card360__layer-btn--bsi')).toHaveClass(/card360__layer-btn--active/)
+  await expect(
+    page.locator('svg.card360__contour image.card360__ndvi-layer'),
+  ).toBeVisible({ timeout: 10_000 })
+})
+
   page,
 }) => {
   await page.goto(`/fields/${FIRST_FIELD}`)
