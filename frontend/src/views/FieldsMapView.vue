@@ -219,12 +219,12 @@ function styleFor(field: Field | undefined): L.PathOptions {
 /** Перекрасить контуры и балуны (смена режима/метрики/данных). */
 function restyleLayer(): void {
   contoursLayer?.eachLayer((layer) => {
-    const feature = (layer as L.GeoJSON.Layer).feature
+    const feature = (layer as L.Layer & { feature?: GeoJSON.Feature }).feature
     const field = feature?.properties as Field | undefined
-    if (!field) return
-    layer.setStyle(styleFor(field))
-    if ('setPopupContent' in layer) {
-      ;(layer as L.Layer & { setPopupContent(html: string): unknown }).setPopupContent(popupHtml(field))
+    ;(layer as L.Path).setStyle(styleFor(field))
+    const withPopup = layer as L.Layer & { setPopupContent?: (html: string) => unknown }
+    if (field && withPopup.setPopupContent) {
+      withPopup.setPopupContent(popupHtml(field))
     }
   })
 }
