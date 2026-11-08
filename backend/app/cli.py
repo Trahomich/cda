@@ -352,6 +352,17 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_hist.set_defaults(func=cmd_backfill_history)
 
+    p_advice = sub.add_parser(
+        "advice-refresh",
+        help="генерация AI-рекомендаций «что делать сейчас» (#120, docs/09 §9.4)",
+    )
+    p_advice.add_argument(
+        "--field-id",
+        default=None,
+        help="UUID одного поля (по умолчанию все активные поля)",
+    )
+    p_advice.set_defaults(func=cmd_advice_refresh)
+
     args = parser.parse_args(argv)
     return args.func(args)
 
