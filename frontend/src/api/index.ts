@@ -48,7 +48,6 @@ import type {
   WeatherForecastDay,
   WeatherGdd,
   WeatherHistory,
-  WeatherHistoryDay,
   WeatherHistoryItem,
   WeatherWindowDay,
   WeatherWindowItem,
