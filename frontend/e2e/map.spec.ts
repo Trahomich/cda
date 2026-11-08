@@ -7,7 +7,7 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel('Логин').fill('agronom')
   await page.getByLabel('Пароль', { exact: true }).fill('demo')
   await page.getByRole('button', { name: 'Войти' }).click()
-  await page.waitForURL(/\/fields\/map/, { timeout: 15_000 })
+  await page.waitForURL(/\/fields\/map\/?$/, { timeout: 15_000 })
 })
 
 test('карта: легенда культур, номера полей и цвет заливки (#55)', async ({ page }) => {
@@ -76,7 +76,7 @@ test('карта: вьюпорт запоминается и восстанав�
   })
   await page.evaluate(() => localStorage.removeItem('cda.map.view'))
   await page.reload()
-  await page.waitForURL(/\/fields\/map/)
+  await page.waitForURL(/\/fields\/map\/?$)
   await expect(page.locator('.map-screen__loading-overlay')).toBeVisible()
   await expect(page.locator('.map-legend__toggle')).toBeVisible({ timeout: 15_000 })
   await expect(page.locator('.map-screen__loading-overlay')).toBeHidden()
@@ -89,7 +89,7 @@ test('карта: вьюпорт запоминается и восстанав�
   // Повторный заход: вид восстанавливается сразу, оверлея нет и вид не
   // прыгает (fitBounds не выполняется при восстановленном виде)
   await page.reload()
-  await page.waitForURL(/\/fields\/map/)
+  await page.waitForURL(/\/fields\/map\/?$)
   await expect(page.locator('.map-screen__loading-overlay')).toBeHidden()
   await expect(page.locator('.map-legend__toggle')).toBeVisible({ timeout: 15_000 })
 })
