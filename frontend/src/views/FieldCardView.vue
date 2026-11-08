@@ -511,12 +511,17 @@ async function loadHistory() {
 }
 
 async function loadNdvi() {
+  const token = seasonToken
+  ndviLoading.value = true
+  ndvi.value = []
   try {
-    ndvi.value = await getFieldNdvi(fieldId)
+    const points = await getFieldNdvi(fieldId, seasonQueryYear.value)
+    if (token !== seasonToken) return // сезон уже переключили — ответ устарел
+    ndvi.value = points
   } catch {
-    ndvi.value = []
+    if (token === seasonToken) ndvi.value = []
   } finally {
-    ndviLoading.value = false
+    if (token === seasonToken) ndviLoading.value = false
   }
 }
 
