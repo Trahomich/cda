@@ -48,6 +48,10 @@ class WeatherObservation(Base):
     precipitation_mm: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
     wind_max_ms: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
     humidity_avg_pct: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
+    cloud_cover_mean_pct: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
+    snowfall_cm: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
+    snow_depth_cm: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
+    precipitation_hours: Mapped[float | None] = mapped_column(Numeric(3, 1), nullable=True)
     source_id: Mapped[str] = mapped_column(
         String(100),
         ForeignKey("ref_source.source_id", name="fk_dat_weather_observation_source"),
