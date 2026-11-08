@@ -370,12 +370,76 @@ def _yield_verdict(
     )
 
 
-def _numbers_within(text: str, allowed: set[str]) -> bool:
-    return set(_NUM_RE.findall(text.replace(",", "."))) <= allowed
+def _date_pairs(text: str) -> set[tuple[int, int]]:
+    """Пары (день, месяц) всех дат текста — ISO и точечных («17.08», «05.11»)."""
+    pairs: set[tuple[int, int]] = set()
+    for tok in _ISO_DATE_RE.findall(text):
+        year, month, day = tok.split("-")
+        pairs.add((int(day), int(month)))
+    for tok in _DOT_DATE_RE.findall(text):
+        day, month = tok.split(".")[:2]
+        pairs.add((int(day), int(month)))
+    return pairs
+
+
+def _ok_number(token: str, allowed_nums: set[str], allowed_floats: list[float]) -> bool:
+    """Число ответа допустимо: точное совпадение или округление разрешённого.
+
+    LLM округляет («~0.20» при контекстном 0.204) — это не выдумка: число
+    допустимо, если оно совпадает с разрешённым с точностью до своей
+    разрядности (round(v, d(token)) == token).
+    """
+    if token in allowed_nums:
+        return True
+    try:
+        value = float(token)
+    except ValueError:  # pragma: no cover — регэксп даёт только числа
+        return False
+    decimals = len(token.partition(".")[2])
+    return any(round(v, decimals) == value for v in allowed_floats)
+
+
+def _is_dot_date(token: str, allowed_pairs: set[tuple[int, int]]) -> bool:
+    """Точечный токен — дата «DD.MM», чья пара (день, месяц) есть в контексте.
+
+    Различает «17.08» (17 августа) от числа «3.5» (мм осадков): датой
+    считается только валидный день 1–31 и месяц 1–12 с парой из контекста.
+    """
+    match = _DOT_DATE_RE.fullmatch(token)
+    if match is None:
+        return False
+    day, month = token.split(".")[:2]
+    d, m = int(day), int(month)
+    return 1 <= d <= 31 and 1 <= m <= 12 and (d, m) in allowed_pairs
+
+
+def _numbers_within(
+    text: str, allowed_nums: set[str], allowed_pairs: set[tuple[int, int]]
+) -> bool:
+    """Guardrail §9.2 (#144): числа и даты ответа обязаны быть из контекста.
+
+    Даты обрабатываются отдельно от чисел: «17.08» — это 17 августа, а не
+    число 17.08 (NDVI-масштаб), раньше такие токены ложно резались и все
+    ответы падали в fallback. ISO-даты — по паре (день, месяц) контекста;
+    точечный токен — сначала число, при промахе — дата с парой из контекста.
+    """
+    for tok in _ISO_DATE_RE.findall(text):
+        year, month, day = tok.split("-")
+        if (int(day), int(month)) not in allowed_pairs:
+            return False
+    rest = _ISO_DATE_RE.sub(" ", text)
+    allowed_floats = [float(n) for n in allowed_nums]
+    for token in set(_NUM_RE.findall(rest.replace(",", "."))):
+        if _ok_number(token, allowed_nums, allowed_floats):
+            continue
+        if _is_dot_date(token, allowed_pairs):
+            continue
+        return False
+    return True
 
 
 def _allowed_numbers(context: str, items: list[InsightItem]) -> set[str]:
-    allowed = set(_NUM_RE.findall(context.replace(",", ".")))
+    allowed = set(_NUM_RE.findall(_ISO_DATE_RE.sub(" ", context).replace(",", ".")))
     allowed |= set(
         _NUM_RE.findall(
             json.dumps([i.model_dump(mode="json") for i in items], ensure_ascii=False).replace(
@@ -384,6 +448,15 @@ def _allowed_numbers(context: str, items: list[InsightItem]) -> set[str]:
         )
     )
     return allowed
+
+
+def _allowed_pairs(context: str, items: list[InsightItem]) -> set[tuple[int, int]]:
+    """Пары (день, месяц) дат контекста и items (guardrail дат, #144)."""
+    pairs = _date_pairs(context)
+    pairs |= _date_pairs(
+        json.dumps([i.model_dump(mode="json") for i in items], ensure_ascii=False)
+    )
+    return pairs
 
 
 def generate_advice(field_id: uuid.UUID, *, today: date | None = None) -> AIFieldAdvice | None:
