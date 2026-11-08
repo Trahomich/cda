@@ -190,7 +190,9 @@ class TestBuildItemsDetectors:
 
         make_satellite_source(db_session)
         field_id = make_vra_field(db_session)
-        culture = Culture(name="Озимая пшеница", kind="main", forage_flag=False, crop_group="cereal")
+        culture = Culture(
+            name="Озимая пшеница", kind="main", forage_flag=False, crop_group="cereal"
+        )
         db_session.add(culture)
         db_session.flush()
         db_session.add(CropCycle(field_id=field_id, year=2027, culture_id=culture.id, kind="main"))
