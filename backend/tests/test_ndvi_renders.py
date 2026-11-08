@@ -269,3 +269,126 @@ class TestRenderApi:
             assert resp.status_code == 200
             items = resp.json()["items"]
             assert items and all(item["render_available"] is expected for item in items)
+
+
+class TestLegendHelpers:
+    """Хелперы легенды (#123, §7.3): отрисовка на канве без изменения размеров."""
+
+    def test_draw_gradient_legend(self):
+        """Градиент палитры + подписи; концы бара = цвета краёв палитры."""
+        from app.services.sentinel_ingest.renders import (
+            PALETTE,
+            _LEGEND_PANEL_ALPHA,
+            draw_gradient_legend,
+        )
+
+        h, w = 120, 200
+        rgb = np.zeros((h, w, 3), "uint8")
+        alpha = np.zeros((h, w), "uint8")
+        assert draw_gradient_legend(rgb, alpha, PALETTE, "-0.10", "0.80") is True
+
+        # панель — полупрозрачная, в левом нижнем углу
+        assert np.count_nonzero(alpha == _LEGEND_PANEL_ALPHA) > 100
+        corner = alpha[-h // 4 :, : w // 2]
+        assert np.count_nonzero(corner == _LEGEND_PANEL_ALPHA) > 100
+
+        # верхняя строка непрозрачных пикселей — градиентный бар:
+        # левый пиксель = палитра t=0, правый = палитра t=1
+        rows = np.where((alpha == 255).any(axis=1))[0]
+        y0 = rows.min()
+        xs = np.where(alpha[y0] == 255)[0]
+        assert np.all(rgb[y0, xs[0]] == PALETTE[0][1])
+        assert np.all(rgb[y0, xs[-1]] == PALETTE[-1][1])
+        assert xs[-1] - xs[0] > 20  # бар широкий
+
+        # подписи — светлый текст (непрозрачные пиксели ниже бара)
+        text_rows = rows[rows > y0]
+        assert text_rows.size > 0
+        ty = text_rows.min()
+        txs = np.where(alpha[ty] == 255)[0]
+        assert np.all(rgb[ty, txs[0]] == (245, 245, 245))
+
+        # размеры канвы не изменились
+        assert rgb.shape == (h, w, 3) and alpha.shape == (h, w)
+
+    def test_draw_zone_legend(self):
+        """Свотчи цветов зон + подписи диапазонов NDVI."""
+        from app.services.sentinel_ingest.renders import draw_zone_legend
+
+        h, w = 120, 200
+        rgb = np.zeros((h, w, 3), "uint8")
+        alpha = np.zeros((h, w), "uint8")
+        swatches = (
+            ((192, 57, 43), "0.30-0.50"),
+            ((241, 196, 15), "0.50-0.62"),
+            ((39, 174, 96), "0.62-0.80"),
+        )
+        assert draw_zone_legend(rgb, alpha, swatches) is True
+        ys, xs = np.where(alpha == 255)
+        # свотчи: каждый цвет зоны присутствует на канве
+        flat = rgb[ys, xs].reshape(-1, 3)
+        for color, _ in swatches:
+            assert (flat == np.array(color)).all(axis=1).any(), color
+        # подписи — светлый текст
+        assert (flat == np.array((245, 245, 245))).all(axis=1).any()
+
+    def test_legend_skipped_on_tiny_canvas(self):
+        """Канва меньше легенды: False, ничего не рисуется."""
+        from app.services.sentinel_ingest.renders import PALETTE, draw_gradient_legend
+
+        rgb = np.zeros((10, 20, 3), "uint8")
+        alpha = np.zeros((10, 20), "uint8")
+        assert draw_gradient_legend(rgb, alpha, PALETTE, "-0.10", "0.80") is False
+        assert not alpha.any()
+
+    def test_zone_legend_empty_swatches(self):
+        from app.services.sentinel_ingest.renders import draw_zone_legend
+
+        rgb = np.zeros((120, 200, 3), "uint8")
+        alpha = np.zeros((120, 200), "uint8")
+        assert draw_zone_legend(rgb, alpha, []) is False
+        assert not alpha.any()
+
+
+class TestRenderLegend:
+    """Легенда в PNG рендеров (#123): только ndvi-вариант, канва не меняется."""
+
+    @staticmethod
+    def _read_png(png: bytes) -> tuple[np.ndarray, np.ndarray]:
+        from rasterio.io import MemoryFile
+
+        with MemoryFile(png) as mem:
+            with rasterio.open(mem) as ds:
+                rgba = ds.read()
+        return rgba[:3], rgba[3]
+
+    def test_ndvi_png_has_legend(self, color_rasters):
+        """ndvi-PNG содержит полупрозрачную панель легенды в левом нижнем углу."""
+        contour = wgs_box(300100, 5760100, 301900, 5760900)
+        render = render_scene(color_rasters["assets"], contour)
+        assert render is not None
+        _, alpha = self._read_png(render.png["ndvi"])
+        assert ((alpha > 0) & (alpha < 255)).any()  # панель легенды
+        corner = alpha[-alpha.shape[0] // 4 :, : alpha.shape[1] // 4]
+        assert ((corner > 0) & (corner < 255)).any()
+
+    def test_truecolor_and_ndwi_without_legend(self, color_rasters):
+        """truecolor/ndwi без шкалы (легенда — только у NDVI, §7.3 #123)."""
+        contour = wgs_box(300100, 5760100, 301900, 5760900)
+        render = render_scene(color_rasters["assets"], contour)
+        assert render is not None
+        for variant in ("truecolor", "ndwi"):
+            _, alpha = self._read_png(render.png[variant])
+            assert not ((alpha > 0) & (alpha < 255)).any(), variant
+
+    def test_legend_does_not_change_canvas_size(self, color_rasters):
+        """Легенда рисуется поверх: размеры всех вариантов = width/height."""
+        contour = wgs_box(300100, 5760100, 301900, 5760900)
+        render = render_scene(color_rasters["assets"], contour)
+        assert render is not None
+        from rasterio.io import MemoryFile
+
+        for variant in RENDER_VARIANTS:
+            with MemoryFile(render.png[variant]) as mem:
+                with rasterio.open(mem) as ds:
+                    assert (ds.width, ds.height) == (render.width, render.height)
