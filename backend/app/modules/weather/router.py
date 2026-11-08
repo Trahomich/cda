@@ -145,6 +145,50 @@ def weather_forecast(
 
 
 @router.get(
+    "/weather/history",
+    response_model=HistoryListResponse,
+    summary="История фактов погоды по полю (карточка погоды, #126)",
+)
+def weather_history(
+    db: DbSession,
+    *,
+    field_id: uuid.UUID = Query(description="UUID поля"),
+    date_from: date = Query(description="Начало периода, ISO-дата"),
+    date_to: date = Query(description="Конец периода, ISO-дата (включительно)"),
+    limit: int = Query(default=366, ge=1, le=1500, description="Суток на странице"),
+    offset: int = Query(default=0, ge=0),
+) -> HistoryListResponse:
+    """Ежедневные факты (включая облачность/снег, #126) сpaginate по offset."""
+    field = _get_field(db, field_id)
+    if date_from > date_to:
+        raise AppError(
+            "date_from позже date_to",
+            code="invalid_period",
+            title="Некорректный запрос",
+            status_code=422,
+        )
+    rows = list(
+        db.scalars(
+            select(WeatherObservation)
+            .where(
+                WeatherObservation.field_id == field.id,
+                WeatherObservation.observed_at >= date_from,
+                WeatherObservation.observed_at <= date_to,
+            )
+            .order_by(WeatherObservation.observed_at)
+        )
+    )
+    window = rows[offset : offset + limit]
+    return HistoryListResponse(
+        items=[FactItem.model_validate(o) for o in window],
+        total=len(rows),
+        limit=limit,
+        offset=offset,
+        meta=_source_meta(db, forecasts=[]),
+    )
+
+
+@router.get(
     "/weather/windows",
     response_model=WindowResponse,
     summary="Погодное окно операции (RULE-AGRO-09, docs/03 §3.3)",
