@@ -211,6 +211,17 @@ function dayHazardClass(iso: string): string | null {
   return top === 'alert' ? 'wx__row--alert' : top === 'warn' ? 'wx__row--warn' : null
 }
 
+/* ─── Пиктограммы суток прогноза (#429 п.4, стиль согласован с Д. Соколовым:
+       эмодзи + title-подсказка) ─── */
+
+/** Пиктограмма погоды суток: приоритет — мороз, осадки, сильный ветер. */
+function dayIcon(d: WeatherForecastDay): { glyph: string; label: string } {
+  if (d.temp_min_c <= 0) return { glyph: '❄️', label: 'Мороз/заморозки' }
+  if (d.precip_mm >= 0.5) return { glyph: '🌧️', label: 'Осадки' }
+  if (d.wind_ms >= 10) return { glyph: '💨', label: 'Сильный ветер' }
+  return { glyph: '☀️', label: 'Без осадков' }
+}
+
 
 onMounted(async () => {
   try {
