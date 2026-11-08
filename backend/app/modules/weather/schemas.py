@@ -89,6 +89,41 @@ class HistoryListResponse(BaseModel):
     meta: SourceMeta
 
 
+class GddDayItem(BaseModel):
+    """День GDD-кривой (API-58, §7.8, #132)."""
+
+    date: date
+    gdd_day: float | None = Field(
+        description="Эффективные температуры суток, °C·сут: "
+        "max(0, (tmax+tmin)/2 − base); null — нет tmin или tmax, в сумму не входит"
+    )
+    gdd_cum: float = Field(description="Накоплено с 1 января года (включая этот день)")
+
+
+class GddNormItem(BaseModel):
+    """Точка многолетней нормы GDD на календарную дату (API-58, §7.8)."""
+
+    date: date
+    norm_cum: float | None = Field(
+        description="Среднее gdd_cum прошлых лет на эту дату (день+месяц); "
+        "null — даты нет в годах истории"
+    )
+
+
+class GddResponse(BaseModel):
+    """API-58: накопительная GDD-кривая поля с 1 января года (§7.8, #132)."""
+
+    field_id: uuid.UUID
+    year: int
+    base_c: float = Field(description="База эффективных температур, °C")
+    total: float = Field(description="gdd_cum последнего дня с наблюдениями (0 — данных нет)")
+    items: list[GddDayItem]
+    norm_cum: list[GddNormItem] | None = Field(
+        default=None,
+        description="Линия многолетней нормы по тем же датам; null — прошлых лет < 2",
+    )
+
+
 class WindowDayItem(BaseModel):
     """Сутки горизонта: входят ли в погодное окно операции и почему нет."""
 
