@@ -299,6 +299,11 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
         height=nir_d.shape[0] + strip_h,
         bbox=bbox,  # type: ignore[arg-type]
         spatial_spread=spread,
+        # векторизация зон для экспорта (#125): маски в сетке поля (легенда
+        # не входит), transform без учёта полосы
+        zone_masks=zone_masks,
+        grid_transform=tuple(transform[:6]),
+        grid_crs=str(red_crs),
     )
 
 
