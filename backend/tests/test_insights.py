@@ -930,7 +930,7 @@ class TestLlmVerdictEveryField138:
             service.llm,
             "summarize",
             lambda p, c, **k: captured.update(prompt=p, context=c)
-            or "Посев в норме, NDVI 0.55–0.56; следите за динамикой.",
+            or "Посев в норме: вегетация идёт ровно, следите за динамикой.",
         )
         db_session.close()
 
