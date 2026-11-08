@@ -575,6 +575,7 @@ def field_vra(
     return VraZonesResponse(
         field_id=field.id,
         date=result.captured_at,
+        index=index,
         iqr_ndvi=result.iqr_ndvi,
         spatial_spread=result.spatial_spread,
         peak_dates=list(result.peak_dates),
