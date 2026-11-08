@@ -42,4 +42,29 @@ class InsightsResponse(BaseModel):
     items: list[InsightItem]
 
 
-__all__ = ["InsightItem", "InsightsResponse", "Severity", "Source"]
+class AdviceResponse(BaseModel):
+    """Одна AI-рекомендация «что делать сейчас» (06 §7.6, 09-ai §9.3)."""
+
+    field_id: uuid.UUID
+    created_at: datetime
+    advice_date: date
+    model: str
+    provider: Literal["anthropic", "ollama"]
+    answer: str
+    status: Literal["ok", "fallback", "empty"]
+
+
+class AdviceHistoryResponse(BaseModel):
+    """Ответ GET /fields/{id}/ai/advice/history (API-56): только items."""
+
+    items: list[AdviceResponse]
+
+
+__all__ = [
+    "AdviceHistoryResponse",
+    "AdviceResponse",
+    "InsightItem",
+    "InsightsResponse",
+    "Severity",
+    "Source",
+]
