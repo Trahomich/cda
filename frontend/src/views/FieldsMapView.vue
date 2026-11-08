@@ -444,6 +444,46 @@ onUnmounted(() => {
         v-else-if="tab === 'map'"
         class="map-screen__state"
       >Полей: {{ fieldCount }}</span>
+      <div
+        v-if="tab === 'map'"
+        class="map-screen__weather"
+        role="group"
+        aria-label="Режим заливки полей"
+      >
+        <button
+          type="button"
+          class="map-screen__wbtn"
+          :class="{ 'map-screen__wbtn--active': !weatherMode }"
+          :aria-pressed="!weatherMode"
+          @click="weatherMode = false"
+        >
+          Культуры
+        </button>
+        <button
+          type="button"
+          class="map-screen__wbtn"
+          :class="{ 'map-screen__wbtn--active': weatherMode }"
+          :aria-pressed="weatherMode"
+          :disabled="weatherFailed"
+          @click="weatherMode = true"
+        >
+          Погода
+        </button>
+        <select
+          v-if="weatherMode"
+          v-model="weatherMetric"
+          class="map-screen__wmetric"
+          aria-label="Метрика погодной карты"
+        >
+          <option
+            v-for="m in WEATHER_METRICS"
+            :key="m.value"
+            :value="m.value"
+          >
+            {{ m.label }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <div
