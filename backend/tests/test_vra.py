@@ -517,7 +517,7 @@ def spotty_red() -> np.ndarray:
 
 class TestVraSpatialSpread:
     """Пространственный критерий неоднородности (§7.4 v1.7, #121): мелкие
-    пятна ~1–3 га при узком пиксельном IQR — spatial_spread их видит."""
+    пятна ~3 га при узком пиксельном IQR — spatial_spread их видит."""
 
     def test_spots_seen_by_spread_not_iqr(self, client, db_session, tmp_path, agro_headers):
         make_satellite_source(db_session)
