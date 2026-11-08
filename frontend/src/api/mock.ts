@@ -2139,7 +2139,7 @@ export class MockTransport implements Transport {
         field_id: fieldId,
         year,
         base_c: 5,
-        total: items.at(-1)?.gdd_cum ?? 0,
+        total: items[items.length - 1]?.gdd_cum ?? 0,
         items,
         norm_cum,
       })
