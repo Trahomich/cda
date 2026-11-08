@@ -351,9 +351,9 @@ class TestVraCache:
         calls = {"n": 0}
         real_analyze = vra._analyze_scene
 
-        def counted(db, field, scene):
+        def counted(db, field, scene, *, index="ndvi"):
             calls["n"] += 1
-            return real_analyze(db, field, scene)
+            return real_analyze(db, field, scene, index=index)
 
         monkeypatch.setattr(vra, "_analyze_scene", counted)
 
@@ -499,9 +499,9 @@ class TestVraPeaks:
         calls = {"n": 0}
         real_analyze = vra._analyze_scene
 
-        def counted(db, field, scene):
+        def counted(db, field, scene, *, index="ndvi"):
             calls["n"] += 1
-            return real_analyze(db, field, scene)
+            return real_analyze(db, field, scene, index=index)
 
         monkeypatch.setattr(vra, "_analyze_scene", counted)
 
