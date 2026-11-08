@@ -305,7 +305,7 @@ async function loadFields(layer: L.FeatureGroup) {
       }))
     const legendMap = new Map<string, string>()
     L.geoJSON(features as unknown as GeoJSON.Feature[], {
-      style: (feature) => styleFor((feature?.properties as Field | undefined) ?? fieldStub()),
+      style: (feature) => styleFor(feature?.properties as Field | undefined),
       onEachFeature: (feature, featureLayer) => {
         const field = feature.properties as Field
         featureLayer.bindPopup(popupHtml(field))
