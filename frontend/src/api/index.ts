@@ -527,6 +527,7 @@ export async function getWeatherForecast(fieldId: string, days = 7): Promise<Wea
     precip_prob_pct: d.precip_prob_pct ?? undefined,
     wind_ms: d.wind_max_ms,
     humidity_pct: d.humidity_avg_pct,
+    hazards: d.hazards ?? [], // ОЯ суток (#139, docs/06 §7.8)
   }))
   return { field_id: fieldId, days: dayList, stale: page.meta?.stale ?? false }
 }
