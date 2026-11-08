@@ -484,6 +484,20 @@ onUnmounted(() => {
   line-height: 1.45;
 }
 
+/* Заголовок балуна — название поля: клик открывает карточку (#368),
+   выглядит как ссылка (курсор-указатель, hover). */
+.field-popup__title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #1b5e20;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.field-popup__title:hover {
+  text-decoration: underline;
+}
+
 /* Краткий номер поля в центроиде (#55): компактная постоянная подпись.
    v2-fix-A: подпись интерактивна — клик открывает карточку поля. */
 .leaflet-tooltip.field-label {
