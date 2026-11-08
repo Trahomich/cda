@@ -607,19 +607,20 @@ export async function getWeatherGdd(fieldId: string, year: number): Promise<Weat
   }
 }
 
-/** Сырой ответ /weather/windows (сутки с причинами) → форма E-10. */
+/** Сырой ответ /weather/windows (сутки с причинами) → форма E-10.
+ *  nearest_window_date приходит с сервера (§7.8); на всякий случай — фолбэк. */
 function windowsFromRaw(raw: WindowsResponse, operationType: WindowOperationType): WeatherWindows {
   const days: WeatherWindowDay[] = raw.days.map((d) => ({
     date: d.day,
     is_window: d.ok,
     summary: d.ok ? 'Все условия выполнены' : d.reasons.join('; '),
   }))
-  const nearest = days.find((d) => d.is_window)
+  const nearest = raw.nearest_window_date ?? days.find((d) => d.is_window)?.date ?? null
   return {
     field_id: raw.field_id,
     operation_type: operationType,
     days,
-    nearest_window_date: nearest ? nearest.date : null,
+    nearest_window_date: nearest,
     rule_text: raw.rule_text,
     window_open: raw.window_open,
     alert: raw.alert,
