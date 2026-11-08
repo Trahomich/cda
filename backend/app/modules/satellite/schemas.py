@@ -70,9 +70,12 @@ class VraZonesResponse(BaseModel):
     field_id: uuid.UUID
     date: Date = Field(description="дата пиковой сцены, по которой построены зоны")
     iqr_ndvi: float
+    #: p90−p10 средних NDVI ячеек сетки ~20×20 пиковой сцены (§7.4 v1.7)
+    spatial_spread: float
     peak_dates: list[Date] = Field(
         default_factory=list,
-        description="даты топ-3 пиковых сцен сезона (подтверждение стабильности)",
+        description="даты топ-3 пиковых сцен сезона, у которых считались метрики "
+        "неоднородности (§7.4 v1.7)",
     )
     base_dose_kg_ha: float | None = None
     zones: list[VraZoneItem]
