@@ -5,16 +5,15 @@
 содержит hazards (пустой массив, если явлений нет) — обратная совместимость.
 """
 
-import uuid
 from datetime import date
 
+from app.models.agronomy import CropCycle
 from app.modules.weather.hazards import (
     FROST_WARN_C,
     HEAVY_RAIN_MM,
     HIGH_WIND_MS,
     day_hazards,
 )
-from app.models.agronomy import CropCycle
 from tests.test_inputs import make_culture
 from tests.test_weather import api_forecast_rows, api_headers, make_field
 
