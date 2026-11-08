@@ -70,8 +70,10 @@ class TestRenderScene:
         render = render_scene(color_rasters["assets"], contour)
 
         assert render is not None
-        assert set(render.png) == set(RENDER_VARIANTS)
-        for variant in RENDER_VARIANTS:
+        # без b05/b11 (#128) рендерятся только варианты на базовых полосах
+        base_variants = {"ndvi", "truecolor", "ndwi", "evi", "savi"}
+        assert set(render.png) == base_variants
+        for variant in base_variants:
             assert render.png[variant].startswith(PNG_MAGIC)
         assert max(render.width, render.height) <= MAX_SIDE_PX
 
