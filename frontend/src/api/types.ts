@@ -784,6 +784,44 @@ export interface WindowsResponse {
   alert: string | null
 }
 
+/** Элемент окна в списочной форме /weather/windows?only_planned (#133). */
+export interface WindowsPlannedItem {
+  operation_type: string
+  rule_text?: string
+  window_open: boolean
+  days: WindowsDayItem[]
+  alert?: string | null
+}
+
+/** Ответ GET /weather/windows?field_id&only_planned=true (без operation_type,
+ *  #133): только типы из активных планов поля; hint при их отсутствии. */
+export interface WindowsPlannedResponse {
+  field_id: string
+  only_planned?: boolean
+  items: WindowsPlannedItem[]
+  hint?: string | null
+}
+
+/** Дневное наблюдение в ответе /weather/history (API-57, сырая форма). */
+export interface WeatherHistoryItem {
+  date: string
+  temp_max_c: number | null
+  temp_min_c: number | null
+  precip_mm: number
+  cloud_pct?: number | null
+  snow_mm?: number | null
+}
+
+/** Ответ GET /weather/gdd (#132, сырая форма). */
+export interface GddResponse {
+  field_id: string
+  year: number
+  base_c: number
+  total: number
+  items: GddPoint[]
+  norm_cum?: GddNormPoint[] | null
+}
+
 /** Цикл культуры в items[] плана севооборота (API-08) или ответе API-11. */
 export interface RotationCycleItem {
   cycle_id: string
