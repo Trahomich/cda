@@ -1326,16 +1326,41 @@ export class MockTransport implements Transport {
       return ok(detail)
     }
 
-    /* ── NDVI-таймлайн (API-06): пагинация + мета источника, как backend ── */
+    /* ── Сезоны NDVI (API-54, §7.5): годы по убыванию, текущий помечен ── */
+    const seasonsMatch = /^\/fields\/([\w-]+)\/seasons$/.exec(pathname)
+    if (method === 'GET' && seasonsMatch) {
+      const field = FIELDS.find((f) => f.field_id === seasonsMatch[1])
+      if (!field) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${seasonsMatch[1]} не найдено`)
+      }
+      const n = FIELD_N.get(field.field_id)!
+      const items = SEASON_YEARS.map((year) => {
+        const clear = ndviOf(n, year).filter((p) => p.cloud_pct <= 60)
+        return {
+          year,
+          scenes: clear.length,
+          first_date: clear[0].date,
+          last_date: clear[clear.length - 1].date,
+          culture_name: seasonCultureName(n, year),
+          is_current: year === 2027,
+        }
+      })
+      return ok({ field_id: field.field_id, items, total: items.length })
+    }
+
+    /* ── NDVI-таймлайн (API-06): пагинация + мета источника, как backend;
+       ?year=YYYY (§7.5) — сцены сезона; неизвестный сезон — пустой список ── */
     const ndviMatch = /^\/fields\/([\w-]+)\/ndvi$/.exec(pathname)
     if (method === 'GET' && ndviMatch) {
       const field = FIELDS.find((f) => f.field_id === ndviMatch[1])
       if (!field) {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${ndviMatch[1]} не найдено`)
       }
-      const ndviPoints = ndviOf(FIELD_N.get(field.field_id)!)
+      const yearParam = Number(params.get('year') ?? 0)
+      const seasonUnknown = yearParam !== 0 && !SEASON_YEARS.includes(yearParam)
+      const ndviPoints = ndviOf(FIELD_N.get(field.field_id)!, yearParam || 2027)
       const n = FIELD_N.get(field.field_id)!
-      const scenes = ndviPoints.map((p, i) => ({
+      const scenes = seasonUnknown ? [] : ndviPoints.map((p, i) => ({
         scene_id: `scene-${p.date}-${field.field_id.slice(-4)}`,
         field_id: field.field_id,
         index: 'ndvi',
