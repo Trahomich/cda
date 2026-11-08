@@ -1,50 +1,153 @@
 <script setup lang="ts">
-// E-10 «Погода и погодные окна» (docs/07-ux §2, сценарий SC-03): текущая
-// погода по выбранному полю (API-07), прогноз 7 суток (API-29) и индикатор
-// погодного окна по типам операций — RULE-AGRO-09 (03 §3.3, GET /weather/windows).
+// E-10 «Погода и погодные окна» (docs/07-ux §2, сценарий SC-03; фидбек user
+// #391, задача #134): текущая погода (API-07), прогноз 7 суток (API-29),
+// история погоды с диапазонами 90 дней/сезон/год (API-57 §7.8), GDD с 1 января
+// (API-58 §7.8) и погодные окна только по активным планам поля
+// (RULE-AGRO-09, /weather/windows only_planned — API-59 §7.8).
 import { computed, onMounted, ref, watch } from 'vue'
-import { getFields, getFieldWeather, getWeatherForecast, getWeatherWindows } from '@/api'
-import type { Field, FieldWeather, WeatherForecast, WeatherWindows, WindowOperationType } from '@/api/types'
+import FieldCombobox from '@/components/FieldCombobox.vue'
+import GddChart from '@/components/GddChart.vue'
+import WeatherHistoryChart from '@/components/WeatherHistoryChart.vue'
+import {
+  getFields,
+  getFieldGdd,
+  getFieldWeather,
+  getWeatherForecast,
+  getWeatherGdd,
+  getWeatherHistory,
+  getWeatherWindowsPlanned,
+} from '@/api'
+import type {
+  Field,
+  FieldWeather,
+  WeatherForecast,
+  WeatherGdd,
+  WeatherHistory,
+  WeatherWindowItem,
+  WindowOperationType,
+} from '@/api/types'
+
+const LS_FIELD = 'cda.weather.field'
+const LS_RECENT = 'cda.weather.recent'
 
 const fields = ref<Field[]>([])
 const fieldId = ref('')
+const recent = ref<string[]>([])
 const weather = ref<FieldWeather | null>(null)
 const forecast = ref<WeatherForecast | null>(null)
-const windows = ref<Partial<Record<WindowOperationType, WeatherWindows>>>({})
+const windows = ref<WeatherWindowItem[]>([])
+const windowsHint = ref<string | null>(null)
 const loading = ref(true)
 const failed = ref(false)
 
-/** Типы операций для оценки окна (RULE-AGRO-09, 03 §3.3). */
-const OP_TYPES: Array<{ value: WindowOperationType; label: string }> = [
-  { value: 'spraying', label: 'Опрыскивание (СЗР)' },
-  { value: 'fertilizing', label: 'Внесение удобрений (жидкие)' },
-  { value: 'seeding', label: 'Посев (ранние яровые)' },
-  { value: 'harvesting', label: 'Уборка' },
-]
+/** Диапазоны истории: 90 дней / сезон / год (фидбек #391 п.2). */
+type RangeKind = '90d' | 'season' | 'year'
+const range = ref<RangeKind>('90d')
+const rangeYear = ref(new Date().getFullYear())
+const CURRENT_YEAR = new Date().getFullYear()
+const years = computed(() => {
+  const out: number[] = []
+  for (let y = CURRENT_YEAR; y >= 2023; y--) out.push(y)
+  return out
+})
+
+/** История и GDD: до деплоя бэкенда (#132) — нейтральное «скоро». */
+const historyDays = ref<WeatherHistory['items']>([])
+const historyState = ref<'loading' | 'ok' | 'soon'>('loading')
+const gdd = ref<WeatherGdd | null>(null)
+const gddState = ref<'loading' | 'ok' | 'soon'>('loading')
+
+/** Подписи типов операций (RULE-AGRO-09, 03 §3.3). */
+const OP_LABELS: Record<WindowOperationType, string> = {
+  spraying: 'Опрыскивание (СЗР)',
+  fertilizing: 'Внесение удобрений (жидкие)',
+  seeding: 'Посев (ранние яровые)',
+  harvesting: 'Уборка',
+}
+
+function opLabel(t: WindowOperationType): string {
+  return OP_LABELS[t] ?? t
+}
 
 const selectedField = computed(() => fields.value.find((f) => f.field_id === fieldId.value) ?? null)
+
+function rangeDates(kind: RangeKind, year: number): { from: string; to: string; label: string } {
+  const iso = (d: Date) => d.toISOString().slice(0, 10)
+  if (kind === '90d') {
+    const to = new Date()
+    const from = new Date(to.getTime() - 89 * 86_400_000)
+    return { from: iso(from), to: iso(to), label: '90 дней' }
+  }
+  if (kind === 'season') {
+    return { from: `${year}-04-01`, to: `${year}-09-30`, label: `сезон ${year}` }
+  }
+  return { from: `${year}-01-01`, to: `${year}-12-31`, label: `${year} год` }
+}
+
+const rangeLabel = computed(() => rangeDates(range.value, rangeYear.value).label)
+
+async function loadHistory() {
+  if (!fieldId.value) return
+  historyState.value = 'loading'
+  const { from, to } = rangeDates(range.value, rangeYear.value)
+  try {
+    const h = await getWeatherHistory(fieldId.value, from, to)
+    historyDays.value = h.items
+    historyState.value = h.items.length ? 'ok' : 'soon'
+  } catch {
+    historyDays.value = []
+    historyState.value = 'soon'
+  }
+}
+
+async function loadGdd() {
+  if (!fieldId.value) return
+  gddState.value = 'loading'
+  try {
+    gdd.value = await getWeatherGdd(fieldId.value, CURRENT_YEAR)
+    gddState.value = gdd.value.items.length ? 'ok' : 'soon'
+  } catch {
+    gdd.value = null
+    gddState.value = 'soon'
+  }
+}
 
 async function load() {
   if (!fieldId.value) return
   loading.value = true
   failed.value = false
-  windows.value = {}
+  windows.value = []
+  windowsHint.value = null
   try {
-    const [w, fc, ...wins] = await Promise.all([
+    const [w, fc, win] = await Promise.all([
       getFieldWeather(fieldId.value),
       getWeatherForecast(fieldId.value, 7),
-      ...OP_TYPES.map((t) => getWeatherWindows(fieldId.value, t.value)),
+      getWeatherWindowsPlanned(fieldId.value),
     ])
     weather.value = w
     forecast.value = fc
-    OP_TYPES.forEach((t, i) => {
-      windows.value[t.value] = wins[i]
-    })
+    windows.value = win.items
+    windowsHint.value = win.hint
+    // История/GDD грузим параллельно с остальным экраном (не блокируем его).
+    void loadHistory()
+    void loadGdd()
   } catch {
     failed.value = true // тост уже показан
   } finally {
     loading.value = false
   }
+}
+
+/** Запоминание выбранного поля и «недавних» (фидбек #391 п.1). */
+function rememberField(id: string) {
+  localStorage.setItem(LS_FIELD, id)
+  const prev = recent.value.filter((x) => x !== id)
+  recent.value = [id, ...prev].slice(0, 5)
+  localStorage.setItem(LS_RECENT, JSON.stringify(recent.value))
+}
+
+function onFieldSelect(id: string) {
+  fieldId.value = id
 }
 
 const RU_DATE = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', weekday: 'short' })
@@ -55,9 +158,19 @@ function fmtDate(iso: string): string {
 
 onMounted(async () => {
   try {
+    recent.value = JSON.parse(localStorage.getItem(LS_RECENT) ?? '[]') as string[]
+  } catch {
+    recent.value = []
+  }
+  try {
     const page = await getFields({ status: 'all' })
     fields.value = page.items.filter((f) => f.status === 'active')
-    if (fields.value.length) fieldId.value = fields.value[0].field_id
+    const saved = localStorage.getItem(LS_FIELD)
+    fieldId.value =
+      saved && fields.value.some((f) => f.field_id === saved)
+        ? saved
+        : (fields.value[0]?.field_id ?? '')
+    if (fieldId.value) rememberField(fieldId.value)
     await load()
   } catch {
     failed.value = true
@@ -65,7 +178,10 @@ onMounted(async () => {
   }
 })
 
-watch(fieldId, load)
+watch(fieldId, (id) => {
+  if (id) rememberField(id)
+})
+watch([range, rangeYear], () => void loadHistory())
 </script>
 
 <template>
@@ -75,24 +191,32 @@ watch(fieldId, load)
         Погода и погодные окна
       </h1>
       <span class="wx__spacer" />
-      <label
-        class="wx__label"
-        for="wx-field"
-      >Поле</label>
-      <select
-        id="wx-field"
-        v-model="fieldId"
-        class="wx__select"
-      >
-        <option
-          v-for="f in fields"
-          :key="f.field_id"
-          :value="f.field_id"
-        >
-          {{ f.name }}
-        </option>
-      </select>
+      <FieldCombobox
+        :fields="fields"
+        :model-value="fieldId || null"
+        :recent="recent"
+        aria-label="Поле"
+        @update:model-value="onFieldSelect"
+      />
     </header>
+
+    <!-- Карточка выбранного поля: культура сезона и площадь (#391 п.1). -->
+    <div
+      v-if="selectedField"
+      class="wx__field-card"
+    >
+      <span class="wx__field-name">{{ selectedField.name }}</span>
+      <span class="wx__field-meta">
+        {{
+          selectedField.current_cycle
+            ? `${selectedField.current_cycle.year}: ${selectedField.current_cycle.culture_name}`
+            : 'культура сезона не задана'
+        }}
+      </span>
+      <span class="wx__field-meta">
+        {{ selectedField.area_ga.toLocaleString('ru-RU') }} га
+      </span>
+    </div>
 
     <p
       v-if="loading"
@@ -145,9 +269,94 @@ watch(fieldId, load)
               <dt>Сумма эффективных температур</dt>
               <dd>{{ weather.summary.gdd.toLocaleString('ru-RU') }} °C·сут</dd>
             </div>
+            <div>
+              <dt>GDD с 1 января</dt>
+              <dd>{{ gddState === 'ok' && gdd ? `${gdd.total.toLocaleString('ru-RU')} °C·сут` : '—' }}</dd>
+            </div>
           </dl>
         </div>
       </div>
+
+      <h2 class="wx__subtitle">
+        История погоды
+      </h2>
+      <div class="wx__hist">
+        <div
+          class="wx__ranges"
+          role="tablist"
+          aria-label="Диапазон истории"
+        >
+          <button
+            v-for="r in (['90d', 'season', 'year'] as RangeKind[])"
+            :key="r"
+            type="button"
+            class="wx__range"
+            :class="{ 'wx__range--active': range === r }"
+            role="tab"
+            :aria-selected="range === r"
+            @click="range = r"
+          >
+            {{ r === '90d' ? '90 дней' : r === 'season' ? 'Сезон' : 'Год' }}
+          </button>
+          <select
+            v-if="range !== '90d'"
+            v-model.number="rangeYear"
+            class="wx__year"
+            aria-label="Год"
+          >
+            <option
+              v-for="y in years"
+              :key="y"
+              :value="y"
+            >
+              {{ y }}
+            </option>
+          </select>
+        </div>
+        <p
+          v-if="historyState === 'loading'"
+          class="wx__state"
+        >
+          Загрузка истории…
+        </p>
+        <p
+          v-else-if="historyState === 'soon'"
+          class="wx__state wx__state--soon"
+        >
+          История погоды за {{ rangeLabel }} скоро появится — сервис погоды обновляется
+        </p>
+        <WeatherHistoryChart
+          v-else
+          :days="historyDays"
+        />
+      </div>
+
+      <h2 class="wx__subtitle">
+        Эффективные температуры (GDD) с 1 января {{ CURRENT_YEAR }}
+      </h2>
+      <p
+        v-if="gddState === 'loading'"
+        class="wx__state"
+      >
+        Загрузка GDD…
+      </p>
+      <p
+        v-else-if="gddState === 'soon'"
+        class="wx__state wx__state--soon"
+      >
+        Накопительная кривая GDD скоро появится — сервис погоды обновляется
+      </p>
+      <template v-else-if="gdd">
+        <p class="wx__gdd-total">
+          Накоплено на {{ gdd.items.at(-1)?.date }}:
+          <strong>{{ gdd.total.toLocaleString('ru-RU') }} °C·сут</strong>
+          (база {{ gdd.base_c }} °C)
+        </p>
+        <GddChart
+          :items="gdd.items"
+          :norm="gdd.norm_cum"
+        />
+      </template>
 
       <h2 class="wx__subtitle">
         Прогноз, {{ forecast.days.length }} сут.
@@ -203,29 +412,37 @@ watch(fieldId, load)
       </div>
 
       <h2 class="wx__subtitle">
-        Погодные окна по типам операций (RULE-AGRO-09)
+        Погодные окна по планам поля (RULE-AGRO-09)
       </h2>
-      <div class="wx__windows">
+      <p
+        v-if="windowsHint"
+        class="wx__state wx__state--soon"
+      >
+        На этом поле нет активных планов операций — погодные окна не оцениваются
+      </p>
+      <div
+        v-else
+        class="wx__windows"
+      >
         <div
-          v-for="t in OP_TYPES"
-          :key="t.value"
+          v-for="t in windows"
+          :key="t.operation_type"
           class="wx__window"
         >
           <div class="wx__window-head">
-            <span class="wx__window-title">{{ t.label }}</span>
+            <span class="wx__window-title">{{ opLabel(t.operation_type) }}</span>
             <span
-              v-if="windows[t.value]"
               class="wx__badge"
-              :class="windows[t.value]!.nearest_window_date ? 'wx__badge--ok' : 'wx__badge--bad'"
+              :class="t.nearest_window_date ? 'wx__badge--ok' : 'wx__badge--bad'"
             >
-              {{ windows[t.value]!.nearest_window_date
-                ? `окно ${fmtDate(windows[t.value]!.nearest_window_date!)}`
+              {{ t.nearest_window_date
+                ? `окно ${fmtDate(t.nearest_window_date)}`
                 : 'окна нет в горизонте 7 сут.' }}
             </span>
           </div>
           <ul class="wx__days">
             <li
-              v-for="d in windows[t.value]?.days ?? []"
+              v-for="d in t.days"
               :key="d.date"
               class="wx__day"
               :class="d.is_window ? 'wx__day--ok' : 'wx__day--bad'"
@@ -235,8 +452,8 @@ watch(fieldId, load)
             </li>
           </ul>
           <p class="wx__window-note">
-            <template v-if="windows[t.value]?.nearest_window_date">
-              {{ windows[t.value]!.days.find((d) => d.date === windows[t.value]!.nearest_window_date)?.summary }}
+            <template v-if="t.nearest_window_date">
+              {{ t.days.find((d) => d.date === t.nearest_window_date)?.summary }}
             </template>
             <template v-else>
               Ни одни сутки не подходят — в системе создаётся предупреждение (ENT-ALERT)
@@ -273,10 +490,24 @@ watch(fieldId, load)
   flex: 1;
 }
 
-.wx__select,
-.wx__label {
-  font-size: 1rem;
-  min-height: 44px;
+.wx__field-card {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  border: 1px solid #c8d6c9;
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  background: #f7faf7;
+}
+
+.wx__field-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.wx__field-meta {
+  color: #55685a;
 }
 
 .wx__state {
@@ -285,6 +516,14 @@ watch(fieldId, load)
 
 .wx__state--error {
   color: #b3261e;
+}
+
+/* нейтральное «скоро» (#391): не выглядит ошибкой */
+.wx__state--soon {
+  background: #f1f4f1;
+  border: 1px dashed #b9c9bb;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
 }
 
 .wx__stale {
@@ -340,6 +579,42 @@ watch(fieldId, load)
 .wx__subtitle {
   font-size: 1.1rem;
   margin: 0.5rem 0 0;
+}
+
+.wx__ranges {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.4rem 0 0.6rem;
+  flex-wrap: wrap;
+}
+
+.wx__range {
+  border: 1px solid #9db59e;
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.3rem 0.9rem;
+  min-height: 38px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.wx__range--active {
+  background: #2e7d32;
+  border-color: #2e7d32;
+  color: #fff;
+  font-weight: 600;
+}
+
+.wx__year {
+  min-height: 38px;
+  font-size: 0.95rem;
+  border: 1px solid #9db59e;
+  border-radius: 8px;
+}
+
+.wx__gdd-total {
+  margin: 0.4rem 0;
 }
 
 .wx__table-wrap {
