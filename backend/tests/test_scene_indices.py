@@ -277,6 +277,7 @@ class TestIndexApi:
     def test_path_form_all_indices(self, client, db_session, band_rasters) -> None:
         """/fields/{id}/{index} отдаёт таймлайн каждого индекса §7.7."""
         _seed_ndvi_scene(db_session, band_rasters["assets"])
+        run_indices_backfill(db_session, render_dir=None)  # сцены индексов
         headers = _api_headers(client, db_session)
         field_id = db_session.scalar(db_text("SELECT id FROM dat_field LIMIT 1"))
         for name in EXTRA_INDICES:
