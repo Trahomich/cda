@@ -175,12 +175,14 @@ export async function getFieldCard(fieldId: string): Promise<FieldCard> {
   }
 }
 
-/** API-06: GET /fields/{id}/ndvi — NDVI-таймлайн сезона (cloud_pct > 80 — облачные). */
-export async function getFieldNdvi(fieldId: string): Promise<NdviPoint[]> {
+/** API-06: GET /fields/{id}/ndvi — NDVI-таймлайн (cloud_pct > 80 — облачные).
+ *  year (§7.5) — только сцены сезона YYYY; без него — вся история. */
+export async function getFieldNdvi(fieldId: string, year?: number): Promise<NdviPoint[]> {
   // limit=200: годовая история (~70 сцен на поле за год при revisit ~5 сут);
   // порядок нормализуем по возрастанию даты (API отдаёт от свежих к старым).
+  const yearQuery = year ? `&year=${year}` : ''
   const page = await apiClient.request<NdviTimelinePage>(
-    `/fields/${fieldId}/ndvi?limit=200`,
+    `/fields/${fieldId}/ndvi?limit=200${yearQuery}`,
   )
   return page.items
     .map((s: SceneItem) => ({
