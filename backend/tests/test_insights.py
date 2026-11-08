@@ -848,5 +848,6 @@ class TestVisionRenders117:
         from app.core.cache import cache_get  # уже отдаёт разобранный JSON
 
         updated = cache_get(f"insights:{fid}:{TODAY.isoformat()}")
-        assert updated["source"] == "rules"
+        # выдуманное число отброшено, опубликован fallback из items §8.2
         assert updated["summary"].startswith("Резкое падение NDVI")
+        assert "90" not in updated["summary"]
