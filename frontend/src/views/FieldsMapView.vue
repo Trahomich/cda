@@ -218,9 +218,9 @@ async function loadFields(layer: L.FeatureGroup) {
     const bounds = layer.getBounds()
     // Вьюпорт уже восстанавливали (сохранённый вид) или подгоняли ранее —
     // не дёргаем карту заново (ретентивная навигация, #437)
-    if (!mapHasView && bounds.isValid()) {
+    if (!mapViewReady.value && bounds.isValid()) {
       map?.fitBounds(bounds.pad(0.15))
-      mapHasView = true
+      mapViewReady.value = true
     }
   } catch {
     failed.value = true // тост с problem+json уже показан API-клиентом
