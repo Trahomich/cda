@@ -853,4 +853,4 @@ class TestVisionRenders117:
 
         updated = _json.loads(cache_get(f"insights:{fid}:{TODAY.isoformat()}"))
         assert updated["source"] == "rules"
-        assert updated["summary"].startswith("Падение NDVI")
+        assert updated["summary"].startswith("Резкое падение NDVI")
