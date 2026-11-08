@@ -23,6 +23,8 @@ const tab = ref<'map' | 'list'>('map')
 
 let map: LeafletMap | null = null
 let contoursLayer: L.FeatureGroup | null = null
+/** У карты уже есть «её» вид: восстановленный из localStorage или fitBounds. */
+let mapHasView = false
 
 const STATUS_LABELS: Record<Field['status'], string> = {
   active: 'действует',
