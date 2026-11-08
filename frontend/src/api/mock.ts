@@ -596,6 +596,37 @@ function ndviOf(n: number, year = 2027): NdviPoint[] {
  *  полей (культура сезона — из истории/матрицы циклов, main | null). */
 const SEASON_YEARS = [2027, 2026]
 
+/** §7.7 (#128): индексы API-06 в моке. Значение — монотонная трансформация
+ *  NDVI сцены, чтобы слои визуально различались; NDSI — снежный индекс,
+ *  в демо-сезонах (апрель–июль) зимних сцен нет → у NDSI сцен 0
+ *  (слой в карточке недоступен — кнопка задизейблена). */
+const MOCK_INDICES = ['ndre', 'ndmi', 'ndsi', 'evi', 'savi', 'bsi'] as const
+type MockIndex = 'ndvi' | 'ndwi' | (typeof MOCK_INDICES)[number]
+
+const MOCK_INDEX_NAMES: readonly MockIndex[] = ['ndvi', 'ndwi', ...MOCK_INDICES]
+
+function mockIndexValue(index: MockIndex, ndvi: number): number {
+  let v: number
+  switch (index) {
+    case 'ndre':
+      v = ndvi * 0.82
+      break
+    case 'ndmi':
+      v = ndvi * 0.68 - 0.04
+      break
+    case 'evi':
+    case 'savi':
+      v = ndvi * 1.35
+      break
+    case 'bsi':
+      v = 0.32 - ndvi * 0.5
+      break
+    default:
+      v = ndvi
+  }
+  return Math.round(v * 100) / 100
+}
+
 function seasonCultureName(n: number, year: number): string | null {
   const rec = cycleAt(n, year)
   if (!rec) return null
