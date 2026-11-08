@@ -106,6 +106,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
       </div>
       <div
         class="vra-lb__stage"
+        @click.self="emit('close')"
         @pointerdown="onPointerDown"
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"
