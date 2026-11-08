@@ -243,21 +243,23 @@ def _analyze_scene(
 
     # прореживание (ближайший сосед) — сетка общая для зон и PNG; растр —
     # до MAX_RASTER_PX, чтобы канва с полосой легенды не превысила MAX_SIDE_PX
-    factor = max(1, math.ceil(max(red_arr.shape) / MAX_RASTER_PX))
+    factor = max(1, math.ceil(max(nir_arr.shape) / MAX_RASTER_PX))
     sl = (slice(None, None, factor), slice(None, None, factor))
-    transform = red_transform * Affine.scale(factor, factor)
+    transform = nir_transform * Affine.scale(factor, factor)
     nir_d = nir_arr[sl].astype("float32")
     red_d = red_arr[sl].astype("float32")
     cloud_d = np.isin(scl[sl], CLOUD_SCL_VALUES)
     inside = contour_mask(
-        transform_geom("EPSG:4326", red_crs, contour_geojson), transform, nir_d.shape
+        transform_geom("EPSG:4326", nir_crs, contour_geojson), transform, nir_d.shape
     )
 
-    ndvi = compute_index_array("ndvi", nir_d, red_d)
-    valid = inside & np.isfinite(ndvi) & ~cloud_d
+    # массив выбранного индекса (§7.7 #129): ndvi = (B08−B04)/(B08+B04),
+    # ndre = (B08−B05)/(B08+B05) — зоны и метрики по одному массиву
+    index_arr = compute_index_array(index, nir_d, red_d)
+    valid = inside & np.isfinite(index_arr) & ~cloud_d
     if not valid.any():
         raise _err_no_data(field.id, "внутри контура нет чистых пикселей с данными")
-    values = ndvi[valid]
+    values = index_arr[valid]
     p25, p30, p70, p75 = np.percentile(values, (25.0, 30.0, 70.0, 75.0))
     iqr = round(float(p75 - p25), 3)
     spread = _spatial_spread(ndvi, valid)
