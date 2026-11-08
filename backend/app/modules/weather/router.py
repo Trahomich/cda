@@ -100,6 +100,18 @@ def _forecast_days(db: Session, field_id: uuid.UUID, days: int) -> list[Forecast
     )
 
 
+def _forecast_items(
+    db: Session, field_id: uuid.UUID, forecasts: list[Forecast]
+) -> list[ForecastDayItem]:
+    """ForecastDayItem с hazards по каждому дню (#139): культура сезона —
+    один запрос, пороги — weather.hazards (docs/06 §7.8)."""
+    per_day = hazards.forecast_hazards(db, field_id, forecasts)
+    items = [ForecastDayItem.model_validate(f) for f in forecasts]
+    for item, day_hazards in zip(items, per_day, strict=True):
+        item.hazards = [HazardItem.model_validate(h) for h in day_hazards]
+    return items
+
+
 @router.get(
     "/fields/{field_id}/weather",
     response_model=FieldWeatherResponse,
@@ -121,7 +133,7 @@ def field_weather(field_id: uuid.UUID, db: DbSession) -> FieldWeatherResponse:
     return FieldWeatherResponse(
         field_id=field.id,
         facts=[FactItem.model_validate(f) for f in facts],
-        forecast=[ForecastDayItem.model_validate(f) for f in forecasts],
+        forecast=_forecast_items(db, field.id, forecasts),
         meta=_source_meta(db, forecasts),
     )
 
