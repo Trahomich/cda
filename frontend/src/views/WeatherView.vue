@@ -464,6 +464,7 @@ watch([range, rangeYear], () => void loadHistory())
             <tr
               v-for="d in forecast.days"
               :key="d.date"
+              :class="dayHazardClass(d.date)"
             >
               <td>{{ fmtDate(d.date) }}</td>
               <td class="wx__num">
