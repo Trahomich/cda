@@ -67,6 +67,11 @@ function title(item: CropCycleHistoryItem): string {
     .filter(Boolean)
     .join(' · ')
 }
+
+/** Год с сезонными данными (API-54) — ячейка переключает сезон карточки. */
+function isSeason(year: number): boolean {
+  return props.seasonYears.includes(year)
+}
 </script>
 
 <template>
