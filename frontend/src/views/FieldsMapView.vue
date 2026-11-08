@@ -199,14 +199,14 @@ function weatherColor(v: number): string {
 }
 
 /** Стиль контура: культуры (обычный) или метрика погоды (#143). */
-function styleFor(field: Field): L.PathOptions {
+function styleFor(field: Field | undefined): L.PathOptions {
   const base: L.PathOptions = {
-    color: STATUS_COLORS[field.status],
+    color: STATUS_COLORS[field?.status ?? 'active'],
     weight: 1.5,
-    fillColor: cultureColorOf(field).color,
+    fillColor: field ? cultureColorOf(field).color : NO_CULTURE_COLOR,
     fillOpacity: 0.45,
   }
-  if (!weatherMode.value) return base
+  if (!field || !weatherMode.value) return base
   const v = weatherValues.value.get(field.field_id)
   if (v === undefined) return base // значения ещё грузятся — прежняя заливка
   if (v === null) {
