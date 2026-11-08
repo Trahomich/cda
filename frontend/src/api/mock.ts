@@ -2233,6 +2233,95 @@ export class MockTransport implements Transport {
       headers: new Headers(),
     })
 
+    const vraExportMatch = /^\/fields\/([\w-]+)\/vra\/export$/.exec(pathname)
+    if (vraExportMatch) {
+      const field = FIELDS.find((f) => f.field_id === vraExportMatch[1])
+      if (!field) return empty(404)
+      const year = Number(params.get('year') ?? 0)
+      if (year !== 0 && !SEASON_YEARS.includes(year)) return empty(404)
+      const vra = vraOf(FIELD_N.get(field.field_id)!, field.field_id, year || 2027)
+      const format = params.get('format') ?? ''
+      if (!['isoxml', 'shp', 'geojson'].includes(format)) {
+        return {
+          ok: false,
+          status: 422,
+          blob: new Blob(
+            [
+              JSON.stringify({
+                type: 'about:blank',
+                title: 'Некорректный запрос',
+                status: 422,
+                detail: `Неизвестный формат выгрузки «${format}»`,
+                code: 'unknown_export_format',
+              }),
+            ],
+            { type: 'application/problem+json' },
+          ),
+          headers: new Headers({ 'Content-Type': 'application/problem+json' }),
+        }
+      }
+      // база: параметр (валидация как в API) или approved-план (vraOf)
+      const doseParam = params.get('base_dose_kg_ha')
+      const dose = doseParam !== null ? Number(doseParam) : vra.base_dose_kg_ha
+      if (dose === null || !Number.isFinite(dose) || dose <= 0 || dose > 2000) {
+        return {
+          ok: false,
+          status: 422,
+          blob: new Blob(
+            [
+              JSON.stringify({
+                type: 'about:blank',
+                title: 'Нет базовой дозы',
+                status: 422,
+                detail: 'У поля нет согласованного плана внесения — задайте базовую дозу',
+                code: 'vra_no_base_dose',
+              }),
+            ],
+            { type: 'application/problem+json' },
+          ),
+          headers: new Headers({ 'Content-Type': 'application/problem+json' }),
+        }
+      }
+      const stem = `vra_${field.field_id.slice(0, 8)}_${vra.date}`
+      if (format === 'geojson') {
+        const geojson = {
+          type: 'FeatureCollection',
+          features: vra.zones.map((z) => ({
+            type: 'Feature',
+            properties: {
+              zone: z.zone,
+              label: z.label,
+              area_ga: z.area_ga,
+              ndvi_mean: z.ndvi_mean,
+              dose_kg_ha: Math.round(dose * z.dose_factor * 10) / 10,
+            },
+            geometry: { type: 'Polygon', coordinates: [] },
+          })),
+        }
+        return {
+          ok: true,
+          status: 200,
+          blob: new Blob([JSON.stringify(geojson)], { type: 'application/geo+json' }),
+          headers: new Headers({
+            'Content-Type': 'application/geo+json',
+            'Content-Disposition': `attachment; filename="${stem}.geojson"`,
+          }),
+        }
+      }
+      // isoxml / shp — ZIP-архив (для мока достаточно magic-байтов PK)
+      const name = format === 'shp' ? `${stem}_shp.zip` : `${stem}_isoxml.zip`
+      return {
+        ok: true,
+        status: 200,
+        blob: new Blob([new Uint8Array([0x50, 0x4b, 0x03, 0x04])], { type: 'application/zip' }),
+        headers: new Headers({
+          'Content-Type': 'application/zip',
+          'Content-Disposition': `attachment; filename="${name}"`,
+          'X-Vra-Base-Dose': String(dose),
+        }),
+      }
+    }
+
     const vraMapMatch = /^\/fields\/([\w-]+)\/vra\/map\.png$/.exec(pathname)
     if (vraMapMatch) {
       const field = FIELDS.find((f) => f.field_id === vraMapMatch[1])
