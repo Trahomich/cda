@@ -151,6 +151,7 @@ def _uniform_rasters(tmp_path) -> dict:
     только зона 2 «среднее» (кластеризация при p30 == p70 == всем пикселям)."""
     from tests.test_vra import CRS, N, _write_tif
 
+    tmp_path.mkdir(parents=True, exist_ok=True)
     t10 = Affine(10.0, 0.0, 300000.0, 0.0, -10.0, 5762000.0)
     t20 = Affine(20.0, 0.0, 300000.0, 0.0, -20.0, 5762000.0)
     red = _write_tif(tmp_path / "b04.tif", np.full((N, N), 800, "uint16"), t10, CRS)
