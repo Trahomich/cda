@@ -13,9 +13,9 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from app.ai_assistant.detectors import (
-    WINTER_CULTURE_MARKERS,
     NDVI_STAGNATION_SEASON_MONTHS,
     NDVI_STAGNATION_WINTER_MONTHS,
+    WINTER_CULTURE_MARKERS,
     current_culture_name,
 )
 from app.models.integrations import Forecast
