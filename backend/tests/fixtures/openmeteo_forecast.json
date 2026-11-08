@@ -13,7 +13,11 @@
     "precipitation_sum": "mm",
     "wind_speed_10m_max": "m/s",
     "relative_humidity_2m_mean": "%",
-    "precipitation_probability_max": "%"
+    "precipitation_probability_max": "%",
+    "cloud_cover_mean": "%",
+    "snowfall_sum": "cm",
+    "snow_depth_max": "cm",
+    "precipitation_hours": "h"
   },
   "daily": {
     "time": [
@@ -78,6 +82,42 @@
       null,
       0,
       45
+    ],
+    "cloud_cover_mean": [
+      20.0,
+      20.0,
+      20.0,
+      20.0,
+      20.0,
+      20.0,
+      20.0
+    ],
+    "snowfall_sum": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "snow_depth_max": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "precipitation_hours": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
     ]
   }
 }
