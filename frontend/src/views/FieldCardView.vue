@@ -1056,154 +1056,6 @@ function fmtNum(v: number, digits = 1): string {
           </p>
         </div>
 
-        <!-- Ассистент (#148): выводы (API-51) + «что делать сейчас» (API-55/56,
-             §9.3) одним блоком с одной кнопкой «Пересчитать» -->
-        <div class="card360__block card360__block--insights">
-          <h2 class="card360__block-title">
-            Выводы и рекомендации
-          </h2>
-          <!-- 1. Сводка-вердикт: LLM-сводка API-51; при source=rules её нет
-               (только детекторы ниже), пустой список — «не выявлено» -->
-          <Skeleton
-            v-if="insightsLoading"
-            :lines="3"
-          />
-          <p
-            v-else-if="!insights"
-            class="card360__muted"
-          >
-            Выводы недоступны
-          </p>
-          <template v-else>
-            <p
-              v-if="insights.summary"
-              class="card360__insights-summary"
-            >
-              {{ insights.summary }}
-            </p>
-            <p
-              v-else-if="!insights.items.length"
-              class="card360__muted"
-            >
-              Отклонений по данным детекторов не выявлено.
-            </p>
-          </template>
-
-          <!-- 2. «Что делать сейчас»: рекомендация API-55, пересчёт API-55
-               POST 202 queued → поллинг GET; одна кнопка на весь блок -->
-          <h3 class="card360__sub-title">
-            Что делать сейчас
-          </h3>
-          <Skeleton
-            v-if="adviceLoading"
-            :lines="2"
-          />
-          <template v-else>
-            <template v-if="advice">
-              <p class="card360__advice-text">
-                {{ advice.answer }}
-              </p>
-              <p class="card360__muted card360__advice-meta">
-                Рассчитано {{ fmtDateTime(advice.created_at) }}{{
-                  advice.status === 'fallback' ? ' · упрощённый расчёт' : ''
-                }}
-              </p>
-            </template>
-            <p
-              v-else
-              class="card360__muted"
-            >
-              Рекомендация ещё не рассчитана.
-            </p>
-            <p
-              v-if="adviceError"
-              class="card360__advice-error"
-              role="alert"
-            >
-              Не удалось {{ advice ? 'пересчитать' : 'рассчитать' }} рекомендацию — попробуйте ещё раз
-            </p>
-            <div class="card360__advice-actions">
-              <button
-                type="button"
-                class="card360__advice-btn"
-                :disabled="adviceBusy"
-                @click="recalcAssistant"
-              >
-                {{ adviceBusy ? 'Пересчитываем…' : advice ? 'Пересчитать' : 'Рассчитать' }}
-              </button>
-              <span
-                v-if="adviceBusy"
-                class="card360__muted"
-              >Это занимает до минуты</span>
-            </div>
-            <div class="card360__advice-history">
-              <button
-                type="button"
-                class="card360__advice-toggle"
-                @click="adviceHistoryOpen = !adviceHistoryOpen"
-              >
-                История рекомендаций{{
-                  adviceHistory.length ? ` (${adviceHistory.length})` : ''
-                }}
-                {{ adviceHistoryOpen ? '▴' : '▾' }}
-              </button>
-              <ul
-                v-if="adviceHistoryOpen"
-                class="card360__advice-list"
-              >
-                <li
-                  v-for="item in adviceHistory"
-                  :key="item.created_at"
-                >
-                  <span class="card360__advice-date">{{ fmtDate(item.created_at.slice(0, 10)) }}</span>
-                  <span class="card360__advice-item-text">{{ item.answer }}</span>
-                </li>
-              </ul>
-              <button
-                v-if="adviceHistoryOpen && adviceHasMore"
-                type="button"
-                class="card360__advice-more"
-                @click="loadAdviceHistory"
-              >
-                Показать ещё
-              </button>
-            </div>
-          </template>
-
-          <!-- 3. Детекторы (API-51): компактные пункты — визуально
-               подчинены сводке и рекомендации -->
-          <template v-if="!insightsLoading && insights && insights.items.length">
-            <ul class="card360__insights">
-              <li
-                v-for="item in insights.items"
-                :key="item.code"
-                class="card360__insight"
-                :class="`card360__insight--${item.severity}`"
-              >
-                <span
-                  class="card360__insight-mark"
-                  :title="item.severity"
-                >{{ SEVERITY_MARKS[item.severity] }}</span>
-                <span class="card360__insight-text">
-                  {{ item.title }} — {{ item.detail }}<a
-                    v-if="item.code === 'vra_heterogeneity'"
-                    class="card360__insight-link"
-                    href="#vra"
-                  >зоны внесения</a>
-                </span>
-              </li>
-            </ul>
-          </template>
-          <p
-            v-if="!insightsLoading && insights"
-            class="card360__muted card360__insights-meta"
-          >
-            По числовым детекторам (NDVI, NDWI, агрохимия){{
-              insights.source === 'rules+llm' ? ' и сводке ИИ' : ''
-            }} · {{ fmtDate(insights.generated_at.slice(0, 10)) }}
-          </p>
-        </div>
-
         <!-- NDVI -->
         <div class="card360__block">
           <h2 class="card360__block-title">
@@ -1611,6 +1463,154 @@ function fmtNum(v: number, digits = 1): string {
         </div>
 
         <!-- Агрохимия -->
+        <!-- Ассистент (#148): выводы (API-51) + «что делать сейчас» (API-55/56,
+             §9.3) одним блоком с одной кнопкой «Пересчитать» -->
+        <div class="card360__block card360__block--insights">
+          <h2 class="card360__block-title">
+            Выводы и рекомендации
+          </h2>
+          <!-- 1. Сводка-вердикт: LLM-сводка API-51; при source=rules её нет
+               (только детекторы ниже), пустой список — «не выявлено» -->
+          <Skeleton
+            v-if="insightsLoading"
+            :lines="3"
+          />
+          <p
+            v-else-if="!insights"
+            class="card360__muted"
+          >
+            Выводы недоступны
+          </p>
+          <template v-else>
+            <p
+              v-if="insights.summary"
+              class="card360__insights-summary"
+            >
+              {{ insights.summary }}
+            </p>
+            <p
+              v-else-if="!insights.items.length"
+              class="card360__muted"
+            >
+              Отклонений по данным детекторов не выявлено.
+            </p>
+          </template>
+
+          <!-- 2. «Что делать сейчас»: рекомендация API-55, пересчёт API-55
+               POST 202 queued → поллинг GET; одна кнопка на весь блок -->
+          <h3 class="card360__sub-title">
+            Что делать сейчас
+          </h3>
+          <Skeleton
+            v-if="adviceLoading"
+            :lines="2"
+          />
+          <template v-else>
+            <template v-if="advice">
+              <p class="card360__advice-text">
+                {{ advice.answer }}
+              </p>
+              <p class="card360__muted card360__advice-meta">
+                Рассчитано {{ fmtDateTime(advice.created_at) }}{{
+                  advice.status === 'fallback' ? ' · упрощённый расчёт' : ''
+                }}
+              </p>
+            </template>
+            <p
+              v-else
+              class="card360__muted"
+            >
+              Рекомендация ещё не рассчитана.
+            </p>
+            <p
+              v-if="adviceError"
+              class="card360__advice-error"
+              role="alert"
+            >
+              Не удалось {{ advice ? 'пересчитать' : 'рассчитать' }} рекомендацию — попробуйте ещё раз
+            </p>
+            <div class="card360__advice-actions">
+              <button
+                type="button"
+                class="card360__advice-btn"
+                :disabled="adviceBusy"
+                @click="recalcAssistant"
+              >
+                {{ adviceBusy ? 'Пересчитываем…' : advice ? 'Пересчитать' : 'Рассчитать' }}
+              </button>
+              <span
+                v-if="adviceBusy"
+                class="card360__muted"
+              >Это занимает до минуты</span>
+            </div>
+            <div class="card360__advice-history">
+              <button
+                type="button"
+                class="card360__advice-toggle"
+                @click="adviceHistoryOpen = !adviceHistoryOpen"
+              >
+                История рекомендаций{{
+                  adviceHistory.length ? ` (${adviceHistory.length})` : ''
+                }}
+                {{ adviceHistoryOpen ? '▴' : '▾' }}
+              </button>
+              <ul
+                v-if="adviceHistoryOpen"
+                class="card360__advice-list"
+              >
+                <li
+                  v-for="item in adviceHistory"
+                  :key="item.created_at"
+                >
+                  <span class="card360__advice-date">{{ fmtDate(item.created_at.slice(0, 10)) }}</span>
+                  <span class="card360__advice-item-text">{{ item.answer }}</span>
+                </li>
+              </ul>
+              <button
+                v-if="adviceHistoryOpen && adviceHasMore"
+                type="button"
+                class="card360__advice-more"
+                @click="loadAdviceHistory"
+              >
+                Показать ещё
+              </button>
+            </div>
+          </template>
+
+          <!-- 3. Детекторы (API-51): компактные пункты — визуально
+               подчинены сводке и рекомендации -->
+          <template v-if="!insightsLoading && insights && insights.items.length">
+            <ul class="card360__insights">
+              <li
+                v-for="item in insights.items"
+                :key="item.code"
+                class="card360__insight"
+                :class="`card360__insight--${item.severity}`"
+              >
+                <span
+                  class="card360__insight-mark"
+                  :title="item.severity"
+                >{{ SEVERITY_MARKS[item.severity] }}</span>
+                <span class="card360__insight-text">
+                  {{ item.title }} — {{ item.detail }}<a
+                    v-if="item.code === 'vra_heterogeneity'"
+                    class="card360__insight-link"
+                    href="#vra"
+                  >зоны внесения</a>
+                </span>
+              </li>
+            </ul>
+          </template>
+          <p
+            v-if="!insightsLoading && insights"
+            class="card360__muted card360__insights-meta"
+          >
+            По числовым детекторам (NDVI, NDWI, агрохимия){{
+              insights.source === 'rules+llm' ? ' и сводке ИИ' : ''
+            }} · {{ fmtDate(insights.generated_at.slice(0, 10)) }}
+          </p>
+        </div>
+
       </div>
 
       <!-- Работы: планы (API-15 field_id) + журнал (API-18 field_id) одной
