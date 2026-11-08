@@ -531,8 +531,8 @@ class TestVraSpatialSpread:
         assert body["iqr_ndvi"] < 0.12  # ...но невидимы пиксельным IQR
         low = [z for z in body["zones"] if z["ndvi_mean"] < 0.70]
         assert low, "пятна образуют зону пониженного развития"
-        # 6 пятен × 18×18 px из ~180×180 полезных ≈ 6 % от 324 га ≈ 19 га
-        assert 12.0 < low[0]["area_ga"] < 26.0
+        # 12 пятен × 18×18 px из ~180×180 полезных ≈ 12 % от 324 га ≈ 39 га
+        assert 30.0 < low[0]["area_ga"] < 48.0
 
     def test_detector_spatial_criterion(self):
         """Детектор §8.2 v1.7: spread ≥ 0.06 на 2 из 3 пиков при IQR < 0.12."""
