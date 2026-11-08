@@ -132,8 +132,13 @@ def build_export(
     transform = Affine(*result.grid_transform)
     crs = result.grid_crs or "EPSG:32637"
 
+    # выравнивание по НОМЕРУ зоны: в VraZones.zones пустые зоны пропущены
+    # (mask.any()), zone_masks — всегда все 3; наивный zip сдвигал бы зоны
+    # и дозы (ревью #125: для терминала это ошибка дозирования)
+    mask_by_zone = dict(enumerate(result.zone_masks, start=1))
     zones: list[ExportZone] = []
-    for zone_row, mask in zip(result.zones, result.zone_masks, strict=False):
+    for zone_row in result.zones:
+        mask = mask_by_zone[zone_row.zone]
         geometry = _zone_geometry(mask, transform, crs)
         if geometry is None:
             continue
