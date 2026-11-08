@@ -247,8 +247,9 @@ class TestRunHistoryBackfill:
             today=TODAY,
         )
 
-        assert report.cache_deleted == 3  # insights:*, vra:peak, vra:peak:*
-        assert f"insights:{field_id}:*" in deleted
+        assert report.cache_deleted == 4  # insights v2+legacy, vra:peak, vra:peak:*
+        assert f"insights:v2:{field_id}:*" in deleted
+        assert f"insights:{field_id}:*" in deleted  # legacy-ключи до v2 (#138)
         assert f"vra:peak:{field_id}" in deleted
         assert f"vra:peak:{field_id}:*" in deleted  # сезонные ключи #110
 
