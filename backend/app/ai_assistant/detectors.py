@@ -413,7 +413,6 @@ def detect_drought(
 
 
 def detect_ndvi_lag_last_year(scenes: Sequence[SceneStat]) -> InsightItem | None:
-    """info: NDVI отстаёт ≥ 0.1 от сцены той же даты прошлого сезона."""
     if len(scenes) < 2:
         return None
     latest = scenes[-1]
