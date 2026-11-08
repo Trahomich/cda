@@ -28,20 +28,24 @@ from app.models.agronomy import Field
 from app.models.integrations import Forecast, WeatherObservation
 from app.models.references import Source, WeatherRule
 from app.modules.weather import ingest as ingest_module
-from app.modules.weather.rules import (
-    OPERATION_TYPES,
-    DayMetrics,
-    evaluate_window,
-)
 from app.modules.weather.schemas import (
     FactItem,
     FieldWeatherResponse,
     ForecastDayItem,
     ForecastListResponse,
+    GddDayItem,
+    GddNormItem,
+    GddResponse,
     HistoryListResponse,
     SourceMeta,
     WindowDayItem,
     WindowResponse,
+)
+from app.modules.weather.rules import (
+    GDD_BASE_C,
+    OPERATION_TYPES,
+    DayMetrics,
+    evaluate_window,
 )
 
 DbSession = Annotated[Session, Depends(get_db)]
