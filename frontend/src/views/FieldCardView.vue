@@ -1090,7 +1090,7 @@ function fmtNum(v: number, digits = 1): string {
                 </li>
               </ul>
               <button
-                v-if="adviceHistoryOpen && adviceHistory.length < adviceTotal"
+                v-if="adviceHistoryOpen && adviceHasMore"
                 type="button"
                 class="card360__advice-more"
                 @click="loadAdviceHistory"
