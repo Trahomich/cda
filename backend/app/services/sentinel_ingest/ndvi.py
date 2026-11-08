@@ -454,23 +454,35 @@ def run_ndvi_cycle(
         payload[id(row)] = (row.field_id, dict(row.assets or {}), row.item_id, row.captured_at)
     db.rollback()  # закрыть неявную транзакцию select'ов перед записями
 
-    def compute(item: SatelliteCatalogItem) -> tuple[SatelliteCatalogItem, object]:
+    def compute(item: SatelliteCatalogItem) -> tuple[SatelliteCatalogItem, object, list]:
+        from app.services.sentinel_ingest.indices import compute_scene_indices
+
         field_id, assets, item_id, captured_at = payload[id(item)]
         contour = contours.get(field_id)
         if contour is None:
-            return item, DataGapError(f"поле {field_id} неактивно или без контура")
+            return item, DataGapError(f"поле {field_id} неактивно или без контура"), []
         try:
             result = zonal_ndvi(assets, contour)
+            extras: list = []
+            if not isinstance(result, BaseException) and result.cloud_pct <= MAX_SCENE_CLOUD_PCT:
+                try:  # индексы §7.7 не роняют сцену ndvi (#128)
+                    extras = compute_scene_indices(assets, contour)
+                except Exception:  # noqa: BLE001
+                    logger.warning(
+                        "sentinel-ndvi: индексы §7.7 сцены %s не рассчитаны",
+                        item_id,
+                        exc_info=True,
+                    )
             _maybe_render(render_dir, field_id, item_id, captured_at, assets, contour, result)
-            return item, result
+            return item, result, extras
         except (DataGapError, DataQualityError, SourceUnavailableError) as exc:
-            return item, exc
+            return item, exc, []
 
     report = NdviReport(rows=len(rows))
     with ThreadPoolExecutor(max_workers=max(1, max_workers)) as pool:
-        for item, result in pool.map(compute, rows):
+        for item, result, extras in pool.map(compute, rows):
             try:
-                outcome = apply_row_result(db, item, result)
+                outcome = apply_row_result(db, item, result, extras)
             except SourceUnavailableError as exc:
                 report.unavailable.append(f"{item.item_id}: {exc}")
                 db.rollback()
@@ -478,6 +490,7 @@ def run_ndvi_cycle(
             db.commit()
             if outcome == "scene":
                 report.scenes += 1
+                report.index_scenes += len(extras)
             elif outcome == "cloud":
                 report.cloud_skipped += 1
             elif outcome == "gap":
