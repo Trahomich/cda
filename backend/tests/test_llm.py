@@ -1,14 +1,22 @@
-"""Тесты Ollama-клиента «Выводов ассистента» (v3-02, docs/09-ai.md §8.1).
+"""Тесты LLM-клиента «Выводов ассистента» (v3-02, docs/09-ai.md §8.1).
 
 Наружу тесты не ходят: httpx.MockTransport. Деградация: пустой
 OLLAMA_BASE_URL — None без единого запроса; таймаут/недоступность после
-1 повтора — None; успех — текст «response».
+1 повтора — None; успех — текст «response». Ветка anthropic (#115):
+POST /v1/messages, thinking-блок пропускается, только thinking → None.
 """
 
 import json
 
 import httpx
-from app.ai_assistant.llm import DEFAULT_MODEL, summarize
+import pytest
+from app.ai_assistant.llm import (
+    ANTHROPIC_DEFAULT_MODEL,
+    DEFAULT_MODEL,
+    llm_enabled,
+    summarize,
+)
+from app.core.config import Settings
 
 
 def _client(handler) -> httpx.Client:
