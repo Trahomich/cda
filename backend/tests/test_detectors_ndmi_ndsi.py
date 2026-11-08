@@ -34,7 +34,7 @@ class TestDroughtNdmi:
         """Прежнее правило (осадки ∧ GDD) работает без NDMI-данных."""
         item = detectors.detect_drought(5.0, 160.0, 10, date(2026, 7, 1))
         assert item is not None and item.code == "drought"
-        assert "осадков за 14 суток" in item.detail
+        assert "садков за 14 суток" in item.detail  # Осадков/осадков
         assert "NDMI" not in item.detail
 
     def test_ndmi_signal_only(self) -> None:
@@ -43,14 +43,14 @@ class TestDroughtNdmi:
             40.0, 60.0, 10, date(2026, 7, 1), ndmi_mean=-0.21, ndvi_mean=0.52
         )
         assert item is not None
-        assert "NDMI −0.21" in item.detail and "осадков за 14 суток" not in item.detail
+        assert "NDMI -0.21" in item.detail and "садков за 14 суток" not in item.detail
 
     def test_both_signals(self) -> None:
         item = detectors.detect_drought(
             3.0, 150.0, 10, date(2026, 7, 1), ndmi_mean=-0.15, ndvi_mean=0.6
         )
         assert item is not None
-        assert "осадков за 14 суток" in item.detail and "NDMI −0.15" in item.detail
+        assert "садков за 14 суток" in item.detail and "NDMI -0.15" in item.detail
         assert any(r.get("ndmi_mean") == -0.15 for r in item.data_refs)
 
     def test_ndmi_requires_vegetation(self) -> None:
@@ -88,7 +88,11 @@ class TestWinterkill:
         assert "2027-01-05 (NDVI 0.12, NDSI 0.10)" in item.detail
 
     def test_info_below_threshold(self) -> None:
-        pairs = [(date(2027, 1, 5), 0.12, 0.1), (date(2027, 1, 15), 0.55, 0.1)]
+        pairs = [
+            (date(2027, 1, 5), 0.12, 0.1),  # оголено
+            (date(2027, 1, 15), 0.55, 0.1),  # живой посев
+            (date(2027, 2, 1), 0.6, 0.2),  # живой посев
+        ]
         item = detectors.detect_winterkill(pairs, "Рожь озимая")
         assert item is not None and item.severity == "info"
 
@@ -131,7 +135,7 @@ class TestWinterDataLoaders:
     def test_load_winter_pairs_window_and_join(self, db_session) -> None:
         """Окно декабрь Y−1 … март Y; пары только по датам с NDVI и NDSI."""
         make_satellite_source(db_session)
-        field_id = make_field(db_session)
+        field_id = make_vra_field(db_session)
         winter = [
             (date(2026, 12, 20), 0.15, 0.2),
             (date(2027, 1, 10), 0.5, 0.1),  # NDVI есть, NDSI нет
@@ -156,7 +160,7 @@ class TestWinterDataLoaders:
 
     def test_latest_index_mean(self, db_session) -> None:
         make_satellite_source(db_session)
-        field_id = make_field(db_session)
+        field_id = make_vra_field(db_session)
         _scene(db_session, field_id, "ndmi", date(2026, 7, 1), -0.05)
         _scene(db_session, field_id, "ndmi", date(2026, 8, 1), -0.21)
         _scene(db_session, field_id, "ndvi", date(2026, 8, 1), 0.5)
@@ -171,7 +175,7 @@ class TestBuildItemsDetectors:
         from app.ai_assistant.service import build_items
 
         make_satellite_source(db_session)
-        field_id = make_field(db_session)
+        field_id = make_vra_field(db_session)
         _scene(db_session, field_id, "ndvi", date(2026, 8, 1), 0.52)
         _scene(db_session, field_id, "ndmi", date(2026, 8, 1), -0.21)
         db_session.commit()
@@ -183,8 +187,8 @@ class TestBuildItemsDetectors:
         from app.ai_assistant.service import build_items
 
         make_satellite_source(db_session)
-        field_id = make_field(db_session)
-        culture = Culture(name="Озимая пшеница", kind="cereal")
+        field_id = make_vra_field(db_session)
+        culture = Culture(name="Озимая пшеница", kind="cereal", crop_group="cereal")
         db_session.add(culture)
         db_session.flush()
         db_session.add(CropCycle(field_id=field_id, year=2027, culture_id=culture.id, kind="main"))
@@ -202,7 +206,7 @@ class TestBuildItemsDetectors:
         from app.ai_assistant.service import build_items
 
         make_satellite_source(db_session)
-        field_id = make_field(db_session)
+        field_id = make_vra_field(db_session)
         _scene(db_session, field_id, "ndvi", date(2026, 12, 20), 0.13)
         _scene(db_session, field_id, "ndsi", date(2026, 12, 20), 0.15)
         db_session.commit()
@@ -216,7 +220,7 @@ class TestBuildItemsDetectors:
 def ndre_world(tmp_path, db_session):
     """Поле + сцены ndre + каталог с ассетами b08/b05(20 м)/scl."""
     make_satellite_source(db_session)
-    field_id = make_field(db_session, name="Эндре-1")
+    field_id = make_vra_field(db_session, name="Эндре-1")
 
     rng = np.random.default_rng(5)
     nir = rng.uniform(2900, 3100, (N, N)).astype("uint16")
