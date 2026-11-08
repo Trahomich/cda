@@ -29,15 +29,20 @@ logger = logging.getLogger(__name__)
 SATELLITE_SOURCE_ID = "satellite.sentinel2-l2a"
 COLLECTION = "sentinel-2-l2a"
 
-#: каналы, нужные для NDVI и маски облаков (05 §2: B04, B08, SCL);
-#: b02/b03 — только рендер truecolor (docs/06 §7.3, #83);
+#: каналы, нужные для NDVI/индексов §7.7 и маски облаков (05 §2: B04, B08,
+#: SCL; #128: + B05, B11, B12 — red edge / SWIR); b02/b03 — рендер truecolor
+#: (docs/06 §7.3, #83) и EVI/BSI/NDSI (§7.7);
 #: ключ актива — каноническое имя, значения — возможные имена в каталоге
-#: (earth-search отдаёт ESA-имена red/nir/green/blue, Copernicus — b04/b08)
+#: (earth-search отдаёт ESA-имена red/nir/green/blue/rededge1/swir16/swir22,
+#: Copernicus — b04/b08/…)
 CATALOG_ASSETS: dict[str, tuple[str, ...]] = {
     "b04": ("b04", "red"),
     "b08": ("b08", "nir"),
     "b02": ("b02", "blue"),
     "b03": ("b03", "green"),
+    "b05": ("b05", "rededge1"),
+    "b11": ("b11", "swir16"),
+    "b12": ("b12", "swir22"),
     "scl": ("scl",),
 }
 
