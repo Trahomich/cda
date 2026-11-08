@@ -14,7 +14,8 @@ from app.modules.weather.hazards import (
     HIGH_WIND_MS,
     day_hazards,
 )
-from tests.test_inputs import make_culture, make_cycle
+from app.models.agronomy import CropCycle
+from tests.test_inputs import make_culture
 from tests.test_weather import api_forecast_rows, api_headers, make_field
 
 API = "/api/v1"
