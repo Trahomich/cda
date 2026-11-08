@@ -129,9 +129,7 @@ class TestFallbackBranch:
 
     def test_guardrail_fail_items_concat(self, monkeypatch):
         """Провал при непустых детекторах → конкатенация items §8.2."""
-        monkeypatch.setattr(
-            advice.llm, "summarize", lambda *a, **k: "выдумка 777 кг"
-        )
+        monkeypatch.setattr(advice.llm, "summarize", lambda *a, **k: "выдумка 777 кг")
         items = [
             InsightItem(
                 code="drought",
