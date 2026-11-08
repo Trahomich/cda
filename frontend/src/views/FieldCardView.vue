@@ -279,6 +279,15 @@ const seasonQueryYear = computed(() => {
     : selectedYear.value
 })
 
+/** Годы с сезонными данными (API-54) — кликабельные ячейки ленты
+ *  севооборота под снимками поля переключают сезон карточки (#122). */
+const seasonYearsList = computed(() => seasons.value.map((s) => s.year))
+
+/** Клик по году ленты севооборота: год с сезоном — переключить сезон. */
+function onSeasonCell(year: number): void {
+  if (seasonYearsList.value.includes(year)) selectSeason(year)
+}
+
 async function loadSeasons() {
   try {
     seasons.value = await getFieldSeasons(fieldId)
