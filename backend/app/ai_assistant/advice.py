@@ -209,7 +209,7 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
             f"{precip14:.1f} мм, сумма GDD {gdd14 or 0:.0f} °C·сут "
             f"({gdd_days} сут с температурами)."
         )
-    forecasts = db.execute(
+    forecasts = db.scalars(
         select(Forecast)
         .where(
             Forecast.field_id == field_id,
@@ -219,8 +219,7 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
         .order_by(Forecast.forecast_for, Forecast.issued_at.desc())
     ).all()
     latest_by_day: dict[date, Forecast] = {}
-    for row in forecasts:  # issued_at desc в пределах дня — первый и есть свежий
-        fc: Forecast = row
+    for fc in forecasts:  # issued_at desc в пределах дня — первый и есть свежий
         latest_by_day.setdefault(fc.forecast_for, fc)
     if latest_by_day:
         fc_line = ", ".join(
