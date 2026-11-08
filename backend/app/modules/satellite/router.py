@@ -494,6 +494,7 @@ def field_vra(
         field_id=field.id,
         date=result.captured_at,
         iqr_ndvi=result.iqr_ndvi,
+        spatial_spread=result.spatial_spread,
         peak_dates=list(result.peak_dates),
         base_dose_kg_ha=base_dose,
         zones=[
