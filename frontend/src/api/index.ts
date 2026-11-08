@@ -544,13 +544,16 @@ export async function getWeatherWindows(
 }
 
 /** GET /weather/windows?field_id&only_planned=true — окна только по типам
- *  операций из активных планов поля (#133, обсуждение #134 #393); без планов —
- *  items=[] и hint «нет активных планов». */
+ *  операций из активных планов поля (#133, §7.8 API-59); без планов —
+ *  items=[] и hint «нет активных планов». Silent: до деплоя #133 бэкенд
+ *  может не знать списочной формы — экран деградирует нейтральным «скоро»
+ *  без тоста об ошибке (#416). */
 export async function getWeatherWindowsPlanned(
   fieldId: string,
 ): Promise<WeatherWindowsPlanned> {
   const raw = await apiClient.request<WindowsPlannedResponse>('/weather/windows', {
     query: { field_id: fieldId, only_planned: 'true' },
+    silent: true,
   })
   const items: WeatherWindowItem[] = raw.items.map((it) => ({
     operation_type: it.operation_type as WindowOperationType,
