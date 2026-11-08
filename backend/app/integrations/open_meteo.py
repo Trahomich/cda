@@ -303,7 +303,7 @@ class OpenMeteoAdapter:
             precip_prob_pct=(
                 None
                 if m.get("precipitation_probability_max") is None  # архив не отдаёт
-                else int(m["precipitation_probability_max"])
+                else int(m["precipitation_probability_max"])  # type: ignore[arg-type]
             ),
             hazard=hazard,
             source_id=OpenMeteoAdapter.source_id,
