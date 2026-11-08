@@ -39,6 +39,7 @@ import type { NdviRender } from '@/api'
 import CropHistoryStrip from '@/components/CropHistoryStrip.vue'
 import NdviTimeline from '@/components/NdviTimeline.vue'
 import Skeleton from '@/components/Skeleton.vue'
+import VraLightbox from '@/components/VraLightbox.vue'
 
 const route = useRoute()
 const fieldId = route.params.fieldId as string
