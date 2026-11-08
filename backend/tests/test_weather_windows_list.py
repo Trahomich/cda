@@ -23,8 +23,8 @@ from tests.test_satellite import make_field as make_db_field  # прямая с�
 API = "/api/v1"
 
 TODAY = date.today()
-#: цикл текущего сезона по году уборки (месяцы 1–8: сначала year, затем −1)
-SEASON_YEAR = TODAY.year
+#: цикл текущего сезона по году уборки (месяцы 9–12 смотрят сначала год+1)
+SEASON_YEAR = TODAY.year + 1 if TODAY.month >= 9 else TODAY.year
 
 
 def make_plan(
