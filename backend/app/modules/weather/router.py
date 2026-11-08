@@ -8,7 +8,10 @@
   включая облачность/снег/часы осадков (#126, карточка погоды);
 - API-58 GET /weather/gdd?field_id&year — накопительная GDD-кривая с 1 января
   года (base 5 °C, §7.8, #132);
-- GET /weather/windows?operation_type&field_id — окно операции по ref_weather_rule.
+- GET /weather/windows?operation_type&field_id — окно одной операции
+  (RULE-AGRO-09); без operation_type — список окон по типам операций из
+  незавершённых планов поля текущего сезона (API-59, §7.8: after harvest —
+  только планирование, вегетационные окна не показываются).
 
 Права (07-ux §5): группа «weather» — все 5 ролей (E-06, E-10).
 """
