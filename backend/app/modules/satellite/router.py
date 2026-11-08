@@ -657,9 +657,20 @@ def field_vra_map(
     db: DbSession,
     *,
     year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"),
+    index: str = Query(
+        default="ndvi",
+        description="Индекс зон: ndvi | ndre (§7.7)",
+    ),
 ) -> Response:
     field = _get_field(db, field_id)
-    result = vra.vra_zones(db, field, year=year)
+    if index not in vra.VRA_INDICES:
+        raise AppError(
+            f"Неизвестный индекс VRA «{index}»; допустимо: {', '.join(vra.VRA_INDICES)}",
+            code="unknown_index",
+            title="Некорректный запрос",
+            status_code=422,
+        )
+    result = vra.vra_zones(db, field, year=year, index=index)
     return Response(
         content=result.png,
         media_type="image/png",
