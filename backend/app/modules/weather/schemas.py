@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class FactItem(BaseModel):
-    """Суточный факт погоды (ENT-WEATHER-OBSERVATION)."""
+    """Суточный факт погоды (ENT-WEATHER-OBSERVATION); облачность/снег — #126."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -18,6 +18,18 @@ class FactItem(BaseModel):
     precipitation_mm: float | None
     wind_max_ms: float | None
     humidity_avg_pct: float | None
+    cloud_cover_mean_pct: float | None = Field(
+        default=None, description="Средняя облачность, % (#126); null — источник не отдаёт"
+    )
+    snowfall_cm: float | None = Field(
+        default=None, description="Сумма снегопада за сутки, см (#126)"
+    )
+    snow_depth_cm: float | None = Field(
+        default=None, description="Максимальная высота снежного покрова, см (#126)"
+    )
+    precipitation_hours: float | None = Field(
+        default=None, description="Часы с осадками за сутки, ч (#126)"
+    )
     source_id: str
 
 
