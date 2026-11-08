@@ -37,7 +37,7 @@ test('паспорт поля: переключатель сезонов, тек
   })
   await expect(ndviBlock.locator('.card360__block-title')).toContainText('сезон 2027')
   await expect(ndviBlock.locator('.ndvi__svg')).toBeVisible({ timeout: 15_000 })
-  await expect(ndviBlock).toContainText('Дата последнего снимка: 31.07.2027')
+  await expect(ndviBlock).toContainText('Дата последнего снимка: 2027-07-31')
 })
 
 test('паспорт поля: выбор прошлого сезона — NDVI-график сезона 2026 (§7.5)', async ({
@@ -56,8 +56,8 @@ test('паспорт поля: выбор прошлого сезона — NDVI
   // Заголовок блока и даты графика — сезона 2026 (не 2027).
   await expect(ndviBlock.locator('.card360__block-title')).toContainText('сезон 2026')
   await expect(ndviBlock.locator('.ndvi__svg')).toBeVisible()
-  await expect(ndviBlock).toContainText('Дата последнего снимка: 31.07.2026')
-  await expect(ndviBlock).not.toContainText('31.07.2027')
+  await expect(ndviBlock).toContainText('Дата последнего снимка: 2026-07-31')
+  await expect(ndviBlock).not.toContainText('2027-07-31')
 
   // Прошлый сезон визуально отличим: бейдж в заголовке карточки.
   const badge = page.locator('.card360__season-badge')
@@ -129,7 +129,7 @@ test('паспорт поля: возврат к текущему сезону �
     has: page.locator('.card360__block-title', { hasText: 'NDVI-таймлайн' }),
   })
   await expect(ndviBlock.locator('.card360__block-title')).toContainText('сезон 2027')
-  await expect(ndviBlock).toContainText('Дата последнего снимка: 31.07.2027', {
+  await expect(ndviBlock).toContainText('Дата последнего снимка: 2027-07-31', {
     timeout: 15_000,
   })
 })
