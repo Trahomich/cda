@@ -96,8 +96,6 @@ def unsubscribe_advice() -> None:
 
 def _run_daily_job() -> None:
     """Суточный прогон: все поля-кандидаты в очередь генерации."""
-    from app.core.config import get_settings
-
     with SessionLocal() as db:
         field_ids = candidate_field_ids(db, date.today())
     if not field_ids:
