@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
-from app.models.agronomy import Field
+from app.models.agronomy import CropCycle, Field, TreatmentPlan
 from app.models.integrations import Forecast, WeatherObservation
 from app.models.references import Source, WeatherRule
 from app.modules.weather import ingest as ingest_module
@@ -46,6 +46,7 @@ from app.modules.weather.schemas import (
     SourceMeta,
     WindowDayItem,
     WindowResponse,
+    WindowsListResponse,
 )
 
 DbSession = Annotated[Session, Depends(get_db)]
