@@ -182,8 +182,22 @@ def run_indices_backfill(
         assets = dict(row.assets or {})
         refreshed = False
         if client is not None and bbox and ("b05" not in assets or "b11" not in assets):
-            merged = _refresh_assets(db, client, bbox, row)
+            # дедупликация по item_id: одна плашка STAC закрывает много полей
+            # (на стенде 309 уникальных item на 27 тыс. строк каталога) —
+            # ищем один раз на item, дальше берём из кэша прогона
+            if row.item_id in refreshed_by_item:
+                merged = refreshed_by_item[row.item_id]
+            else:
+                merged = _refresh_assets(db, client, bbox, row)
+                if merged is not None:
+                    refreshed_by_item[row.item_id] = merged
             if merged is not None:
+                db.execute(
+                    update(SatelliteCatalogItem)
+                    .where(SatelliteCatalogItem.id == row.id)
+                    .values(assets=merged)
+                )
+                db.commit()
                 assets = merged
                 refreshed = True
         tasks.append(_Task(field_id, captured_at, contour, assets, refreshed))
