@@ -30,6 +30,7 @@ from app.core.rbac import group_checker
 from app.models.agronomy import CropCycle, Field, TreatmentPlan
 from app.models.integrations import Forecast, WeatherObservation
 from app.models.references import Source, WeatherRule
+from app.modules.weather import hazards
 from app.modules.weather import ingest as ingest_module
 from app.modules.weather.rules import (
     GDD_BASE_C,
