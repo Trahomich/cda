@@ -14,7 +14,6 @@ import {
   getWeatherForecast,
   getWeatherGdd,
   getWeatherHistory,
-  getWeatherWindows,
   getWeatherWindowsPlanned,
 } from '@/api'
 import type {
