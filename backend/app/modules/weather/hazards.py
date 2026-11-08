@@ -37,12 +37,17 @@ def _winter_culture(culture_name: str) -> bool:
     return any(marker in lowered for marker in WINTER_CULTURE_MARKERS)
 
 
+def fmt_c(v: float) -> str:
+    """Температура с типографским минусом: −6 °C."""
+    return f"{v:.0f} °C".replace("-", "−")
+
+
 def _frost_text(tmin: float) -> str:
     if tmin <= FROST_SEVERE_C:
-        return f"Сильный мороз: ночью до {tmin:.0f} °C."
+        return f"Сильный мороз: ночью до {fmt_c(tmin)}."
     if tmin <= FROST_ALERT_C:
-        return f"Заморозки: ночью до {tmin:.0f} °C."
-    return f"Похолодание до {tmin:.0f} °C — риск заморозка."
+        return f"Заморозки: ночью до {fmt_c(tmin)}."
+    return f"Похолодание до {fmt_c(tmin)} — риск заморозка."
 
 
 def day_hazards(
