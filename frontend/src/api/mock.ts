@@ -1297,10 +1297,24 @@ adviceStore.set(FIELDS[1]!.field_id, makeAdvice(2, 1))
 
 /** Отрисовка демо-PNG 200×100 (canvas) для raw(): ndvi — палитра
  *  коричневый→жёлтый→зелёный (как бэкенд), truecolor — оливково-зелёные
- *  тона, ndwi (§7.4) — «сухо→влажно→вода» жёлтый→бирюзовый→синий;
+ *  тона, ndwi (§7.4) — «сухо→влажно→вода» жёлтый→бирюзовый→синий,
+ *  индексы §7.7 (#130) — свои трёхцветные градиенты по смыслу индекса;
  *  «пятно» детерминировано от индекса даты, чтобы сцены различались. */
+type MockRenderVariant = 'ndvi' | 'truecolor' | 'ndwi' | (typeof MOCK_INDICES)[number]
+
+const MOCK_PALETTES: Record<Exclude<MockRenderVariant, 'truecolor'>, [string, string, string]> = {
+  ndvi: ['#8a5a2b', '#d9c34a', '#2e7d32'],
+  ndwi: ['#e0c24a', '#26a69a', '#1565c0'],
+  ndre: ['#8d6e63', '#ef6c00', '#558b2f'],
+  ndmi: ['#e0c24a', '#26a69a', '#2e7d32'],
+  ndsi: ['#546e7a', '#90a4ae', '#eceff1'],
+  evi: ['#9e9d24', '#7cb342', '#1b5e20'],
+  savi: ['#9e9d24', '#7cb342', '#1b5e20'],
+  bsi: ['#2e7d32', '#a1887f', '#4e342e'],
+}
+
 async function renderScenePng(
-  variant: 'ndvi' | 'truecolor' | 'ndwi',
+  variant: MockRenderVariant,
   sceneIdx: number,
 ): Promise<Blob> {
   const canvas = document.createElement('canvas')
@@ -1308,34 +1322,23 @@ async function renderScenePng(
   canvas.height = 100
   const ctx = canvas.getContext('2d')
   if (!ctx) return new Blob()
-  if (variant === 'ndvi') {
-    const grad = ctx.createLinearGradient(0, 100, 0, 0)
-    grad.addColorStop(0, '#8a5a2b')
-    grad.addColorStop(0.5, '#d9c34a')
-    grad.addColorStop(1, '#2e7d32')
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, 200, 100)
-  } else if (variant === 'ndwi') {
-    const grad = ctx.createLinearGradient(0, 100, 0, 0)
-    grad.addColorStop(0, '#e0c24a')
-    grad.addColorStop(0.5, '#26a69a')
-    grad.addColorStop(1, '#1565c0')
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, 200, 100)
-  } else {
+  if (variant === 'truecolor') {
     ctx.fillStyle = '#6f7d3c'
     ctx.fillRect(0, 0, 200, 100)
     ctx.fillStyle = '#8d9a52'
     for (let i = 0; i < 8; i++) {
       ctx.fillRect((i * 37 + sceneIdx * 11) % 190, (i * 53 + sceneIdx * 7) % 90, 10, 8)
     }
+  } else {
+    const [c0, c1, c2] = MOCK_PALETTES[variant]
+    const grad = ctx.createLinearGradient(0, 100, 0, 0)
+    grad.addColorStop(0, c0)
+    grad.addColorStop(0.5, c1)
+    grad.addColorStop(1, c2)
+    ctx.fillStyle = grad
+    ctx.fillRect(0, 0, 200, 100)
   }
-  ctx.fillStyle =
-    variant === 'ndvi'
-      ? 'rgba(46,125,50,0.5)'
-      : variant === 'ndwi'
-        ? 'rgba(21,101,192,0.55)'
-        : 'rgba(59,69,31,0.5)'
+  ctx.fillStyle = variant === 'ndvi' ? 'rgba(46,125,50,0.5)' : 'rgba(59,69,31,0.5)'
   ctx.beginPath()
   ctx.arc(60 + (sceneIdx * 13) % 80, 40 + (sceneIdx * 7) % 30, 18, 0, Math.PI * 2)
   ctx.fill()
