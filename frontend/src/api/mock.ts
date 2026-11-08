@@ -2086,8 +2086,13 @@ export class MockTransport implements Transport {
     const variant = params.get('variant') ?? 'ndvi'
     if (variant !== 'ndvi' && variant !== 'truecolor' && variant !== 'ndwi') return empty(422)
 
-    // Рендер есть только у дат с render_available (условие как в ndvi-эндпоинте).
-    const ndviPoints = ndviOf(FIELD_N.get(field.field_id)!)
+    // Рендер есть только у дат с render_available (условие как в ndvi-эндпоинте);
+    // сцена ищется в сезоне своей даты (§7.5 — у прошлых сезонов свои рендеры).
+    const sceneYear = Number(renderMatch[2].slice(0, 4))
+    const ndviPoints = ndviOf(
+      FIELD_N.get(field.field_id)!,
+      SEASON_YEARS.includes(sceneYear) ? sceneYear : 2027,
+    )
     const idx = ndviPoints.findIndex((p) => p.date === renderMatch[2])
     if (idx < 0 || !(idx >= ndviPoints.length - 3 && ndviPoints[idx].cloud_pct <= 60)) {
       return empty(404)
