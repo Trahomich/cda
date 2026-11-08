@@ -37,8 +37,11 @@ DEFAULT_MODEL = "qwen3.5:9b"
 ANTHROPIC_DEFAULT_MODEL = "glm-5.3-flash"
 ANTHROPIC_VERSION = "2023-06-01"
 #: glm-5.3-flash думающая: текст приходит после thinking-блока, поэтому
-#: max_tokens всегда с запасом — малые лимиты (как 120) съедаются thinking (#115)
-ANTHROPIC_MAX_TOKENS = 1024
+#: max_tokens всегда с запасом — малые лимиты (как 120) съедаются thinking
+#: (#115). 1024 (#115) оказалось мало: длина thinking варьируется и часто
+#: съедает весь бюджет — text-блок не успевает родиться, summarize=None
+#: (ревью #116, 08.11). 3072: thinking ~1–2 тыс. + текст сводки ~300.
+ANTHROPIC_MAX_TOKENS = 3072
 REQUEST_TIMEOUT_SECONDS = 60.0
 RETRY_ATTEMPTS = 2  # запрос + 1 повтор (09 §8.1)
 
