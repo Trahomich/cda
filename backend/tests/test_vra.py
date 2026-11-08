@@ -379,9 +379,9 @@ class TestVraPeaks:
         assert body["iqr_ndvi"] >= 0.12
         assert len(body["zones"]) == 3
 
-    def test_single_heterogeneous_peak_422(self, client, db_session, tmp_path, agro_headers):
-        """IQR ≥ 0.12 только на 1 из 3 пиковых сцен: стабильности нет — 422,
-        сообщение упоминает пиковые сцены и их даты."""
+    def test_single_heterogeneous_peak_zones(self, client, db_session, tmp_path, agro_headers):
+        """v1.7: IQR ≥ 0.12 только на 1 из 3 пиковых сцен — зоны всё равно
+        строятся, по сцене с максимальным index_avg (ворота удалены)."""
         make_satellite_source(db_session)
         field_id = make_field(db_session, name="Один пик")
         self.add_scene(db_session, tmp_path, field_id, "s1", date(2026, 6, 20), striped_red(), 0.82)
@@ -404,11 +404,11 @@ class TestVraPeaks:
             0.74,
         )
         resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
-        assert resp.status_code == 422, resp.text
+        assert resp.status_code == 200, resp.text
         body = resp.json()
-        assert body["code"] == "vra_uniform_field"
-        assert "пиковым сценам" in body["detail"]
-        assert "2026-06-20" in body["detail"]
+        assert body["date"] == "2026-06-20"  # макс index_avg
+        assert body["iqr_ndvi"] >= 0.12
+        assert len(body["zones"]) == 3
 
     def test_two_scenes_one_peak_enough(self, client, db_session, tmp_path, agro_headers):
         """<3 сцен: подтверждение на всех, кроме максимум одной — 1 из 2 достаточно."""
