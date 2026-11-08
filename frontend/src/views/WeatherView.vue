@@ -183,7 +183,9 @@ onMounted(async () => {
 })
 
 watch(fieldId, (id) => {
-  if (id) rememberField(id)
+  if (!id) return
+  rememberField(id)
+  void load()
 })
 watch([range, rangeYear], () => void loadHistory())
 </script>
