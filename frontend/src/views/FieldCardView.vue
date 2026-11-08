@@ -372,8 +372,13 @@ const insights = ref<InsightsResponse | null>(null)
 const insightsLoading = ref(true)
 
 async function loadInsights() {
+  const token = seasonToken
+  insightsLoading.value = true
+  insights.value = null
   // null (404 поля/прочее) — блок покажет «недоступны»; кэша на клиенте нет.
-  insights.value = await getInsights(fieldId)
+  const data = await getInsights(fieldId, seasonQueryYear.value)
+  if (token !== seasonToken) return
+  insights.value = data
   insightsLoading.value = false
 }
 
