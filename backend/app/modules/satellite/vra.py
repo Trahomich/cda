@@ -253,6 +253,17 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
     for mask, color in zip(zone_masks, ZONE_COLORS, strict=False):
         rgb[mask] = color
         alpha[mask] = 255
+
+    # легенда зон (#123): свотч цвета + диапазон NDVI зоны, min/max сцены;
+    # рисуется поверх канвы — геопривязка PNG не меняется
+    vmin, vmax = float(values.min()), float(values.max())
+    zone_bounds = ((vmin, float(p30)), (float(p30), float(p70)), (float(p70), vmax))
+    swatches = [
+        (color, f"{lo:.2f}-{hi:.2f}")
+        for mask, color, (lo, hi) in zip(zone_masks, ZONE_COLORS, zone_bounds, strict=False)
+        if mask.any()
+    ]
+    draw_zone_legend(rgb, alpha, swatches)
     png = _png_rgba(rgb, alpha)
 
     left, top = transform * (0, 0)
