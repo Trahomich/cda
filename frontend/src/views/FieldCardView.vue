@@ -352,12 +352,17 @@ const yieldForecast = ref<YieldForecastResponse | 'insufficient' | null>(null)
 const yieldLoading = ref(true)
 
 async function loadYield() {
+  const token = seasonToken
+  yieldLoading.value = true
+  yieldForecast.value = null
   try {
-    yieldForecast.value = await getYieldForecast(fieldId)
+    const data = await getYieldForecast(fieldId, seasonQueryYear.value)
+    if (token !== seasonToken) return
+    yieldForecast.value = data
   } catch {
-    yieldForecast.value = null
+    if (token === seasonToken) yieldForecast.value = null
   } finally {
-    yieldLoading.value = false
+    if (token === seasonToken) yieldLoading.value = false
   }
 }
 
