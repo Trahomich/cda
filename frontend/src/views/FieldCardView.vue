@@ -1614,7 +1614,6 @@ function fmtNum(v: number, digits = 1): string {
             }} · {{ fmtDate(insights.generated_at.slice(0, 10)) }}
           </p>
         </div>
-
       </div>
 
       <!-- Работы: планы (API-15 field_id) + журнал (API-18 field_id) одной
