@@ -183,12 +183,11 @@ def get_insights(
             background.add_task(refresh_insights, field.id, day, year)
         return resp
 
-    vra_info = _vra_peak_cached(field.id, year)
+    vra_peaks = _vra_peaks_cached(field.id, year)
     items = build_items(
         db,
         field.id,
-        vra_iqr=vra_info[1] if vra_info else None,
-        vra_day=vra_info[0] if vra_info else None,
+        vra_peaks=vra_peaks,
         year=year,
     )
     resp = InsightsResponse(
