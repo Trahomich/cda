@@ -586,8 +586,15 @@ export interface VraZoneItem {
 /** Ответ API-52: зоны VRA по последней чистой NDVI-сцене (§7.4). */
 export interface VraZonesResponse {
   field_id: string
+  /** Дата пиковой сцены, по которой построены зоны (§7.4 v1.7). */
   date: string
+  /** Пиксельный IQR NDVI пиковой сцены (информационная метрика). */
   iqr_ndvi: number
+  /** Пространственная неоднородность: p90−p10 средних ячеек сетки
+   *  ~20×20 (§7.4 v1.7) — мелкие пятна, которые не видит IQR. */
+  spatial_spread: number
+  /** Даты топ-3 пиковых сцен сезона (§7.4 v1.7). */
+  peak_dates: string[]
   base_dose_kg_ha: number | null
   zones: VraZoneItem[]
   map_png_url: string
