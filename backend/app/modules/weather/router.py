@@ -450,3 +450,130 @@ def weather_window(
         items=items,
         hint=hint,
     )
+
+
+#: метрики карты погоды (API-61, §7.8): окно осадков / последняя суточная
+#: температура / накопленная GDD с начала года (base 5 °C, как API-58)
+WEATHER_MAP_METRICS = ("precip_7d", "precip_14d", "t_now", "gdd_ytd")
+WEATHER_MAP_CACHE_TTL = 3600  # 1 ч (§7.8)
+WEATHER_MAP_SIMPLIFY_TOLERANCE = 0.0005  # ~50 м, градусы: контуры для заливки
+
+
+def _weather_map_cache_key(metric: str) -> str:
+    return f"weather:map:{metric}"
+
+
+@router.get(
+    "/weather/map",
+    response_model=WeatherMapResponse,
+    summary="API-61: карта погоды хозяйства — заливка полей по метрике (§7.8)",
+)
+def weather_map(
+    db: DbSession,
+    *,
+    metric: str = Query(
+        default="precip_7d",
+        description="precip_7d | precip_14d (сумма осадков за окно), t_now "
+        "(последняя суточная температура), gdd_ytd (GDD с 1 января, base 5 °C)",
+    ),
+) -> WeatherMapResponse:
+    """Контуры всех активных полей со значением метрики (§7.8, #135).
+
+    Кэш 1 ч (ключ weather:map:{metric}); value=null — наблюдений нет.
+    """
+    if metric not in WEATHER_MAP_METRICS:
+        raise AppError(
+            f"Неизвестная метрика «{metric}»; допустимо: {', '.join(WEATHER_MAP_METRICS)}",
+            code="unknown_metric",
+            title="Некорректный запрос",
+            status_code=422,
+        )
+    cache_key = _weather_map_cache_key(metric)
+    if (cached := cache_get(cache_key)) is not None:
+        return WeatherMapResponse.model_validate(cached)
+
+    today = date.today()
+    fields_rows = db.execute(
+        text(
+            "SELECT f.id, f.name, ST_AsGeoJSON(ST_Simplify(f.contour::geometry, "
+            ":tol)) FROM dat_field f WHERE f.status = 'active' "
+            "AND f.contour IS NOT NULL ORDER BY f.name"
+        ),
+        {"tol": WEATHER_MAP_SIMPLIFY_TOLERANCE},
+    ).fetchall()
+    field_ids = [row[0] for row in fields_rows]
+
+    # наблюдения по всем полям за нужный период: одна запись на дату (большая
+    # trust), как API-58; для осадков — окно метрики, для t_now/gdd — весь год
+    if metric in ("precip_7d", "precip_14d"):
+        window = 7 if metric == "precip_7d" else 14
+        date_from = today - timedelta(days=window - 1)
+    else:
+        window = 0
+        date_from = date(today.year, 1, 1)
+    per_field: dict[uuid.UUID, dict[date, WeatherObservation]] = {}
+    if field_ids:
+        for obs in db.scalars(
+            select(WeatherObservation)
+            .where(
+                WeatherObservation.field_id.in_(field_ids),
+                WeatherObservation.observed_at >= date_from,
+                WeatherObservation.observed_at <= today,
+            )
+            .order_by(WeatherObservation.observed_at)
+        ):
+            bucket = per_field.setdefault(obs.field_id, {})
+            prev = bucket.get(obs.observed_at)
+            if prev is None or float(obs.trust) > float(prev.trust):
+                bucket[obs.observed_at] = obs
+
+    items: list[WeatherMapItem] = []
+    for field_id, name, contour_raw in fields_rows:
+        observations = per_field.get(field_id, {})
+        value: float | None = None
+        updated_at: date | None = max(observations) if observations else None
+        if metric in ("precip_7d", "precip_14d"):
+            value = round(
+                sum(
+                    float(o.precipitation_mm or 0.0)
+                    for o in observations.values()
+                    if o.observed_at >= today - timedelta(days=window - 1)
+                ),
+                1,
+            )
+        elif observations:
+            latest = observations[max(observations)]
+            if metric == "t_now":
+                if latest.temperature_avg_c is not None:
+                    value = float(latest.temperature_avg_c)
+                elif latest.temperature_min_c is not None and latest.temperature_max_c is not None:
+                    value = round(
+                        (float(latest.temperature_min_c) + float(latest.temperature_max_c)) / 2,
+                        1,
+                    )
+            else:  # gdd_ytd — как API-58: дни с обеими tmin/tmax, base 5 °C
+                value = round(
+                    sum(
+                        max(
+                            0.0,
+                            (float(o.temperature_min_c) + float(o.temperature_max_c)) / 2
+                            - GDD_BASE_C,
+                        )
+                        for o in observations.values()
+                        if o.temperature_min_c is not None and o.temperature_max_c is not None
+                    ),
+                    1,
+                )
+        items.append(
+            WeatherMapItem(
+                field_id=field_id,
+                name=name,
+                contour=json.loads(contour_raw),
+                value=value,
+                updated_at=updated_at,
+            )
+        )
+
+    resp = WeatherMapResponse(metric=metric, items=items)
+    cache_set(cache_key, resp.model_dump(mode="json"), WEATHER_MAP_CACHE_TTL)
+    return resp
