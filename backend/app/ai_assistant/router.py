@@ -21,6 +21,7 @@ from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
 from app.models.agronomy import Field
+from app.models.ai import AIFieldAdvice
 
 DbSession = Annotated[Session, Depends(get_db)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
