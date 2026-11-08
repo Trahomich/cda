@@ -284,6 +284,52 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
     return AdviceContext(context=context, context_hash=context_hash, images=images)
 
 
+def _vra_verdict_line(field_id: uuid.UUID, season_year: int) -> str:
+    """VRA-вердикт §9.1 п.7 из кэша VRA (без COG-пересчёта, #121).
+
+    Указатель vra:peak:{field_id}[:{year}] (его пишет vra_zones) содержит
+    дату сцены-вердикта и метрики пиков; число зон — из кэша зон
+    vra:{field_id}:{date} (24 ч). Нет указателя/кэша — «нет расчёта».
+    """
+    pointer = cache_get(f"vra:peak:{field_id}:{season_year}")
+    if not isinstance(pointer, dict):
+        pointer = cache_get(f"vra:peak:{field_id}")  # ключ текущего сезона
+    if not isinstance(pointer, dict):
+        return "Модель дифвнесения: нет расчёта."
+
+    peaks_raw = pointer.get("peaks")
+    if isinstance(peaks_raw, list) and peaks_raw:
+        peak_dates = ", ".join(
+            str(p.get("date")) for p in peaks_raw if isinstance(p, dict) and p.get("date")
+        )
+    else:  # старый формат указателя (одна пиковая сцена)
+        peak_dates = str(pointer.get("date") or "")
+
+    verdict_date = pointer.get("date")
+    iqr = pointer.get("iqr_ndvi")
+    spread = pointer.get("spatial_spread")
+    zone_count: int | None = None
+    if verdict_date:
+        zones_cache = cache_get(f"vra:{field_id}:{verdict_date}")
+        if isinstance(zones_cache, dict) and isinstance(zones_cache.get("zones"), list):
+            zone_count = len(zones_cache["zones"])
+
+    details: list[str] = []
+    if iqr is not None:
+        details.append(f"IQR NDVI = {float(iqr):.3f}")
+    if spread is not None:
+        details.append(f"пространственный разброс = {float(spread):.3f}")
+    if zone_count is not None:
+        details.append(f"зон дифвнесения {zone_count} (/vra)")
+    else:
+        details.append("нет расчёта зон")
+    line = "Модель дифвнесения: "
+    if peak_dates:
+        line += f"пиковые сцены {peak_dates}; "
+    line += f"вердикт по сцене {verdict_date}: " + ", ".join(details) + "."
+    return line
+
+
 def _yield_verdict(
     db: Session, field_id: uuid.UUID, year: int, scenes: list[SatelliteScene]
 ) -> str | None:
