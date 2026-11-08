@@ -32,9 +32,7 @@ class AIFieldAdvice(Base):
     __tablename__ = "ai_field_advice"
     __table_args__ = (
         CheckConstraint("status IN ('ok', 'fallback', 'empty')", name="ck_ai_field_advice_status"),
-        CheckConstraint(
-            "provider IN ('anthropic', 'ollama')", name="ck_ai_field_advice_provider"
-        ),
+        CheckConstraint("provider IN ('anthropic', 'ollama')", name="ck_ai_field_advice_provider"),
         Index("ix_ai_field_advice_field_created", "field_id", "created_at"),
     )
 
