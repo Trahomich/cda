@@ -1097,6 +1097,7 @@ function windowsOf(n: number, type: WindowOperationType, fieldId: string) {
     field_id: fieldId,
     rule_text: `Условия ${OP_WINDOW_LABELS[type]} (RULE-AGRO-09, docs/03 §3.3)`,
     window_open: Boolean(nearest),
+    nearest_window_date: nearest ? nearest.day : null,
     days: raw,
     alert: nearest
       ? null
