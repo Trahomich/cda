@@ -974,11 +974,14 @@ function fmtNum(v: number, digits = 1): string {
           </p>
         </div>
 
-        <!-- «Выводы ассистента» (API-51, §7.4): детекторы + LLM-сводка -->
+        <!-- Ассистент (#148): выводы (API-51) + «что делать сейчас» (API-55/56,
+             §9.3) одним блоком с одной кнопкой «Пересчитать» -->
         <div class="card360__block card360__block--insights">
           <h2 class="card360__block-title">
-            Выводы ассистента
+            Выводы и рекомендации
           </h2>
+          <!-- 1. Сводка-вердикт: LLM-сводка API-51; при source=rules её нет
+               (только детекторы ниже), пустой список — «не выявлено» -->
           <Skeleton
             v-if="insightsLoading"
             :lines="3"
@@ -990,58 +993,28 @@ function fmtNum(v: number, digits = 1): string {
             Выводы недоступны
           </p>
           <template v-else>
-            <!-- summary — LLM-сводка; при source=rules её нет (только пункты) -->
             <p
               v-if="insights.summary"
               class="card360__insights-summary"
             >
               {{ insights.summary }}
             </p>
-            <ul
-              v-if="insights.items.length"
-              class="card360__insights"
-            >
-              <li
-                v-for="item in insights.items"
-                :key="item.code"
-                class="card360__insight"
-                :class="`card360__insight--${item.severity}`"
-              >
-                <span
-                  class="card360__insight-mark"
-                  :title="item.severity"
-                >{{ SEVERITY_MARKS[item.severity] }}</span>
-                <span class="card360__insight-text">
-                  {{ item.title }} — {{ item.detail }}<a
-                    v-if="item.code === 'vra_heterogeneity'"
-                    class="card360__insight-link"
-                    href="#vra"
-                  >зоны внесения</a>
-                </span>
-              </li>
-            </ul>
             <p
-              v-else
+              v-else-if="!insights.items.length"
               class="card360__muted"
             >
               Отклонений по данным детекторов не выявлено.
             </p>
-            <p class="card360__muted card360__insights-meta">
-              По числовым детекторам (NDVI, NDWI, агрохимия){{
-                insights.source === 'rules+llm' ? ' и сводке ИИ' : ''
-              }} · {{ fmtDate(insights.generated_at.slice(0, 10)) }}
-            </p>
           </template>
-        </div>
 
-        <!-- Что делать сейчас: AI-рекомендация (API-55/56, §9.3, #137) -->
-        <div class="card360__block">
-          <h2 class="card360__block-title">
+          <!-- 2. «Что делать сейчас»: рекомендация API-55, пересчёт API-55
+               POST 202 queued → поллинг GET; одна кнопка на весь блок -->
+          <h3 class="card360__sub-title">
             Что делать сейчас
-          </h2>
+          </h3>
           <Skeleton
             v-if="adviceLoading"
-            :lines="3"
+            :lines="2"
           />
           <template v-else>
             <template v-if="advice">
