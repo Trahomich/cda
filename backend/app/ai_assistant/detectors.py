@@ -30,7 +30,7 @@ from app.ai_assistant.schemas import InsightItem
 from app.models.agronomy import CropCycle
 from app.models.integrations import SatelliteScene, WeatherObservation
 from app.models.references import Agrochem, Culture
-from app.modules.satellite.vra import VRA_MIN_IQR
+from app.modules.satellite.vra import VRA_MIN_IQR, VRA_SPREAD_MIN
 from app.modules.satellite.waterlog import (
     WATERLOG_NDVI_MEAN,
     WATERLOG_NDWI_P90,
