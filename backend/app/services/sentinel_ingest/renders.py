@@ -491,7 +491,7 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     bbox = tuple(round(v, 7) for v in (west, south, east, north))
 
     return SceneRender(
-        png={"ndvi": png_ndvi, "truecolor": png_tc, "ndwi": png_ndwi},
+        png={"ndvi": png_ndvi, "truecolor": png_tc, "ndwi": png_ndwi, **png_extra},
         width=nir_d.shape[1],
         height=nir_d.shape[0] + strip_h,
         bbox=bbox,  # type: ignore[arg-type]
