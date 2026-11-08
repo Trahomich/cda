@@ -1087,6 +1087,39 @@ function fmtNum(v: number, digits = 1): string {
               </button>
             </div>
           </template>
+
+          <!-- 3. Детекторы (API-51): компактные пункты — визуально
+               подчинены сводке и рекомендации -->
+          <template v-if="!insightsLoading && insights && insights.items.length">
+            <ul class="card360__insights">
+              <li
+                v-for="item in insights.items"
+                :key="item.code"
+                class="card360__insight"
+                :class="`card360__insight--${item.severity}`"
+              >
+                <span
+                  class="card360__insight-mark"
+                  :title="item.severity"
+                >{{ SEVERITY_MARKS[item.severity] }}</span>
+                <span class="card360__insight-text">
+                  {{ item.title }} — {{ item.detail }}<a
+                    v-if="item.code === 'vra_heterogeneity'"
+                    class="card360__insight-link"
+                    href="#vra"
+                  >зоны внесения</a>
+                </span>
+              </li>
+            </ul>
+          </template>
+          <p
+            v-if="!insightsLoading && insights"
+            class="card360__muted card360__insights-meta"
+          >
+            По числовым детекторам (NDVI, NDWI, агрохимия){{
+              insights.source === 'rules+llm' ? ' и сводке ИИ' : ''
+            }} · {{ fmtDate(insights.generated_at.slice(0, 10)) }}
+          </p>
         </div>
 
         <!-- NDVI -->
