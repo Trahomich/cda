@@ -524,6 +524,8 @@ __all__ = [
     "LEGEND_STRIP_FRAC",
     "MAX_RASTER_PX",
     "MAX_SIDE_PX",
+    "NDVI_RENDER_HI",
+    "NDVI_RENDER_LO",
     "PALETTE",
     "PALETTE_BSI",
     "PALETTE_NDSI",
