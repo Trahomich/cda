@@ -279,7 +279,9 @@ function downloadExportFile(file: { blob: Blob; filename: string }): void {
 async function exportVra(): Promise<void> {
   if (!vra.value || exportBusy.value) return
   exportError.value = false
-  const manualDose = Number(exportDose.value.replace(',', '.'))
+  // v-model на input[type=number] отдаёт число; строка может прийти с запятой
+  const rawDose: string | number = exportDose.value
+  const manualDose = Number(typeof rawDose === 'string' ? rawDose.replace(',', '.') : rawDose)
   const dose =
     Number.isFinite(manualDose) && manualDose > 0 && manualDose <= 2000
       ? manualDose
