@@ -1147,63 +1147,45 @@ function historyAll(n: number): WeatherHistoryItem[] {
 
 /** Кривая GDD года (base 5 °C) и многолетняя норма по тем же датам (#132). */
 function gddOf(n: number, year: number) {
-  const days = historyAll(n).filter((d) => d.date.startsWith(String(year)))
-  const items = days.map((d, i) => {
-    const tMean = ((d.temp_max_c ?? 0) + (d.temp_min_c ?? 0)) / 2
-    const gddDay = Math.max(0, Number((tMean - 5).toFixed(1)))
-    const prev = i > 0 ? items[i - 1].gdd_cum : 0
-    return { date: d.date, gdd_day: gddDay, gdd_cum: Number((prev + gddDay).toFixed(1)) }
-  })
-  // Норма: среднее накопления по тем же DOY в других доступных годах (2023+).
+  const items = gddOfCache(n, year)
+  // Норма: среднее накопления по тем же дням в других доступных годах (2023+).
   const otherYears = [2023, 2024, 2025, 2026].filter(
     (y) => y !== year && y <= new Date(NOW).getUTCFullYear(),
   )
   const norm_cum =
     otherYears.length >= 2
       ? items.map((p) => {
-          const doy = Math.round(
-            (Date.parse(p.date) - Date.parse(`${year}-01-01T00:00:00Z`)) / DAY,
-          )
           const vals = otherYears
-            .map((y) => {
-              const other = gddOfCache(n, y).find((q) => q.date === `${y}-${p.date.slice(5)}`)
-              return other?.gdd_cum
-            })
-            .filter((v): v is number => v != null)
+            .map((y) => gddOfCache(n, y).find((q) => q.date === `${y}-${p.date.slice(5)}`))
+            .filter((q): q is GddPoint => q != null)
           return {
             date: p.date,
             norm_cum: vals.length
-              ? Number((vals.reduce((a, v) => a + v, 0) / vals.length).toFixed(1))
-              : Math.round(doy) === doy
-                ? p.gdd_cum
-                : 0,
+              ? Number((vals.reduce((a, q) => a + q.gdd_cum, 0) / vals.length).toFixed(1))
+              : 0,
           }
         })
       : null
   return { items, norm_cum }
 }
 
-/** Кэш кривых по годам (норма иначе пересчитывается рекурсивно). */
+/** Кэш кривых по годам (норма иначе пересчитывала бы их заново). */
 const gddCache = new Map<string, GddPoint[]>()
 function gddOfCache(n: number, year: number): GddPoint[] {
   const key = `${n}/${year}`
   let v = gddCache.get(key)
   if (!v) {
-    v = gddOfRaw(n, year)
+    const days = historyAll(n).filter((d) => d.date.startsWith(String(year)))
+    let cum = 0
+    v = days.map((d) => {
+      const tMean = ((d.temp_max_c ?? 0) + (d.temp_min_c ?? 0)) / 2
+      const gddDay = Math.max(0, Number((tMean - 5).toFixed(1)))
+      cum = Number((cum + gddDay).toFixed(1))
+      return { date: d.date, gdd_day: gddDay, gdd_cum: cum }
+    })
     gddCache.set(key, v)
   }
   return v
-}
-
-function gddOfRaw(n: number, year: number): GddPoint[] {
-  const days = historyAll(n).filter((d) => d.date.startsWith(String(year)))
-  let cum = 0
-  return days.map((d) => {
-    const tMean = ((d.temp_max_c ?? 0) + (d.temp_min_c ?? 0)) / 2
-    const gddDay = Math.max(0, Number((tMean - 5).toFixed(1)))
-    cum = Number((cum + gddDay).toFixed(1))
-    return { date: d.date, gdd_day: gddDay, gdd_cum: cum }
-  })
 }
 
 
