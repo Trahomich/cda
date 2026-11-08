@@ -37,7 +37,7 @@ from app.core.db import SessionLocal
 from app.models.agronomy import AgroInput, CropCycle, Field, FieldOperation, Recommendation
 from app.models.ai import AIFieldAdvice
 from app.models.integrations import Forecast, SatelliteScene
-from app.models.references import AgroInput, Culture
+from app.models.references import Culture
 from app.modules.satellite.waterlog import precip_sums_7d, waterlogged
 from app.services.sentinel_ingest.renders import render_path
 
