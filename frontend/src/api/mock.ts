@@ -2054,7 +2054,9 @@ export class MockTransport implements Transport {
     if (vraMapMatch) {
       const field = FIELDS.find((f) => f.field_id === vraMapMatch[1])
       if (!field || FIELD_N.get(field.field_id) === 6) return empty(404)
-      const vra = vraOf(FIELD_N.get(field.field_id)!, field.field_id)
+      const vraYear = Number(params.get('year') ?? 0)
+      if (vraYear !== 0 && !SEASON_YEARS.includes(vraYear)) return empty(404)
+      const vra = vraOf(FIELD_N.get(field.field_id)!, field.field_id, vraYear || 2027)
       const blob = await vraMapPng(vra.zones)
       const ring = field.contour?.coordinates[0] as number[][] | undefined
       if (!ring || ring.length < 4) return empty(404)
