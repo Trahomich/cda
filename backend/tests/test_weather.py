@@ -576,3 +576,196 @@ class TestWeatherApi:
         field_id = make_field(db_session)
         resp = client.get(f"{API}/weather/forecast", params={"field_id": field_id, "days": 3})
         assert resp.status_code == 401
+
+
+# -- история погоды: облачность/снег + бэкфилл (#126) -----------------------
+
+
+class TestWeatherCloudSnow:
+    """Новые метрики фактов (cloud/snow/hours) и полный бэкфилл истории."""
+
+    def test_history_normalizes_cloud_snow_hours(self, db_session):
+        """Архив: облачность/снег/часы осадков попадают в Observation (#126)."""
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        adapter = adapter_for(db_session, {"/archive": load_fixture("openmeteo_archive.json")})
+        observations = adapter.fetch_history(str(field_id), date(2026, 5, 8), date(2026, 5, 10))
+        assert len(observations) == 3
+        assert observations[0].cloud_cover_mean_pct == pytest.approx(65.0)
+        assert observations[2].cloud_cover_mean_pct == pytest.approx(80.0)
+        assert observations[2].snowfall_cm == pytest.approx(1.5)
+        assert observations[2].snow_depth_cm == pytest.approx(4.0)
+        assert observations[2].precipitation_hours == pytest.approx(6.5)
+        assert observations[0].snowfall_cm == pytest.approx(0.0)
+
+    def test_forecast_daily_includes_cloud_snow_params(self, db_session):
+        """Прогноз запрашивает общие метрики + probability (forecast-only)."""
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        seen: dict[str, str] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen["url"] = str(request.url)
+            return httpx.Response(200, json=load_fixture("openmeteo_forecast.json"))
+
+        adapter = OpenMeteoAdapter(
+            http=httpx.Client(transport=httpx.MockTransport(handler)),
+            centroid_lookup=lambda _: (40.5, 51.5),
+        )
+        adapter.fetch_forecast(str(field_id), days=7)
+        assert "cloud_cover_mean" in seen["url"]
+        assert "snowfall_sum" in seen["url"]
+        assert "precipitation_probability_max" in seen["url"]
+
+    def test_history_request_omits_forecast_only_metrics(self, db_session):
+        """Архив не отдаёт вероятность осадков — и не запрашивает её (#126)."""
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        seen: dict[str, str] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen["url"] = str(request.url)
+            return httpx.Response(200, json=load_fixture("openmeteo_archive.json"))
+
+        adapter = OpenMeteoAdapter(
+            http=httpx.Client(transport=httpx.MockTransport(handler)),
+            centroid_lookup=lambda _: (40.5, 51.5),
+        )
+        adapter.fetch_history(str(field_id), date(2026, 5, 8), date(2026, 5, 10))
+        assert "cloud_cover_mean" in seen["url"]
+        assert "precipitation_hours" in seen["url"]
+        assert "precipitation_probability_max" not in seen["url"]
+
+    @pytest.mark.parametrize(
+        ("metric", "value", "match"),
+        [
+            ("cloud_cover_mean", 150.0, "облачность"),
+            ("snowfall_sum", -1.0, "снегопад"),
+            ("snow_depth_max", -0.5, "высота снега"),
+            ("precipitation_hours", 30.0, "часы осадков"),
+        ],
+    )
+    def test_data_quality_new_metrics(self, db_session, metric, value, match):
+        """Диапазоны 05 §5 для новых метрик (05 §5 -> DataQualityError)."""
+        payload = load_fixture("openmeteo_archive.json")
+        payload["daily"][metric] = [value] * 3
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        adapter = adapter_for(db_session, {"/archive": payload})
+        with pytest.raises(DataQualityError, match=match):
+            adapter.fetch_history(str(field_id), date(2026, 5, 8), date(2026, 5, 10))
+
+    def test_backfill_history_upsert_idempotent(self, db_session):
+        """Бэкфилл: один запрос на поле, upsert по UQ — повтор не плодит строк."""
+        make_field(db_session, name="Бэкфилл-1")
+        make_weather_source(db_session)
+        ingest = make_ingest(db_session, {"/archive": load_fixture("openmeteo_archive.json")})
+
+        report = ingest.backfill_history(db_session, date(2026, 5, 8), date(2026, 5, 10))
+        assert report.ok == 1 and not report.failed
+        count = db_session.scalar(text("SELECT count(*) FROM dat_weather_observation"))
+        assert count == 3
+        row = db_session.execute(
+            text(
+                "SELECT cloud_cover_mean_pct, snowfall_cm, precipitation_hours "
+                "FROM dat_weather_observation WHERE observed_at = '2026-05-10'"
+            )
+        ).first()
+        assert row is not None
+        assert float(row[0]) == pytest.approx(80.0)
+        assert float(row[1]) == pytest.approx(1.5)
+        assert float(row[2]) == pytest.approx(6.5)
+
+        # повторный прогон того же окна — upsert, число строк не меняется
+        report2 = ingest.backfill_history(db_session, date(2026, 5, 8), date(2026, 5, 10))
+        assert report2.ok == 1
+        assert db_session.scalar(text("SELECT count(*) FROM dat_weather_observation")) == 3
+
+    def test_history_endpoint_filters_and_new_fields(self, client, db_session):
+        """GET /weather/history: фильтр периода, новые метрики в ответе."""
+        field_id = make_field(db_session)
+        make_weather_source(db_session, last_status="ok")
+        db_session.add_all(
+            [
+                WeatherObservation(
+                    field_id=field_id,
+                    observed_at=day,
+                    temperature_avg_c=5.0,
+                    precipitation_mm=0.0,
+                    cloud_cover_mean_pct=cloud,
+                    snowfall_cm=snow,
+                    snow_depth_cm=snow,
+                    precipitation_hours=hours,
+                    source_id=OpenMeteoAdapter.source_id,
+                )
+                for day, cloud, snow, hours in [
+                    (date(2026, 1, 1), 90.0, 2.0, 4.0),
+                    (date(2026, 1, 2), 70.0, 0.0, 1.0),
+                    (date(2026, 1, 3), 10.0, 0.0, 0.0),
+                ]
+            ]
+        )
+        db_session.commit()
+        headers = api_headers(client, db_session)
+        resp = client.get(
+            f"{API}/weather/history",
+            params={
+                "field_id": field_id,
+                "date_from": "2026-01-02",
+                "date_to": "2026-01-02",
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["total"] == 1 and len(body["items"]) == 1
+        item = body["items"][0]
+        assert item["observed_at"] == "2026-01-02"
+        assert item["cloud_cover_mean_pct"] == 70.0
+        assert item["snowfall_cm"] == 0.0
+        assert item["precipitation_hours"] == 1.0
+        assert body["meta"]["source_id"] == OpenMeteoAdapter.source_id
+
+        # полный период + пагинация
+        full = client.get(
+            f"{API}/weather/history",
+            params={"field_id": field_id, "date_from": "2026-01-01", "date_to": "2026-01-03"},
+            headers=headers,
+        )
+        assert full.json()["total"] == 3
+        limited = client.get(
+            f"{API}/weather/history",
+            params={
+                "field_id": field_id,
+                "date_from": "2026-01-01",
+                "date_to": "2026-01-03",
+                "limit": 2,
+            },
+            headers=headers,
+        )
+        assert len(limited.json()["items"]) == 2 and limited.json()["total"] == 3
+
+    def test_history_endpoint_422_invalid_period(self, client, db_session):
+        field_id = make_field(db_session)
+        headers = api_headers(client, db_session)
+        resp = client.get(
+            f"{API}/weather/history",
+            params={"field_id": field_id, "date_from": "2026-02-01", "date_to": "2026-01-01"},
+            headers=headers,
+        )
+        assert resp.status_code == 422
+        assert resp.json()["code"] == "invalid_period"
+
+    def test_history_endpoint_404_unknown_field(self, client, db_session):
+        headers = api_headers(client, db_session)
+        resp = client.get(
+            f"{API}/weather/history",
+            params={
+                "field_id": uuid.uuid4(),
+                "date_from": "2026-01-01",
+                "date_to": "2026-01-31",
+            },
+            headers=headers,
+        )
+        assert resp.status_code == 404
+        assert resp.json()["code"] == "field_not_found"
