@@ -785,14 +785,16 @@ watch([range, rangeYear], () => void loadHistory())
   background: #eef4ef;
 }
 
-/* числа — по центру, заголовки числовых колонок тоже (#429 п.4) */
-.wx__table th:not(:first-child) {
+/* числа — по центру, заголовки числовых колонок тоже (#429 п.4);
+   специфичность выше, чем у .wx__table th/td */
+.wx__table th:not(:first-child),
+.wx__table td.wx__num,
+.wx__table td.wx__ico {
   text-align: center;
 }
 
 .wx__num {
   font-variant-numeric: tabular-nums;
-  text-align: center;
 }
 
 .wx__th-ico {
