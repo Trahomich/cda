@@ -103,6 +103,11 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     llm_model: str = "glm-5.3-flash"  # модель anthropic-провайдера
 
+    # AI-рекомендации «что делать сейчас» (09 §9, #118/#119): параллелизм
+    # фоновой очереди генерации (для anthropic можно 3; ollama advice
+    # не формируется — §9 деградация).
+    ai_advice_parallelism: int = 3
+
     @property
     def sqlalchemy_database_uri(self) -> str:
         """DSN для SQLAlchemy (psycopg 3)."""
