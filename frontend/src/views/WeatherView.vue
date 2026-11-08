@@ -299,6 +299,15 @@ watch([range, rangeYear], () => void loadHistory())
 
     <template v-else-if="weather && forecast">
       <p
+        v-if="hazardBanner"
+        class="wx__hazards"
+        :class="{ 'wx__hazards--alert': hazardBanner.severity === 'alert' }"
+        role="alert"
+      >
+        ⚠ {{ hazardBanner.label }} ожидаются {{ fmtDate(hazardBanner.date) }}:
+        {{ hazardBanner.text }}
+      </p>
+      <p
         v-if="forecast.stale"
         class="wx__stale"
       >
