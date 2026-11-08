@@ -222,7 +222,6 @@ const monthTicks = computed(() => {
   width: 10px;
   height: 8px;
   border-radius: 2px;
-  background: #4d9fd6;
   background: rgba(77, 159, 214, 0.75);
 }
 
