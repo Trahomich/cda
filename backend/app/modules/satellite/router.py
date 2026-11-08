@@ -599,7 +599,7 @@ def field_vra_export(
     ),
     year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"),
 ) -> Response:
-    """Файл выгрузки зон с дозами (§7.4 API-57, #125): ZIP (isoxml/shp)
+    """Файл выгрузки зон с дозами (§7.4 API-60, #125): ZIP (isoxml/shp)
     или GeoJSON. Без базовой дозы — 422 vra_no_base_dose."""
     from app.modules.satellite import vra_export
 
