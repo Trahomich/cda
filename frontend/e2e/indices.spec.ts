@@ -98,6 +98,7 @@ test('карточка поля: перечень индексов на 360px �
   ).toBeVisible({ timeout: 10_000 })
 })
 
+test('карточка поля: индексный слой следует выбранному сезону (§7.5/§7.7)', async ({
   page,
 }) => {
   await page.goto(`/fields/${FIRST_FIELD}`)
