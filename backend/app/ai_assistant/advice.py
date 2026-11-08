@@ -387,9 +387,10 @@ def _date_pairs(text: str) -> set[tuple[int, int]]:
 def _ok_number(token: str, allowed_nums: set[str], allowed_floats: list[float]) -> bool:
     """Число ответа допустимо: точное совпадение или округление разрешённого.
 
-    LLM округляет («~0.20» при контекстном 0.204) — это не выдумка: число
-    допустимо, если оно совпадает с разрешённым с точностью до своей
-    разрядности (round(v, d(token)) == token).
+    LLM округляет («~0.20» при контекстном 0.204) — это не выдумка: дробный
+    токен допустим, если совпадает с разрешённым с точностью до своей
+    разрядности. Целый токен допустим только из целого разрешённого числа
+    (иначе «0–4 %» просказывало бы через округление 0.4 и 4.0 — #144).
     """
     if token in allowed_nums:
         return True
@@ -398,6 +399,8 @@ def _ok_number(token: str, allowed_nums: set[str], allowed_floats: list[float]) 
     except ValueError:  # pragma: no cover — регэксп даёт только числа
         return False
     decimals = len(token.partition(".")[2])
+    if decimals == 0:
+        return any(round(v, 0) == value and float(v).is_integer() for v in allowed_floats)
     return any(round(v, decimals) == value for v in allowed_floats)
 
 
