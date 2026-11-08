@@ -135,3 +135,32 @@ test('паспорт поля: возврат к текущему сезону �
     timeout: 15_000,
   })
 })
+
+// Порядок блоков паспорта поля (#372, #122): карта → выводы ассистента → NDVI
+// → погода → планы и журнал → агрохимия → дифвнесение → остальное (прогноз).
+test('паспорт поля: порядок блоков по #372', async ({ page }) => {
+  await page.goto(`/fields/${FIRST_FIELD}`)
+  await page.locator('.card360__block-title').first().waitFor({ timeout: 15_000 })
+
+  const titles = await page
+    .locator('.card360__block > .card360__block-title')
+    .allTextContents()
+  const order = titles.map((t) => t.trim())
+  const idx = (needle: string) => order.findIndex((t) => t.includes(needle))
+  const map = idx('Контур поля')
+  const insights = idx('Выводы ассистента')
+  const ndvi = idx('NDVI-таймлайн')
+  const weather = idx('Погода')
+  const plans = idx('Планы и журнал')
+  const agro = idx('Агрохимия')
+  const vra = idx('Дифференцированное внесение')
+  const forecast = idx('Прогноз урожайности')
+  expect(map).toBeGreaterThanOrEqual(0)
+  expect(insights).toBeGreaterThan(map)
+  expect(ndvi).toBeGreaterThan(insights)
+  expect(weather).toBeGreaterThan(ndvi)
+  expect(plans).toBeGreaterThan(weather)
+  expect(agro).toBeGreaterThan(plans)
+  expect(vra).toBeGreaterThan(agro)
+  expect(forecast).toBeGreaterThan(vra)
+})
