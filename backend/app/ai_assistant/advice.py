@@ -219,7 +219,8 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
         .order_by(Forecast.forecast_for, Forecast.issued_at.desc())
     ).all()
     latest_by_day: dict[date, Forecast] = {}
-    for fc in forecasts:  # issued_at desc в пределах дня — первый и есть свежий
+    for row in forecasts:  # issued_at desc в пределах дня — первый и есть свежий
+        fc: Forecast = row
         latest_by_day.setdefault(fc.forecast_for, fc)
     if latest_by_day:
         fc_line = ", ".join(
