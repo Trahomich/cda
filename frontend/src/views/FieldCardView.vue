@@ -575,6 +575,7 @@ async function loadWorks() {
 function load() {
   void loadCore()
   void loadHistory()
+  void loadSeasons()
   void loadNdvi()
   void loadWeather()
   void loadJournal()
