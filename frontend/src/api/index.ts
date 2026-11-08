@@ -8,6 +8,7 @@ import type {
   AdapterStatus,
   AgroInput,
   Api05FieldDetail,
+  Page,
   AuthMe,
   AuthResponse,
   CropCycleHistoryItem,
