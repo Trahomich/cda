@@ -322,9 +322,8 @@ async function loadVra() {
         resetVra()
         return
       }
-    } else if (res.kind === 'uniform') {
-      vraUniform.value = true
     }
+    // 'empty' (нет чистых сцен сезона) — в шаблоне «Нет данных…»
   } finally {
     if (token === seasonToken) vraLoading.value = false
   }
