@@ -227,15 +227,12 @@ onUnmounted(() => {
 /* ── Дифференцированное внесение (API-52, §7.4): зоны + карта ── */
 
 const vra = ref<VraZonesResponse | null>(null)
-/** Поле однородно (422 vra_uniform_field) — короткая пометка. */
-const vraUniform = ref(false)
 const vraLoading = ref(true)
 /** PNG-карта зон (raw + геопривязка X-Field-Bbox/X-Image-Size). */
 const vraMap = ref<NdviRender | null>(null)
 
 function resetVra(): void {
   vra.value = null
-  vraUniform.value = false
   if (vraMap.value) {
     URL.revokeObjectURL(vraMap.value.url)
     vraMap.value = null
