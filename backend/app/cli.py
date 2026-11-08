@@ -215,6 +215,35 @@ def cmd_backfill_history(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_scene_indices_backfill(args: argparse.Namespace) -> int:
+    """Бэкфилл индексов §7.7 по историческим сценам (#128, docs/06 §7.7)."""
+    import json
+
+    from app.core.config import get_settings
+    from app.integrations.stac import EarthSearchStacClient
+    from app.services.sentinel_ingest.indices_backfill import run_indices_backfill
+
+    settings = get_settings()
+    client = EarthSearchStacClient(
+        base_url=settings.stac_api_url,
+        request_timeout=settings.ingest_satellite_request_timeout,
+    )
+    with SessionLocal() as db:
+        report = run_indices_backfill(
+            db,
+            client=client,
+            date_from=args.date_from,
+            max_workers=args.workers or 4,
+            render_dir=settings.ndvi_render_dir or None,
+        )
+    data = report.as_dict()
+    print(json.dumps(data, ensure_ascii=False, indent=2))
+    if data["unavailable_count"]:
+        print("ВНИМАНИЕ: часть COG недоступна — повторный запуск доберёт")
+        return 1
+    return 0
+
+
 def cmd_weather_backfill(args: argparse.Namespace) -> int:
     """Бэкфилл полной истории погоды по всем активным полям (#126, docs/06 §7.5)."""
     import json
