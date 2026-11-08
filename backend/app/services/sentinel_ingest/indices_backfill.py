@@ -81,28 +81,35 @@ def _refresh_assets(
 ) -> dict | None:
     """Дозапросить активы item'а из STAC (окно ±1 сутки); новые — словарь.
 
-    None — item не найден/полос нет; не ошибка (индексы без полос пропустятся).
+    2 попытки с паузой 3 с — транзиентные обрывы/таймауты earth-search
+    не должны оставлять сцену без полос. None — item не найден/полос нет;
+    не ошибка (индексы без полос пропустятся).
     """
-    try:
-        items = client.search(
-            bbox,
-            row.captured_at - timedelta(days=1),
-            row.captured_at + timedelta(days=1),
-        )
-    except Exception:  # noqa: BLE001 — STAC недоступен: работаем с тем, что есть
-        logger.warning("indices-backfill: STAC-дозапрос %s не удался", row.item_id, exc_info=True)
+    items: list | None = None
+    for attempt in (1, 2):
+        try:
+            items = client.search(
+                bbox,
+                row.captured_at - timedelta(days=1),
+                row.captured_at + timedelta(days=1),
+            )
+            break
+        except Exception:  # noqa: BLE001 — STAC недоступен: повтор/работаем с тем, что есть
+            logger.warning(
+                "indices-backfill: STAC-дозапрос %s не удался (попытка %d)",
+                row.item_id,
+                attempt,
+                exc_info=True,
+            )
+            if attempt == 1:
+                time.sleep(3.0)
+    if items is None:
         return None
     for item in items:
         if item.item_id != row.item_id:
             continue
         merged = {**(row.assets or {}), **item.assets}
         if "b05" in merged and "b11" in merged:
-            db.execute(
-                update(SatelliteCatalogItem)
-                .where(SatelliteCatalogItem.id == row.id)
-                .values(assets=merged)
-            )
-            db.commit()
             return merged
         break
     return None
