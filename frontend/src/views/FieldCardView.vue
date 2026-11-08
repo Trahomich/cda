@@ -740,6 +740,7 @@ function load() {
   void loadVra()
   void loadYield()
   void loadInsights()
+  void loadAdvice()
 }
 
 onMounted(load)
