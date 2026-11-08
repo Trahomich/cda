@@ -46,7 +46,7 @@ from app.services.sentinel_ingest.ndvi import (
     _read_band_window,
     _read_scl_grid,
 )
-from app.services.sentinel_ingest.renders import MAX_SIDE_PX
+from app.services.sentinel_ingest.renders import MAX_SIDE_PX, draw_zone_legend
 
 logger = logging.getLogger(__name__)
 
