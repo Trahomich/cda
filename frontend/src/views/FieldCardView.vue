@@ -428,7 +428,8 @@ const adviceLoading = ref(true)
 const adviceBusy = ref(false)
 const adviceError = ref(false)
 const adviceHistory = ref<FieldAdvice[]>([])
-const adviceTotal = ref(0)
+/** Есть ли ещё страницы: API-56 не отдаёт total — полная страница = 20 шт. */
+const adviceHasMore = ref(false)
 const adviceHistoryOpen = ref(false)
 const ADVICE_PAGE = 20
 /** Поллинг после 202 queued: каждые 10 с, максимум 12 попыток (~2 мин). */
