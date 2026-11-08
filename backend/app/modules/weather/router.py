@@ -197,6 +197,98 @@ def weather_history(
     )
 
 
+def _gdd_curve(
+    observations: dict[date, WeatherObservation], year: int
+) -> list[tuple[date, float | None, float]]:
+    """GDD-кривая года: (дата, gdd_day|None, gdd_cum) по возрастанию дат.
+
+    gdd_day = max(0, (tmax+tmin)/2 − base); день без tmin/tmax в сумму не
+    входит (gdd_day=None). Кумулятив — по дням с наблюдениями (§7.8).
+    """
+    cum = 0.0
+    curve: list[tuple[date, float | None, float]] = []
+    for day in sorted(d for d in observations if d.year == year):
+        obs = observations[day]
+        gdd_day: float | None = None
+        if obs.temperature_min_c is not None and obs.temperature_max_c is not None:
+            gdd_day = round(
+                max(
+                    0.0,
+                    (float(obs.temperature_min_c) + float(obs.temperature_max_c)) / 2
+                    - GDD_BASE_C,
+                ),
+                1,
+            )
+            cum = round(cum + gdd_day, 1)
+        curve.append((day, gdd_day, cum))
+    return curve
+
+
+@router.get(
+    "/weather/gdd",
+    response_model=GddResponse,
+    summary="API-58: накопительная GDD-кривая с 1 января года (§7.8)",
+)
+def weather_gdd(
+    db: DbSession,
+    *,
+    field_id: uuid.UUID = Query(description="UUID поля"),
+    year: int | None = Query(
+        default=None, ge=2000, le=2100, description="Год кривой; по умолчанию текущий"
+    ),
+) -> GddResponse:
+    """Дни с наблюдениями года по возрастанию + многолетняя норма (§7.8, #132).
+
+    Норма — среднее gdd_cum прошлых лет по календарной дате (день+месяц);
+    null при <2 годах истории.
+    """
+    field = _get_field(db, field_id)
+    chosen_year = year if year is not None else date.today().year
+
+    # одна запись на дату (источник у поля один; при дубле — большая trust)
+    by_date: dict[date, WeatherObservation] = {}
+    for obs in db.scalars(
+        select(WeatherObservation)
+        .where(WeatherObservation.field_id == field.id)
+        .order_by(WeatherObservation.observed_at)
+    ):
+        prev = by_date.get(obs.observed_at)
+        if prev is None or float(obs.trust) > float(prev.trust):
+            by_date[obs.observed_at] = obs
+
+    curve = _gdd_curve(by_date, chosen_year)
+    past_years = sorted({d.year for d in by_date if d.year < chosen_year})
+    norm_items: list[GddNormItem] | None = None
+    if len(past_years) >= 2:
+        # кумулятив каждого прошлого года, ключ — календарная дата (день+месяц)
+        past_curves = [
+            {(d.month, d.day): cum for d, _gdd, cum in _gdd_curve(by_date, y)}
+            for y in past_years
+        ]
+        norm_items = []
+        for day, _gdd, _cum in curve:
+            values = [
+                pc[(day.month, day.day)]
+                for pc in past_curves
+                if (day.month, day.day) in pc
+            ]
+            norm_items.append(
+                GddNormItem(
+                    date=day,
+                    norm_cum=round(sum(values) / len(values), 1) if values else None,
+                )
+            )
+
+    return GddResponse(
+        field_id=field.id,
+        year=chosen_year,
+        base_c=GDD_BASE_C,
+        total=curve[-1][2] if curve else 0.0,
+        items=[GddDayItem(date=d, gdd_day=gdd, gdd_cum=cum) for d, gdd, cum in curve],
+        norm_cum=norm_items,
+    )
+
+
 @router.get(
     "/weather/windows",
     response_model=WindowResponse,
