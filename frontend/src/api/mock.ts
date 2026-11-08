@@ -15,6 +15,7 @@ import type {
   Field,
   FieldOperation,
   FieldStatus,
+  GddPoint,
   Machine,
   MachineJob,
   NdviPoint,
@@ -23,6 +24,7 @@ import type {
   TreatmentPlan,
   TreatmentPlanRequest,
   WeatherForecastDay,
+  WeatherHistoryItem,
   WindowOperationType,
 } from './types'
 
