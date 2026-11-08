@@ -43,8 +43,8 @@ from app.integrations.raster import compute_index_array, compute_ndwi_array, con
 
 logger = logging.getLogger(__name__)
 
-#: варианты рендера: каталог ndvi-renders/{field_id}/{variant}/ (§7.3 + §7.4)
-RENDER_VARIANTS = ("ndvi", "truecolor", "ndwi")
+#: варианты рендера: каталог ndvi-renders/{field_id}/{variant}/ (§7.3 + §7.4 + §7.7)
+RENDER_VARIANTS = ("ndvi", "truecolor", "ndwi", "ndre", "ndmi", "ndsi", "evi", "savi", "bsi")
 
 #: варианты, обязательные для render_available (§7.3: «PNG обоих вариантов» —
 #: ndvi и truecolor; ndwi добавлен #91 и у сцен, отрендеренных кодом #83,
