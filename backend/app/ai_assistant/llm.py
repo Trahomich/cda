@@ -103,9 +103,10 @@ def summarize(
     В ollama-тело запроса всегда добавляется top-level ``"think": False``
     (#113): у think-моделей (qwen3.5) блок размышлений съедает весь
     num_predict и response остаётся пустым; не-think-модели параметр
-    игнорируют. В anthropic-ветке thinking-блок не отключается (glm-5.3-flash
-    присылает его даже при thinking disabled) — просто берём первый
-    content-блок type="text" (#115).
+    игнорируют. В anthropic-ветке thinking отключается явно (``thinking:
+    {"type": "disabled"}``, #116) и берётся первый content-блок type="text"
+    — thinking-блок glm варьируется по длине и при малых max_tokens съедает
+    бюджет, text-блок не успевает родиться (#115, #116).
     """
     settings = get_settings()
     chosen_provider = (provider or settings.llm_provider or "ollama").strip().lower()
