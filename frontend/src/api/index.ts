@@ -532,6 +532,75 @@ export async function getWeatherWindows(
   const raw = await apiClient.request<WindowsResponse>('/weather/windows', {
     query: { field_id: fieldId, operation_type: operationType },
   })
+  return windowsFromRaw(raw, operationType)
+}
+
+/** GET /weather/windows?field_id&only_planned=true — окна только по типам
+ *  операций из активных планов поля (#133, обсуждение #134 #393); без планов —
+ *  items=[] и hint «нет активных планов». */
+export async function getWeatherWindowsPlanned(
+  fieldId: string,
+): Promise<WeatherWindowsPlanned> {
+  const raw = await apiClient.request<WindowsPlannedResponse>('/weather/windows', {
+    query: { field_id: fieldId, only_planned: true },
+  })
+  const items: WeatherWindowItem[] = raw.items.map((it) => ({
+    operation_type: it.operation_type as WindowOperationType,
+    rule_text: it.rule_text,
+    window_open: it.window_open,
+    nearest_window_date: it.days.find((d) => d.ok)?.day ?? null,
+    days: it.days.map((d) => ({
+      date: d.day,
+      is_window: d.ok,
+      summary: d.ok ? 'Все условия выполнены' : d.reasons.join('; '),
+    })),
+    alert: it.alert,
+  }))
+  return { field_id: raw.field_id, only_planned: true, items, hint: raw.hint ?? null }
+}
+
+/** API-57: GET /weather/history?field_id&date_from&date_to — дневные факты
+ *  погоды за период ≤ 400 суток (#126/#132; 422 too_wide, 404 field_not_found). */
+export async function getWeatherHistory(
+  fieldId: string,
+  dateFrom: string,
+  dateTo: string,
+): Promise<WeatherHistory> {
+  const page = await apiClient.request<Page<WeatherHistoryItem>>('/weather/history', {
+    query: { field_id: fieldId, date_from: dateFrom, date_to: dateTo, limit: 400 },
+  })
+  return {
+    field_id: fieldId,
+    items: page.items.map((d) => ({
+      date: d.date,
+      temp_max_c: d.temp_max_c,
+      temp_min_c: d.temp_min_c,
+      precip_mm: d.precip_mm,
+      cloud_pct: d.cloud_pct ?? null,
+      snow_mm: d.snow_mm ?? null,
+    })),
+    total: page.total,
+  }
+}
+
+/** GET /weather/gdd?field_id&year — накопительная кривая эффективных
+ *  температур с 1 января года (base 5 °C) и норма при ≥ 2 годах истории (#132). */
+export async function getWeatherGdd(fieldId: string, year: number): Promise<WeatherGdd> {
+  const raw = await apiClient.request<GddResponse>('/weather/gdd', {
+    query: { field_id: fieldId, year },
+  })
+  return {
+    field_id: raw.field_id,
+    year: raw.year,
+    base_c: raw.base_c,
+    total: raw.total,
+    items: raw.items,
+    norm_cum: raw.norm_cum ?? null,
+  }
+}
+
+/** Сырой ответ /weather/windows (сутки с причинами) → форма E-10. */
+function windowsFromRaw(raw: WindowsResponse, operationType: WindowOperationType): WeatherWindows {
   const days: WeatherWindowDay[] = raw.days.map((d) => ({
     date: d.day,
     is_window: d.ok,
