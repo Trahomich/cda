@@ -1929,6 +1929,18 @@ polygon.card360__polygon {
   font-size: 0.78rem;
 }
 
+/* Заголовок смысловой части объединённого блока ассистента (#148) */
+.card360__sub-title {
+  margin: 0.9rem 0 0.3rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1b5e20;
+}
+
+.card360__advice-meta {
+  font-size: 0.78rem;
+}
+
 /* ── «Что делать сейчас» (API-55/56, #137) ── */
 .card360__advice-text {
   margin: 0;
