@@ -291,6 +291,7 @@ class TestIndexApi:
             assert body["items"][0]["index"] == name
 
     def test_query_param_form_unknown_422(self, client, db_session) -> None:
+        make_ndvi_field(db_session)
         headers = _api_headers(client, db_session)
         field_id = db_session.scalar(db_text("SELECT id FROM dat_field LIMIT 1"))
         resp = client.get(
