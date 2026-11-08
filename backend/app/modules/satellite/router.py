@@ -585,7 +585,7 @@ def field_vra(
 
 @router.get(
     "/fields/{field_id}/vra/export",
-    summary="API-57: выгрузка карты дифвнесения (ISOXML / Shapefile / GeoJSON)",
+    summary="API-60: выгрузка карты дифвнесения (ISOXML / Shapefile / GeoJSON)",
     response_class=Response,
 )
 def field_vra_export(
