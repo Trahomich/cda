@@ -2053,7 +2053,7 @@ export class MockTransport implements Transport {
     const vraMapMatch = /^\/fields\/([\w-]+)\/vra\/map\.png$/.exec(pathname)
     if (vraMapMatch) {
       const field = FIELDS.find((f) => f.field_id === vraMapMatch[1])
-      if (!field || FIELD_N.get(field.field_id) === 6) return empty(404)
+      if (!field) return empty(404)
       const vraYear = Number(params.get('year') ?? 0)
       if (vraYear !== 0 && !SEASON_YEARS.includes(vraYear)) return empty(404)
       const vra = vraOf(FIELD_N.get(field.field_id)!, field.field_id, vraYear || 2027)
