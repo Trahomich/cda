@@ -584,6 +584,61 @@ def field_vra(
 
 
 @router.get(
+    "/fields/{field_id}/vra/export",
+    summary="API-57: выгрузка карты дифвнесения (ISOXML / Shapefile / GeoJSON)",
+    response_class=Response,
+)
+def field_vra_export(
+    field_id: uuid.UUID,
+    db: DbSession,
+    settings: SettingsDep,
+    *,
+    format: str = Query(description="isoxml | shp | geojson"),
+    base_dose_kg_ha: float | None = Query(
+        default=None, gt=0, le=2000, description="Базовая доза, кг/га; иначе — approved-план"
+    ),
+    year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"),
+) -> Response:
+    """Файл выгрузки зон с дозами (§7.4 API-57, #125): ZIP (isoxml/shp)
+    или GeoJSON. Без базовой дозы — 422 vra_no_base_dose."""
+    from app.modules.satellite import vra_export
+
+    field = _get_field(db, field_id)
+    fmt = format.strip().lower()
+    if fmt not in ("isoxml", "shp", "geojson"):
+        raise AppError(
+            f"Неизвестный формат выгрузки «{format}»; допустимо: isoxml, shp, geojson",
+            code="unknown_export_format",
+            title="Некорректный запрос",
+            status_code=422,
+        )
+    data = vra_export.build_export(
+        db, field, year=year, base_dose=base_dose_kg_ha
+    )
+    stem = f"vra_{field.id.hex[:8]}_{data.captured_at.isoformat()}"
+    if fmt == "geojson":
+        return Response(
+            content=vra_export.geojson_bytes(data),
+            media_type="application/geo+json",
+            headers={"Content-Disposition": f'attachment; filename="{stem}.geojson"'},
+        )
+    if fmt == "shp":
+        return Response(
+            content=vra_export.shapefile_zip(data, field.name),
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{stem}_shp.zip"'},
+        )
+    return Response(
+        content=vra_export.isoxml_zip(data, field),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{stem}_isoxml.zip"',
+            "X-Vra-Base-Dose": f"{data.base_dose_kg_ha:g}",
+        },
+    )
+
+
+@router.get(
     "/fields/{field_id}/vra/map.png",
     response_class=Response,
     summary="API-52: PNG-карта зон внесения (геопривязка — как §7.3)",
