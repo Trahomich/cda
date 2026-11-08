@@ -158,7 +158,7 @@ def weather_history(
     limit: int = Query(default=366, ge=1, le=1500, description="Суток на странице"),
     offset: int = Query(default=0, ge=0),
 ) -> HistoryListResponse:
-    """Ежедневные факты (включая облачность/снег, #126) сpaginate по offset."""
+    """Ежедневные факты (включая облачность/снег, #126) с пагинацией по offset."""
     field = _get_field(db, field_id)
     if date_from > date_to:
         raise AppError(
