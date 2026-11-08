@@ -126,7 +126,7 @@ def build_items(
         drought,
         detectors.detect_ndvi_lag_last_year(scenes),
         detectors.detect_agrochem_low(detectors.latest_agrochem(db, field_id)),
-        detectors.detect_vra_heterogeneity(vra_iqr, vra_day),
+        detectors.detect_vra_heterogeneity(vra_peaks),
     ]
     return [item for item in candidates if item is not None]
 
