@@ -1045,7 +1045,7 @@ function fmtNum(v: number, digits = 1): string {
                 type="button"
                 class="card360__advice-btn"
                 :disabled="adviceBusy"
-                @click="recalcAdvice"
+                @click="recalcAssistant"
               >
                 {{ adviceBusy ? 'Пересчитываем…' : advice ? 'Пересчитать' : 'Рассчитать' }}
               </button>
