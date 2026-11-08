@@ -32,7 +32,6 @@ from app.services.sentinel_ingest.indices import (
 from app.services.sentinel_ingest.indices_backfill import run_indices_backfill
 from rasterio.transform import Affine
 from sqlalchemy import text as db_text
-from sqlalchemy.orm import Session
 from tests.test_auth import auth_header, make_user
 from tests.test_satellite import make_satellite_source
 from tests.test_sentinel_ndvi import _write_tif, make_ndvi_field, wgs_box
