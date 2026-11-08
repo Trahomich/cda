@@ -137,3 +137,104 @@ def test_summarize_model_override() -> None:
         summarize("p", "c", http=_client(handler), base_url="http://o:11434", model="llama3:8b")
         == "ok"
     )
+
+
+# --- anthropic-ветка (провайдер облака, #115) ---------------------------
+
+
+def _anthropic(**kw):
+    """summarize с явным anthropic-провайдером и ключом (кроме переопределений)."""
+    defaults = {
+        "http": _client(kw.pop("handler")),
+        "base_url": "http://zai.local",
+        "provider": "anthropic",
+        "api_key": "test-key",
+    }
+    defaults.update(kw)
+    return summarize("p", "c", **defaults)
+
+
+def test_anthropic_thinking_then_text_returns_text() -> None:
+    """content = [thinking, text] → первый text-блок (thinking пропущен)."""
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "content": [
+                    {"type": "thinking", "thinking": "размышления…"},
+                    {"type": "text", "text": "  Краткая сводка.  "},
+                ],
+                "stop_reason": "end_turn",
+            },
+        )
+
+    assert _anthropic(handler=handler) == "Краткая сводка."
+    req = seen[0]
+    assert str(req.url) == "http://zai.local/v1/messages"  # Messages API
+    assert req.headers["x-api-key"] == "test-key"
+    assert req.headers["anthropic-version"] == "2023-06-01"
+    body = json.loads(req.read().decode())
+    assert body["model"] == ANTHROPIC_DEFAULT_MODEL  # glm-5.3-flash
+    assert body["max_tokens"] == 1024  # с запасом: thinking съедает малые лимиты
+    assert body["messages"] == [{"role": "user", "content": "p\n\nДанные хозяйства (context):\nc"}]
+    assert "think" not in body  # num_predict/think — только у ollama-ветки
+
+
+def test_anthropic_only_thinking_returns_none() -> None:
+    """Только thinking-блоки (лимит съеден) → None без второго запроса."""
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(
+            200, json={"content": [{"type": "thinking", "thinking": "…"}], "stop_reason": "max_tokens"}
+        )
+
+    assert _anthropic(handler=handler, attempts=1) is None
+    assert len(calls) == 1
+
+
+def test_anthropic_error_returns_none() -> None:
+    """HTTP 4xx → None без повтора; таймаут → повтор → None."""
+
+    calls: list[int] = []
+
+    def handler_4xx(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        return httpx.Response(401, json={"error": "bad key"})
+
+    assert _anthropic(handler=handler_4xx) is None
+    assert len(calls) == 1
+
+    def handler_timeout(request: httpx.Request) -> httpx.Response:
+        calls.append(1)
+        raise httpx.ConnectTimeout("нет ответа")
+
+    assert _anthropic(handler=handler_timeout, timeout=0.01) is None
+    assert len(calls) == 3  # 401 + таймаут с 1 повтором
+
+
+def test_anthropic_no_key_returns_none_without_network() -> None:
+    """Пустой ключ (по умолчанию env пуст) → None, запросов нет вовсе."""
+
+    def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
+        raise AssertionError("запрос не должен выполняться без ключа")
+
+    assert _anthropic(handler=handler, api_key="   ") is None
+
+
+@pytest.mark.parametrize(
+    ("update", "expected"),
+    [
+        ({"llm_provider": "ollama", "ollama_base_url": ""}, False),
+        ({"llm_provider": "ollama", "ollama_base_url": "http://o:11434"}, True),
+        ({"llm_provider": "anthropic", "anthropic_api_key": ""}, False),
+        ({"llm_provider": "anthropic", "anthropic_api_key": "k"}, True),
+    ],
+)
+def test_llm_enabled_by_provider(update: dict, expected: bool) -> None:
+    """llm_enabled: ollama — по base URL, anthropic — по ключу (#115)."""
+    assert llm_enabled(Settings(**update)) is expected
