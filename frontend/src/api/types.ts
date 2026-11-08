@@ -786,11 +786,13 @@ export interface WindowsResponse {
   alert: string | null
 }
 
-/** Элемент окна в списочной форме /weather/windows?only_planned (#133). */
+/** Элемент окна в списочной форме /weather/windows?only_planned (§7.8 API-59):
+ *  WindowResponse одиночного режима по каждому типу. */
 export interface WindowsPlannedItem {
   operation_type: string
   rule_text?: string
   window_open: boolean
+  nearest_window_date?: string | null
   days: WindowsDayItem[]
   alert?: string | null
 }
