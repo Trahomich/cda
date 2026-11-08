@@ -208,7 +208,11 @@ async function loadIndexLayers(): Promise<void> {
   const loaded = await Promise.all(
     EXTRA_INDEX_KEYS.map(async (key) => {
       try {
-        const points = await getFieldNdvi(fieldId, seasonQueryYear.value, key)
+        // Текущему сезону — явный ?year: без него API-06 отдаёт сцены ВСЕХ
+        // лет (бэкфилл 2023+) и годы смешиваются (регрессия #146/#495).
+        const year =
+          seasonQueryYear.value ?? selectedYear.value ?? currentSeasonYear.value ?? undefined
+        const points = await getFieldNdvi(fieldId, year, key)
         return [key, points.filter((p) => p.render_available).map((p) => p.date).sort()] as const
       } catch {
         return [key, []] as const
