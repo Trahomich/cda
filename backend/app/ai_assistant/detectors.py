@@ -60,6 +60,19 @@ DROUGHT_WINDOW_DAYS = 14
 DROUGHT_PRECIP_MM = 10.0
 GDD_NORM_DAILY_C = 10.0
 GDD_MIN_DAYS = 7  # меньше — окно непредставительно, детектор молчит
+#: drought — NDMI-сигнал стресса влажности биомассы (§7.7 #129): ndmi_mean
+#: ниже порога при живой вегетации (NDVI выше) — засуха видна по спутнику
+#: ещё до того, как NDVI упал
+DROUGHT_NDMI_MIN = -0.1
+DROUGHT_NDMI_NDVI_MIN = 0.35
+
+#: winterkill: перезимовка озимых по зимним сценам (§7.7 #129) — доля сцен
+#: «оголённая биомасса без снега» (NDSI < 0.4 ∧ NDVI < 0.2): нет снега,
+#: а вегетации тоже нет — выпадение/оголение озимых
+WINTERKILL_MONTHS = frozenset({12, 1, 2, 3})
+WINTERKILL_NDSI_MAX = 0.4
+WINTERKILL_NDVI_MAX = 0.2
+WINTERKILL_WARN_SHARE = 0.3
 
 #: ndvi_lag_last_year: отставание от прошлой даты ± окно поиска сцены
 NDVI_LAG_THRESHOLD = 0.1
