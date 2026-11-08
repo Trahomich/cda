@@ -262,12 +262,12 @@ def _analyze_scene(
     values = index_arr[valid]
     p25, p30, p70, p75 = np.percentile(values, (25.0, 30.0, 70.0, 75.0))
     iqr = round(float(p75 - p25), 3)
-    spread = _spatial_spread(ndvi, valid)
+    spread = _spatial_spread(index_arr, valid)
 
     zone_masks = (
-        valid & (ndvi < p30),  # 1 — пониженное развитие
-        valid & (ndvi >= p30) & (ndvi <= p70),  # 2 — среднее
-        valid & (ndvi > p70),  # 3 — повышенное
+        valid & (index_arr < p30),  # 1 — пониженное развитие
+        valid & (index_arr >= p30) & (index_arr <= p70),  # 2 — среднее
+        valid & (index_arr > p70),  # 3 — повышенное
     )
     field_area = float(field.area_ga or 0.0)
     total_pixels = int(valid.sum())
@@ -276,7 +276,7 @@ def _analyze_scene(
             zone=number,
             label=ZONE_LABELS[number - 1],
             area_ga=round(field_area * int(mask.sum()) / total_pixels, 2),
-            ndvi_mean=round(float(ndvi[mask].mean()), 3),
+            ndvi_mean=round(float(index_arr[mask].mean()), 3),  # среднее индекса зон
             dose_factor=ZONE_DOSE_FACTORS[number - 1],
         )
         for number, mask in enumerate(zone_masks, start=1)

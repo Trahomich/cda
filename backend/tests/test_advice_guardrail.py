@@ -108,7 +108,9 @@ class TestNumbersWithin:
         """
         nums_no, pairs = _allowed()
         assert advice._numbers_within("шкала легенды −0.10…0.80", nums_no, pairs) is False
-        nums_yes, pairs_yes = _allowed(REAL_CONTEXT + "\nРендеры NDVI (приложены): шкала раскраски от -0.10 до 0.80.")
+        nums_yes, pairs_yes = _allowed(
+            REAL_CONTEXT + "\nРендеры NDVI (приложены): шкала раскраски от -0.10 до 0.80."
+        )
         assert advice._numbers_within("шкала легенды −0.10…0.80", nums_yes, pairs_yes) is True
 
     def test_iso_date_outside_context(self):
