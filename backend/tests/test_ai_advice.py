@@ -298,6 +298,7 @@ class TestAdviceTriggers:
         )
         scheduler = advice_scheduler.create_advice_scheduler(settings)
         assert scheduler is not None
+        scheduler.start()
         try:
             (job,) = scheduler.get_jobs()
             fields = {f.name: str(f) for f in job.trigger.fields}
