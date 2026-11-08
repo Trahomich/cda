@@ -75,9 +75,7 @@ class TestHazardsApi:
         field_id = make_field(db_session)
         culture = make_culture(db_session, name=WINTER)
         # main-цикл года уборки 2027 (сейчас ноябрь → ищем year+1, потом year)
-        db_session.add(
-            CropCycle(field_id=field_id, year=2027, culture_id=culture.id, kind="main")
-        )
+        db_session.add(CropCycle(field_id=field_id, year=2027, culture_id=culture.id, kind="main"))
         db_session.commit()
         api_forecast_rows(db_session, field_id, [(0, -1.0, -2.0, 0.0), (1, 5.0, 1.0, 0.0)])
         resp = client.get(
