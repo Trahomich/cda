@@ -289,35 +289,45 @@ def weather_gdd(
     response_model=WindowResponse,
     summary="Погодное окно операции (RULE-AGRO-09, docs/03 §3.3)",
 )
-def weather_window(
-    db: DbSession,
-    *,
-    operation_type: str = Query(description=f"Тип операции: {', '.join(OPERATION_TYPES)}"),
-    field_id: uuid.UUID = Query(description="UUID поля"),
-) -> WindowResponse:
-    field = _get_field(db, field_id)
-    if operation_type not in OPERATION_TYPES:
-        raise AppError(
-            f"Неизвестный тип операции «{operation_type}»; допустимо: {', '.join(OPERATION_TYPES)}",
-            code="unknown_operation_type",
-            title="Некорректный запрос",
-            status_code=422,
-        )
-    rule = db.scalar(select(WeatherRule).where(WeatherRule.operation_type == operation_type))
-    if rule is None:
-        raise AppError(
-            f"Правило погодного окна для «{operation_type}» не настроено "
-            f"(выполните seed-weather-rules)",
-            code="rule_not_found",
-            title="Не настроено",
-            status_code=422,
-        )
+def _planned_treatment_types(db: Session, field_id: uuid.UUID, today: date) -> set[str]:
+    """Типы операций из незавершённых планов внесения текущего сезона (§7.8).
 
-    forecasts = _forecast_days(db, field.id, days=7)
+    Сезон — main-цикл по году уборки (как current_culture_name: месяцы 9–12
+    сначала смотрят год+1 — озимые под будущий сезон). Цикл, закрытый
+    уборкой (status='completed'), вегетационных операций не даёт: планы
+    внесения после уборки не показываем (фидбек #391 п.3). Незавершённые
+    планы — draft/approved/in_progress (в модели нет «planned», это
+    отображение контракта «НЕзавершённые», 03 §2.1).
+    """
+    years = (today.year + 1, today.year) if today.month >= 9 else (today.year, today.year - 1)
+    cycle = db.scalar(
+        select(CropCycle).where(
+            CropCycle.field_id == field_id,
+            CropCycle.kind == "main",
+            CropCycle.year.in_(years),
+        )
+    )
+    if cycle is None or cycle.status == "completed":
+        return set()
+    return set(
+        db.scalars(
+            select(TreatmentPlan.operation_type).where(
+                TreatmentPlan.cycle_id == cycle.id,
+                TreatmentPlan.status.in_(("draft", "approved", "in_progress")),
+            )
+        )
+    )
+
+
+def _forecast_metrics(
+    db: Session, field_id: uuid.UUID
+) -> tuple[list[DayMetrics], dict[date, float | None]]:
+    """Метрики горизонта 7 сут + осадки предыдущих суток по факту (API-59)."""
+    forecasts = _forecast_days(db, field_id, days=7)
     # осадки предыдущих суток: факт за вчера, иначе день перед горизонтом из прогноза
     yesterday_fact = db.scalar(
         select(WeatherObservation).where(
-            WeatherObservation.field_id == field.id,
+            WeatherObservation.field_id == field_id,
             WeatherObservation.observed_at == date.today() - timedelta(days=1),
         )
     )
@@ -326,7 +336,6 @@ def weather_window(
     }
     if yesterday_fact is not None and yesterday_fact.precipitation_mm is not None:
         precip_by_day[yesterday_fact.observed_at] = float(yesterday_fact.precipitation_mm)
-
     metrics = [
         DayMetrics(
             day=f.forecast_for,
@@ -338,21 +347,94 @@ def weather_window(
         )
         for f in forecasts
     ]
+    return metrics, precip_by_day
+
+
+def _window_response(
+    field: Field,
+    rule: WeatherRule,
+    metrics: list[DayMetrics],
+    precip_by_day: dict[date, float | None],
+) -> WindowResponse:
+    """Окно одного типа по общим метрикам горизонта (API-59)."""
     first_day = metrics[0].day if metrics else date.today()
     prev_precip = precip_by_day.get(first_day - timedelta(days=1))
-
     window_days = evaluate_window(dict(rule.params), metrics, prev_precip)
     window_open = any(d.ok for d in window_days)
+    nearest = next((d.day for d in window_days if d.ok), None)
     return WindowResponse(
-        operation_type=operation_type,
+        operation_type=rule.operation_type,
         field_id=field.id,
         rule_text=rule.rule_text,
         window_open=window_open,
+        nearest_window_date=nearest,
         days=[WindowDayItem(day=d.day, ok=d.ok, reasons=d.reasons) for d in window_days],
         alert=None
         if window_open or not window_days
         else (
-            f"В горизонте 7 суток нет погодного окна для «{operation_type}» "
+            f"В горизонте 7 суток нет погодного окна для «{rule.operation_type}» "
             f"({'; '.join(window_days[0].reasons)} — ближайшие сутки)"
         ),
+    )
+
+
+@router.get(
+    "/weather/windows",
+    response_model=WindowResponse | WindowsListResponse,
+    summary="API-59: погодное окно операции (RULE-AGRO-09) / список окон по планам поля",
+)
+def weather_window(
+    db: DbSession,
+    *,
+    operation_type: str | None = Query(
+        default=None,
+        description=(
+            "Одиночный режим: тип операции "
+            f"({', '.join(OPERATION_TYPES)}). Без параметра — список окон "
+            "по типам операций активных планов поля (§7.8)"
+        ),
+    ),
+    field_id: uuid.UUID = Query(description="UUID поля"),
+    only_planned: bool = Query(
+        default=True,
+        description="Список-режим: только типы из незавершённых планов текущего сезона",
+    ),
+) -> WindowResponse | WindowsListResponse:
+    """Два режима (§7.8 v1.8): одиночное окно или список по планам поля."""
+    field = _get_field(db, field_id)
+
+    if operation_type is not None:
+        if operation_type not in OPERATION_TYPES:
+            raise AppError(
+                f"Неизвестный тип операции «{operation_type}»; допустимо: "
+                f"{', '.join(OPERATION_TYPES)}",
+                code="unknown_operation_type",
+                title="Неконтентный запрос"[:0] or "Некорректный запрос",
+                status_code=422,
+            )
+        rule = db.scalar(select(WeatherRule).where(WeatherRule.operation_type == operation_type))
+        if rule is None:
+            raise AppError(
+                f"Правило погодного окна для «{operation_type}» не настроено "
+                f"(выполните seed-weather-rules)",
+                code="rule_not_found",
+                title="Не настроено",
+                status_code=422,
+            )
+        metrics, precip_by_day = _forecast_metrics(db, field.id)
+        return _window_response(field, rule, metrics, precip_by_day)
+
+    # список-режим: окна по типам операций поля (§7.8)
+    rules_rows = list(db.scalars(select(WeatherRule).order_by(WeatherRule.operation_type)))
+    if only_planned:
+        planned = _planned_treatment_types(db, field.id, date.today())
+        rules_rows = [r for r in rules_rows if r.operation_type in planned]
+    metrics, precip_by_day = _forecast_metrics(db, field.id)
+    items = [_window_response(field, rule, metrics, precip_by_day) for rule in rules_rows]
+    hint = "нет активных планов операций" if only_planned and not items else None
+    return WindowsListResponse(
+        field_id=field.id,
+        only_planned=only_planned,
+        items=items,
+        hint=hint,
     )
