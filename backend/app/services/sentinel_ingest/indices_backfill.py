@@ -155,6 +155,7 @@ def run_indices_backfill(
     # подготовка кандидатов — сессией в главном потоке
     lookup = contour_lookup_factory(db)
     bbox = farm_bbox(db) if client is not None else None
+    refreshed_by_item: dict[str, dict] = {}
     tasks: list[_Task] = []
     for field_id, captured_at in ndvi_scenes:
         if not _missing_indices(db, field_id, captured_at):
