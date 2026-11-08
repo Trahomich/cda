@@ -20,6 +20,7 @@ NDVI), запись — upsert по UQ, идемпотентно: повторн
 """
 
 import logging
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
