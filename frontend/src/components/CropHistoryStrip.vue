@@ -157,6 +157,8 @@ button.strip__cell:hover {
   border: 2px solid #2e7d32;
   background: #e8f5e9;
   box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.18);
+  /* год может быть плановым (пунктир/бледность) — выбор важнее */
+  opacity: 1;
 }
 
 /* текущий год — акцентная обводка */
