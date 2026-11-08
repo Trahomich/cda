@@ -183,6 +183,8 @@ erDiagram
 | API-52 | GET /fields/{id}/vra; GET /fields/{id}/vra/map.png | зоны дифференцированного внесения (3 зоны по перцентилям NDVI) и карта зон PNG; 422 vra_uniform_field (§7.4) | REQ-F-010 |
 | API-53 | GET /fields/{id}/yield-forecast | оценка урожайности по кривой NDVI (эмпирика, интервал ±25 %, §7.4; 09-ai §8.3); 422 yield_no_season_data/yield_no_culture/yield_no_model | REQ-F-028 |
 | API-54 | GET /fields/{id}/seasons | список сезонов NDVI поля (годы, счётчики сцен, культура цикла; §7.5) — переключатель сезонов в паспорте поля | REQ-F-028 |
+| API-55 | GET/POST /fields/{id}/ai/advice | последняя AI-рекомендация «что делать сейчас» / принудительный пересчёт 202 queued (09-ai §9.3) | REQ-F-035 |
+| API-56 | GET /fields/{id}/ai/advice/history?from&to&limit | история AI-рекомендаций поля, desc, limit ≤ 100 (09-ai §9.3) | REQ-F-035 |
 
 Пост-MVP (описаны в своих документах, здесь — только индекс): API-36..39 —
 агроскаутинг (docs/11-agroscouting.md §5), API-40..45 — экономика
