@@ -1,0 +1,478 @@
+"""AI-рекомендации «что делать сейчас» (docs/09-ai.md §9, эпик #118/#119).
+
+Контекст §9.1 собирается только из БД ЦДА (пользовательский ввод не
+попадает): поле, севооборот, агрохимия, работы, NDVI-сезон, погода,
+вердикты моделей + PNG-рендеры NDVI (файловые §7.3, ≤2) — только для
+anthropic-провайдера (vision). Генерация — LLM glm-5.3-flash с промптом
+§9.2; guardrail: числа ответа обязаны встречаться в context/items, иначе
+повтор с уточнением, затем fallback на конкатенацию items §8.2.
+
+Запись — ai_field_advice (§9.3): только ok/fallback; empty (пустой сезон)
+и ошибки провайдера не пишем (§9.5). advice_date = дата генерации.
+
+Провайдер: только anthropic (решение #358): при LLM_PROVIDER=ollama/без
+ключа advice не формируется (деградация §9), детекторы §8.2 работают.
+
+Инвариант #101 сохранён: сессия БД закрывается ДО инференса; запись —
+отдельной короткой сессией после.
+"""
+
+import hashlib
+import json
+import logging
+import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass, field
+from datetime import UTC, date, datetime, timedelta
+
+from sqlalchemy import case, func, select
+from sqlalchemy.orm import Session, aliased
+
+from app.ai_assistant import detectors, llm, service
+from app.ai_assistant.schemas import InsightItem
+from app.core.config import Settings, get_settings
+from app.core.db import SessionLocal
+from app.models.agronomy import CropCycle, Field, FieldOperation, Recommendation
+from app.models.ai import AIFieldAdvice
+from app.models.integrations import Forecast, SatelliteScene, WeatherObservation
+from app.models.references import AgroInput, Culture
+from app.modules.satellite.waterlog import precip_sums_7d, waterlogged
+from app.services.sentinel_ingest.renders import render_path
+
+logger = logging.getLogger(__name__)
+
+#: «чистая» сцена для ИИ-продуктов (docs/06 §7.4) — как в satellite/router
+CLEAN_CLOUD_PCT = 60
+
+#: таймаут инференса advice: облако отвечает за секунды (§9.4 — 120 с)
+ADVICE_LLM_TIMEOUT_SECONDS = 120.0
+
+#: максимум PNG-рендеров в одном запросе (§9.1: не более 2 картинок)
+MAX_IMAGES = 2
+
+ADVICE_PROMPT = (
+    "Ты — агроном-ассистент цифрового двойника хозяйства. Сегодня {date}. "
+    "По данным хозяйства (context, включая спутниковые снимки) дай "
+    "рекомендации на текущий момент: 1) что сделать или проверить в ближайшие "
+    "дни с приоритетами; 2) окно работ с учётом прогноза погоды; 3) на что "
+    "обратить внимание по снимкам. 2–4 абзаца или короткий список. Только "
+    "факты из данных: числа (даты, дозы, осадки, NDVI) можно брать только из "
+    "context, свои нормативы и числа не выдумывать. Ты советуешь — решение "
+    "принимает агроном."
+)
+
+_GUARDRAIL_RETRY_SUFFIX = (
+    "\n\nВажно: в предыдущем ответе были числа, которых нет в данных "
+    "хозяйства. Ответь снова, используя только числа из context."
+)
+
+_NUM_RE = re.compile(r"\d+(?:\.\d+)?")
+
+_NO_DATA_ANSWER = "Данных для рекомендации недостаточно."
+
+_OPERATION_TITLES = dict(service._OPERATION_TITLES)  # noqa: SLF001 — общие названия работ
+
+
+@dataclass(frozen=True, slots=True)
+class AdviceContext:
+    """Собранный контекст §9.1: текст, его sha256 и PNG-рендеры (≤2)."""
+
+    context: str
+    context_hash: str
+    images: list[bytes] = field(default_factory=list)
+
+
+def _season_scenes(db: Session, field_id: uuid.UUID_alias if False else object, year: int) -> list:
+    return []  # placeholder — заменяется ниже (см. _season_scene_rows)
+
+
+import uuid  # noqa: E402  (используется в сигнатурах ниже)
+
+
+def _season_scene_rows(db: Session, field_id: uuid.UUID, year: int) -> list[SatelliteScene]:
+    """Чистые NDVI-сцены сезона year по возрастанию даты (§7.5)."""
+    return list(
+        db.scalars(
+            select(SatelliteScene)
+            .where(
+                SatelliteScene.field_id == field_id,
+                SatelliteScene.index == "ndvi",
+                SatelliteScene.cloud_pct <= CLEAN_CLOUD_PCT,
+                func.extract("year", SatelliteScene.captured_at) == year,
+            )
+            .order_by(SatelliteScene.captured_at, SatelliteScene.created_at)
+        )
+    )
+
+
+def _latest_clean_scene_year(db: Session, field_id: uuid.UUID) -> int | None:
+    return db.scalar(
+        select(func.extract("year", func.max(SatelliteScene.captured_at))).where(
+            SatelliteScene.field_id == field_id,
+            SatelliteScene.index == "ndvi",
+            SatelliteScene.cloud_pct <= CLEAN_CLOUD_PCT,
+        )
+    )
+
+
+def _fmt(v: float | None, nd: int = 1) -> str:
+    return "нет" if v is None else f"{float(v):.{nd}f}"
+
+
+def build_advice_context(
+    db: Session, field_id: uuid.UUID, today: date
+) -> AdviceContext | None:
+    """Контекст рекомендации §9.1; None — пустой сезон (чистых сцен нет).
+
+    Региона в модели Field нет — секция опущена (решение Ивана, #381).
+    """
+    f = db.get(Field, field_id)
+    if f is None:
+        return None
+    season_year = _latest_clean_scene_year(db, field_id)
+    if season_year is None:
+        return None
+    season_year = int(season_year)
+    parts: list[str] = [f"Поле «{f.name}», площадь {float(f.area_ga):.1f} га, сезон {season_year}."]
+
+    # 2. культура сезона + история севооборота (последние 5 main-циклов)
+    pred_cycle = aliased(CropCycle)
+    pred_culture = aliased(Culture)
+    rows = db.execute(
+        select(CropCycle, Culture.name, pred_culture.name)
+        .join(Culture, CropCycle.culture_id == Culture.id)
+        .outerjoin(pred_cycle, CropCycle.predecessor_cycle_id == pred_cycle.id)
+        .outerjoin(pred_culture, pred_cycle.culture_id == pred_culture.id)
+        .where(CropCycle.field_id == field_id, CropCycle.kind == "main")
+        .order_by(CropCycle.year.desc())
+        .limit(5)
+    ).all()
+    if rows:
+        history = ", ".join(
+            f"{r[0].year} — {r[1]}"
+            + (f" (предшественник: {r[2]})" if r[2] else "")
+            for r in rows
+        )
+        parts.append(f"Севооборот (последние циклы): {history}.")
+
+    # 3. агрохимия: последняя проба
+    probe = detectors.latest_agrochem(db, field_id)
+    if probe is not None:
+        parts.append(
+            f"Агрохимия (проба {probe.sample_date.isoformat()}): "
+            f"pH {_fmt(probe.ph, 1)}, гумус {_fmt(probe.humus_pct, 1)} %, "
+            f"P2O5 {_fmt(probe.p2o5_mg100, 1)} мг/100 г, "
+            f"K2O {_fmt(probe.k2o_mg100, 1)} мг/100 г."
+        )
+
+    # 4. работы: план (незавершённые) + журнал (последние 10)
+    plan_ops = db.execute(
+        select(FieldOperation, AgroInput.name)
+        .outerjoin(AgroInput, FieldOperation.input_id == AgroInput.id)
+        .where(
+            FieldOperation.field_id == field_id,
+            FieldOperation.status.in_(("draft", "planned", "in_progress")),
+        )
+        .order_by(FieldOperation.date)
+        .limit(10)
+    ).all()
+    if plan_ops:
+        plan = ", ".join(
+            f"{op.date.isoformat()} {_OPERATION_TITLES.get(op.operation_type, op.operation_type)}"
+            + (f" ({name})" if name else "")
+            for op, name in plan_ops
+        )
+        parts.append(f"План работ (незавершённые): {plan}.")
+    journal_ops = db.execute(
+        select(FieldOperation, AgroInput.name)
+        .outerjoin(AgroInput, FieldOperation.input_id == AgroInput.id)
+        .where(FieldOperation.field_id == field_id, FieldOperation.status == "done")
+        .order_by(FieldOperation.date.desc())
+        .limit(10)
+    ).all()
+    if journal_ops:
+        journal = ", ".join(
+            f"{op.date.isoformat()} {_OPERATION_TITLES.get(op.operation_type, op.operation_type)}"
+            + (f" ({name})" if name else "")
+            for op, name in reversed(journal_ops)
+        )
+        parts.append(f"Журнал работ (последние {len(journal_ops)}): {journal}.")
+
+    # 5. NDVI сезона: точки avg/min/max + пик вегетации
+    scenes = _season_scene_rows(db, field_id, season_year)
+    peak = max(scenes, key=lambda s: float(s.index_avg)) if scenes else None
+    if scenes:
+        points = ", ".join(
+            f"{s.captured_at.isoformat()}: avg {float(s.index_avg):.3f}"
+            f"/min {float(s.index_min):.3f}/max {float(s.index_max):.3f}"
+            + (" [пик вегетации]" if s is peak else "")
+            for s in scenes
+        )
+        parts.append(f"NDVI сезона {season_year} (дата: avg/min/max): {points}.")
+
+    # 6. погода: факт 14 сут + прогноз 7 сут
+    precip14, gdd14, gdd_days = detectors.weather_window_14d(db, field_id, today)
+    if precip14 is not None:
+        parts.append(
+            f"Погода, факт 14 сут до {today.isoformat()}: осадки "
+            f"{precip14:.1f} мм, сумма GDD {gdd14 or 0:.0f} °C·сут "
+            f"({gdd_days} сут с температурами)."
+        )
+    forecasts = db.execute(
+        select(Forecast)
+        .where(
+            Forecast.field_id == field_id,
+            Forecast.forecast_for >= today,
+            Forecast.forecast_for <= today + timedelta(days=6),
+        )
+        .order_by(Forecast.forecast_for, Forecast.issued_at.desc())
+    ).all()
+    latest_by_day: dict[date, Forecast] = {}
+    for fc in forecasts:  # issued_at desc в пределах дня — первый и есть свежий
+        latest_by_day.setdefault(fc.forecast_for, fc)
+    if latest_by_day:
+        fc_line = ", ".join(
+            f"{d.isoformat()}: осадки {_fmt(fc.precipitation_mm)} мм "
+            f"(риск {_fmt(fc.precip_prob_pct, 0)} %), "
+            f"t {_fmt(fc.temperature_min_c)}…{_fmt(fc.temperature_max_c)} °C"
+            for d, fc in sorted(latest_by_day.items())
+        )
+        parts.append(f"Прогноз погоды на 7 сут: {fc_line}.")
+
+    # 7. выводы моделей: вымокания, АХО, VRA, урожайность
+    precip_map = precip_sums_7d(db, field_id, [s.captured_at for s in scenes]) if scenes else {}
+    episode_dates = [
+        s.captured_at.isoformat()
+        for s in scenes
+        if waterlogged(s.ndwi_p90, s.index_avg, precip_map.get(s.captured_at)) is True
+    ]
+    if episode_dates:
+        parts.append(f"Модель вымокания: эпизоды по сценам {', '.join(episode_dates)}.")
+    else:
+        parts.append(f"Модель вымокания: признаков вымокания нет по {len(scenes)} сценам.")
+    active_recs = db.scalars(
+        select(Recommendation)
+        .where(
+            Recommendation.target_type == "field",
+            Recommendation.target_id == field_id,
+            Recommendation.status == "new",
+        )
+        .order_by(Recommendation.created_at.desc())
+        .limit(5)
+    ).all()
+    if active_recs:
+        parts.append(
+            "Активные рекомендации системы: "
+            + "; ".join(f"[{r.rule_id}] {r.action}" for r in active_recs)
+        )
+    vra_peak = service._vra_peak_cached(field_id)  # noqa: SLF001 — общий кэш VRA (#106)
+    if vra_peak is not None:
+        parts.append(
+            f"Модель дифвнесения: пиковая сцена {vra_peak[0].isoformat()}, "
+            f"IQR NDVI = {vra_peak[1]:.3f} (зоны — /vra)."
+        )
+    else:
+        parts.append("Модель дифвнесения: нет расчёта.")
+    yield_line = _yield_verdict(db, field_id, season_year, scenes)
+    if yield_line:
+        parts.append(yield_line)
+
+    context = "\n".join(parts)
+    context_hash = hashlib.sha256(context.encode("utf-8")).hexdigest()
+
+    # 8. PNG-рендеры NDVI (§7.3, файловые): последняя чистая + пик, ≤2
+    images: list[bytes] = []
+    settings = get_settings()
+    render_dir = settings.ndvi_render_dir
+    if render_dir and scenes:
+        seen_days: set[date] = set()
+        for day in (scenes[-1].captured_at, peak.captured_at if peak else None):
+            if day is None or day in seen_days or len(images) >= MAX_IMAGES:
+                continue
+            seen_days.add(day)
+            path = render_path(render_dir, field_id, "ndvi", day)
+            if path.is_file():
+                try:
+                    images.append(path.read_bytes())
+                except OSError:
+                    logger.warning("advice: рендер %s не читается", path)
+    return AdviceContext(context=context, context_hash=context_hash, images=images)
+
+
+def _yield_verdict(
+    db: Session, field_id: uuid.UUID, year: int, scenes: list[SatelliteScene]
+) -> str | None:
+    """Прогноз урожайности (§8.3, та же эмпирика, что API-53)."""
+    if len(scenes) < 3:
+        return None
+    cycle = db.scalar(
+        select(CropCycle, Culture)
+        .join(Culture, CropCycle.culture_id == Culture.id)
+        .where(
+            CropCycle.field_id == field_id, CropCycle.year == year, CropCycle.kind == "main"
+        )
+    )
+    if cycle is None:
+        return None
+    _, culture = cycle
+    if culture is None or culture.kind == "fallow" or any(
+        v is None for v in (culture.yield_k_base, culture.yield_k_ndvi_max, culture.yield_k_ndvi_int)
+    ):
+        return None
+    avgs = [float(s.index_avg) for s in scenes]
+    ndvi_max = max(avgs)
+    ndvi_integral = sum(max(v - 0.2, 0.0) for v in avgs) / 100
+    forecast = float(culture.yield_k_base) + float(culture.yield_k_ndvi_max) * ndvi_max + float(
+        culture.yield_k_ndvi_int
+    ) * ndvi_integral
+    return (
+        f"Прогноз урожайности ({culture.name}, {year}): {forecast:.2f} "
+        f"ц/га (интервал {forecast * 0.75:.2f}–{forecast * 1.25:.2f})."
+    )
+
+
+def _numbers_within(text: str, allowed: set[str]) -> bool:
+    return set(_NUM_RE.findall(text.replace(",", "."))) <= allowed
+
+
+def _allowed_numbers(context: str, items: list[InsightItem]) -> set[str]:
+    allowed = set(_NUM_RE.findall(context.replace(",", ".")))
+    allowed |= set(
+        _NUM_RE.findall(
+            json.dumps([i.model_dump(mode="json") for i in items], ensure_ascii=False).replace(
+                ",", "."
+            )
+        )
+    )
+    return allowed
+
+
+def generate_advice(
+    field_id: uuid.UUID, *, today: date | None = None
+) -> AIFieldAdvice | None:
+    """Полный цикл генерации рекомендации для поля (§9.1–9.3).
+
+    None — провайдер не anthropic/выключен, поля/сезона нет или LLM
+    недоступен/пуст (§9.5: записи не создаём). Успех — запись ok/fallback
+    в ai_field_advice (возвращается тем же объектом).
+    """
+    settings = get_settings()
+    if settings.llm_provider.strip().lower() != "anthropic" or not llm.llm_enabled(settings):
+        return None  # деградация §9: advice только у облачного провайдера
+    day = today or date.today()
+
+    # 1) сбор контекста и items — с сессией БД (#101: закрыть до инференса)
+    db = SessionLocal()
+    try:
+        if db.get(Field, field_id) is None:
+            return None
+        ctx = build_advice_context(db, field_id, day)
+        if ctx is None:
+            return None  # пустой сезон — empty не пишем (§9.3)
+        items = service.build_items(db, field_id)
+    finally:
+        db.close()
+
+    # 2) инференс — без БД; guardrail §9.2 (повтор с уточнением → fallback)
+    prompt = ADVICE_PROMPT.format(date=day.isoformat())
+    model_name = (settings.llm_model or llm.ANTHROPIC_DEFAULT_MODEL).strip()
+    answer, status = _infer_with_guardrail(prompt, ctx, items, model_name)
+    if answer is None:
+        return None  # провайдер недоступен/пуст — записи нет (§9.5)
+
+    # 3) запись — короткой сессией
+    db = SessionLocal()
+    try:
+        record = AIFieldAdvice(
+            field_id=field_id,
+            model=model_name,
+            provider="anthropic",
+            advice_date=day,
+            answer=answer,
+            context_hash=ctx.context_hash,
+            status=status,
+        )
+        db.add(record)
+        db.commit()
+        return record
+    finally:
+        db.close()
+
+
+def _infer_with_guardrail(
+    prompt: str, ctx: AdviceContext, items: list[InsightItem], model_name: str
+) -> tuple[str | None, str]:
+    """LLM-инференс с guardrail §9.2: ok / fallback / (None, —)."""
+    allowed = _allowed_numbers(ctx.context, items)
+    answer = llm.summarize(
+        prompt,
+        ctx.context,
+        timeout=ADVICE_LLM_TIMEOUT_SECONDS,
+        attempts=1,
+        provider="anthropic",
+        model=model_name,
+        images=ctx.images or None,
+    )
+    if answer is None:
+        return None, ""
+    if _numbers_within(answer, allowed):
+        return answer, "ok"
+    logger.warning("advice: посторонние числа в ответе — повтор с уточнением")
+    retry = llm.summarize(
+        prompt + _GUARDRAIL_RETRY_SUFFIX,
+        ctx.context,
+        timeout=ADVICE_LLM_TIMEOUT_SECONDS,
+        attempts=1,
+        provider="anthropic",
+        model=model_name,
+        images=ctx.images or None,
+    )
+    if retry is not None and _numbers_within(retry, allowed):
+        return retry, "ok"
+    logger.warning("advice: guardrail дважды не пройден — fallback на items §8.2")
+    fallback = " ".join(f"{i.title}: {i.detail}" for i in items) or _NO_DATA_ANSWER
+    return fallback[:2000], "fallback"
+
+
+#: фоновая очередь генерации (§9.4): сериализация по AI_ADVICE_PARALLELISM
+_pool: ThreadPoolExecutor | None = None
+_pool_lock = threading.Lock()
+
+
+def _worker_pool() -> ThreadPoolExecutor:
+    global _pool
+    with _pool_lock:
+        if _pool is None:
+            _pool = ThreadPoolExecutor(
+                max_workers=max(1, get_settings().ai_advice_parallelism),
+                thread_name_prefix="ai-advice",
+            )
+        return _pool
+
+
+def queue_advice(field_id: uuid.UUID, *, today: date | None = None) -> None:
+    """Поставить генерацию рекомендации в фоновую очередь (§9.4).
+
+    Ошибки не бросаются: worker всё логирует (§9.5 — очередь продолжает
+    остальные поля).
+    """
+    _worker_pool().submit(_run_advice, field_id, today)
+
+
+def _run_advice(field_id: uuid.UUID, today: date | None) -> None:
+    try:
+        generate_advice(field_id, today=today)
+    except Exception:
+        logger.warning("advice: генерация для поля %s не удалась", field_id, exc_info=True)
+
+
+__all__ = [
+    "ADVICE_LLM_TIMEOUT_SECONDS",
+    "ADVICE_PROMPT",
+    "AdviceContext",
+    "MAX_IMAGES",
+    "build_advice_context",
+    "generate_advice",
+    "queue_advice",
+]
