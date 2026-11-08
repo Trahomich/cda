@@ -360,7 +360,11 @@ def _checked_summary(
     found = set(_NUM_RE.findall(summary.replace(",", ".")))
     if found <= allowed:
         return summary
-    logger.warning("insights: LLM-сводка с посторонними числами — fallback на items")
+    logger.warning(
+        "insights: LLM-сводка с посторонними числами — fallback на items; "
+        "отброшенная сводка: %.300s",
+        summary,
+    )
     fallback = " ".join(f"{item.title}: {item.detail}" for item in items)
     return fallback[:2000]
 
