@@ -10,7 +10,6 @@ import GddChart from '@/components/GddChart.vue'
 import WeatherHistoryChart from '@/components/WeatherHistoryChart.vue'
 import {
   getFields,
-  getFieldGdd,
   getFieldWeather,
   getWeatherForecast,
   getWeatherGdd,
