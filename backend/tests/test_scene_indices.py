@@ -269,7 +269,9 @@ class TestIndicesBackfill:
 
 
 def _api_headers(client, db_session) -> dict:
-    make_user(db_session, login="idx_agro", role="agronomist")
+    from app.models.auth import UserRole
+
+    make_user(db_session, login="idx_agro", role=UserRole.AGRONOMIST, password="secret123")
     return auth_header(client, "idx_agro", "secret123")
 
 
