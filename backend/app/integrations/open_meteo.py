@@ -40,14 +40,21 @@ HAZARD_FROST_T = 0.0
 HAZARD_HEAVY_RAIN_MM = 15.0
 HAZARD_WIND_MS = 15.0
 
+# Метрики суточные, общие для forecast- и archive-API (05 §2, #126).
 _DAILY_METRICS = (
     "temperature_2m_max",
     "temperature_2m_min",
     "precipitation_sum",
     "wind_speed_10m_max",
     "relative_humidity_2m_mean",
-    "precipitation_probability_max",
+    "cloud_cover_mean",
+    "snowfall_sum",
+    "snow_depth_max",
+    "precipitation_hours",
 )
+
+# Вероятность осадков отдаёт только forecast-API (в архиве её нет).
+_FORECAST_ONLY_METRICS = ("precipitation_probability_max",)
 
 CentroidLookup = Callable[[str], tuple[float, float] | None]
 """field_id (UUID строкой) -> (longitude, latitude) или None, если центр не найден."""
