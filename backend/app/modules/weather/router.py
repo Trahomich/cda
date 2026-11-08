@@ -51,6 +51,8 @@ from app.modules.weather.schemas import (
     HazardItem,
     HistoryListResponse,
     SourceMeta,
+    WeatherMapItem,
+    WeatherMapResponse,
     WindowDayItem,
     WindowResponse,
     WindowsListResponse,
