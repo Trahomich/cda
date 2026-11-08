@@ -263,7 +263,7 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
     )
     bbox = tuple(round(v, 7) for v in (west, south, east, north))
 
-    return iqr, VraZones(
+    return VraZones(
         captured_at=scene.captured_at,
         iqr_ndvi=iqr,
         zones=zones,
@@ -271,6 +271,7 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
         width=nir_d.shape[1],
         height=nir_d.shape[0],
         bbox=bbox,  # type: ignore[arg-type]
+        spatial_spread=spread,
     )
 
 
