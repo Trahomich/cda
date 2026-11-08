@@ -65,10 +65,12 @@ class VraZoneItem(BaseModel):
 
 
 class VraZonesResponse(BaseModel):
-    """API-52: зоны дифференцированного внесения по пиковым NDVI-сценам."""
+    """API-52: зоны дифференцированного внесения по пиковым сценам."""
 
     field_id: uuid.UUID
     date: Date = Field(description="дата пиковой сцены, по которой построены зоны")
+    #: индекс зон (§7.7 #129): ndvi | ndre; метрики ниже — по выбранному индексу
+    index: str = "ndvi"
     iqr_ndvi: float
     #: p90−p10 средних NDVI ячеек сетки ~20×20 пиковой сцены (§7.4 v1.7)
     spatial_spread: float
