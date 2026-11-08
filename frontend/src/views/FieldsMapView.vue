@@ -236,7 +236,15 @@ onMounted(async () => {
   if (!mapEl.value) return
   // На узких экранах легенда по умолчанию сложена (E-01: место под картой важнее).
   legendOpen.value = window.innerWidth >= 600
-  map = L.map(mapEl.value, { zoomControl: true }).setView([48.731, 42.0], 12)
+  // Без сохранённого вида НЕ задаём произвольную точку: вид даст fitBounds
+  // по полям (до того — серая канва под оверлеем «Загружаем поля…»)
+  map = L.map(mapEl.value, { zoomControl: true })
+  const savedView = loadMapView()
+  if (savedView) {
+    map.setView(savedView.center, savedView.zoom)
+    mapHasView = true
+  }
+  map.on('moveend', saveMapView)
   // Тайлы OSM (провайдер офлайн-тайлов выбирается до MVP, 10-mobile-pwa §7).
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
