@@ -74,7 +74,7 @@ const layout = computed(() => {
     .reverse()
     .map((p, ri) => {
       const i = n - 1 - ri
-      return `${x(i, n).toFixed(1)},${y(p.index_min ?? p.ndvi).toFixed(1)}}`
+      return `${x(i, n).toFixed(1)},${y(p.index_min ?? p.ndvi).toFixed(1)}`
     })
 
   return {
