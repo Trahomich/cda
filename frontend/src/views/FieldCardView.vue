@@ -866,7 +866,7 @@ function fmtNum(v: number, digits = 1): string {
         <!-- NDVI -->
         <div class="card360__block">
           <h2 class="card360__block-title">
-            NDVI-таймлайн (сезон {{ currentCycle?.year ?? '—' }})
+            NDVI-таймлайн (сезон {{ selectedYear ?? currentCycle?.year ?? '—' }})
           </h2>
           <!-- Пустое состояние («снимков нет») рендерит сам компонент -->
           <Skeleton
