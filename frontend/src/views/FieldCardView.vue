@@ -1072,7 +1072,9 @@ function fmtNum(v: number, digits = 1): string {
                 class="card360__advice-toggle"
                 @click="adviceHistoryOpen = !adviceHistoryOpen"
               >
-                История рекомендаций {{ adviceHistory.length ? `(${adviceTotal})` : '' }}
+                История рекомендаций{{
+                  adviceHistory.length ? ` (${adviceHistory.length})` : ''
+                }}
                 {{ adviceHistoryOpen ? '▴' : '▾' }}
               </button>
               <ul
