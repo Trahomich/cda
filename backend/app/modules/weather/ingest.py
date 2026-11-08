@@ -378,6 +378,42 @@ class WeatherIngest:
         return report_result
 
 
+    def backfill_history(self, db: Session, date_from: date, date_to: date) -> IngestReport:
+        """Полный бэкфилл истории по всем активным полям (#126, docs/06 §7.5).
+
+        Одно обращение к архиву на поле за весь период (start_date/end_date),
+        затем upsert по UQ — идемпотентно, повторный запуск ничего не портит.
+        Пропуски за последние сутки закрывает джоба ingest_history_gaps.
+        """
+        report = IngestReportBuilder()
+        for field_id, name in self.active_fields(db):
+            try:
+                items, error = self._fetch_with_retries(
+                    lambda fid=field_id: self._adapter.fetch_history(fid, date_from, date_to)
+                )
+            except DataGapError as exc:
+                report.skip(name, str(exc))
+                continue
+            except DataQualityError as exc:
+                report.fail(name, f"качество данных: {exc}")
+                continue
+            if error is not None:
+                report.fail(name, error)
+                continue
+            saved = self.save_observations(db, items)
+            db.commit()
+            logger.info("погода: бэкфилл %s — upsert %d фактов", name, saved)
+            report.ok()
+        report_result = report.build()
+        self.log_source(
+            db,
+            self._adapter.source_id,
+            report_result.status,
+            "; ".join(report_result.failed) or None,
+        )
+        return report_result
+
+
 class IngestReportBuilder:
     """Накопитель итога прогона (внутренний для WeatherIngest)."""
 
