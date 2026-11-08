@@ -86,6 +86,7 @@ class NdviReport:
 
     rows: int = 0  # обработано строк каталога
     scenes: int = 0  # записано сцен dat_satellite_scene
+    index_scenes: int = 0  # сцен индексов §7.7 (#128) — все индексы одной сцены
     cloud_skipped: int = 0  # честная облачность > 60 — не сохранена (05 §5 п.2)
     gaps: int = 0  # DataGap — строка failed (данных нет, повтор бессмыслен)
     failed: int = 0  # ошибки расчёта (DataQualityError и пр.) — failed
