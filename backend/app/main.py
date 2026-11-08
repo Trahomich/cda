@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
 
         subscribe_advice()
+        advice_unsub = unsubscribe_advice
 
         weather = create_scheduler(get_settings())
         if weather is not None:
