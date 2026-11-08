@@ -490,6 +490,15 @@ async function recalcAdvice(): Promise<void> {
   }
 }
 
+/** #148: единая кнопка «Пересчитать» блока ассистента: пересчитывает
+ *  рекомендацию (POST API-55 202 queued + поллинг) и перезитчивает
+ *  выводы (GET API-51; отдельного POST-пересчёта выводов API не имеет —
+ *  детекторы считаются событийно, GET отдаёт актуальное/кэш). */
+async function recalcAssistant(): Promise<void> {
+  await recalcAdvice()
+  void loadInsights()
+}
+
 async function loadAdviceHistory(): Promise<void> {
   try {
     const page = await getFieldAdviceHistory(fieldId, {
