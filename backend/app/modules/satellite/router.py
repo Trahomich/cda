@@ -114,6 +114,25 @@ def field_ndvi(
     limit: int = Query(default=50, ge=1, le=366),
     offset: int = Query(default=0, ge=0),
 ) -> NdviTimelineResponse:
+    return _field_index_timeline(
+        field_id, db, settings,
+        index=index, year=year, date_from=date_from, date_to=date_to,
+        limit=limit, offset=offset,
+    )
+
+
+def _field_index_timeline(
+    field_id: uuid.UUID,
+    db: Session,
+    settings,
+    *,
+    index: str,
+    year: int | None,
+    date_from: date | None,
+    date_to: date | None,
+    limit: int,
+    offset: int,
+) -> NdviTimelineResponse:
     field = _get_field(db, field_id)
     if index not in INDICES:
         raise AppError(
