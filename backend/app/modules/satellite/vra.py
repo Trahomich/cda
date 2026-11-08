@@ -143,23 +143,34 @@ def _scene_assets(db: Session, field_id: uuid.UUID, captured_at: date) -> dict:
 
 
 def compute_vra(db: Session, field: Field, scene: SatelliteScene) -> VraZones:
-    """Расчёт зон по COG сцены (§7.4): окно как в §7.3; однородность — 422."""
-    iqr, zones = _analyze_scene(db, field, scene)
-    if zones is None:
-        raise _uniform_error(iqr, (scene.captured_at,))
-    return zones
+    """Расчёт зон по COG сцены (§7.4 v1.7): окно как в §7.3, зоны — всегда."""
+    return _analyze_scene(db, field, scene)
 
 
-def _uniform_error(iqr: float, peak_dates: tuple[date, ...] | list[date]) -> AppError:
-    """422 vra_uniform_field: IQR ниже порога на пиковых сценах (§7.4 v1.4)."""
-    dates_str = ", ".join(d.isoformat() for d in peak_dates)
-    return AppError(
-        f"Поле однородно по пиковым сценам ({dates_str}): IQR NDVI < {VRA_MIN_IQR} "
-        "— зоны внесения не строятся",
-        code="vra_uniform_field",
-        title="Поле однородно",
-        status_code=422,
-    )
+def _spatial_spread(ndvi: np.ndarray, valid: np.ndarray) -> float:
+    """p90−p10 средних ячеек сетки ~SPREAD_GRID×SPREAD_GRID (§7.4 v1.7).
+
+    Ячейка учитывается при ≥ SPREAD_CELL_MIN_PX валидных пикселей; меньше
+    двух валидных ячеек — 0.0 (пространственной информации нет). Мелкие
+    пятна ~1 га глобальный IQR не видит, средние ячеек — видят.
+    """
+    h, w = ndvi.shape
+    ny, nx = min(SPREAD_GRID, h), min(SPREAD_GRID, w)
+    if ny < 1 or nx < 1:
+        return 0.0
+    y_bounds = np.linspace(0, h, ny + 1).astype(int)
+    x_bounds = np.linspace(0, w, nx + 1).astype(int)
+    means: list[float] = []
+    for i in range(ny):
+        for j in range(nx):
+            cell = (slice(y_bounds[i], y_bounds[i + 1]), slice(x_bounds[j], x_bounds[j + 1]))
+            cell_valid = valid[cell]
+            if int(cell_valid.sum()) < SPREAD_CELL_MIN_PX:
+                continue
+            means.append(float(ndvi[cell][cell_valid].mean()))
+    if len(means) < 2:
+        return 0.0
+    return round(float(np.percentile(means, 90) - np.percentile(means, 10)), 3)
 
 
 def _analyze_scene(
