@@ -52,6 +52,7 @@ function logout() {
         v-for="item in visibleNav()"
         :key="item.label"
         class="cabinet__nav"
+        :class="{ 'cabinet__nav--ready': isReady(item) }"
         :to="item.to"
       >
         {{ item.label }}
