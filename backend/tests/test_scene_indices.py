@@ -278,9 +278,7 @@ def _api_headers(client, db_session) -> dict:
 class TestIndexApi:
     def test_path_form_all_indices(self, client, db_session, band_rasters) -> None:
         """/fields/{id}/{index} отдаёт таймлайн каждого индекса §7.7."""
-        from tests.test_scene_indices import TestIndicesBackfill
-
-        TestIndicesBackfill._seed(db_session, band_rasters["assets"])
+        self._seed(db_session, band_rasters["assets"])
         headers = _api_headers(client, db_session)
         field_id = db_session.scalar(db_text("SELECT id FROM dat_field LIMIT 1"))
         for name in EXTRA_INDICES:
@@ -303,9 +301,7 @@ class TestIndexApi:
         assert resp.json()["code"] == "unknown_index"
 
     def test_year_filter(self, client, db_session, band_rasters) -> None:
-        from tests.test_scene_indices import TestIndicesBackfill
-
-        TestIndicesBackfill._seed(db_session, band_rasters["assets"])
+        self._seed(db_session, band_rasters["assets"])
         run_indices_backfill(db_session, render_dir=None)
         headers = _api_headers(client, db_session)
         field_id = db_session.scalar(db_text("SELECT id FROM dat_field LIMIT 1"))
