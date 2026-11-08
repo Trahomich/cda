@@ -152,9 +152,13 @@ def contour_mask(
 
 
 __all__ = [
-    "INDICES",
+    "FORMULA_INDICES",
     "INDEX_BANDS",
+    "INDEX_BOUNDS",
+    "INDICES",
     "SAVI_L",
+    "compute_bsi_array",
+    "compute_evi_array",
     "compute_index_array",
     "compute_ndwi_array",
     "contour_mask",
