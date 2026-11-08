@@ -572,8 +572,8 @@ __all__ = [
     "PROMPT",
     "VISION_PROMPT",
     "VISION_MAX_IMAGES",
-    "strip_markdown",
     "build_items",
     "get_insights",
     "refresh_insights",
+    "strip_markdown",
 ]
