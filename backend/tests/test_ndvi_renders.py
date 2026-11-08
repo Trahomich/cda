@@ -301,8 +301,9 @@ class TestLegendHelpers:
         assert np.all(rgb[y0, xs[-1]] == PALETTE[-1][1])
         assert xs[-1] - xs[0] > 20  # бар широкий
 
-        # подписи — светлый текст (непрозрачные пиксели ниже бара)
-        text_rows = rows[rows > y0]
+        # подписи — светлый текст (непрозрачные пиксели ниже бара:
+        # бар занимает 3 строки с y0, текст — начиная с y0 + 4)
+        text_rows = rows[rows > y0 + 3]
         assert text_rows.size > 0
         ty = text_rows.min()
         txs = np.where(alpha[ty] == 255)[0]
