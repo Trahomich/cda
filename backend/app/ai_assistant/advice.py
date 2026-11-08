@@ -430,6 +430,8 @@ def _numbers_within(text: str, allowed_nums: set[str], allowed_pairs: set[tuple[
             continue
         if _is_dot_date(token, allowed_pairs):
             continue
+        if _is_day_component(token, allowed_pairs):
+            continue
         return False
     return True
 
