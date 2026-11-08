@@ -36,16 +36,70 @@ test('карточка поля: зоны дифвнесения — карта 
   await expect(layer).toHaveAttribute('href', /^blob:/)
   await expect(vraBlock.locator('polygon.card360__vra-contour')).toBeVisible()
 
-  // Таблица: 3 зоны с площадью, NDVI и дозой (база 75 → 86.3 / 75 / 63.8).
+  // Таблица (компактная, #141): заголовки №/га/NDVI/кг/га, 3 зоны;
+  // подписи зон — строкой-легендой под таблицей.
   const rows = vraBlock.locator('.card360__vra-table tbody tr')
   await expect(rows).toHaveCount(3)
-  await expect(rows.nth(0)).toContainText('пониженное развитие')
-  await expect(rows.nth(1)).toContainText('среднее развитие')
-  await expect(rows.nth(2)).toContainText('повышенное развитие')
-  await expect(rows.nth(0).locator('td').nth(3)).toContainText('86,3 кг/га')
-  await expect(rows.nth(1).locator('td').nth(3)).toContainText('75 кг/га')
-  await expect(rows.nth(2).locator('td').nth(3)).toContainText('63,8 кг/га')
+  const heads = vraBlock.locator('.card360__vra-table thead th')
+  await expect(heads.nth(0)).toHaveText('№')
+  await expect(heads.nth(1)).toHaveText('га')
+  await expect(heads.nth(2)).toHaveText('NDVI')
+  await expect(heads.nth(3)).toHaveText('кг/га')
+  await expect(rows.nth(0).locator('td').nth(0)).toHaveText('1')
+  await expect(rows.nth(1).locator('td').nth(0)).toHaveText('2')
+  await expect(rows.nth(2).locator('td').nth(0)).toHaveText('3')
+  await expect(vraBlock.locator('.card360__vra-legend')).toContainText('пониженное')
+  await expect(rows.nth(0).locator('td').nth(3)).toContainText('86,3')
+  await expect(rows.nth(1).locator('td').nth(3)).toContainText('75')
+  await expect(rows.nth(2).locator('td').nth(3)).toContainText('63,8')
   await expect(vraBlock).toContainText('Дозы — рекомендация, не план')
+})
+
+test('карточка поля: карта дифвнесения — лайтбокс с зумом (§7.4, #141)', async ({ page }) => {
+  await page.goto(`/fields/${FIRST_FIELD}`)
+  const vraBlock = page.locator('#vra')
+  await expect(vraBlock).toBeVisible({ timeout: 15_000 })
+  await expect(
+    vraBlock.locator('svg.card360__vra-map image.card360__vra-layer'),
+  ).toBeVisible({ timeout: 10_000 })
+
+  // Клик по превью — полноэкранный лайтбокс с кнопками зума.
+  await vraBlock.locator('.card360__vra-map-btn').click()
+  const lb = page.locator('.vra-lb')
+  await expect(lb).toBeVisible()
+  await expect(lb.locator('img.vra-lb__img')).toBeVisible()
+  await expect(lb).toContainText('Зоны дифвнесения · сцена')
+
+  // Зум кнопками, сброс 1:1.
+  await lb.getByLabel('Увеличить').click()
+  await expect(lb.locator('.vra-lb__scale')).toHaveText('130 %')
+  await lb.getByLabel('Уменьшить').click()
+  await lb.getByRole('button', { name: '1:1' }).click()
+  await expect(lb.locator('.vra-lb__scale')).toHaveText('100 %')
+
+  // Esc закрывает.
+  await page.keyboard.press('Escape')
+  await expect(lb).toHaveCount(0)
+
+  // Повторное открытие и закрытие кликом по фону.
+  await vraBlock.locator('.card360__vra-map-btn').click()
+  await expect(page.locator('.vra-lb')).toBeVisible()
+  await page.locator('.vra-lb').click({ position: { x: 8, y: 200 } })
+  await expect(page.locator('.vra-lb')).toHaveCount(0)
+})
+
+test('карточка поля: таблица дифвнесения без скролла на 360px (#141)', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 })
+  await page.goto(`/fields/${FIRST_FIELD}`)
+  const vraBlock = page.locator('#vra')
+  await expect(vraBlock.locator('.card360__vra-table tbody tr')).toHaveCount(3, {
+    timeout: 15_000,
+  })
+  const overflow = await vraBlock.locator('.card360__vra-table').evaluate((el) => ({
+    tableW: el.scrollWidth,
+    boxW: el.clientWidth,
+  }))
+  expect(overflow.tableW).toBeLessThanOrEqual(overflow.boxW)
 })
 
 test('карточка поля: бывшее «однородное» поле — зоны строятся всегда (§7.4 v1.7)', async ({
