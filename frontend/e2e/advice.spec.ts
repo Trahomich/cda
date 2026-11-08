@@ -1,7 +1,8 @@
-// E2E #137 (эпик #118): блок «Что делать сейчас» в карточке поля —
-// последняя AI-рекомендация (API-55), принудительный пересчёт (POST 202
-// queued → поллинг GET), пустое состояние «Рассчитать», история с
-// offset-пагинацией (API-56). Мок-мир: поле 1 — 22 записи, поле 3 — пусто.
+// E2E #137/#148: подраздел «Что делать сейчас» объединённого блока
+// ассистента в карточке поля — последняя AI-рекомендация (API-55),
+// принудительный пересчёт (POST 202 queued → поллинг GET), пустое
+// состояние «Рассчитать», история с offset-пагинацией (API-56).
+// Мок-мир: поле 1 — 22 записи, поле 3 — пусто.
 import { expect, test } from '@playwright/test'
 
 const FIELD1 = '0000000a-0000-4000-8000-000000000001'
@@ -14,9 +15,7 @@ test.beforeEach(async ({ page }) => {
 })
 
 function adviceBlock(page: import('@playwright/test').Page) {
-  return page.locator('.card360__block', {
-    has: page.locator('.card360__block-title', { hasText: 'Что делать сейчас' }),
-  })
+  return page.locator('.card360__block--insights')
 }
 
 test('рекомендация: последняя запись с датой и пересчётом', async ({ page }) => {
@@ -27,7 +26,7 @@ test('рекомендация: последняя запись с датой и
   await expect(block.locator('.card360__advice-text')).toContainText(/подкормк|обследов|окн|вегетация|обработку/, {
     timeout: 10_000,
   })
-  await expect(block.locator('.card360__insights-meta')).toContainText('Рассчитано')
+  await expect(block.locator('.card360__advice-meta')).toContainText('Рассчитано')
   await expect(block.locator('.card360__advice-btn')).toHaveText('Пересчитать')
 })
 
