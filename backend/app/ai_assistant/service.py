@@ -492,9 +492,7 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
             prompt = PROMPT
             images: list[bytes] = []
             settings = get_settings()
-            if settings.llm_provider.strip().lower() == "anthropic" and llm.llm_enabled(
-                settings
-            ):
+            if settings.llm_provider.strip().lower() == "anthropic" and llm.llm_enabled(settings):
                 renders = _vision_renders(field_id, day, peak_day)
                 if renders:
                     images = [png for _, png in renders]

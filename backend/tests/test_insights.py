@@ -733,9 +733,7 @@ class TestVisionRenders117:
         make_scene(db_session, fid, TODAY, 0.50)  # ndvi_drop → items непустые
         db_session.commit()
         TestBackgroundFix101._fake_redis(monkeypatch)
-        monkeypatch.setattr(
-            service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
-        )
+        monkeypatch.setattr(service, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
         db_session.close()
         return fid
 
@@ -761,8 +759,9 @@ class TestVisionRenders117:
         service.refresh_insights(fid, TODAY)
 
         assert calls["prompt"] == service.VISION_PROMPT
-        assert f"Приложены рендеры поля (изображения): ndvi за {TODAY.isoformat()}" in (
-            calls["context"]
+        assert (
+            f"Приложены рендеры поля (изображения): ndvi за {TODAY.isoformat()}"
+            in (calls["context"])
         )
         assert "truecolor" in calls["context"] and "ndwi" in calls["context"]
         images = calls["kwargs"]["images"]
@@ -786,9 +785,7 @@ class TestVisionRenders117:
             spatial_spread = 0.1
             zones = []
 
-        monkeypatch.setattr(
-            service.vra, "vra_zones", lambda db, field, *, year=None: _FakeZones()
-        )
+        monkeypatch.setattr(service.vra, "vra_zones", lambda db, field, *, year=None: _FakeZones())
         for day, variants in ((TODAY, ("ndvi", "truecolor", "ndwi")), (peak_day, ("ndvi",))):
             for variant in variants:
                 path = render_path(tmp_path, fid, variant, day)
@@ -808,7 +805,8 @@ class TestVisionRenders117:
         from app.ai_assistant import service
 
         settings = type(service.get_settings())(
-            llm_provider="ollama", ollama_base_url="http://ollama:11434",
+            llm_provider="ollama",
+            ollama_base_url="http://ollama:11434",
             ndvi_render_dir=str(tmp_path),
         )
         monkeypatch.setattr(service, "get_settings", lambda: settings)
