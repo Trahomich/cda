@@ -389,6 +389,7 @@ class TestRenderLegend:
     def test_all_variants_same_canvas_with_strip(self, color_rasters):
         """Легенда под полем (#385): все варианты одной канвы = width/height,
         канва ≤ MAX_SIDE_PX, панель легенды — в нижних ~10% канвы."""
+        import rasterio
         from rasterio.io import MemoryFile
 
         contour = wgs_box(300100, 5760100, 301900, 5760900)
