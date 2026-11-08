@@ -286,9 +286,17 @@ class TestAdviceTriggers:
         assert advice_scheduler.create_advice_scheduler(get_settings()) is None
 
     def test_scheduler_cron_for_anthropic(self, monkeypatch):
-        """Anthropic с ключом — cron на AI_ADVICE_DAILY_AT, локальное время."""
+        """Anthropic с ключом — cron на AI_ADVICE_DAILY_AT, локальное время.
+
+        Redis в тестовом окружении недоступен — замокан, срабатывает
+        fallback на in-memory jobstore (как при недоступном Redis).
+        """
         from app.core.config import get_settings
 
+        def _no_redis(**_kwargs):
+            raise RuntimeError("нет Redis в тесте")
+
+        monkeypatch.setattr(advice_scheduler, "RedisJobStore", _no_redis)
         settings = get_settings().model_copy(
             update={
                 "llm_provider": "anthropic",
