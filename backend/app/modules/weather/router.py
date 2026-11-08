@@ -6,6 +6,8 @@
 - API-29 GET /weather/forecast?field_id&days — прогноз (кэш 3 ч на приёме);
 - GET /weather/history?field_id&date_from&date_to — ежедневная история фактов,
   включая облачность/снег/часы осадков (#126, карточка погоды);
+- API-58 GET /weather/gdd?field_id&year — накопительная GDD-кривая с 1 января
+  года (base 5 °C, §7.8, #132);
 - GET /weather/windows?operation_type&field_id — окно операции по ref_weather_rule.
 
 Права (07-ux §5): группа «weather» — все 5 ролей (E-06, E-10).
