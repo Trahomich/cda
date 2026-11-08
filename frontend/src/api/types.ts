@@ -530,6 +530,25 @@ export interface WeatherWindowsPlanned {
   hint: string | null
 }
 
+/* ─── AI-рекомендации «что делать сейчас» (API-55/56, docs/09 §9.3) ─── */
+
+/** AI-рекомендация поля — GET /fields/{id}/ai/advice (API-55); 404
+ *  advice_not_found — рекомендации ещё нет (пустое состояние блока). */
+export interface FieldAdvice {
+  field_id: string
+  created_at: string
+  advice_date: string
+  model: string
+  provider: 'anthropic' | 'ollama'
+  answer: string
+  status: 'ok' | 'fallback' | 'empty'
+}
+
+/** Ответ GET /fields/{id}/ai/advice/history (API-56): только items, desc. */
+export interface FieldAdviceHistory {
+  items: FieldAdvice[]
+}
+
 /* ─── Источники данных (API-28, экран E-14; ref_source, 06 §3) ─── */
 
 /** Статус адаптера: ok / degraded / error (05 §6). */
