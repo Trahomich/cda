@@ -589,6 +589,7 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
 
 
 __all__ = [
+    "INSIGHTS_CACHE_VERSION",
     "INSIGHTS_TTL_SECONDS",
     "LLM_BACKGROUND_TIMEOUT_SECONDS",
     "LLM_NUM_PREDICT",
