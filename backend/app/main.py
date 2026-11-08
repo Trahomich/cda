@@ -60,7 +60,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
     if alert_engine is not None:
         alert_engine.unsubscribe()
-    unsubscribe_advice()
+    if advice_unsub is not None:
+        advice_unsub()
     for scheduler in schedulers:
         scheduler.shutdown(wait=False)
 
