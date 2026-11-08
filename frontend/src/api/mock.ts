@@ -1002,7 +1002,9 @@ function forecastDays(n: number): WeatherForecastDay[] {
     { min: 8 + (n % 3), max: 19, precip: 0, prob: 10, wind: 3.2, hum: 62 },
     { min: 9 + (n % 3), max: 21, precip: 0, prob: 15, wind: 2.8, hum: 58 },
     { min: 10, max: 23, precip: 2.5, prob: 60, wind: 4.6, hum: 72 },
-    { min: 11, max: 20, precip: 7.8, prob: 90, wind: 7.4, hum: 88 },
+    // день 4 — все окна уже закрыты (осадки/вероятность/влажность), поэтому
+    // «опасный» сценарий #139 (заморозок + ветер) не меняет окна планов
+    { min: -3, max: 20, precip: 7.8, prob: 90, wind: 17.4, hum: 88 },
     { min: 10, max: 17, precip: 4.1, prob: 70, wind: 5.1, hum: 76 },
     { min: 7, max: 15, precip: 0.5, prob: 30, wind: 3.0, hum: 60 },
     { min: 6, max: 16, precip: 0, prob: 5, wind: 2.2 + (n % 2) * 0.4, hum: 54 },
@@ -1015,6 +1017,12 @@ function forecastDays(n: number): WeatherForecastDay[] {
     precip_prob_pct: d.prob,
     wind_ms: d.wind,
     humidity_pct: d.hum,
+    hazards: i === 3
+      ? [
+          { code: 'frost', severity: 'alert', text: 'Заморозки: ночью до −3 °C.' },
+          { code: 'high_wind', severity: 'warn', text: 'Сильный ветер: порывы до 17 м/с.' },
+        ]
+      : [],
   }))
 }
 
