@@ -48,13 +48,23 @@ test('карточка поля: зоны дифвнесения — карта 
   await expect(vraBlock).toContainText('Дозы — рекомендация, не план')
 })
 
-test('карточка поля: однородное поле — пометка вместо зон (§7.4)', async ({ page }) => {
+test('карточка поля: бывшее «однородное» поле — зоны строятся всегда (§7.4 v1.7)', async ({
+  page,
+}) => {
   await page.goto(`/fields/${UNIFORM_FIELD}`)
 
+  // Ворота однородности удалены (#364): блок зон всегда с картой и таблицей,
+  // метрики (IQR, пространственная) информационные — никакого «однородно».
   const vraBlock = page.locator('#vra')
   await expect(vraBlock).toBeVisible({ timeout: 15_000 })
-  await expect(vraBlock.locator('.card360__vra-table')).toHaveCount(0)
-  await expect(vraBlock).toContainText('Поле однородно по NDVI')
+  await expect(vraBlock.locator('.card360__vra-table tbody tr')).toHaveCount(3, {
+    timeout: 15_000,
+  })
+  await expect(vraBlock.locator('svg.card360__vra-map image.card360__vra-layer')).toBeVisible()
+  await expect(vraBlock.locator('.card360__muted').first()).toContainText(
+    'пространственная',
+  )
+  await expect(vraBlock).not.toContainText('однородно')
 })
 
 test('карточка поля: прогноз урожайности — число и интервал (§7.4)', async ({ page }) => {
