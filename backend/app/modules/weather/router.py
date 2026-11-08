@@ -1,9 +1,11 @@
-"""API модуля погоды: API-07, API-29, погодные окна RULE-AGRO-09 (MVP-6).
+"""API модуля погоды: API-07, API-29, история фактов (#126), окна RULE-AGRO-09.
 
-Эндпоинты (docs/06-data-api.md §5):
+Эндпоинты (docs/06-data-api.md §5, §7.5):
 - API-07 GET /fields/{field_id}/weather — факты (последние 14 сут) + прогноз 7 сут
   + meta источника (статус адаптера, stale-метка по issued_at > 12 ч, 05 §5);
 - API-29 GET /weather/forecast?field_id&days — прогноз (кэш 3 ч на приёме);
+- GET /weather/history?field_id&date_from&date_to — ежедневная история фактов,
+  включая облачность/снег/часы осадков (#126, карточка погоды);
 - GET /weather/windows?operation_type&field_id — окно операции по ref_weather_rule.
 
 Права (07-ux §5): группа «weather» — все 5 ролей (E-06, E-10).
