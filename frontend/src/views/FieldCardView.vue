@@ -269,8 +269,9 @@ async function loadLayer() {
     if (prev) URL.revokeObjectURL(prev.url)
     return
   }
+  // Индексные режимы (§7.7) — вариант рендера = имя индекса (API-50).
   const mode = layerMode.value
-  const variant: 'ndvi' | 'truecolor' = mode === 'truecolor' ? 'truecolor' : 'ndvi'
+  const variant: 'truecolor' | IndexLayerKey = mode === 'truecolor' ? 'truecolor' : mode
   const r = await getNdviRender(fieldId, renderDate.value, variant)
   if (token !== layerToken) {
     // Пользователь успел переключить режим/дату — этот ответ устарел.
