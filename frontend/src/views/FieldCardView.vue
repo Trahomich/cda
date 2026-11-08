@@ -627,30 +627,10 @@ function fmtNum(v: number, digits = 1): string {
       </button>
     </header>
 
-    <!-- Переключатель сезонов (API-54, §7.5): все блоки карточки следуют
-         выбранному сезону; текущий помечен, при одном сезоне не показываем -->
-    <nav
-      v-if="seasons.length > 1"
-      class="card360__seasons"
-      aria-label="Сезон данных карточки"
-    >
-      <span class="card360__seasons-label">Сезон:</span>
-      <button
-        v-for="s in seasons"
-        :key="s.year"
-        type="button"
-        class="card360__season-btn"
-        :class="{ 'card360__season-btn--active': s.year === selectedYear }"
-        :aria-pressed="s.year === selectedYear"
-        @click="selectSeason(s.year)"
-      >
-        {{ s.year }}<span
-          v-if="s.is_current"
-          class="card360__season-mark"
-        >· текущий</span>
-      </button>
-    </nav>
-
+    <!-- Переключение сезонов (API-54, §7.5) — кликами по годам ленты
+         «Севооборот по годам» под снимками поля (фидбек user, #122);
+         отдельная строка-переключатель убрана. Все блоки карточки следуют
+         выбранному сезону. -->
     <p
       v-if="coreFailed"
       class="card360__state card360__state--error"
