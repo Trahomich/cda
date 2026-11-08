@@ -23,6 +23,7 @@ from rasterio.enums import Resampling
 from rasterio.warp import reproject, transform_geom
 from rasterio.windows import Window, from_bounds
 from shapely.geometry import shape
+from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
