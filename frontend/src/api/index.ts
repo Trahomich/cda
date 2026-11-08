@@ -549,7 +549,7 @@ export async function getWeatherWindowsPlanned(
   fieldId: string,
 ): Promise<WeatherWindowsPlanned> {
   const raw = await apiClient.request<WindowsPlannedResponse>('/weather/windows', {
-    query: { field_id: fieldId, only_planned: true },
+    query: { field_id: fieldId, only_planned: 'true' },
   })
   const items: WeatherWindowItem[] = raw.items.map((it) => ({
     operation_type: it.operation_type as WindowOperationType,
