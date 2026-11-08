@@ -386,8 +386,8 @@ class TestRenderLegend:
             assert not alpha[-alpha.shape[0] // 8 :].any(), variant
 
     def test_all_variants_same_canvas_with_strip(self, color_rasters):
-        """Легенда под полем (#385): все варианты одной канвы, размеры —
-        X-Image-Size, канва выше растра на полосу, bbox расширен на юг."""
+        """Легенда под полем (#385): все варианты одной канвы = width/height,
+        канва ≤ MAX_SIDE_PX, панель легенды — в нижних ~10% канвы."""
         from rasterio.io import MemoryFile
 
         contour = wgs_box(300100, 5760100, 301900, 5760900)
@@ -397,11 +397,12 @@ class TestRenderLegend:
             with MemoryFile(render.png[variant]) as mem:
                 with rasterio.open(mem) as ds:
                     assert (ds.width, ds.height) == (render.width, render.height)
-        # канва ≤ MAX_SIDE_PX и выше растрового окна на полосу легенды
         assert max(render.width, render.height) <= MAX_SIDE_PX
-        assert render.height > max(render.width, 1) * 0.9  # полоса добавлена
-        strip = render.height - round(render.height / 1.08)  # ≈8% высоты
-        assert 0 < strip <= 96
+        # панель легенды ndvi целиком в нижней части канвы (полоса под полем)
+        _, alpha = self._read_png(render.png["ndvi"])
+        semi_rows = np.where(((alpha > 0) & (alpha < 255)).any(axis=1))[0]
+        assert semi_rows.size > 0
+        assert semi_rows.min() > alpha.shape[0] * 0.85
 
     def test_bbox_extended_for_legend_strip(self, color_rasters):
         """Юг bbox расширен пропорционально полосе: равномерное отображение
