@@ -687,6 +687,10 @@ async function loadHistory() {
   }
 }
 
+/** Флаг: NDVI загружен без ?year (год сезона ещё не был известен) —
+ *  перезапросить, когда loadSeasons определит текущий сезон (#495). */
+const ndviNeedsSeasonYear = ref(false)
+
 async function loadNdvi() {
   const token = seasonToken
   ndviLoading.value = true
@@ -695,6 +699,7 @@ async function loadNdvi() {
     // Текущему сезону — явный ?year: без него API-06 отдаёт последние сцены
     // ВСЕХ лет (бэкфилл 2023+), и график «текущего сезона» мешает годы (#495).
     const year = seasonQueryYear.value ?? currentSeasonYear.value ?? undefined
+    ndviNeedsSeasonYear.value = year === undefined
     const points = await getFieldNdvi(fieldId, year)
     if (token !== seasonToken) return // сезон уже переключили — ответ устарел
     // API-06 отдаёт desc (свежая первой); фронту нужен asc: график слева-направо
