@@ -7,7 +7,9 @@ import paramiko
 
 import os
 HOST, USER = "192.168.99.201", "cda"
-KEY = os.path.join(os.path.dirname(os.path.abspath(__file__)), "id_ed25519")
+# Приватный ключ НЕ хранится в репозитории (репо публичное!).
+# Путь передаётся через env CDA_KEY (например, CDA_KEY=/path/to/id_ed25519).
+KEY = os.environ.get("CDA_KEY", os.path.join(os.path.dirname(os.path.abspath(__file__)), "id_ed25519"))
 
 
 def client() -> paramiko.SSHClient:
