@@ -34,6 +34,7 @@ from app.modules.weather.schemas import (
     FieldWeatherResponse,
     ForecastDayItem,
     ForecastListResponse,
+    HistoryListResponse,
     SourceMeta,
     WindowDayItem,
     WindowResponse,
