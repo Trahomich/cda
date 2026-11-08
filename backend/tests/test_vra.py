@@ -552,7 +552,7 @@ class TestVraSpatialSpread:
         import re
 
         assert re.search(r"\bоднородно\b", item.detail) is None
-        assert "дифвнесени" in item.detail
+        assert "дифференцированного внесения" in item.detail
         assert len(item.data_refs) == 3
         assert {"iqr_ndvi", "spatial_spread"} <= set(item.data_refs[0])
 
