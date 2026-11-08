@@ -411,6 +411,59 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     alpha_ndwi = np.where(inside & np.isfinite(ndwi) & ~cloud_d, 255, 0).astype("uint8")
     png_ndwi = _canvas_png(_palette_rgb(t_w, PALETTE_NDWI), alpha_ndwi)
 
+    # --- варианты индексов §7.7 (#128): как NDVI, NDSI/BSI — своя палитра --
+    from app.integrations.raster import compute_bsi_array, compute_evi_array
+    from app.services.sentinel_ingest.indices import read_band_into_grid
+
+    nir_f = nir_d.astype("float32")
+    red_f = red_d.astype("float32")
+    green_f = green_d.astype("float32")
+    blue_f = blue_d.astype("float32")
+    rededge_f = (
+        read_band_into_grid(assets["b05"], contour_geojson, transform, red_crs, nir_d.shape)
+        if assets.get("b05")
+        else None
+    )
+    swir_f = (
+        read_band_into_grid(assets["b11"], contour_geojson, transform, red_crs, nir_d.shape)
+        if assets.get("b11")
+        else None
+    )
+
+    def _index_png(arr: np.ndarray, lo: float, hi: float, palette) -> bytes:
+        t_i = np.clip((arr - lo) / (hi - lo), 0.0, 1.0)
+        t_i[~np.isfinite(arr)] = 0.0
+        alpha_i = np.where(inside & np.isfinite(arr) & ~cloud_d, 255, 0).astype("uint8")
+        return _canvas_png(
+            _palette_rgb(t_i, palette),
+            alpha_i,
+            lambda c, a: draw_gradient_legend(c, a, palette, f"{lo:.2f}", f"{hi:.2f}"),
+        )
+
+    png_extra: dict[str, bytes] = {}
+    if swir_f is not None:
+        png_extra["ndmi"] = _index_png(
+            compute_index_array("ndmi", nir_f, swir_f), _NDMI_LO, _NDMI_HI, PALETTE
+        )
+    if rededge_f is not None:
+        png_extra["ndre"] = _index_png(
+            compute_index_array("ndre", nir_f, rededge_f), _NDRE_LO, _NDRE_HI, PALETTE
+        )
+    if swir_f is not None:
+        png_extra["ndsi"] = _index_png(
+            compute_index_array("ndsi", green_f, swir_f), _NDSI_LO, _NDSI_HI, PALETTE_NDSI
+        )
+    png_extra["evi"] = _index_png(
+        compute_evi_array(nir_f, red_f, blue_f), _EVI_LO, _EVI_HI, PALETTE
+    )
+    png_extra["savi"] = _index_png(
+        compute_index_array("savi", nir_f, red_f), _SAVI_LO, _SAVI_HI, PALETTE
+    )
+    if swir_f is not None:
+        png_extra["bsi"] = _index_png(
+            compute_bsi_array(nir_f, red_f, blue_f, swir_f), _BSI_LO, _BSI_HI, PALETTE_BSI
+        )
+
     # --- вариант truecolor: композит B04/B03/B02, перцентильная нормировка
     lo, hi = np.percentile(
         np.concatenate([a[inside].ravel() for a in (red_d, green_d, blue_d) if a[inside].size]),
