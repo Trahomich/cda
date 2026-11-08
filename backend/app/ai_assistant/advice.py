@@ -277,12 +277,20 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
     if yield_line:
         parts.append(yield_line)
 
+    # шкала легенды рендеров §7.3 — числа детерминированы бэкендом: LLM
+    # цитирует легенду («шкала −0.10…0.80») → диапазон легален через context
+    # (guardrail не флапает), сам текст — до хэша (#145)
+    settings = get_settings()
+    if settings.ndvi_render_dir and scenes:
+        parts.append(
+            f"Рендеры NDVI (приложены): шкала раскраски от {_NDVI_LO:.2f} до {_NDVI_HI:.2f}."
+        )
+
     context = "\n".join(parts)
     context_hash = hashlib.sha256(context.encode("utf-8")).hexdigest()
 
     # 8. PNG-рендеры NDVI (§7.3, файловые): последняя чистая + пик, ≤2
     images: list[bytes] = []
-    settings = get_settings()
     render_dir = settings.ndvi_render_dir
     if render_dir and scenes:
         seen_days: set[date] = set()
