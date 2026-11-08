@@ -257,6 +257,6 @@ class TestInsightsYear(TestSeasonsBase):
             assert resp.status_code == 200, resp.text
         keys = sorted(k for k in self.store if k.startswith("insights:"))
         assert keys == [
-            f"insights:{self.field_id}:2025-06-10",
-            f"insights:{self.field_id}:2026-06-10",
+            f"insights:v2:{self.field_id}:2025-06-10",
+            f"insights:v2:{self.field_id}:2026-06-10",
         ]
