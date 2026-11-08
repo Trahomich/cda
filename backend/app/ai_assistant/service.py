@@ -102,7 +102,9 @@ VISION_MAX_IMAGES = 4
 _MD_FENCE_RE = re.compile(r"```[a-zA-Z0-9_-]*\n?|```")  # ограждения кода
 _MD_HEADER_RE = re.compile(r"(?m)^#{1,6}\s*")  # заголовки в начале строки
 _MD_BOLD_RE = re.compile(r"\*\*(.+?)\*\*|__(.+?)__", re.DOTALL)
-_MD_ITALIC_RE = re.compile(r"(?<![*\w])\*(?!\s)([^*\n]+?)(?<!\s)\*(?![\w*])|(?<![_\w])_(?!\s)([^_\n]+?)(?<!\s)_(?![_\w])")
+_MD_ITALIC_RE = re.compile(
+    r"(?<![*\w])\*(?!\s)([^*\n]+?)(?<!\s)\*(?![\w*])|(?<![_\w])_(?!\s)([^_\n]+?)(?<!\s)_(?![_\w])"
+)
 _MD_CODE_RE = re.compile(r"`+([^`\n]*)`+")
 _MD_LIST_RE = re.compile(r"(?m)^(\s*)[*+-]\s+")  # маркеры списков → тире
 
