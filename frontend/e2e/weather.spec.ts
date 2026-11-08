@@ -128,3 +128,24 @@ test('погода: поле 1 остаётся выбранным между в
   const saved = await page.evaluate(() => localStorage.getItem('cda.weather.field'))
   expect(saved).toBe(FIELD1)
 })
+
+// #139 (docs/06 §7.8): баннер ОЯ вверху вкладки + подсветка дней с ОЯ.
+test('погода: баннер опасных явлений и подсветка дня прогноза (#139)', async ({
+  page,
+}) => {
+  await page.goto('/weather')
+  await expect(page.locator('.wx__field-card')).toBeVisible({ timeout: 15_000 })
+
+  // Мок: сутки 4 — заморозок alert (−3 °C) и сильный ветер warn (17 м/с).
+  const banner = page.locator('.wx__hazards')
+  await expect(banner).toBeVisible({ timeout: 15_000 })
+  await expect(banner).toHaveClass(/wx__hazards--alert/)
+  await expect(banner).toContainText('Заморозки ожидаются')
+  await expect(banner).toContainText('до −3 °C')
+
+  // Строка суток с ОЯ подсвечена, строк без ОЯ подсветка не трогает.
+  const alertRow = page.locator('.wx__table tbody tr.wx__row--alert')
+  await expect(alertRow).toHaveCount(1)
+  await expect(alertRow).toContainText('−3')
+  await expect(page.locator('.wx__table tbody tr.wx__row--warn')).toHaveCount(0)
+})
