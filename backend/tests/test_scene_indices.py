@@ -194,7 +194,7 @@ class TestNdviCycleIndices:
         assert report.scenes == 1 and report.index_scenes == len(EXTRA_INDICES)
         indexes = set(
             db_session.scalars(
-                db_text("SELECT DISTINCT \"index\" FROM dat_satellite_scene").columns()
+                db_text('SELECT DISTINCT "index" FROM dat_satellite_scene').columns()
             )
         )
         assert {"ndvi", *EXTRA_INDICES} <= indexes
@@ -238,7 +238,7 @@ def _seed_ndvi_scene(db_session, assets) -> uuid.UUID:
     return field_id
 
     def test_backfill_writes_and_idempotent(self, db_session, band_rasters) -> None:
-        field_id = self._seed(db_session, band_rasters["assets"])
+        field_id = _seed_ndvi_scene(db_session, band_rasters["assets"])
 
         report = run_indices_backfill(db_session, render_dir=None)
         assert report.scenes == 1 and report.scenes_written == 1
@@ -256,9 +256,7 @@ def _seed_ndvi_scene(db_session, assets) -> uuid.UUID:
 
     def test_backfill_without_bands_partial(self, db_session, band_rasters) -> None:
         """Старые активы без b05/b11 (без STAC-клиента) — только 10-м индексы."""
-        assets = {
-            k: v for k, v in band_rasters["assets"].items() if k not in ("b05", "b11")
-        }
+        assets = {k: v for k, v in band_rasters["assets"].items() if k not in ("b05", "b11")}
         _seed_ndvi_scene(db_session, assets)
         report = run_indices_backfill(db_session, render_dir=None)
         assert report.scenes_written == 1
@@ -313,9 +311,7 @@ class TestIndexApi:
         )
         assert resp.status_code == 200
         assert resp.json()["total"] == 0  # сцена 2026 года
-        resp2 = client.get(
-            f"{API}/fields/{field_id}/ndre", params={"year": 2026}, headers=headers
-        )
+        resp2 = client.get(f"{API}/fields/{field_id}/ndre", params={"year": 2026}, headers=headers)
         assert resp2.json()["total"] == 1
 
 
@@ -351,9 +347,7 @@ class TestIndexRenders:
         """Нет b05/b11 — рендеры остальных вариантов строятся, SWIR-слоёв нет."""
         from app.services.sentinel_ingest.renders import render_scene
 
-        assets = {
-            k: v for k, v in band_rasters["assets"].items() if k not in ("b05", "b11")
-        }
+        assets = {k: v for k, v in band_rasters["assets"].items() if k not in ("b05", "b11")}
         render = render_scene(assets, wgs_box(300100, 5760100, 301900, 5760900))
         assert render is not None
         assert set(render.png) == {"ndvi", "truecolor", "ndwi", "evi", "savi"}
