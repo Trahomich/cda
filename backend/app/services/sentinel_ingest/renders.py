@@ -345,6 +345,17 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     geom_raster = transform_geom("EPSG:4326", red_crs, contour_geojson)
     inside = contour_mask(geom_raster, transform, nir_d.shape)
 
+    # полоса легенды ПОД полем (вне контура, #123/#385): одинаковая у всех
+    # вариантов — единая геопривязка в сайдкаре; заполняют её те, у кого
+    # есть шкала (пока ndvi; единообразие прочих индексов — §7.7 #128)
+    strip_h = legend_strip_height(nir_d.shape[0])
+
+    def _canvas_png(rgb_v: np.ndarray, alpha_v: np.ndarray, legend=None) -> bytes:
+        rgb_c, alpha_c = canvas_with_strip(rgb_v, alpha_v, strip_h)
+        if legend is not None:
+            legend(rgb_c, alpha_c)
+        return _png_rgba(rgb_c, alpha_c)
+
     # --- вариант ndvi: палитра; облака и вне контура прозрачны -----------
     ndvi = compute_index_array(INDEX_NAME, nir_d.astype("float32"), red_d.astype("float32"))
     t = np.clip((ndvi - _NDVI_LO) / (_NDVI_HI - _NDVI_LO), 0.0, 1.0)
