@@ -208,7 +208,9 @@ def _analyze_scene(
     from rasterio.warp import transform_bounds, transform_geom
 
     assets = _scene_assets(
-        db, field.id, scene.captured_at,
+        db,
+        field.id,
+        scene.captured_at,
         bands=VRA_BANDS if index == "ndvi" else VRA_BANDS_NDRE,
     )
     if not assets:
