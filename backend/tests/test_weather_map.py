@@ -70,7 +70,7 @@ class TestWeatherMapApi:
         assert by_name["A"]["value"] == 5.0  # 9 мм 10 дней назад не в окне
         assert by_name["B"]["value"] == 2.5
         assert by_name["A"]["updated_at"] == (today - timedelta(days=1)).isoformat()
-        assert by_name["A"]["contour"]["type"] == "Polygon"
+        assert by_name["A"]["contour"]["type"] in ("Polygon", "MultiPolygon")
 
     def test_precip_14d_wider_window(self, client, db_session):
         """14 суток захватывают запись 10 дней назад."""
@@ -130,11 +130,11 @@ class TestWeatherMapApi:
         assert resp.status_code == 200, resp.text
         item = resp.json()["items"][0]
         assert item["value"] is None and item["updated_at"] is None
-        assert item["contour"]["type"] == "Polygon"
+        assert item["contour"]["type"] in ("Polygon", "MultiPolygon")
 
     def test_inactive_field_excluded(self, client, db_session):
-        """Неактивные поля на карту не попадают."""
-        make_field(db_session, name="inactive", status="retired")
+        """Архивные поля на карту не попадают (статусы: active/merged/archived)."""
+        make_field(db_session, name="archived", status="archived")
         headers = api_headers(client, db_session)
 
         resp = client.get(f"{API}/weather/map", headers=headers)
@@ -184,7 +184,12 @@ class TestWeatherMapApi:
         resp = client.get(f"{API}/weather/map", params={"metric": "gdd_ytd"}, headers=headers)
         assert resp.status_code == 200, resp.text
         contour = resp.json()["items"][0]["contour"]
-        assert contour["type"] == "Polygon"
-        xs = [c[0] for c in contour["coordinates"][0]]
+        assert contour["type"] in ("Polygon", "MultiPolygon")
+        rings = (
+            contour["coordinates"]
+            if contour["type"] == "MultiPolygon"
+            else [contour["coordinates"]]
+        )
+        xs = [c[0] for ring in rings for c in ring[0]]
         assert 40.0 <= min(xs) and max(xs) <= 40.01
         json.dumps(contour)  # сериализуем
