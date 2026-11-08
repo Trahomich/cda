@@ -470,7 +470,8 @@ def _checked_summary(
         summary,
     )
     fallback = " ".join(f"{item.title}: {item.detail}" for item in items)
-    return fallback[:2000]
+    # items=[] → fallback пуст: None (не пустая строка) — деградация #138
+    return fallback[:2000] if fallback else None
 
 
 def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) -> None:
