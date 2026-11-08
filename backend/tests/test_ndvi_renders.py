@@ -356,6 +356,7 @@ class TestRenderLegend:
 
     @staticmethod
     def _read_png(png: bytes) -> tuple[np.ndarray, np.ndarray]:
+        import rasterio
         from rasterio.io import MemoryFile
 
         with MemoryFile(png) as mem:
@@ -364,32 +365,57 @@ class TestRenderLegend:
         return rgba[:3], rgba[3]
 
     def test_ndvi_png_has_legend(self, color_rasters):
-        """ndvi-PNG содержит полупрозрачную панель легенды в левом нижнем углу."""
+        """ndvi-PNG содержит полупрозрачную панель легенды под полем."""
         contour = wgs_box(300100, 5760100, 301900, 5760900)
         render = render_scene(color_rasters["assets"], contour)
         assert render is not None
         _, alpha = self._read_png(render.png["ndvi"])
         assert ((alpha > 0) & (alpha < 255)).any()  # панель легенды
-        corner = alpha[-alpha.shape[0] // 4 :, : alpha.shape[1] // 4]
-        assert ((corner > 0) & (corner < 255)).any()
+        corner = alpha[-alpha.shape[0] // 6 :, : alpha.shape[1] // 2]
+        assert ((corner > 0) & (corner < 255)).any()  # внизу слева, в полосе
 
-    def test_truecolor_and_ndwi_without_legend(self, color_rasters):
-        """truecolor/ndwi без шкалы (легенда — только у NDVI, §7.3 #123)."""
+    def test_truecolor_and_ndwi_strip_empty(self, color_rasters):
+        """truecolor/ndwi: полоса легенды пустая (шкала — только у NDVI)."""
         contour = wgs_box(300100, 5760100, 301900, 5760900)
         render = render_scene(color_rasters["assets"], contour)
         assert render is not None
         for variant in ("truecolor", "ndwi"):
             _, alpha = self._read_png(render.png[variant])
             assert not ((alpha > 0) & (alpha < 255)).any(), variant
+            # нижняя полоса (за пределами растрового окна) полностью прозрачна
+            assert not alpha[-alpha.shape[0] // 8 :].any(), variant
 
-    def test_legend_does_not_change_canvas_size(self, color_rasters):
-        """Легенда рисуется поверх: размеры всех вариантов = width/height."""
+    def test_all_variants_same_canvas_with_strip(self, color_rasters):
+        """Легенда под полем (#385): все варианты одной канвы, размеры —
+        X-Image-Size, канва выше растра на полосу, bbox расширен на юг."""
+        from rasterio.io import MemoryFile
+
         contour = wgs_box(300100, 5760100, 301900, 5760900)
         render = render_scene(color_rasters["assets"], contour)
         assert render is not None
-        from rasterio.io import MemoryFile
-
         for variant in RENDER_VARIANTS:
             with MemoryFile(render.png[variant]) as mem:
                 with rasterio.open(mem) as ds:
                     assert (ds.width, ds.height) == (render.width, render.height)
+        # канва ≤ MAX_SIDE_PX и выше растрового окна на полосу легенды
+        assert max(render.width, render.height) <= MAX_SIDE_PX
+        assert render.height > max(render.width, 1) * 0.9  # полоса добавлена
+        strip = render.height - round(render.height / 1.08)  # ≈8% высоты
+        assert 0 < strip <= 96
+
+    def test_bbox_extended_for_legend_strip(self, color_rasters):
+        """Юг bbox расширен пропорционально полосе: равномерное отображение
+        пиксель↔градус — растровая часть совпадает с окном поля."""
+        from rasterio.warp import transform_bounds
+
+        # пересчитаем окно растра напрямую нельзя (внутри render_scene),
+        # поэтому проверяем пропорцию: полоса ~8% → юг ниже растрового окна
+        contour = wgs_box(300100, 5760100, 301900, 5760900)
+        render = render_scene(color_rasters["assets"], contour)
+        assert render is not None
+        cw, cs, ce, cn = _contour_wgs_bounds(contour)
+        w, s, e, n = render.bbox
+        # bbox по-прежнему накрывает контур (растровая часть — сверху)
+        assert w <= cw and s <= cs and e >= ce and n >= cn
+        # а юг расширен за контур: полоса легенды «ниже поля»
+        assert s < cs - 1e-4
