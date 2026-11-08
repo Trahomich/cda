@@ -1102,7 +1102,111 @@ function windowsOf(n: number, type: WindowOperationType, fieldId: string) {
   }
 }
 
-/* ───────────────────────── Транспорт ───────────────────────── */
+/* ───────── Погода: история фактов (API-57) и GDD (#132, #134) ───────── */
+
+/** Начало бэкфилла истории (как #126: с 2023-01-01). */
+const HISTORY_FROM = '2023-01-01'
+
+/** Детерминированный ГПСЧ от поля и даты: мок стабилен между прогонами. */
+function dayRand(n: number, date: string): number {
+  let h = (n * 7919 + date.split('-').reduce((a, p) => a * 31 + Number(p), 0)) % 100003
+  h = (h * 137 + 61) % 100003
+  return h / 100003
+}
+
+/** Дневной факт истории поля n: сезонная волна температур (ср. ~5…25 °C,
+ *  широта 48.7°) и осадки с «дождливыми сериями». */
+function historyDay(n: number, date: string): WeatherHistoryItem {
+  const ms = new Date(`${date}T00:00:00Z`).getTime()
+  const doy = Math.round((ms - Date.parse(`${date.slice(0, 4)}-01-01T00:00:00Z`)) / DAY) + 1
+  const seasonal = Math.sin(((doy - 105) / 365) * 2 * Math.PI)
+  const tMean = 9.5 + 11.5 * seasonal + (n % 3) * 0.4
+  const spread = 4.5 + (n % 2) * 1.5
+  const r = dayRand(n, date)
+  const wet = seasonal > -0.2 && r > 0.72 // вегетация — чаще дожди
+  const precip = wet ? Number((1 + dayRand(n + 5, date) * 14).toFixed(1)) : 0
+  return {
+    date,
+    temp_max_c: Number((tMean + spread).toFixed(1)),
+    temp_min_c: Number((tMean - spread).toFixed(1)),
+    precip_mm: precip,
+    cloud_pct: Math.round(r * 100),
+    snow_mm: seasonal < -0.55 && precip > 0 ? Number((precip * 0.8).toFixed(1)) : 0,
+  }
+}
+
+/** Все дни истории поля n (по возрастанию даты), от 2023-01-01 до «сегодня». */
+function historyAll(n: number): WeatherHistoryItem[] {
+  const out: WeatherHistoryItem[] = []
+  const end = new Date(NOW)
+  for (let d = new Date(`${HISTORY_FROM}T00:00:00Z`); d <= end; d = new Date(d.getTime() + DAY)) {
+    out.push(historyDay(n, d.toISOString().slice(0, 10)))
+  }
+  return out
+}
+
+/** Кривая GDD года (base 5 °C) и многолетняя норма по тем же датам (#132). */
+function gddOf(n: number, year: number) {
+  const days = historyAll(n).filter((d) => d.date.startsWith(String(year)))
+  const items = days.map((d, i) => {
+    const tMean = ((d.temp_max_c ?? 0) + (d.temp_min_c ?? 0)) / 2
+    const gddDay = Math.max(0, Number((tMean - 5).toFixed(1)))
+    const prev = i > 0 ? items[i - 1].gdd_cum : 0
+    return { date: d.date, gdd_day: gddDay, gdd_cum: Number((prev + gddDay).toFixed(1)) }
+  })
+  // Норма: среднее накопления по тем же DOY в других доступных годах (2023+).
+  const otherYears = [2023, 2024, 2025, 2026].filter(
+    (y) => y !== year && y <= new Date(NOW).getUTCFullYear(),
+  )
+  const norm_cum =
+    otherYears.length >= 2
+      ? items.map((p) => {
+          const doy = Math.round(
+            (Date.parse(p.date) - Date.parse(`${year}-01-01T00:00:00Z`)) / DAY,
+          )
+          const vals = otherYears
+            .map((y) => {
+              const other = gddOfCache(n, y).find((q) => q.date === `${y}-${p.date.slice(5)}`)
+              return other?.gdd_cum
+            })
+            .filter((v): v is number => v != null)
+          return {
+            date: p.date,
+            norm_cum: vals.length
+              ? Number((vals.reduce((a, v) => a + v, 0) / vals.length).toFixed(1))
+              : Math.round(doy) === doy
+                ? p.gdd_cum
+                : 0,
+          }
+        })
+      : null
+  return { items, norm_cum }
+}
+
+/** Кэш кривых по годам (норма иначе пересчитывается рекурсивно). */
+const gddCache = new Map<string, GddPoint[]>()
+function gddOfCache(n: number, year: number): GddPoint[] {
+  const key = `${n}/${year}`
+  let v = gddCache.get(key)
+  if (!v) {
+    v = gddOfRaw(n, year)
+    gddCache.set(key, v)
+  }
+  return v
+}
+
+function gddOfRaw(n: number, year: number): GddPoint[] {
+  const days = historyAll(n).filter((d) => d.date.startsWith(String(year)))
+  let cum = 0
+  return days.map((d) => {
+    const tMean = ((d.temp_max_c ?? 0) + (d.temp_min_c ?? 0)) / 2
+    const gddDay = Math.max(0, Number((tMean - 5).toFixed(1)))
+    cum = Number((cum + gddDay).toFixed(1))
+    return { date: d.date, gdd_day: gddDay, gdd_cum: cum }
+  })
+}
+
+
 
 /** Отрисовка демо-PNG 200×100 (canvas) для raw(): ndvi — палитра
  *  коричневый→жёлтый→зелёный (как бэкенд), truecolor — оливково-зелёные
