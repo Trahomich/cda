@@ -32,6 +32,9 @@ export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   query?: Record<string, string | number | undefined | null>
+  /** Не показывать тост ошибки: вызывающий код сам обрабатывает ответ
+   *  (ожидаемый 422 «поле однородно» — нормальное состояние, не ошибка). */
+  silent?: boolean
 }
 
 /** Обработчик ошибок (подключается из приложения: тост problem+json). */
