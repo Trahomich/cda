@@ -11,13 +11,13 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
-from app.models.agronomy import CropCycle, FieldOperation
+from app.models.agronomy import CropCycle
 from app.models.auth import UserRole
 from app.models.integrations import Forecast
-from app.models.references import Culture
+from app.modules.weather.rules import seed_weather_rules
 from sqlalchemy.orm import Session
 from tests.test_auth import auth_header, make_user
-from tests.test_inputs import make_cycle, make_culture, make_field, make_ppp
+from tests.test_inputs import make_culture, make_ppp
 from tests.test_satellite import make_field as make_db_field  # прямая строка в БД
 
 API = "/api/v1"
