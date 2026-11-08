@@ -1209,6 +1209,60 @@ function gddOfCache(n: number, year: number): GddPoint[] {
 
 
 
+/* ───────── AI-рекомендации «что делать сейчас» (§9.3, #137) ───────── */
+
+interface MockAdvice {
+  created_at: string
+  advice_date: string
+  answer: string
+  status: 'ok' | 'fallback' | 'empty'
+}
+
+/** Хранилище: последние сверху (desc по created_at). */
+const adviceStore = new Map<string, MockAdvice[]>()
+/** Поля «в пересчёте» после POST (202 queued): fieldId → время запроса. */
+const advicePending = new Map<string, number>()
+
+const ADVICE_TEXTS = [
+  'Проведите обследование западной части поля: NDVI ниже среднего на 0,08, при подтверждении — подкормка азотом 30 кг/га д.в. в ближайшее погодное окно.',
+  'Дождитесь окна без осадков 3 суток и ветра до 4 м/с — прогноз даёт его через 2 дня; после этого планируйте обработку СЗР.',
+  'Влажность почвы в норме, посевы развиты равномерно — агротехнических работ на этой неделе не требуется, следующий контроль по новой спутниковой сцене.',
+  'Скорректируйте план подкормки: вегетация опережает норму на 5 суток, перенесите внесение на 3–4 дня раньше, чтобы не потерять эффект.',
+]
+
+function adviceView(fieldId: string, a: MockAdvice): FieldAdvice {
+  return {
+    field_id: fieldId,
+    created_at: a.created_at,
+    advice_date: a.advice_date,
+    model: 'glm-5.3-flash',
+    provider: 'anthropic',
+    answer: a.answer,
+    status: a.status,
+  }
+}
+
+/** История рекомендаций поля (по одной в сутки, свежие сверху). */
+function makeAdvice(n: number, count: number): MockAdvice[] {
+  const out: MockAdvice[] = []
+  const now = new Date(NOW)
+  for (let i = 0; i < count; i++) {
+    const d = new Date(now.getTime() - i * DAY)
+    out.push({
+      created_at: new Date(d.getTime() - 7 * HOUR).toISOString(),
+      advice_date: d.toISOString().slice(0, 10),
+      answer: ADVICE_TEXTS[(n + i) % ADVICE_TEXTS.length]!,
+      status: 'ok',
+    })
+  }
+  return out
+}
+
+// Семена: поле 1 — 22 записи (для пагинации «Показать ещё»), поле 2 — одна,
+// остальные — пусто (пустое состояние «Рассчитать»).
+adviceStore.set(FIELDS[0]!.field_id, makeAdvice(1, 22))
+adviceStore.set(FIELDS[1]!.field_id, makeAdvice(2, 1))
+
 /** Отрисовка демо-PNG 200×100 (canvas) для raw(): ndvi — палитра
  *  коричневый→жёлтый→зелёный (как бэкенд), truecolor — оливково-зелёные
  *  тона, ndwi (§7.4) — «сухо→влажно→вода» жёлтый→бирюзовый→синий;
