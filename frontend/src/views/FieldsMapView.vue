@@ -5,12 +5,12 @@
 // в центроиде — краткий номер поля (часть имени до первого «/»), поверх карты —
 // складная легенда культур (#55, замечания пользователя №3–4). Панель «Список» —
 // таблица полей с фильтрами (вкладки).
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import type { Map as LeafletMap } from 'leaflet'
 import L from 'leaflet'
-import { getCultureReferences, getFields } from '@/api'
-import type { CultureReference, Field } from '@/api/types'
+import { getCultureReferences, getFields, getWeatherMap } from '@/api'
+import type { CultureReference, Field, WeatherMapMetric } from '@/api/types'
 import FieldsListPanel from '@/components/FieldsListPanel.vue'
 import Skeleton from '@/components/Skeleton.vue'
 
