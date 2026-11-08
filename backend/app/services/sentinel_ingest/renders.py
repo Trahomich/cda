@@ -221,18 +221,18 @@ def draw_zone_legend(
 ) -> bool:
     """Легенда зон VRA (§7.4, #123): свотч цвета зоны + диапазон NDVI.
 
-    Рисуется поверх растра в левом нижнем углу без изменения канвы.
-    False — нет свотчей или канва слишком мала.
+    Рисуется в левом нижнем углу канвы — в полосе легенды ПОД растром,
+    вне контура поля (уточнение #385). False — нет свотчей или канва мала.
     """
     if not swatches:
         return False
     h, w = alpha.shape
-    k = max(1, round(w / 200))
+    k = _legend_scale(w, h)
     pad, gap, sw = 2 * k, k, 3 * k
     items = [(color, label, _text_px(label, k)) for color, label in swatches]
     inner = sum(sw + gap + lw for _, _, lw in items) + gap * (len(items) - 1)
     pw, ph = 2 * pad + inner, 2 * pad + 5 * k
-    pos = _legend_panel(alpha, pw, ph)
+    pos = _legend_panel(alpha, pw, ph, k)
     if pos is None:
         return False
     x0, y0 = pos
