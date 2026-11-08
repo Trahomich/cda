@@ -241,13 +241,40 @@ def _register_index_routes() -> None:
                 offset=offset,
             )
 
-        endpoint = partial(_endpoint, _index=_idx)
-        endpoint.__name__ = f"field_index_{_idx}"
+        def _endpoint_by(_index: str):
+            def endpoint(
+                field_id: uuid.UUID,
+                db: DbSession,
+                settings: SettingsDep,
+                *,
+                year: int | None = Query(
+                    default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"
+                ),
+                date_from: date | None = Query(default=None, description="Начало периода"),
+                date_to: date | None = Query(default=None, description="Конец периода"),
+                limit: int = Query(default=50, ge=1, le=366),
+                offset: int = Query(default=0, ge=0),
+            ) -> NdviTimelineResponse:
+                return _field_index_timeline(
+                    field_id,
+                    db,
+                    settings,
+                    index=_index,
+                    year=year,
+                    date_from=date_from,
+                    date_to=date_to,
+                    limit=limit,
+                    offset=offset,
+                )
+
+            endpoint.__name__ = f"field_index_{_index}"
+            return endpoint
+
         router.get(
             f"/fields/{{field_id}}/{_idx}",
             response_model=NdviTimelineResponse,
             summary=f"API-06: таймлайн {_idx.upper()} по полю (§7.7)",
-        )(endpoint)
+        )(_endpoint_by(_idx))
 
 
 _register_index_routes()
