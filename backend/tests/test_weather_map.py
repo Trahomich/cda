@@ -118,8 +118,7 @@ class TestWeatherMapApi:
         today = date.today()
         f1 = make_field(db_session, name="A")
         make_obs(db_session, f1, today - timedelta(days=1), precip=1.0, trust=1.0)
-        make_obs(db_session, f1, today - timedelta(days=1), precip=7.0, trust=0.5)
-        # вторая запись — другой источник (UQ: поле+дата+источник)
+        # конкурент с меньшей trust — другой источник (UQ: поле+дата+источник)
         db_session.execute(
             text(
                 "INSERT INTO dat_weather_observation "
