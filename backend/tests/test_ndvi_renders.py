@@ -395,10 +395,13 @@ class TestRenderLegend:
         contour = wgs_box(300100, 5760100, 301900, 5760900)
         render = render_scene(color_rasters["assets"], contour)
         assert render is not None
-        for variant in RENDER_VARIANTS:
-            with MemoryFile(render.png[variant]) as mem:
+        # базовые варианты есть всегда; индексы §7.7 (#128) — при наличии
+        # полос b05/b11, поэтому итерируем по фактическим ключам
+        assert {"ndvi", "truecolor", "ndwi"} <= set(render.png)
+        for variant, png in render.png.items():
+            with MemoryFile(png) as mem:
                 with rasterio.open(mem) as ds:
-                    assert (ds.width, ds.height) == (render.width, render.height)
+                    assert (ds.width, ds.height) == (render.width, render.height), variant
         assert max(render.width, render.height) <= MAX_SIDE_PX
         # панель легенды ndvi целиком в нижней части канвы (полоса под полем)
         _, alpha = self._read_png(render.png["ndvi"])
