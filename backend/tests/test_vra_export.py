@@ -14,7 +14,7 @@ import zipfile
 from xml.etree.ElementTree import fromstring
 
 import pytest
-from app.models.agronomy import UserRole
+from app.models.auth import UserRole
 from shapely.geometry import shape
 from tests.test_auth import auth_header, make_user
 from tests.test_satellite import make_satellite_source
