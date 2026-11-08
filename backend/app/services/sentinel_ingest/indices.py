@@ -28,6 +28,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from app.integrations.raster import (
+    INDEX_BOUNDS,
     compute_bsi_array,
     compute_evi_array,
     compute_index_array,
