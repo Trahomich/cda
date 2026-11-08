@@ -412,7 +412,100 @@ def detect_drought(
     )
 
 
+def load_winter_pairs(
+    db: Session, field_id: uuid.UUID, season_year: int
+) -> list[tuple[date, float, float]]:
+    """Зимние сцены сезона (декабрь Y−1 … март Y, §7.7 #129): (дата, NDVI, NDSI).
+
+    NDVI- и NDSI-сцены сопоставляются по дате; в пары идут только даты,
+    где есть обе (пороговая логика winterkill требует NDSI).
+    """
+    window_from = date(season_year - 1, 12, 1)
+    window_to = date(season_year, 3, 31)
+
+    def _index_by_date(index: str) -> dict[date, float]:
+        return {
+            captured_at: float(avg)
+            for captured_at, avg in db.execute(
+                select(SatelliteScene.captured_at, SatelliteScene.index_avg).where(
+                    SatelliteScene.field_id == field_id,
+                    SatelliteScene.index == index,
+                    SatelliteScene.captured_at >= window_from,
+                    SatelliteScene.captured_at <= window_to,
+                )
+            ).all()
+        }
+
+    ndvi_by_date = _index_by_date("ndvi")
+    ndsi_by_date = _index_by_date("ndsi")
+    return [
+        (day, ndvi_by_date[day], ndsi_by_date[day])
+        for day in sorted(set(ndvi_by_date) & set(ndsi_by_date))
+    ]
+
+
+def detect_winterkill(
+    winter_pairs: Sequence[tuple[date, float, float]], culture_name: str | None
+) -> InsightItem | None:
+    """info/warn: перезимовка озимых по зимним сценам (§7.7 #129).
+
+    Только для озимых культур (маркеры как у стагнации §8.2). Доля сцен
+    «оголённая биомасса без снега» (NDSI < 0.4 ∧ NDVI < 0.2): снега нет, а
+    вегетации тоже нет — выпадение/оголение посева. info при доле < 30 %,
+    warn при ≥ 30 %. Нет зимних сцен — детектор молчит (сезон ещё не зимний
+    или спутник не летал).
+    """
+    if not winter_pairs or not _is_winter_culture(culture_name):
+        return None
+    bare = [
+        (day, ndvi, ndsi)
+        for day, ndvi, ndsi in winter_pairs
+        if ndsi < WINTERKILL_NDSI_MAX and ndvi < WINTERKILL_NDVI_MAX
+    ]
+    share = len(bare) / len(winter_pairs)
+    if not bare:
+        return None  # снег есть или посев жив — перезимовка в норме
+    severity = "warn" if share >= WINTERKILL_WARN_SHARE else "info"
+    dates_str = ", ".join(
+        f"{day.isoformat()} (NDVI {ndvi:.2f}, NDSI {ndsi:.2f})" for day, ndvi, ndsi in bare[:5]
+    )
+    if len(bare) > 5:
+        dates_str += ", …"
+    return InsightItem(
+        code="winterkill",
+        severity=severity,  # type: ignore[arg-type]
+        title="Признаки плохой перезимовки озимых",
+        detail=(
+            f"{round(share * 100)} % зимних сцен ({len(bare)} из {len(winter_pairs)}, "
+            f"декабрь–март) — оголённый посев без снега (NDSI < {WINTERKILL_NDSI_MAX}, "
+            f"NDVI < {WINTERKILL_NDVI_MAX}): {dates_str}. Оцените состояние посева "
+            "весной и планируйте пересев/подкормку по факту отрастания."
+        ),
+        data_refs=[
+            {"source": "satellite", "date": day.isoformat(), "ndvi_mean": ndvi, "ndsi_mean": ndsi}
+            for day, ndvi, ndsi in bare
+        ],
+    )
+
+
+def latest_index_mean(
+    db: Session, field_id: uuid.UUID, index: str, *, year: int | None = None
+) -> float | None:
+    """Среднее последней чистой сцены индекса (для drought-сигнала NDMI #129)."""
+    filters = [SatelliteScene.field_id == field_id, SatelliteScene.index == index]
+    if year is not None:
+        filters.append(func.extract("year", SatelliteScene.captured_at) == year)
+    value = db.scalar(
+        select(SatelliteScene.index_avg)
+        .where(*filters)
+        .order_by(SatelliteScene.captured_at.desc(), SatelliteScene.created_at.desc())
+        .limit(1)
+    )
+    return None if value is None else float(value)
+
+
 def detect_ndvi_lag_last_year(scenes: Sequence[SceneStat]) -> InsightItem | None:
+    """info: NDVI отстаёт ≥ 0.1 от сцены той же даты прошлого сезона."""
     if len(scenes) < 2:
         return None
     latest = scenes[-1]
