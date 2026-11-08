@@ -230,20 +230,33 @@ class TestVraZones:
         assert body["base_dose_kg_ha"] is None
         assert all(z["dose_kg_ha"] is None for z in body["zones"])
 
-    def test_uniform_field_422(self, client, db_session, tmp_path, agro_headers):
-        """Однородное поле (IQR NDVI < 0.12): 422 vra_uniform_field, без зон."""
+    def test_uniform_field_zones_always(self, client, db_session, tmp_path, agro_headers):
+        """v1.7: однородное поле (IQR < 0.12) — зоны всё равно строятся.
+
+        Все пиксели в узком диапазоне: зоны почти неотличимы по ndvi_mean,
+        iqr_ndvi < 0.12 и spatial_spread < 0.06 — дифвнесение не обосновано,
+        но результаты «записаны в дифвнесения» (ворота удалены, #121).
+        """
         make_satellite_source(db_session)
         field_id = make_field(db_session, name="Ровное-1")
         make_scene(db_session, field_id, make_vra_rasters(tmp_path, np.full((N, N), 800), seed=11))
         resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
-        assert resp.status_code == 422, resp.text
-        assert resp.json()["code"] == "vra_uniform_field"
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["iqr_ndvi"] < 0.12
+        assert body["spatial_spread"] < 0.06
+        zones = body["zones"]
+        assert zones, "однородное поле тоже получает зоны (v1.7)"
+        means = [z["ndvi_mean"] for z in zones]
+        assert max(means) - min(means) < 0.05  # различия внутри шума NIR
+        # поле 1800×1800 м = 324 га — зоны делят всю полезную площадь
+        assert abs(sum(z["area_ga"] for z in zones) - 324.0) < 3.0
 
     def test_field_without_scenes_422(self, client, db_session, agro_headers):
         field_id = make_field(db_session, name="Без сцен")
         resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
         assert resp.status_code == 422, resp.text
-        assert resp.json()["code"] == "vra_no_data"
+        assert resp.json()["code"] == "vra_no_season_data"
 
     def test_unknown_field_404(self, client, agro_headers):
         resp = client.get(f"/api/v1/fields/{uuid.uuid4()}/vra", headers=agro_headers)
