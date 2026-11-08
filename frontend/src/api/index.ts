@@ -189,14 +189,20 @@ export async function getFieldCard(fieldId: string): Promise<FieldCard> {
   }
 }
 
-/** API-06: GET /fields/{id}/ndvi — NDVI-таймлайн (cloud_pct > 80 — облачные).
- *  year (§7.5) — только сцены сезона YYYY; без него — вся история. */
-export async function getFieldNdvi(fieldId: string, year?: number): Promise<NdviPoint[]> {
+/** API-06: GET /fields/{id}/ndvi — таймлайн индексов (cloud_pct > 80 — облачные).
+ *  year (§7.5) — только сцены сезона YYYY; без него — вся история.
+ *  index (§7.7 #128) — индекс сцен (query-форма ?index=; NDVI по умолчанию). */
+export async function getFieldNdvi(
+  fieldId: string,
+  year?: number,
+  index: SceneIndex = 'ndvi',
+): Promise<NdviPoint[]> {
   // limit=200: годовая история (~70 сцен на поле за год при revisit ~5 сут);
   // порядок нормализуем по возрастанию даты (API отдаёт от свежих к старым).
   const yearQuery = year ? `&year=${year}` : ''
+  const indexQuery = index === 'ndvi' ? '' : `&index=${index}`
   const page = await apiClient.request<NdviTimelinePage>(
-    `/fields/${fieldId}/ndvi?limit=200${yearQuery}`,
+    `/fields/${fieldId}/ndvi?limit=200${yearQuery}${indexQuery}`,
   )
   return page.items
     .map((s: SceneItem) => ({
@@ -211,6 +217,21 @@ export async function getFieldNdvi(fieldId: string, year?: number): Promise<Ndvi
     }))
     .sort((a, b) => a.date.localeCompare(b.date))
 }
+
+/** §7.7 (#128): индексы API-06 (path-форма /fields/{id}/{index} и query
+ *  ?index=) — возможные сцены и варианты рендера API-50. */
+export type SceneIndex =
+  | 'ndvi'
+  | 'ndwi'
+  | 'ndre'
+  | 'ndmi'
+  | 'ndsi'
+  | 'evi'
+  | 'savi'
+  | 'bsi'
+
+/** Вариант PNG-рендера API-50: truecolor-снимок или слой индекса. */
+export type RenderVariant = 'truecolor' | SceneIndex
 
 /** §7.3: загруженный PNG-рендер сцены (ndvi/truecolor) с геопривязкой окна. */
 export interface NdviRender {
