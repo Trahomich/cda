@@ -101,6 +101,12 @@ class VraZones:
     peak_dates: tuple[date, ...] = ()
     #: p90−p10 средних ячеек сетки ~20×20 пиковой сцены (§7.4 v1.7)
     spatial_spread: float = 0.0
+    #: бинарные маски зон (1/2/3) в сетке PNG — только живой расчёт (#125):
+    #: в кэш не пишутся (_to_cache), из кэша не читаются (_from_cache)
+    zone_masks: tuple[np.ndarray, ...] | None = None
+    #: аффинная привязка сетки зон и её CRS — для векторизации экспорта (#125)
+    grid_transform: tuple[float, float, float, float, float, float] | None = None
+    grid_crs: str | None = None
 
 
 def _err_no_data(field_id: uuid.UUID, reason: str) -> AppError:
