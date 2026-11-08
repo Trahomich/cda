@@ -504,7 +504,7 @@ onUnmounted(() => {
         Загружаем поля…
       </div>
       <div
-        v-if="!loading && !failed && legend.length"
+        v-if="!loading && !failed && (weatherMode || legend.length)"
         class="map-legend"
         :class="{ 'map-legend--open': legendOpen }"
       >
@@ -514,11 +514,35 @@ onUnmounted(() => {
           :aria-expanded="legendOpen"
           @click="legendOpen = !legendOpen"
         >
-          {{ legendTitle }}
+          {{ weatherMode ? `Легенда: ${metricLabel()}` : legendTitle }}
           <span class="map-legend__chevron">▾</span>
         </button>
+        <div
+          v-if="legendOpen && weatherMode"
+          class="map-legend__weather"
+        >
+          <div class="map-legend__scale">
+            <span class="map-legend__scale-val">{{
+              weatherStats.min.toLocaleString('ru-RU', { maximumFractionDigits: 1 })
+            }} {{ weatherMetricMeta.unit }}</span>
+            <span
+              class="map-legend__bar"
+              :style="{ background: `linear-gradient(90deg, ${weatherMetricMeta.from}, ${weatherMetricMeta.to})` }"
+            />
+            <span class="map-legend__scale-val">{{
+              weatherStats.max.toLocaleString('ru-RU', { maximumFractionDigits: 1 })
+            }} {{ weatherMetricMeta.unit }}</span>
+          </div>
+          <p class="map-legend__nodata">
+            <span class="map-legend__swatch map-legend__swatch--nodata" />
+            нет данных
+            <template v-if="weatherUpdated">
+              · по наблюдениям на {{ weatherUpdated.split('-').reverse().join('.') }}
+            </template>
+          </p>
+        </div>
         <ul
-          v-if="legendOpen"
+          v-else-if="legendOpen"
           class="map-legend__list"
         >
           <li
