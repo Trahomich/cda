@@ -1233,13 +1233,22 @@ function fmtNum(v: number, digits = 1): string {
               aria-label="Слой мини-карты"
             >
               <button
+                v-for="item in INDEX_LAYERS"
+                :key="item.key"
                 type="button"
-                class="card360__layer-btn card360__layer-btn--ndvi"
-                :class="{ 'card360__layer-btn--active': layerMode === 'ndvi' }"
-                :aria-pressed="layerMode === 'ndvi'"
-                @click="layerMode = 'ndvi'"
+                class="card360__layer-btn"
+                :class="[
+                  `card360__layer-btn--${item.key}`,
+                  { 'card360__layer-btn--active': layerMode === item.key },
+                ]"
+                :aria-pressed="layerMode === item.key"
+                :disabled="indexLayerDisabled(item.key)"
+                :title="`${item.label} — ${item.hint}${
+                  indexLayerDisabled(item.key) ? ' (нет сцен за сезон)' : ''
+                }`"
+                @click="layerMode = item.key"
               >
-                NDVI
+                {{ item.label }}
               </button>
               <button
                 type="button"
@@ -1261,7 +1270,7 @@ function fmtNum(v: number, digits = 1): string {
               </button>
             </div>
             <span class="card360__layer-date-label">
-              Снимок за {{ renderDate ? fmtDate(renderDate) : '—' }}
+              {{ activeIndexHint }} · снимок за {{ renderDate ? fmtDate(renderDate) : '—' }}
             </span>
           </div>
           <p
