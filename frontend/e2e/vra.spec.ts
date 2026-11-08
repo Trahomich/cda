@@ -153,21 +153,21 @@ test('выгрузка карты дифвнесения: три формата 
   const format = page.getByLabel('Формат выгрузки карты дифвнесения')
   const btn = vraBlock.getByRole('button', { name: 'Выгрузить' })
 
-  // Поле 1: базовая доза есть (75) — файл сразу, без формы дозы
+  // Поле 1: базовая доза есть (75) — файл сразу, без формы дозы.
+  // Формат по умолчанию — ISOXML (для бортовых терминалов)
   const dl1 = page.waitForEvent('download')
   await btn.click()
-  const geo = await dl1
-  expect(geo.suggestedFilename()).toMatch(/^vra_\w+_20\d\d-\d\d-\d\d\.geojson$/)
+  expect((await dl1).suggestedFilename()).toMatch(/_isoxml\.zip$/)
 
   await format.selectOption('shp')
   const dl2 = page.waitForEvent('download')
   await btn.click()
   expect((await dl2).suggestedFilename()).toMatch(/_shp\.zip$/)
 
-  await format.selectOption('isoxml')
+  await format.selectOption('geojson')
   const dl3 = page.waitForEvent('download')
   await btn.click()
-  expect((await dl3).suggestedFilename()).toMatch(/_isoxml\.zip$/)
+  expect((await dl3).suggestedFilename()).toMatch(/^vra_\w+_20\d\d-\d\d-\d\d\.geojson$/)
   await expect(vraBlock.locator('.card360__vra-export-dose')).toBeHidden()
 })
 
