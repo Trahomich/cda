@@ -10,12 +10,19 @@ import json
 import uuid
 from datetime import date, timedelta
 
+import pytest
 from app.integrations.open_meteo import OpenMeteoAdapter
 from app.models.integrations import WeatherObservation
 from sqlalchemy.orm import Session
-from tests.test_weather import api_headers, make_field
+from tests.test_weather import api_headers, make_field, make_weather_source
 
 API = "/api/v1"
+
+
+@pytest.fixture(autouse=True)
+def _weather_source(db_session):
+    """FK dat_weather_observation → ref_source (source_id weather.open-meteo)."""
+    make_weather_source(db_session)
 
 
 def make_obs(
