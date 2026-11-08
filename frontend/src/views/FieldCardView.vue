@@ -8,6 +8,8 @@ import { useRoute } from 'vue-router'
 import {
   getFieldCard,
   getFieldCropCycles,
+  getFieldAdvice,
+  getFieldAdviceHistory,
   getFieldNdvi,
   getFieldSeasons,
   getFieldVra,
@@ -19,6 +21,7 @@ import {
   getOperations,
   getTreatmentPlans,
   getYieldForecast,
+  refreshFieldAdvice,
 } from '@/api'
 import type {
   CropCycleHistoryItem,
