@@ -395,6 +395,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_advice.set_defaults(func=cmd_advice_refresh)
 
+    p_wx = sub.add_parser(
+        "weather-backfill",
+        help="полная история погоды по всем полям с указанной даты (#126, docs/06 §7.5)",
+    )
+    p_wx.add_argument(
+        "--from",
+        dest="date_from",
+        type=date.fromisoformat,
+        default=date(2023, 1, 1),
+        help="начало периода, ISO-дата (по умолчанию 2023-01-01)",
+    )
+    p_wx.set_defaults(func=cmd_weather_backfill)
+
     args = parser.parse_args(argv)
     return args.func(args)
 
