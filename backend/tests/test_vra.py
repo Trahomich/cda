@@ -293,6 +293,29 @@ class TestVraMap:
         # при перепроекции в UTM), прореживание до 1024 не срабатывает
         assert 178 < int(width) <= 184 and 178 < int(height) <= 184
 
+    def test_png_legend_zones(self, client, vra_world, agro_headers):
+        """Легенда зон (#123): свотчи цветов + диапазоны NDVI, канва та же."""
+        from rasterio.io import MemoryFile
+
+        resp = client.get(f"/api/v1/fields/{vra_world}/vra/map.png", headers=agro_headers)
+        assert resp.status_code == 200
+        with MemoryFile(resp.content) as mem:
+            with mem.open() as src:
+                alpha = src.read(4)
+                rgb = np.stack([src.read(i) for i in (1, 2, 3)], axis=-1)
+                w, h = src.width, src.height
+        # панель легенды полупрозрачна и в левом нижнем углу
+        semi = (alpha > 0) & (alpha < 255)
+        assert semi.any()
+        assert semi[int(h * 0.7) :, : w // 2].any()
+        # свотчи всех трёх цветов зон присутствуют
+        ys, xs = np.where(alpha == 255)
+        flat = rgb[ys, xs].reshape(-1, 3)
+        for color in ZONE_COLORS:
+            assert (flat == np.array(color)).all(axis=1).any(), color
+        # размеры канвы не изменились (геопривязка X-Image-Size валидна)
+        assert 178 < w <= 184 and 178 < h <= 184
+
     def test_machine_operator_403(self, client, db_session, vra_world):
         make_user(db_session, login="vra-op2", role=UserRole.MACHINE_OPERATOR, password="pw-op")
         headers = auth_header(client, "vra-op2", "pw-op")
