@@ -54,8 +54,9 @@ NDVI_STAGNATION_WINTER_MONTHS = frozenset({3, 4, 5, 6, 9, 10, 11})
 #: маркеры озимых в имени культуры ref_culture.name (09 §8.2 v1.1)
 WINTER_CULTURE_MARKERS = ("озим", "рожь", "тритикале")
 
-#: drought «GDD выше нормы»: норма среднесуточного GDD вегетации — 10 °C·сут
-#: (база 5 °C), превышение — средний суточный GDD за окно 14 сут выше нормы
+#: drought: осадки за 14 сут и норма среднесуточного GDD (см. докстринг)
+DROUGHT_WINDOW_DAYS = 14
+DROUGHT_PRECIP_MM = 10.0
 GDD_NORM_DAILY_C = 10.0
 GDD_NORM_DAILY_C = 10.0
 GDD_MIN_DAYS = 7  # меньше — окно непредставительно, детектор молчит
