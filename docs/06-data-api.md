@@ -185,7 +185,9 @@ erDiagram
 | API-54 | GET /fields/{id}/seasons | список сезонов NDVI поля (годы, счётчики сцен, культура цикла; §7.5) — переключатель сезонов в паспорте поля | REQ-F-028 |
 | API-55 | GET/POST /fields/{id}/ai/advice | последняя AI-рекомендация «что делать сейчас» / принудительный пересчёт 202 queued (09-ai §9.3) | REQ-F-035 |
 | API-56 | GET /fields/{id}/ai/advice/history?from&to&limit | история AI-рекомендаций поля, desc, limit ≤ 100 (09-ai §9.3) | REQ-F-035 |
-| API-57 | GET /weather/history?field_id&date_from&date_to&limit&offset | ежедневная история фактов погоды по полю, включая облачность/снег/часы осадков (#126, карточка погоды); 422 invalid_period, 404 field_not_found | REQ-F-024; бэклог |
+| API-57 | GET /weather/history?field_id&date_from&date_to&limit&offset | ежедневная история фактов погоды по полю, включая облачность/снег/часы осадков (#126, карточка погоды); постранично, поля факта — как в API-07 (§7.8); 422 invalid_period, 404 field_not_found | REQ-F-024 |
+| API-58 | GET /weather/gdd?field_id&year | накопительная GDD-кривая с 1 января года (base 5 °C): items {date, gdd_day, gdd_cum}, total, norm_cum (многолетняя норма, null при <2 годах; §7.8) | REQ-F-024; #132 |
+| API-59 | GET /weather/windows | два режима: ?operation_type&field_id — одиночное окно (RULE-AGRO-09, было раньше, +nearest_window_date); ?field_id[&only_planned=true] — список окон по типам операций из активных планов поля, планов нет → items=[]+hint (§7.8, #133) | REQ-F-025; #133 |
 
 Пост-MVP (описаны в своих документах, здесь — только индекс): API-36..39 —
 агроскаутинг (docs/11-agroscouting.md §5), API-40..45 — экономика
