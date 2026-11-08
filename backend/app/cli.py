@@ -210,6 +210,37 @@ def cmd_backfill_history(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_weather_backfill(args: argparse.Namespace) -> int:
+    """Бэкфилл полной истории погоды по всем активным полям (#126, docs/06 §7.5)."""
+    import json
+    from datetime import timedelta
+
+    from app.integrations.open_meteo import OpenMeteoAdapter
+    from app.modules.weather.ingest import WeatherIngest, centroid_lookup_factory
+
+    date_to = date.today() - timedelta(days=1)  # сегодня пишет джоба current
+    with SessionLocal() as db:
+        ingest = WeatherIngest(
+            OpenMeteoAdapter(centroid_lookup=centroid_lookup_factory(db)),
+        )
+        report = ingest.backfill_history(db, args.date_from, date_to)
+    print(
+        json.dumps(
+            {
+                "from": args.date_from.isoformat(),
+                "to": date_to.isoformat(),
+                "ok": report.ok,
+                "skipped": report.skipped,
+                "failed": report.failed,
+                "status": report.status,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    return 1 if report.failed else 0
+
+
 def cmd_advice_refresh(args: argparse.Namespace) -> int:
     """Генерация AI-рекомендаций синхронно (docs/09 §9.4 п.3, #120).
 
