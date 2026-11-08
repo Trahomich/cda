@@ -2057,20 +2057,27 @@ export class MockTransport implements Transport {
         )
       }
       const type = params.get('operation_type') as WindowOperationType | null
-      // Списочная форма only_planned (#133, обсуждение #134 #393): только типы
-      // операций из активных планов поля; без планов — hint, не ошибка.
+      // Списочная форма (§7.8 API-59, default only_planned=true): типы из
+      // НЕзавершённых планов поля; only_planned=false — все типы правил.
       if (!type) {
-        const planned = new Set(
-          TREATMENTS.filter((t) => {
-            const ctx = fieldOfCycle(t.cycle_id)
-            return ctx?.field.field_id === fieldId && t.status !== 'completed' && t.status !== 'cancelled'
-          }).map((t) => t.operation_type),
-        )
+        const onlyPlanned = params.get('only_planned') !== 'false'
+        const planned = onlyPlanned
+          ? new Set(
+              TREATMENTS.filter((t) => {
+                const ctx = fieldOfCycle(t.cycle_id)
+                return (
+                  ctx?.field.field_id === fieldId
+                  && t.status !== 'completed'
+                  && t.status !== 'cancelled'
+                )
+              }).map((t) => t.operation_type),
+            )
+          : new Set(Object.keys(OP_WINDOW_LABELS) as WindowOperationType[])
         return ok({
           field_id: fieldId,
-          only_planned: params.get('only_planned') !== 'false',
+          only_planned: onlyPlanned,
           items: [...planned].map((op) => windowsOf(n, op as WindowOperationType, fieldId)),
-          hint: planned.size ? null : 'нет активных планов операций',
+          hint: onlyPlanned && planned.size === 0 ? 'нет активных планов операций' : null,
         })
       }
       if (!(type in OP_WINDOW_LABELS)) {
