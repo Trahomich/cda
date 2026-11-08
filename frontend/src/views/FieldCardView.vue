@@ -704,7 +704,8 @@ async function loadNdvi() {
   try {
     // Текущему сезону — явный ?year: без него API-06 отдаёт последние сцены
     // ВСЕХ лет (бэкфилл 2023+), и график «текущего сезона» мешает годы (#495).
-    const year = seasonQueryYear.value ?? currentSeasonYear.value ?? undefined
+    const year =
+      seasonQueryYear.value ?? selectedYear.value ?? currentSeasonYear.value ?? undefined
     ndviNeedsSeasonYear.value = year === undefined
     const points = await getFieldNdvi(fieldId, year)
     if (token !== seasonToken) return // сезон уже переключили — ответ устарел
