@@ -933,12 +933,6 @@ function fmtNum(v: number, digits = 1): string {
             :lines="4"
           />
           <p
-            v-else-if="vraUniform"
-            class="card360__muted"
-          >
-            Поле однородно по NDVI — зоны дифференцированного внесения не выделяются
-          </p>
-          <p
             v-else-if="!vra"
             class="card360__muted"
           >
@@ -947,7 +941,8 @@ function fmtNum(v: number, digits = 1): string {
           <template v-else>
             <p class="card360__muted">
               По чистой сцене {{ fmtDate(vra.date) }} ·
-              неоднородность NDVI (IQR): {{ fmtNum(vra.iqr_ndvi, 2) }}
+              неоднородность NDVI (IQR): {{ fmtNum(vra.iqr_ndvi, 2) }} ·
+              пространственная: {{ fmtNum(vra.spatial_spread, 2) }}
             </p>
             <!-- SVG-превью карты зон: PNG-оверлей в рамке контура (§7.4) -->
             <svg
