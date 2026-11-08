@@ -432,14 +432,20 @@ def write_renders(render_dir: Path | str, field_id, captured_at: date, render: S
 
 
 __all__ = [
+    "LEGEND_STRIP_MAX_PX",
+    "LEGEND_STRIP_MIN_PX",
+    "LEGEND_STRIP_FRAC",
+    "MAX_RASTER_PX",
     "MAX_SIDE_PX",
     "PALETTE",
     "PALETTE_NDWI",
     "RENDER_VARIANTS",
     "REQUIRED_VARIANTS",
     "SceneRender",
+    "canvas_with_strip",
     "draw_gradient_legend",
     "draw_zone_legend",
+    "legend_strip_height",
     "meta_path",
     "render_path",
     "render_scene",
