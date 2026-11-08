@@ -344,7 +344,7 @@ onUnmounted(() => {
         aria-label="Карта контуров полей хозяйства"
       />
       <div
-        v-if="loading"
+        v-if="loading && !mapViewReady"
         class="map-screen__loading-overlay"
         role="status"
         aria-live="polite"
