@@ -213,7 +213,12 @@ async function loadFields(layer: L.FeatureGroup) {
       .map(([name, color]) => ({ name, color }))
       .sort((a, b) => a.name.localeCompare(b.name, 'ru'))
     const bounds = layer.getBounds()
-    if (bounds.isValid()) map?.fitBounds(bounds.pad(0.15))
+    // Вьюпорт уже восстанавливали (сохранённый вид) или подгоняли ранее —
+    // не дёргаем карту заново (ретентивная навигация, #437)
+    if (!mapHasView && bounds.isValid()) {
+      map?.fitBounds(bounds.pad(0.15))
+      mapHasView = true
+    }
   } catch {
     failed.value = true // тост с problem+json уже показан API-клиентом
   } finally {
