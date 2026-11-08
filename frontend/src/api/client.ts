@@ -112,7 +112,7 @@ export class ApiClient {
         }
         throw error
       }
-      this.onError?.(error)
+      if (!options.silent) this.onError?.(error)
       throw error
     }
 
