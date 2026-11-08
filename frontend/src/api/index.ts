@@ -20,6 +20,7 @@ import type {
   FieldCard,
   FieldCardPlan,
   FieldCycle,
+  FieldAdvice,
   FieldOperation,
   FieldStatus,
   FieldWeather,
