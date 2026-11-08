@@ -218,7 +218,48 @@ def test_anthropic_error_returns_none() -> None:
     assert len(calls) == 3  # 401 + таймаут с 1 повтором
 
 
-def test_anthropic_no_key_returns_none_without_network() -> None:
+def test_anthropic_images_as_content_blocks() -> None:
+    """images → content-блоки image (base64 PNG) перед текстом (#119, §9.1)."""
+    import base64
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"content": [{"type": "text", "text": "ok"}]})
+
+    png = b"\x89PNG-fake-bytes"
+    assert _anthropic(handler=handler, images=[png, png]) == "ok"
+    # body проверим через отдельный запрос со «шпионом»
+    seen: list[httpx.Request] = []
+
+    def spy(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"content": [{"type": "text", "text": "ok"}]})
+
+    assert _anthropic(handler=spy, images=[png]) == "ok"
+    body = json.loads(seen[0].read().decode())
+    blocks = body["messages"][0]["content"]
+    assert blocks[0] == {
+        "type": "image",
+        "source": {
+            "type": "base64",
+            "media_type": "image/png",
+            "data": base64.b64encode(png).decode("ascii"),
+        },
+    }
+    assert blocks[1]["type"] == "text"
+
+
+def test_ollama_branch_ignores_images() -> None:
+    """images не влияют на ollama-ветку (vision — только anthropic, §9.1)."""
+    bodies: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        bodies.append(json.loads(request.read().decode()))
+        return httpx.Response(200, json={"response": "ok"})
+
+    kwargs = {"http": _client(handler), "base_url": "http://o:11434", "images": [b"\x89PNG"]}
+    assert summarize("p", "c", **kwargs) == "ok"
+    assert "images" not in bodies[-1]
+    assert bodies[-1]["prompt"].startswith("p\n")  # тело прежнее (только prompt)
     """Пустой ключ (по умолчанию env пуст) → None, запросов нет вовсе."""
 
     def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
