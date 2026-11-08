@@ -350,34 +350,63 @@ def detect_waterlogging(
 
 
 def detect_drought(
-    precip_mm_14d: float | None, gdd_14d: float | None, gdd_days: int, day: date
+    precip_mm_14d: float | None,
+    gdd_14d: float | None,
+    gdd_days: int,
+    day: date,
+    ndmi_mean: float | None = None,
+    ndvi_mean: float | None = None,
 ) -> InsightItem | None:
-    """warn: осадки 14 сут < 10 мм ∧ GDD выше нормы (допущение — докстринг)."""
-    if precip_mm_14d is None or precip_mm_14d >= DROUGHT_PRECIP_MM:
+    """warn: засуха по осадкам/GDD ИЛИ по NDMI-стрессу биомассы (§7.7 #129).
+
+    Сигнал «осадки»: осадки 14 сут < 10 мм ∧ средний GDD выше нормы.
+    Сигнал «NDMI»: ndmi_mean < −0.1 при NDVI > 0.35 — влажность биомассы
+    упала при живой вегетации (ранний сигнал, до падения NDVI).
+    detail указывает, какой сигнал сработал (осадки/NDMI/оба).
+    """
+    signals: list[str] = []
+    if (
+        precip_mm_14d is not None
+        and precip_mm_14d < DROUGHT_PRECIP_MM
+        and gdd_14d is not None
+        and gdd_days >= GDD_MIN_DAYS
+        and gdd_14d / gdd_days > GDD_NORM_DAILY_C
+    ):
+        signals.append(
+            f"осадков за 14 суток (по {day.isoformat()}) {precip_mm_14d:.1f} мм "
+            f"(<{DROUGHT_PRECIP_MM:.0f}) при среднем GDD {gdd_14d / gdd_days:.1f} °C·сут "
+            f"(норма {GDD_NORM_DAILY_C:.0f}, база {GDD_BASE_C:.0f} °C) — тепло "
+            "усиливает дефицит влаги"
+        )
+    if (
+        ndmi_mean is not None
+        and ndmi_mean < DROUGHT_NDMI_MIN
+        and ndvi_mean is not None
+        and ndvi_mean > DROUGHT_NDMI_NDVI_MIN
+    ):
+        signals.append(
+            f"NDMI {ndmi_mean:.2f} < {DROUGHT_NDMI_MIN:.1f} при NDVI "
+            f"{ndvi_mean:.2f} > {DROUGHT_NDMI_NDVI_MIN} — влажность биомассы "
+            "на фоне живой вегетации (стресс задолго до падения NDVI)"
+        )
+    if not signals:
         return None
-    if gdd_14d is None or gdd_days < GDD_MIN_DAYS:
-        return None
-    gdd_daily = gdd_14d / gdd_days
-    if gdd_daily <= GDD_NORM_DAILY_C:
-        return None
+    data_refs: list[dict] = [
+        {
+            "source": "weather",
+            "date": day.isoformat(),
+            "precip_mm_14d": precip_mm_14d,
+            "gdd_14d": gdd_14d,
+        }
+    ]
+    if len(signals) > 1:
+        data_refs.append({"source": "satellite", "date": day.isoformat(), "ndmi_mean": ndmi_mean})
     return InsightItem(
         code="drought",
         severity="warn",
         title="Почвенная засуха",
-        detail=(
-            f"Осадков за 14 суток (по {day.isoformat()}) {precip_mm_14d:.1f} мм "
-            f"(<{DROUGHT_PRECIP_MM:.0f}), средний GDD {gdd_daily:.1f} °C·сут "
-            f"(норма {GDD_NORM_DAILY_C:.0f}, база {GDD_BASE_C:.0f} °C) — тепло "
-            "усиливает дефицит влаги. Проверьте запасы влаги в почве."
-        ),
-        data_refs=[
-            {
-                "source": "weather",
-                "date": day.isoformat(),
-                "precip_mm_14d": precip_mm_14d,
-                "gdd_14d": gdd_14d,
-            }
-        ],
+        detail="; ".join(signals).capitalize() + ". Проверьте запасы влаги в почве.",
+        data_refs=data_refs,
     )
 
 
