@@ -329,8 +329,9 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
 
     cloud = np.isin(scl, CLOUD_SCL_VALUES)
 
-    # прореживание окна до MAX_SIDE_PX (ближайший сосед, трансформ × f)
-    factor = max(1, math.ceil(max(red_arr.shape) / MAX_SIDE_PX))
+    # прореживание окна (ближайший сосед, трансформ × f): растр — до
+    # MAX_RASTER_PX, чтобы канва с полосой легенды не превысила MAX_SIDE_PX
+    factor = max(1, math.ceil(max(red_arr.shape) / MAX_RASTER_PX))
     sl = (slice(None, None, factor), slice(None, None, factor))
     from rasterio.transform import Affine
 
