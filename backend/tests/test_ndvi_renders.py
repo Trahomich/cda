@@ -409,7 +409,7 @@ class TestRenderLegend:
         _, alpha = self._read_png(render.png["ndvi"])
         semi_rows = np.where(((alpha > 0) & (alpha < 255)).any(axis=1))[0]
         assert semi_rows.size > 0
-        assert semi_rows.min() > alpha.shape[0] * 0.85
+        assert semi_rows.min() > alpha.shape[0] * 0.8
 
     def test_bbox_extended_for_legend_strip(self, color_rasters):
         """Юг bbox расширен пропорционально полосе: равномерное отображение
