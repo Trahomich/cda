@@ -1391,7 +1391,8 @@ export class MockTransport implements Transport {
       })
     }
 
-    /* ── Зоны дифвнесения (API-52, §7.4, #97); поле 6 — однородное ── */
+    /* ── Зоны дифвнесения (API-52, §7.4, #97); поле 6 — однородное;
+       ?year=YYYY (§7.5) — сезон; нет сезона — 404 season_not_found ── */
     const vraMatch = /^\/fields\/([\w-]+)\/vra$/.exec(pathname)
     if (method === 'GET' && vraMatch) {
       const field = FIELDS.find((f) => f.field_id === vraMatch[1])
@@ -1399,6 +1400,16 @@ export class MockTransport implements Transport {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${vraMatch[1]} не найдено`)
       }
       const n = FIELD_N.get(field.field_id)!
+      const yearParam = Number(params.get('year') ?? 0)
+      if (yearParam !== 0 && !SEASON_YEARS.includes(yearParam)) {
+        return problem(
+          404,
+          'https://cda.example/errors/season-not-found',
+          'Нет сезона',
+          `У поля нет чистых NDVI-сцен сезона ${yearParam}`,
+          'season_not_found',
+        )
+      }
       if (n === 6) {
         return problem(
           422,
@@ -1408,10 +1419,11 @@ export class MockTransport implements Transport {
           'vra_uniform_field',
         )
       }
-      return ok(vraOf(n, field.field_id))
+      return ok(vraOf(n, field.field_id, yearParam || 2027))
     }
 
-    /* ── Прогноз урожайности (API-53, §7.4, #97); поле 4 — пар (без культуры) ── */
+    /* ── Прогноз урожайности (API-53, §7.4, #97); поле 4 — пар (без культуры);
+       ?year=YYYY (§7.5) — цикл года YYYY, ответ дополняется полем year ── */
     const yieldMatch = /^\/fields\/([\w-]+)\/yield-forecast$/.exec(pathname)
     if (method === 'GET' && yieldMatch) {
       const field = FIELDS.find((f) => f.field_id === yieldMatch[1])
@@ -1419,6 +1431,29 @@ export class MockTransport implements Transport {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${yieldMatch[1]} не найдено`)
       }
       const n = FIELD_N.get(field.field_id)!
+      const yearParam = Number(params.get('year') ?? 0)
+      if (yearParam !== 0) {
+        if (!SEASON_YEARS.includes(yearParam)) {
+          return problem(
+            422,
+            'https://cda.example/errors/yield-no-season-data',
+            'Прогноз недоступен',
+            `Чистых NDVI-сцен сезона ${yearParam} меньше трёх — прогноз не рассчитывается`,
+            'yield_no_season_data',
+          )
+        }
+        const cultureName = seasonCultureName(n, yearParam)
+        if (!cultureName) {
+          return problem(
+            422,
+            'https://cda.example/errors/yield-no-culture',
+            'Прогноз недоступен',
+            `Основной культуры в цикле ${yearParam} нет — прогноз не рассчитывается`,
+            'yield_no_culture',
+          )
+        }
+        return ok(yieldOf(n, field.field_id, cultureName, yearParam))
+      }
       if (field.current_cycle?.kind === 'fallow') {
         return problem(
           422,
@@ -1431,14 +1466,25 @@ export class MockTransport implements Transport {
     }
 
     /* ── «Выводы ассистента» (API-51, §7.4, #96): только числовые
-       детекторы, source='rules' (мок-мир без Ollama), поле 7 — пусто ── */
+       детекторы, source='rules' (мок-мир без Ollama), поле 7 — пусто;
+       ?year=YYYY (§7.5) — детекторы по сезону YYYY ── */
     const insightsMatch = /^\/fields\/([\w-]+)\/insights$/.exec(pathname)
     if (method === 'GET' && insightsMatch) {
       const field = FIELDS.find((f) => f.field_id === insightsMatch[1])
       if (!field) {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${insightsMatch[1]} не найдено`)
       }
-      return ok(insightsOf(FIELD_N.get(field.field_id)!, field.field_id))
+      const yearParam = Number(params.get('year') ?? 0)
+      if (yearParam !== 0 && !SEASON_YEARS.includes(yearParam)) {
+        return problem(
+          404,
+          'https://cda.example/errors/season-not-found',
+          'Нет сезона',
+          `У поля нет чистых NDVI-сцен сезона ${yearParam}`,
+          'season_not_found',
+        )
+      }
+      return ok(insightsOf(FIELD_N.get(field.field_id)!, field.field_id, yearParam || 2027))
     }
 
     /* ── Погода (API-07): факты + прогноз + мета, как backend ── */
