@@ -12,6 +12,7 @@ from app.models.agronomy import (
     TreatmentPlan,
     YieldRecord,
 )
+from app.models.ai import AIFieldAdvice
 from app.models.auth import AuditRecord, User
 from app.models.integrations import (
     Forecast,
