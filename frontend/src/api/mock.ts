@@ -1660,7 +1660,10 @@ export class MockTransport implements Transport {
       const pending = advicePending.get(field.field_id)
       if (pending != null && Date.now() - pending >= 1500) {
         advicePending.delete(field.field_id)
-        adviceStore.set(field.field_id, makeAdvice(FIELD_N.get(field.field_id)!, 1))
+        const fresh = makeAdvice(FIELD_N.get(field.field_id)!, 1)[0]!
+        fresh.answer =
+          'Рекомендация пересчитана по свежей сцене: подкормка 35 кг/га д.в. в ближайшее окно без осадков и ветра до 4 м/с.'
+        adviceStore.set(field.field_id, [fresh, ...(adviceStore.get(field.field_id) ?? [])])
       }
       const list = adviceStore.get(field.field_id)
       if (!list?.length) {
