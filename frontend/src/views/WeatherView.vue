@@ -184,8 +184,17 @@ onMounted(async () => {
     recent.value = []
   }
   try {
-    const page = await getFields({ status: 'all' })
-    fields.value = page.items.filter((f) => f.status === 'active')
+    // Все активные поля (на стене их 90): страницами по 100 — без limit
+    // сервер отдаёт дефолтные 20, комбобокс обязан видеть всё хозяйство.
+    const items: Field[] = []
+    let offset = 0
+    for (;;) {
+      const page = await getFields({ status: 'all', limit: 100, offset })
+      items.push(...page.items)
+      offset += page.items.length
+      if (offset >= page.total || page.items.length === 0) break
+    }
+    fields.value = items.filter((f) => f.status === 'active')
     const saved = localStorage.getItem(LS_FIELD)
     fieldId.value =
       saved && fields.value.some((f) => f.field_id === saved)
