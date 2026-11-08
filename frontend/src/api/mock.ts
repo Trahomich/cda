@@ -1592,6 +1592,57 @@ export class MockTransport implements Transport {
       return ok(insightsOf(FIELD_N.get(field.field_id)!, field.field_id, yearParam || 2027))
     }
 
+    /* ── AI-рекомендации «что делать сейчас» (API-55/56, §9.3, #137) ── */
+    const adviceMatch = /^\/fields\/([\w-]+)\/ai\/advice$/.exec(pathname)
+    const adviceHistoryMatch = /^\/fields\/([\w-]+)\/ai\/advice\/history$/.exec(pathname)
+
+    if (method === 'GET' && adviceMatch) {
+      const field = FIELDS.find((f) => f.field_id === adviceMatch[1])
+      if (!field) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${adviceMatch[1]} не найдено`)
+      }
+      // 202 queued: POST пометил поле «в пересчёте» — через ~1.5 с «готово».
+      const pending = advicePending.get(field.field_id)
+      if (pending != null && Date.now() - pending >= 1500) {
+        advicePending.delete(field.field_id)
+        adviceStore.set(field.field_id, makeAdvice(FIELD_N.get(field.field_id)!, true))
+      }
+      const list = adviceStore.get(field.field_id)
+      if (!list?.length) {
+        return problem(
+          404,
+          'https://cda.example/errors/advice-not-found',
+          'Рекомендация не найдена',
+          'Рекомендация для поля ещё не рассчитана',
+          'advice_not_found',
+        )
+      }
+      return ok(adviceView(field.field_id, list[0]))
+    }
+
+    if (method === 'POST' && adviceMatch) {
+      const field = FIELDS.find((f) => f.field_id === adviceMatch[1])
+      if (!field) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${adviceMatch[1]} не найдено`)
+      }
+      advicePending.set(field.field_id, Date.now())
+      return ok({ status: 'queued' }, 202)
+    }
+
+    if (method === 'GET' && adviceHistoryMatch) {
+      const field = FIELDS.find((f) => f.field_id === adviceHistoryMatch[1])
+      if (!field) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${adviceHistoryMatch[1]} не найдено`)
+      }
+      const limit = Math.min(Math.max(Number(params.get('limit') ?? 20) || 20, 1), 100)
+      const offset = Number(params.get('offset') ?? 0) || 0
+      const list = (adviceStore.get(field.field_id) ?? []).slice(
+        offset,
+        offset + limit,
+      )
+      return ok({ items: list.map((a) => adviceView(field.field_id, a)) })
+    }
+
     /* ── Погода (API-07): факты + прогноз + мета, как backend ── */
     const weatherMatch = /^\/fields\/([\w-]+)\/weather$/.exec(pathname)
     if (method === 'GET' && weatherMatch) {
