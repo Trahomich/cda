@@ -140,6 +140,25 @@ function isSeason(year: number): boolean {
   background: #fff;
 }
 
+/* кнопка-ячейка сезона (API-54): сбрасываем браузерный вид button */
+button.strip__cell {
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+}
+
+button.strip__cell:hover {
+  border-color: #66bb6a;
+  background: #f1f8f1;
+}
+
+/* выбранный сезон карточки поля — заливка + акцентная рамка */
+.strip__cell--selected {
+  border: 2px solid #2e7d32;
+  background: #e8f5e9;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.18);
+}
+
 /* текущий год — акцентная обводка */
 .strip__cell--in_progress {
   border: 2px solid #2e7d32;
