@@ -136,9 +136,10 @@ test('паспорт поля: возврат к текущему сезону �
   })
 })
 
-// Порядок блоков паспорта поля (#372, #122): карта → выводы ассистента → NDVI
-// → погода → планы и журнал → агрохимия → дифвнесение → остальное (прогноз).
-test('паспорт поля: порядок блоков по #372', async ({ page }) => {
+// Порядок блоков паспорта поля (#372 → #150): карта → NDVI → погода →
+// планы и журнал → агрохимия → дифвнесение → остальное (прогноз) →
+// «Выводы и рекомендации» — последний блок (фидбек #527).
+test('паспорт поля: порядок блоков по #372/#150', async ({ page }) => {
   await page.goto(`/fields/${FIRST_FIELD}`)
   await page.locator('.card360__block-title').first().waitFor({ timeout: 15_000 })
 
@@ -156,11 +157,13 @@ test('паспорт поля: порядок блоков по #372', async ({ 
   const vra = idx('Дифференцированное внесение')
   const forecast = idx('Прогноз урожайности')
   expect(map).toBeGreaterThanOrEqual(0)
-  expect(insights).toBeGreaterThan(map)
-  expect(ndvi).toBeGreaterThan(insights)
+  expect(ndvi).toBeGreaterThan(map)
   expect(weather).toBeGreaterThan(ndvi)
   expect(plans).toBeGreaterThan(weather)
   expect(agro).toBeGreaterThan(plans)
   expect(vra).toBeGreaterThan(agro)
   expect(forecast).toBeGreaterThan(vra)
+  // #150: блок ассистента — самый последний
+  expect(insights).toBeGreaterThan(forecast)
+  expect(insights).toBe(order.length - 1)
 })
