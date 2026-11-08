@@ -7,8 +7,6 @@ warn. VRA: /vra?index=ndre — зоны по B08/B05, отдельный кэш-
 детектора vra:peak не перезаписывается. БД — DATABASE_URL_TEST.
 """
 
-import json
-import uuid
 from datetime import date
 
 import numpy as np
@@ -18,13 +16,11 @@ from app.models.agronomy import CropCycle
 from app.models.integrations import SatelliteScene
 from app.models.references import Culture
 from rasterio.transform import Affine
-from rasterio.warp import transform_geom
-from shapely.geometry import box, mapping
 from sqlalchemy import text as db_text
 from sqlalchemy.orm import Session
 from tests.test_auth import auth_header, make_user
 from tests.test_satellite import make_field, make_satellite_source
-from tests.test_vra import CRS, N, X0, Y1, _write_tif, wgs_box
+from tests.test_vra import CRS, X0, Y1, N, _write_tif
 
 SATELLITE_SOURCE_ID = "satellite.sentinel2-l2a"
 API = "/api/v1"
@@ -60,7 +56,9 @@ class TestDroughtNdmi:
     def test_ndmi_requires_vegetation(self) -> None:
         """NDVI ≤ 0.35 — вегетации нет, NDMI-сигнал не подстава."""
         assert (
-            detectors.detect_drought(40.0, 60.0, 10, date(2026, 7, 1), ndmi_mean=-0.3, ndvi_mean=0.2)
+            detectors.detect_drought(
+                40.0, 60.0, 10, date(2026, 7, 1), ndmi_mean=-0.3, ndvi_mean=0.2
+            )
             is None
         )
 
@@ -273,8 +271,8 @@ class TestVraNdre:
     def test_vra_ndre_cache_key_separate(self, ndre_world, db_session) -> None:
         """Не-ndvi кэш — с суффиксом :ndre; vra:peak не пишется для ndre."""
         from app.core.cache import cache_get
-        from app.modules.satellite import vra
         from app.models.agronomy import Field
+        from app.modules.satellite import vra
 
         field_obj = db_session.get(Field, ndre_world[0])
         vra.vra_zones(db_session, field_obj, index="ndre")
