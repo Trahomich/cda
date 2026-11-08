@@ -455,20 +455,40 @@ watch([range, rangeYear], () => void loadHistory())
               <th scope="col">
                 Дата
               </th>
-              <th scope="col">
-                Температура, °C
+              <th
+                scope="col"
+                class="wx__th-ico"
+                aria-label="Погода"
+              />
+              <th
+                scope="col"
+                title="Температура, °C (ночь…день)"
+              >
+                t, °C
               </th>
-              <th scope="col">
-                Осадки, мм
+              <th
+                scope="col"
+                title="Осадки, мм"
+              >
+                мм
               </th>
-              <th scope="col">
-                Вероятность, %
+              <th
+                scope="col"
+                title="Вероятность осадков, %"
+              >
+                вер., %
               </th>
-              <th scope="col">
-                Ветер, м/с
+              <th
+                scope="col"
+                title="Ветер, м/с"
+              >
+                м/с
               </th>
-              <th scope="col">
-                Влажность, %
+              <th
+                scope="col"
+                title="Влажность, %"
+              >
+                %
               </th>
             </tr>
           </thead>
@@ -479,6 +499,13 @@ watch([range, rangeYear], () => void loadHistory())
               :class="dayHazardClass(d.date)"
             >
               <td>{{ fmtDate(d.date) }}</td>
+              <td
+                class="wx__ico"
+                :title="dayIcon(d).label"
+                :aria-label="dayIcon(d).label"
+              >
+                {{ dayIcon(d).glyph }}
+              </td>
               <td class="wx__num">
                 {{ d.temp_min_c.toLocaleString('ru-RU') }} … {{ d.temp_max_c.toLocaleString('ru-RU') }}
               </td>
