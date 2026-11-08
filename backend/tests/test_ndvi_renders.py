@@ -21,7 +21,7 @@ from app.models.integrations import SatelliteScene
 from app.services.sentinel_ingest.ndvi import run_ndvi_cycle
 from app.services.sentinel_ingest.renders import (
     MAX_SIDE_PX,
-    RENDER_VARIANTS,
+
     meta_path,
     render_path,
     render_scene,
