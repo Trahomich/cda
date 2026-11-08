@@ -291,8 +291,10 @@ class TestVraMap:
         with MemoryFile(resp.content) as mem, mem.open() as src:
             assert (src.width, src.height) == (int(width), int(height))
         # окно 1800 м при пикселе 10 м: ~180 px (±1 на округление границ контура
-        # при перепроекции в UTM), прореживание до 1024 не срабатывает
-        assert 178 < int(width) <= 184 and 178 < int(height) <= 184
+        # при перепроекции в UTM), прореживание до 1024 не срабатывает;
+        # ниже — полоса легенды (~8% высоты растра, #123): ~195 px
+        assert 178 < int(width) <= 184
+        assert 190 < int(height) <= 200
 
     def test_png_legend_zones(self, client, vra_world, agro_headers):
         """Легенда зон (#123): свотчи цветов + диапазоны NDVI, канва та же."""
