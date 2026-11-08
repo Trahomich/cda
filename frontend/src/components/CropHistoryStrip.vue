@@ -88,12 +88,20 @@ function isSeason(year: number): boolean {
         .map((i) => `${i.year} — ${i.culture_name}`)
         .join(', ')}`"
     >… +{{ hidden }}</span>
-    <span
+    <!-- Ячейка сезона (год с данными API-54) — кнопка: клик переключает
+         сезон карточки поля (§7.5, фидбек user #122); прочие годы — span. -->
+    <component
+      :is="isSeason(item.year) ? 'button' : 'span'"
       v-for="item in visibleAsc"
       :key="item.year"
+      :type="isSeason(item.year) ? 'button' : undefined"
       class="strip__cell"
-      :class="`strip__cell--${item.status}`"
+      :class="[
+        `strip__cell--${item.status}`,
+        { 'strip__cell--season': isSeason(item.year), 'strip__cell--selected': item.year === props.selectedYear },
+      ]"
       :title="title(item)"
+      @click="isSeason(item.year) && emit('select', item.year)"
     >
       <span class="strip__year">{{ item.year }}</span>
       <span
