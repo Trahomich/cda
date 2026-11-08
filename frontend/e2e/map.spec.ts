@@ -65,3 +65,26 @@ test('карта: балун поля — кликабельный заголо�
   await page.waitForURL(/\/fields\/[\w-]+$/, { timeout: 10_000 })
   await expect(page.locator('.card360__back')).toBeVisible({ timeout: 15_000 })
 })
+
+test('карта: вьюпорт запоминается и восстанавливается (#136, #437)', async ({ page }) => {
+  // Первый заход без сохранённого вида: оверлей «Загружаем поля…» вместо
+  // произвольной точки; после загрузки вид (fitBounds) сохраняется.
+  await page.evaluate(() => localStorage.removeItem('cda.map.view'))
+  await page.reload()
+  await page.waitForURL(/\/fields\/map/)
+  await expect(page.locator('.map-screen__loading-overlay')).toBeVisible()
+  await expect(page.locator('.map-legend__toggle')).toBeVisible({ timeout: 15_000 })
+  await expect(page.locator('.map-screen__loading-overlay')).toBeHidden()
+  const saved = await page.evaluate(() => localStorage.getItem('cda.map.view'))
+  expect(saved).not.toBeNull()
+  const view = JSON.parse(saved as string) as { center: number[]; zoom: number }
+  expect(view.center).toHaveLength(2)
+  expect(view.zoom).toBeGreaterThanOrEqual(1)
+
+  // Повторный заход: вид восстанавливается сразу, оверлея нет и вид не
+  // прыгает (fitBounds не выполняется при восстановленном виде)
+  await page.reload()
+  await page.waitForURL(/\/fields\/map/)
+  await expect(page.locator('.map-screen__loading-overlay')).toBeHidden()
+  await expect(page.locator('.map-legend__toggle')).toBeVisible({ timeout: 15_000 })
+})
