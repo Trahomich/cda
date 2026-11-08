@@ -146,6 +146,6 @@ test('погода: баннер опасных явлений и подсвет
   // Строка суток с ОЯ подсвечена, строк без ОЯ подсветка не трогает.
   const alertRow = page.locator('.wx__table tbody tr.wx__row--alert')
   await expect(alertRow).toHaveCount(1)
-  await expect(alertRow).toContainText('−3')
+  await expect(alertRow).toContainText('-3') // toLocaleString отдаёт дефис-минус
   await expect(page.locator('.wx__table tbody tr.wx__row--warn')).toHaveCount(0)
 })
