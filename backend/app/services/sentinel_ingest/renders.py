@@ -133,9 +133,7 @@ def _draw_text(
         x0 += 4 * k
 
 
-def _legend_panel(
-    alpha: np.ndarray, pw: int, ph: int
-) -> tuple[int, int] | tuple[int, int] | None:
+def _legend_panel(alpha: np.ndarray, pw: int, ph: int) -> tuple[int, int] | None:
     """Координаты панели легенды в левом нижнем углу; None, если не помещается."""
     h, w = alpha.shape
     if pw > w or ph > h:
