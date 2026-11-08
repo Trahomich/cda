@@ -851,3 +851,45 @@ class TestVisionRenders117:
         # выдуманное число отброшено, опубликован fallback из items §8.2
         assert updated["summary"].startswith("Резкое падение NDVI")
         assert "90" not in updated["summary"]
+
+
+class TestStripMarkdown131:
+    """#131: LLM-вывод — простой текст без markdown (§8.2): запрет в промпте +
+    санитайзер strip_markdown после guardrail."""
+
+    def test_sanitizer_unit(self) -> None:
+        """Юнит: разметка срезается, чистый текст не меняется, числа целы."""
+        from app.ai_assistant.service import strip_markdown
+
+        assert strip_markdown("Обычный текст. NDVI 0.41.") == "Обычный текст. NDVI 0.41."
+        assert strip_markdown("**Важно:** проверить поле.") == "Важно: проверить поле."
+        assert strip_markdown("_курсив_ и __жирный__") == "курсив и жирный"
+        assert strip_markdown("### Заголовок\nТекст.") == "Заголовок\nТекст."
+        assert strip_markdown("`код` и ```\nблок\n```конец") == "код и блок\nконец"
+        assert strip_markdown("* пункт\n* пункт два") == "- пункт\n- пункт два"
+        # числа со звёздочкой/подчёркиванием (умножение, snake_case) не трогаем
+        assert strip_markdown("2*3*4 и some_name") == "2*3*4 и some_name"
+
+    def test_prompt_forbids_markdown(self) -> None:
+        """Промпты §8.2/§8.5 требуют простой текст без markdown."""
+        from app.ai_assistant import service
+
+        for prompt in (service.PROMPT, service.VISION_PROMPT):
+            assert "без markdown-разметки" in prompt
+
+    def test_summary_sanitized_in_cache(self, world, db_session, monkeypatch, tmp_path):
+        """Мок-LLM вернула сводку с **/#/` — в кэше опубликован чистый текст
+        (легальные числа сохранены, разметки нет)."""
+        service = TestVisionRenders117._anthropic(monkeypatch, ndvi_render_dir=str(tmp_path))
+        fid = TestVisionRenders117._prepare(world, db_session, monkeypatch)
+        md_answer = "# Сводка по полю\n**NDVI** упал на 0.22 — `проверить` север."
+        monkeypatch.setattr(service.llm, "summarize", lambda p, c, **k: md_answer)
+        service.refresh_insights(fid, TODAY)
+
+        from app.core.cache import cache_get  # уже отдаёт разобранный JSON
+
+        updated = cache_get(f"insights:{fid}:{TODAY.isoformat()}")
+        summary = updated["summary"]
+        assert summary.startswith("Сводка по полю\nNDVI упал на 0.22 — проверить север.")
+        assert "**" not in summary and "`" not in summary and "\n#" not in summary
+        assert "0.22" in summary
