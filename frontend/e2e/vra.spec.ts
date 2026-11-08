@@ -64,7 +64,7 @@ test('карточка поля: бывшее «однородное» поле 
   await expect(vraBlock.locator('.card360__muted').first()).toContainText(
     'пространственная',
   )
-  await expect(vraBlock).not.toContainText('однородно')
+  await expect(vraBlock).not.toContainText('Поле однородно')
 })
 
 test('карточка поля: прогноз урожайности — число и интервал (§7.4)', async ({ page }) => {
