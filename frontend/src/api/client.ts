@@ -32,6 +32,8 @@ export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   query?: Record<string, string | number | undefined | null>
+  /** Не показывать тост ошибки: у запроса своя обработка деградации (#134). */
+  silent?: boolean
 }
 
 /** Обработчик ошибок (подключается из приложения: тост problem+json). */
