@@ -69,12 +69,6 @@ class TestDayHazards:
 class TestHazardsApi:
     """API-07/API-29 отдают hazards по каждому дню (#139)."""
 
-    def _field_with_winter_cycle(self, db_session) -> uuid.UUID:
-        field_id = make_field(db_session)
-        culture = make_culture(db_session, name=WINTER)
-        make_cycle(db_session, field=None, culture=culture) if False else None
-        return field_id
-
     def test_api07_forecast_hazards(self, client, db_session):
         """Озимая (цикл сезона) + прогноз −2 °C → frost alert в API-07."""
         field_id = make_field(db_session)
