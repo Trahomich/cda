@@ -11,22 +11,14 @@ import io
 import json
 import uuid
 import zipfile
-from datetime import date
 from xml.etree.ElementTree import fromstring
 
-import numpy as np
 import pytest
 from app.models.agronomy import UserRole
-from rasterio.transform import Affine
 from shapely.geometry import shape
-from sqlalchemy.orm import Session
 from tests.test_auth import auth_header, make_user
 from tests.test_satellite import make_satellite_source
 from tests.test_vra import (
-    CRS,
-    N,
-    SCENE_DATE,
-    SATELLITE_SOURCE_ID,
     make_field,
     make_scene,
     make_vra_rasters,
