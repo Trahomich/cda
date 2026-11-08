@@ -488,7 +488,7 @@ watch([range, rangeYear], () => void loadHistory())
                 scope="col"
                 title="Влажность, %"
               >
-                %
+                влаж., %
               </th>
             </tr>
           </thead>
