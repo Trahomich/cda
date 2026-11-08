@@ -32,10 +32,12 @@ from app.models.integrations import SatelliteScene, WeatherObservation
 from app.models.references import Agrochem, Culture
 from app.modules.satellite.vra import VRA_MIN_IQR, VRA_SPREAD_MIN
 from app.modules.satellite.waterlog import (
+    WATERLOG_NDVI_MEAN,
     WATERLOG_NDWI_P90,
     WATERLOG_PRECIP_MM_7D,
     waterlogged,
 )
+from app.modules.weather.rules import GDD_BASE_C  # noqa: F401 — точка истины (§7.8, #132)
 
 #: ndvi_drop: падение NDVI между соседними чистыми сценами (09-ai §8.2)
 NDVI_DROP_WARN = 0.15
