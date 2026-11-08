@@ -776,16 +776,33 @@ watch([range, rangeYear], () => void loadHistory())
 .wx__table th,
 .wx__table td {
   border: 1px solid #d7e0d8;
-  padding: 0.45rem 0.6rem;
+  padding: 0.4rem 0.5rem;
   text-align: left;
+  white-space: nowrap;
 }
 
 .wx__table th {
   background: #eef4ef;
 }
 
+/* числа — по центру, заголовки числовых колонок тоже (#429 п.4) */
+.wx__table th:not(:first-child) {
+  text-align: center;
+}
+
 .wx__num {
   font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.wx__th-ico {
+  width: 1%;
+}
+
+.wx__ico {
+  text-align: center;
+  font-size: 1rem;
+  line-height: 1.2;
 }
 
 .wx__windows {
