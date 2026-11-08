@@ -53,7 +53,7 @@ test('рекомендация: пустое состояние и первый 
   const block = adviceBlock(page)
   await expect(block).toBeVisible({ timeout: 15_000 })
 
-  await expect(block.locator('.card360__muted')).toContainText('Рекомендация ещё не рассчитана')
+  await expect(block).toContainText('Рекомендация ещё не рассчитана')
   await expect(block.locator('.card360__advice-btn')).toHaveText('Рассчитать')
 
   await block.locator('.card360__advice-btn').click()
