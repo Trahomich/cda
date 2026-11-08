@@ -69,6 +69,10 @@ test('карта: балун поля — кликабельный заголо�
 test('карта: вьюпорт запоминается и восстанавливается (#136, #437)', async ({ page }) => {
   // Первый заход без сохранённого вида: оверлей «Загружаем поля…» вместо
   // произвольной точки; после загрузки вид (fitBounds) сохраняется.
+  // Оверлей транзиентен — замедляем мок, чтобы поймать его надёжно.
+  await page.evaluate(() => {
+    ;(globalThis as { __CDA_MOCK_DELAY__?: number }).__CDA_MOCK_DELAY__ = 700
+  })
   await page.evaluate(() => localStorage.removeItem('cda.map.view'))
   await page.reload()
   await page.waitForURL(/\/fields\/map/)
