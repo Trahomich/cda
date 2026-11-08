@@ -14,7 +14,6 @@ from datetime import UTC, date, datetime, timedelta
 import pytest
 from app.ai_assistant import advice, advice_scheduler
 from app.core import events
-from app.models.agronomy import Field
 from app.models.ai import AIFieldAdvice
 from app.models.auth import UserRole
 from app.models.integrations import SatelliteScene
@@ -120,9 +119,9 @@ class TestAdviceAPI:
         """Несуществующее поле → 404 field_not_found у всех трёх эндпоинтов."""
         missing = uuid.uuid4()
         for method, path in (
-            ("get", f"/ai/advice"),
-            ("post", f"/ai/advice"),
-            ("get", f"/ai/advice/history"),
+            ("get", "/ai/advice"),
+            ("post", "/ai/advice"),
+            ("get", "/ai/advice/history"),
         ):
             resp = getattr(self.client, method)(f"{API}/fields/{missing}{path}", headers=self.auth)
             assert resp.status_code == 404
