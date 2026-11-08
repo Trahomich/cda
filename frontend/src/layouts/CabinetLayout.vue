@@ -20,6 +20,16 @@ const NAV_ITEMS = [
   { label: 'Права', to: { name: 'users' }, roles: ['manager', 'admin'] },
 ] as const
 
+/** Разделы «почти готовы» (фидбек #398, #136): лёгкая точка-индикация
+ * в меню. Когда остальные разделы дозреют — очистить массив одним
+ * движением, индикация исчезнет. */
+const READY_SECTIONS: ReadonlySet<string> = new Set(['fields-map', 'work-calendar', 'weather'])
+
+/** У пункта меню индикатор «почти готово»? */
+function isReady(item: (typeof NAV_ITEMS)[number]): boolean {
+  return READY_SECTIONS.has(String(item.to.name))
+}
+
 /** Ссылки, доступные роли текущего пользователя (07-ux §5). */
 const visibleNav = () =>
   NAV_ITEMS.filter(
