@@ -198,8 +198,6 @@ class TestAdviceTriggers:
 
     def _spy_queue(self, monkeypatch) -> list[uuid.UUID]:
         queued: list[uuid.UUID] = []
-        from app.ai_assistant import advice
-
         monkeypatch.setattr(advice, "queue_advice", lambda fid, **kw: queued.append(fid))
         return queued
 
