@@ -139,10 +139,27 @@ class WindowResponse(BaseModel):
     field_id: uuid.UUID
     rule_text: str
     window_open: bool = Field(description="Есть ли хотя бы одни подходящие сутки")
+    nearest_window_date: date | None = Field(
+        default=None,
+        description="Дата первых подходящих суток горизонта или null (§7.8, API-59)",
+    )
     days: list[WindowDayItem]
     alert: str | None = Field(
         default=None, description="Текст для ENT-ALERT (warning), если окна нет (RULE-AGRO-09)"
     )
+
+
+class WindowsListResponse(BaseModel):
+    """Список погодных окон по типам операций поля (API-59, §7.8).
+
+    ``only_planned=true`` — только типы из незавершённых планов внесения
+    текущего сезона; планов нет → ``items=[]`` и ``hint`` (не ошибка).
+    """
+
+    field_id: uuid.UUID
+    only_planned: bool
+    items: list[WindowResponse]
+    hint: str | None = None
 
 
 __all__ = [
@@ -157,4 +174,5 @@ __all__ = [
     "SourceMeta",
     "WindowDayItem",
     "WindowResponse",
+    "WindowsListResponse",
 ]
