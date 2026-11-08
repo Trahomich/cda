@@ -384,6 +384,8 @@ __all__ = [
     "RENDER_VARIANTS",
     "REQUIRED_VARIANTS",
     "SceneRender",
+    "draw_gradient_legend",
+    "draw_zone_legend",
     "meta_path",
     "render_path",
     "render_scene",
