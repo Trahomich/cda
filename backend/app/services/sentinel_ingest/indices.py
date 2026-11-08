@@ -234,7 +234,7 @@ def missing_indices_for(field_id: uuid.UUID, captured_at: date, db: Session) -> 
     """Какие индексы EXTRA_INDICES ещё не записаны для (поле, дата) — идемпотентность."""
     present = set(
         db.scalars(
-            select_index().where(
+            select(SatelliteScene.index).where(
                 SatelliteScene.field_id == field_id,
                 SatelliteScene.captured_at == captured_at,
                 SatelliteScene.index.in_(EXTRA_INDICES),
@@ -242,12 +242,6 @@ def missing_indices_for(field_id: uuid.UUID, captured_at: date, db: Session) -> 
         )
     )
     return [name for name in EXTRA_INDICES if name not in present]
-
-
-def select_index():
-    from sqlalchemy import select
-
-    return select(SatelliteScene.index)
 
 
 __all__ = [
