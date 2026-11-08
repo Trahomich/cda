@@ -350,22 +350,24 @@ def _from_cache(data: dict) -> VraZones | None:
 
 
 def peak_scenes(
-    db: Session, field_id: uuid.UUID, *, year: int | None = None
+    db: Session, field_id: uuid.UUID, *, year: int | None = None, index: str = "ndvi"
 ) -> list[SatelliteScene]:
-    """Топ-3 чистых NDVI-сцены сезона по index_avg (§7.4 v1.4), по возрастанию даты.
+    """Топ-3 чистых сцены сезона по index_avg (§7.4 v1.4), по возрастанию даты.
 
-    Сезон по умолчанию (year=None) — календарный год последней сцены поля
-    (задача #106: зоны вегетации видны на пиковых снимках, а не на последних,
-    где вегетации уже нет). Явный year — сцены сезона YYYY (§7.5).
+    index — индекс сцен (§7.7 #129: VRA можно строить по NDRE — не насыщается
+    на поздних фазах). Сезон по умолчанию (year=None) — календарный год
+    последней сцены поля (задача #106: зоны вегетации видны на пиковых
+    снимках, а не на последних, где вегетации уже нет). Явный year — сцены
+    сезона YYYY (§7.5).
     """
-    latest = latest_scene(db, field_id, year=year)
+    latest = latest_scene(db, field_id, year=year, index=index)
     if latest is None:
         return []
     rows = db.scalars(
         select(SatelliteScene)
         .where(
             SatelliteScene.field_id == field_id,
-            SatelliteScene.index == "ndvi",
+            SatelliteScene.index == index,
             func.extract("year", SatelliteScene.captured_at) == latest.captured_at.year,
         )
         .order_by(SatelliteScene.index_avg.desc(), SatelliteScene.captured_at.desc())
@@ -374,65 +376,77 @@ def peak_scenes(
     return sorted(rows, key=lambda s: s.captured_at)
 
 
-def _scene_vra(db: Session, field: Field, scene: SatelliteScene) -> VraZones:
+def _scene_vra(db: Session, field: Field, scene: SatelliteScene, index: str = "ndvi") -> VraZones:
     """Полный расчёт по сцене с кэшем 24 ч (§7.4 v1.7): зоны строятся всегда,
-    ключ vra:{field_id}:{date} (записи до #121 без spatial_spread
-    пересчитываются — _from_cache вернёт None).
+    ключ vra:{field_id}:{date} (§7.7 #129: не-ndvi индексы — с суффиксом
+    :{index}; записи до #121 без spatial_spread пересчитываются —
+    _from_cache вернёт None).
     """
-    key = f"vra:{field.id}:{scene.captured_at.isoformat()}"
+    date_key = scene.captured_at.isoformat()
+    key = f"vra:{field.id}:{date_key}" if index == "ndvi" else f"vra:{field.id}:{date_key}:{index}"
     if (cached := cache_get(key)) is not None and (parsed := _from_cache(cached)) is not None:
         return parsed
-    zones = _analyze_scene(db, field, scene)
+    zones = _analyze_scene(db, field, scene, index=index)
     cache_set(key, _to_cache(zones), CACHE_TTL_SECONDS)
     return zones
 
 
-def vra_zones(db: Session, field: Field, *, year: int | None = None) -> VraZones:
+def vra_zones(
+    db: Session, field: Field, *, year: int | None = None, index: str = "ndvi"
+) -> VraZones:
     """Зоны по пиковым сценам вегетации (§7.4 v1.7): топ-3 по index_avg,
     зоны и метрики — по сцене с максимальным index_avg (ворота однородности
     удалены, #121: «просто записать результаты в дифвнесения»).
 
+    index (§7.7 #129) — индекс зон: ndvi (default) или ndre (не насыщается
+    на поздних фазах вегетации); метрики iqr_ndvi/spatial_spread считаются
+    по выбранному индексу, указатель детектора §8.2 пишется только для ndvi.
     Явный year (§7.5) — сцены сезона YYYY; сезона нет — 404 season_not_found.
     Без year — текущий сезон (год последней сцены)."""
-    peaks = peak_scenes(db, field.id, year=year)
+    if index not in VRA_INDICES:
+        raise ValueError(f"Неизвестный индекс VRA {index!r}; допустимо: {', '.join(VRA_INDICES)}")
+    peaks = peak_scenes(db, field.id, year=year, index=index)
     if not peaks:
         if year is not None:
             raise AppError(
-                f"У поля {field.id} нет NDVI-сцен сезона {year}",
+                f"У поля {field.id} нет {index.upper()}-сцен сезона {year}",
                 code="season_not_found",
                 title="Сезон не найден",
                 status_code=404,
             )
         raise AppError(
-            f"Зоны внесения недоступны для поля {field.id}: нет чистых NDVI-сцен текущего сезона",
+            f"Зоны внесения недоступны для поля {field.id}: "
+            f"нет чистых {index.upper()}-сцен текущего сезона",
             code="vra_no_season_data",
             title="Нет данных сезона",
             status_code=422,
         )
     peak_dates = tuple(scene.captured_at for scene in peaks)
-    analyzed = [(scene, _scene_vra(db, field, scene)) for scene in peaks]
+    analyzed = [(scene, _scene_vra(db, field, scene, index=index)) for scene in peaks]
 
     # зоны строим по пиковой сцене с максимальным index_avg (§7.4)
     scene, result = max(analyzed, key=lambda row: (row[0].index_avg, row[0].captured_at))
     result = replace(result, peak_dates=peak_dates)
     # указатель для «Выводов ассистента»: актуальные зоны + метрики всех
     # пиковых сцен (детектор §8.2 v1.7, #121); сезонный год (§7.5) —
-    # отдельный ключ, ключ текущего сезона не трогаем
-    pointer_key = f"vra:peak:{field.id}" if year is None else f"vra:peak:{field.id}:{year}"
-    cache_set(
-        pointer_key,
-        {
-            "date": result.captured_at.isoformat(),
-            "iqr_ndvi": result.iqr_ndvi,
-            "spatial_spread": result.spatial_spread,
-            "peaks": [
-                {
-                    "date": row.captured_at.isoformat(),
-                    "iqr_ndvi": zones.iqr_ndvi,
-                    "spatial_spread": zones.spatial_spread,
-                }
-                for row, zones in analyzed
-            ],
+    # отдельный ключ, ключ текущего сезона не трогаем; для не-ndvi индексов
+    # указатель не пишем — детектор §8.2 работает по NDVI (#129)
+    if index == "ndvi":
+        pointer_key = f"vra:peak:{field.id}" if year is None else f"vra:peak:{field.id}:{year}"
+        cache_set(
+            pointer_key,
+            {
+                "date": result.captured_at.isoformat(),
+                "iqr_ndvi": result.iqr_ndvi,
+                "spatial_spread": result.spatial_spread,
+                "peaks": [
+                    {
+                        "date": row.captured_at.isoformat(),
+                        "iqr_ndvi": zones.iqr_ndvi,
+                        "spatial_spread": zones.spatial_spread,
+                    }
+                    for row, zones in analyzed
+                ],
         },
         CACHE_TTL_SECONDS,
     )
