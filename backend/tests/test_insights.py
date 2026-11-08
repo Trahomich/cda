@@ -11,6 +11,7 @@ import uuid
 from datetime import date, timedelta
 
 import pytest
+from app.ai_assistant.service import _key as insights_key
 from app.models.integrations import SatelliteScene, WeatherObservation
 from app.models.references import Agrochem, Source
 from tests.test_inputs import headers, make_culture, make_cycle, make_field
