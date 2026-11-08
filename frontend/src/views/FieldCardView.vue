@@ -239,6 +239,64 @@ function resetVra(): void {
   }
 }
 
+/* ── Выгрузка карты дифвнесения (API-60, §7.4, #140) ── */
+
+const EXPORT_FORMATS = [
+  { value: 'isoxml', label: 'ISOXML (терминалы)' },
+  { value: 'shp', label: 'Shapefile (ГИС)' },
+  { value: 'geojson', label: 'GeoJSON' },
+] as const
+
+const exportFormat = ref<(typeof EXPORT_FORMATS)[number]['value']>('isoxml')
+/** Базовая доза из формы (когда нет approved-плана, API-60 → 422). */
+const exportDose = ref('')
+const exportBusy = ref(false)
+/** Нужна базовая доза: 422 vra_no_base_dose или base_dose_kg_ha=null. */
+const exportNeedsDose = ref(false)
+const exportError = ref(false)
+
+/** Скачать blob как файл (a[download] + object URL, revoke сразу). */
+function downloadExportFile(file: { blob: Blob; filename: string }): void {
+  const url = URL.createObjectURL(file.blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = file.filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
+
+/** Выгрузить карту зон в выбранном формате; без базовой дозы — 422 → форма. */
+async function exportVra(): Promise<void> {
+  if (!vra.value || exportBusy.value) return
+  exportError.value = false
+  const manualDose = Number(exportDose.value.replace(',', '.'))
+  const dose =
+    Number.isFinite(manualDose) && manualDose > 0 && manualDose <= 2000
+      ? manualDose
+      : (vra.value.base_dose_kg_ha ?? undefined)
+  exportBusy.value = true
+  try {
+    const res = await exportFieldVra(props.fieldId, exportFormat.value, {
+      baseDoseKgHa: dose,
+      year: seasonQueryYear.value,
+    })
+    if (res.kind === 'file') {
+      exportNeedsDose.value = false
+      downloadExportFile(res.file)
+    } else if (res.kind === 'no-dose') {
+      exportNeedsDose.value = true // форма ввода базовой дозы
+    } else {
+      exportError.value = true
+    }
+  } catch {
+    exportError.value = true
+  } finally {
+    exportBusy.value = false
+  }
+}
+
 onUnmounted(() => {
   if (layer.value) URL.revokeObjectURL(layer.value.url)
   if (vraMap.value) URL.revokeObjectURL(vraMap.value.url)
