@@ -262,14 +262,17 @@ def get_insights(
         field_id=field.id,
         generated_at=datetime.now(UTC),
         source="rules",
-        summary=NO_DEVIATIONS_SUMMARY if not items else None,
+        # сводки пока нет: LLM обязателен и при items=[] (§8.2 v1.3, #138);
+        # статическая строка — только деградация в refresh_insights
+        summary=None,
         items=items,
     )
     cache_set(key, resp.model_dump(mode="json"), INSIGHTS_TTL_SECONDS)
 
-    if llm.llm_enabled(settings) and items:
-        # фоновая доработка: VRA по COG + LLM-сводка (повторный запрос увидит).
-        # В tests LLM выключен — фон не запускается вовсе.
+    if llm.llm_enabled(settings):
+        # фоновая доработка: VRA по COG + LLM-вердикт (§8.2 v1.3 — включая
+        # items=[]; повторный запрос увидит). В tests LLM выключен — фон
+        # не запускается вовсе.
         background.add_task(refresh_insights, field.id, day, year)
     return resp
 
