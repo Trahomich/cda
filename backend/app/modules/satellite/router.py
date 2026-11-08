@@ -557,9 +557,20 @@ def field_vra(
     settings: SettingsDep,
     *,
     year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"),
+    index: str = Query(
+        default="ndvi",
+        description="Индекс зон: ndvi | ndre (§7.7 — NDRE не насыщается на поздних фазах)",
+    ),
 ) -> VraZonesResponse:
     field = _get_field(db, field_id)
-    result = vra.vra_zones(db, field, year=year)
+    if index not in vra.VRA_INDICES:
+        raise AppError(
+            f"Неизвестный индекс VRA «{index}»; допустимо: {', '.join(vra.VRA_INDICES)}",
+            code="unknown_index",
+            title="Некорректный запрос",
+            status_code=422,
+        )
+    result = vra.vra_zones(db, field, year=year, index=index)
     base_dose = vra.base_dose_kg_ha(db, field.id)
     return VraZonesResponse(
         field_id=field.id,
