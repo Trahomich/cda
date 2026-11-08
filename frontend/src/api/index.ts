@@ -46,6 +46,8 @@ import type {
   TreatmentPlanRequest,
   TreatmentPlanStatus,
   VraZonesResponse,
+  WeatherMapMetric,
+  WeatherMapResponse,
   GddResponse,
   WeatherForecast,
   WeatherForecastDay,
