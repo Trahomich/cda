@@ -56,7 +56,7 @@ test('паспорт поля: выбор прошлого сезона — NDVI
   await expect(ndviBlock.locator('.ndvi__svg')).toBeVisible({ timeout: 15_000 })
 
   // Клик по году 2026 в ленте севооборота под снимками поля.
-  await seasonCells(page).locator('button', { hasText: '2026' }).click()
+  await seasonCells(page).filter({ hasText: '2026' }).click()
 
   // Заголовок блока и даты графика — сезона 2026 (не 2027).
   await expect(ndviBlock.locator('.card360__block-title')).toContainText('сезон 2026')
@@ -83,7 +83,7 @@ test('паспорт поля: VRA и урожайность следуют вы
     timeout: 15_000,
   })
 
-  await seasonCells(page).locator('button', { hasText: '2026' }).click()
+  await seasonCells(page).filter({ hasText: '2026' }).click()
 
   // Зоны VRA — по пиковой чистой сцене сезона 2026 (§7.4 v1.7: пик
   // вегетации 19.06, не последняя сцена).
@@ -110,7 +110,7 @@ test('паспорт поля: выводы ассистента следуют 
   await expect(insights.locator('.card360__insight')).toHaveCount(4, { timeout: 15_000 })
   await expect(insights).toContainText('31.07.2027')
 
-  await seasonCells(page).locator('button', { hasText: '2026' }).click()
+  await seasonCells(page).filter({ hasText: '2026' }).click()
 
   // Детекторы пересчитаны по сезону 2026: даты сцен и метка времени — 2026.
   await expect(insights.locator('.card360__insight')).toHaveCount(4, { timeout: 15_000 })
@@ -120,10 +120,10 @@ test('паспорт поля: выводы ассистента следуют 
 
 test('паспорт поля: возврат к текущему сезону после прошлого (§7.5)', async ({ page }) => {
   await page.goto(`/fields/${FIRST_FIELD}`)
-  await seasonCells(page).locator('button', { hasText: '2026' }).click()
+  await seasonCells(page).filter({ hasText: '2026' }).click()
   await expect(page.locator('.card360__season-badge')).toBeVisible({ timeout: 15_000 })
 
-  await seasonCells(page).locator('button', { hasText: '2027' }).click()
+  await seasonCells(page).filter({ hasText: '2027' }).click()
 
   // Бейджа нет, данные вернулись к текущему сезону.
   await expect(page.locator('.card360__season-badge')).toHaveCount(0)
