@@ -91,14 +91,14 @@ def build_items(
     db: Session,
     field_id: uuid.UUID,
     *,
-    vra_iqr: float | None = None,
-    vra_day: date | None = None,
+    vra_peaks: Sequence[tuple[date, float, float]] = (),
     year: int | None = None,
 ) -> list[InsightItem]:
     """Все детекторы по данным поля (чистые функции над собранными данными).
 
-    year (§7.5) — сцены сезона YYYY (исторические выводы); без него — вся
-    история (текущее поведение).
+    vra_peaks — кортежи (дата, IQR, spatial_spread) пиковых сцен из кэша VRA
+    (детектор vra_heterogeneity §8.2 v1.7). year (§7.5) — сцены сезона YYYY
+    (исторические выводы); без него — вся история (текущее поведение).
     """
     scenes = detectors.load_scenes(db, field_id, year=year)
     latest = scenes[-1] if scenes else None
