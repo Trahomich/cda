@@ -452,6 +452,72 @@ export interface WeatherWindows {
   alert?: string | null
 }
 
+/* ─── Погода: история, GDD, окна по планам (#132/#133, обсуждение #134/#393) ─── */
+
+/** Дневной факт истории погоды — GET /weather/history (API-57, #126/#132).
+ *  cloud_pct/snow_mm — метрики бэкфилла #126 (могут отсутствовать в старых сутках). */
+export interface WeatherHistoryDay {
+  date: string
+  temp_max_c: number | null
+  temp_min_c: number | null
+  precip_mm: number
+  cloud_pct?: number | null
+  snow_mm?: number | null
+}
+
+/** История за период (по возрастанию даты; > 400 суток — 422 too_wide). */
+export interface WeatherHistory {
+  field_id: string
+  items: WeatherHistoryDay[]
+  total: number
+}
+
+/** Точка накопительной кривой GDD — GET /weather/gdd (#132, base 5 °C). */
+export interface GddPoint {
+  date: string
+  /** Эффективная температура за сутки, °C·сут. */
+  gdd_day: number
+  /** Накопленная с 1 января, °C·сут. */
+  gdd_cum: number
+}
+
+/** Точка многолетней нормы GDD (при ≥ 2 годах истории). */
+export interface GddNormPoint {
+  date: string
+  norm_cum: number
+}
+
+/** Ответ GET /weather/gdd?field_id&year (#132): кривая с 1 января + норма. */
+export interface WeatherGdd {
+  field_id: string
+  year: number
+  base_c: number
+  /** Итог на последний день с данными, °C·сут. */
+  total: number
+  items: GddPoint[]
+  /** Норма по тем же датам; null при < 2 годах истории. */
+  norm_cum: GddNormPoint[] | null
+}
+
+/** Оценка окна одного типа операций в списочной форме /weather/windows. */
+export interface WeatherWindowItem {
+  operation_type: WindowOperationType
+  rule_text?: string
+  window_open: boolean
+  nearest_window_date: string | null
+  days: WeatherWindowDay[]
+  alert?: string | null
+}
+
+/** Ответ GET /weather/windows?field_id&only_planned=true (без operation_type,
+ *  #133): только типы операций из активных планов поля; hint — когда планов нет. */
+export interface WeatherWindowsPlanned {
+  field_id: string
+  only_planned: boolean
+  items: WeatherWindowItem[]
+  hint: string | null
+}
+
 /* ─── Источники данных (API-28, экран E-14; ref_source, 06 §3) ─── */
 
 /** Статус адаптера: ok / degraded / error (05 §6). */
