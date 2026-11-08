@@ -640,9 +640,10 @@ function vraOf(n: number, fieldId: string, year = 2027): {
 
 /** API-53 (§7.4, #97): прогноз урожайности по эмпирике NDVI (детерминирован
  *  от поля); у поля 4 (пар) бэкенд отдал бы 422 yield_no_culture. */
-function yieldOf(n: number, fieldId: string, cultureName: string): {
+function yieldOf(n: number, fieldId: string, cultureName: string, year = 2027): {
   field_id: string
   cycle_year: number
+  year: number
   culture_id: string
   culture_name: string
   method: string
@@ -653,14 +654,15 @@ function yieldOf(n: number, fieldId: string, cultureName: string): {
   high_c_ha: number
   disclaimer: string
 } {
-  const points = ndviOf(n).filter((p) => p.cloud_pct <= 60)
+  const points = ndviOf(n, year).filter((p) => p.cloud_pct <= 60)
   const ndviMax = Math.max(...points.map((p) => p.ndvi))
   const integral = Math.round((points.reduce((s, p) => s + Math.max(0, p.ndvi - 0.2), 0) / 100) * 1000) / 1000
   const forecast = Math.round((12 + n * 1.4 + ndviMax * 15 + integral * 6) * 10) / 10
   const culture = CULTURES.find((c) => c.name === cultureName) ?? CULTURES[0]
   return {
     field_id: fieldId,
-    cycle_year: 2027,
+    cycle_year: year,
+    year,
     culture_id: culture.culture_id,
     culture_name: cultureName,
     method: 'ndvi-empirical',
