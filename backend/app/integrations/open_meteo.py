@@ -143,7 +143,12 @@ class OpenMeteoAdapter:
                     return None
                 return float(series[_i])
 
-            rows.append((date.fromisoformat(str(day_str)), {m: value(m) for m in _DAILY_METRICS}))
+            rows.append(
+                (
+                    date.fromisoformat(str(day_str)),
+                    {m: value(m) for m in _DAILY_METRICS + _FORECAST_ONLY_METRICS},
+                )
+            )
         return rows
 
     @staticmethod
