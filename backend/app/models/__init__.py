@@ -31,6 +31,7 @@ from app.models.references import (
 )
 
 __all__ = [
+    "AIFieldAdvice",
     "Agrochem",
     "AgroInput",
     "Alert",
