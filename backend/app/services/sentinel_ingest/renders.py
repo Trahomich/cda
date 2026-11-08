@@ -65,6 +65,9 @@ PALETTE: tuple[tuple[float, tuple[int, int, int]], ...] = (
 #: NDVI отображаемого диапазона: −0.1 → 0 (голая почва/вода), 0.8 → 1 (пик вегетации)
 _NDVI_LO, _NDVI_HI = -0.1, 0.8
 
+#: публичные имена шкалы NDVI (advice-контекст легализует легенду рендера, #145)
+NDVI_RENDER_LO, NDVI_RENDER_HI = _NDVI_LO, _NDVI_HI
+
 #: NDWI отображаемого диапазона (§7.4): < −0.3 сухо, > 0.5 открытая вода
 _NDWI_LO, _NDWI_HI = -0.3, 0.5
 
