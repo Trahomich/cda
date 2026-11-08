@@ -167,13 +167,14 @@ class TestAdviceAPI:
         days = {it["advice_date"] for it in resp.json()["items"]}
         assert days == {TODAY.isoformat(), (TODAY - timedelta(days=1)).isoformat()}
 
-        # limit > 100 → 422
+        # limit > 100 → 400 validation_error (422 зарезервирован за доменными, §8)
         resp = self.client.get(
             f"{API}/fields/{self.field_id}/ai/advice/history",
             headers=self.auth,
             params={"limit": 101},
         )
-        assert resp.status_code == 422
+        assert resp.status_code == 400
+        assert resp.json()["code"] == "validation_error"
 
     def test_history_empty(self):
         """История без записей — 200 с пустым items (не 404)."""
