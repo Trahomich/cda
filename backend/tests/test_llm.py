@@ -189,9 +189,8 @@ def test_anthropic_only_thinking_returns_none() -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         calls.append(1)
-        return httpx.Response(
-            200, json={"content": [{"type": "thinking", "thinking": "…"}], "stop_reason": "max_tokens"}
-        )
+        payload = {"content": [{"type": "thinking", "thinking": "…"}], "stop_reason": "max_tokens"}
+        return httpx.Response(200, json=payload)
 
     assert _anthropic(handler=handler, attempts=1) is None
     assert len(calls) == 1
