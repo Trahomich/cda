@@ -375,7 +375,7 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     t_w = np.clip((ndwi - _NDWI_LO) / (_NDWI_HI - _NDWI_LO), 0.0, 1.0)
     t_w[~np.isfinite(ndwi)] = 0.0
     alpha_ndwi = np.where(inside & np.isfinite(ndwi) & ~cloud_d, 255, 0).astype("uint8")
-    png_ndwi = _png_rgba(_palette_rgb(t_w, PALETTE_NDWI), alpha_ndwi)
+    png_ndwi = _canvas_png(_palette_rgb(t_w, PALETTE_NDWI), alpha_ndwi)
 
     # --- вариант truecolor: композит B04/B03/B02, перцентильная нормировка
     lo, hi = np.percentile(
