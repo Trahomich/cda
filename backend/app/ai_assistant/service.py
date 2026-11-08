@@ -206,22 +206,41 @@ def get_insights(
     return resp
 
 
-def _vra_peak_cached(field_id: uuid.UUID, year: int | None = None) -> tuple[date, float] | None:
-    """(дата, IQR) пиковой сцены из кэша VRA (vra.py #106); нет — детектор молчит.
+def _vra_peaks_cached(
+    field_id: uuid.UUID, year: int | None = None
+) -> list[tuple[date, float, float]]:
+    """(дата, IQR, spatial_spread) пиковых сцен из кэша VRA (§8.2 v1.7, #121).
 
-    VRA-зоны теперь строятся по пиковым сценам сезона — их даты отличаются
-    от последней сцены, поэтому vra.py кладёт указатель текущих зон
-    отдельно (ключ vra:peak:{field_id}; сезонный год — §7.5 — с суффиксом
-    :{year}, ключ текущего сезона не меняется).
+    vra.py кладёт указатель текущих зон отдельно (ключ vra:peak:{field_id};
+    сезонный год — §7.5 — с суффиксом :{year}) и с v1.7 хранит метрики ВСЕХ
+    пиковых сцен (ключ «peaks»). Старый формат без «peaks» — одна пиковая
+    сцена с spread=0.0 (детектор доработает по IQR при пересчёте зон).
+    Битый/отсутствующий указатель — [] (детектор молчит).
     """
     key = f"vra:peak:{field_id}" if year is None else f"vra:peak:{field_id}:{year}"
     data = cache_get(key)
-    if isinstance(data, dict):
+    if not isinstance(data, dict):
+        return []
+    raw_peaks = data.get("peaks")
+    if not isinstance(raw_peaks, list):  # старый формат указателя
+        raw_peaks = [
+            {"date": data.get("date"), "iqr_ndvi": data.get("iqr_ndvi"), "spatial_spread": 0.0}
+        ]
+    peaks: list[tuple[date, float, float]] = []
+    for row in raw_peaks:
+        if not isinstance(row, dict):
+            continue
         try:
-            return date.fromisoformat(data["date"]), float(data["iqr_ndvi"])
+            peaks.append(
+                (
+                    date.fromisoformat(str(row["date"])),
+                    float(row["iqr_ndvi"]),
+                    float(row.get("spatial_spread", 0.0)),
+                )
+            )
         except (KeyError, ValueError, TypeError):
-            return None
-    return None
+            continue
+    return peaks
 
 
 #: вердикт модели дифвнесения для контекста LLM (§8.2, #105), когда расчёта нет
