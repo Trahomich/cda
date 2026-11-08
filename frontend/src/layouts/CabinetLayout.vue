@@ -152,6 +152,19 @@ function logout() {
   background: rgb(255 255 255 / 20%);
 }
 
+/* Индикация «почти готово» (#136, фидбек #398): тонкая приглушённая
+   точка рядом с пунктом — заметна при взгляде, не кричит; снимается
+   очисткой READY_SECTIONS выше */
+.cabinet__nav--ready::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  margin-left: 0.35rem;
+  border-radius: 50%;
+  background: #ffe082; /* мягкий тёплый акцент на зелёном фоне шапки */
+  opacity: 0.9;
+}
+
 .cabinet__logout {
   background: #fff;
   color: #2e7d32;
