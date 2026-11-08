@@ -97,9 +97,10 @@ class TestRenderScene:
                 assert ds.count == 4 and ds.dtypes[0] == "uint8"
                 alpha = ds.read(4)
         top = alpha[: alpha.shape[0] // 4]
-        bottom = alpha[-alpha.shape[0] // 4 :]
+        # средняя полоса (нижняя теперь занята пустой полосой легенды, #123)
+        middle = alpha[alpha.shape[0] // 4 : alpha.shape[0] // 2]
         assert not top.any()  # облачная зона прозрачна
-        assert bottom.mean() > 200  # растительность непрозрачна
+        assert middle.mean() > 200  # растительность непрозрачна
 
     def test_no_visible_bands_returns_none(self, scene_rasters):  # noqa: F811
         """Активов без b02/b03 (каталог до #83): рендер пропускается, без ошибки."""
