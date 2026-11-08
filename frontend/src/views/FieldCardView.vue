@@ -491,11 +491,9 @@ async function loadAdviceHistory(): Promise<void> {
       offset: adviceHistory.value.length,
     })
     adviceHistory.value = [...adviceHistory.value, ...page.items]
-    adviceTotal.value = Math.max(adviceTotal.value, adviceHistory.value.length)
-    // «Показать ещё» прячем, когда страница пришла неполной.
-    if (page.items.length < ADVICE_PAGE) adviceTotal.value = adviceHistory.value.length
+    adviceHasMore.value = page.items.length === ADVICE_PAGE
   } catch {
-    adviceTotal.value = adviceHistory.value.length
+    adviceHasMore.value = false
   }
 }
 
