@@ -294,7 +294,6 @@ class TestAdviceCli:
     def _run_cli(self, monkeypatch, *, field_id=None) -> dict:
         import json
 
-        from app.ai_assistant import advice
         from app.cli import main as cli_main
 
         monkeypatch.setattr(
@@ -305,19 +304,21 @@ class TestAdviceCli:
             ),
         )
         generated: list[uuid.UUID] = []
-        record = AIFieldAdvice(
-            field_id=self.field_id,
-            created_at=datetime.now(tz=UTC),
-            model="glm-5.3-flash",
-            provider="anthropic",
-            advice_date=TODAY,
-            answer="ok",
-            context_hash="hash-cli",
-            status="ok",
-        )
 
         def fake_generate(fid, *, today=None):
             generated.append(fid)
+            record = AIFieldAdvice(
+                field_id=fid,
+                created_at=datetime.now(tz=UTC),
+                model="glm-5.3-flash",
+                provider="anthropic",
+                advice_date=today or TODAY,
+                answer="ok",
+                context_hash="hash-cli",
+                status="ok",
+            )
+            self.db.add(record)
+            self.db.commit()
             return record
 
         monkeypatch.setattr(advice, "generate_advice", fake_generate)
@@ -340,9 +341,7 @@ class TestAdviceCli:
             argv += ["--field-id", str(field_id)]
         code = cli_main(argv)
         assert code == 0
-        # последний принт — JSON-отчёт
-        out = self.captured
-        return json.loads("\n".join(out))
+        return json.loads("\n".join(self.captured))
 
     @pytest.fixture(autouse=True)
     def _capture_stdout(self, monkeypatch):
