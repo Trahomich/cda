@@ -85,6 +85,137 @@ class SceneRender:
     bbox: tuple[float, float, float, float]  # WGS84: minLon, minLat, maxLon, maxLat
 
 
+#: мини-шрифт 3×5 для подписей легенды (цифры, точка, минус, пробел);
+#: каждый бит — пиксель слева направо (старший бит = левый столбец)
+_FONT_3X5: dict[str, tuple[int, ...]] = {
+    "0": (0b111, 0b101, 0b101, 0b101, 0b111),
+    "1": (0b010, 0b110, 0b010, 0b010, 0b111),
+    "2": (0b111, 0b001, 0b111, 0b100, 0b111),
+    "3": (0b111, 0b001, 0b011, 0b001, 0b111),
+    "4": (0b101, 0b101, 0b111, 0b001, 0b001),
+    "5": (0b111, 0b100, 0b111, 0b001, 0b111),
+    "6": (0b111, 0b100, 0b111, 0b101, 0b111),
+    "7": (0b111, 0b001, 0b001, 0b001, 0b001),
+    "8": (0b111, 0b101, 0b111, 0b101, 0b111),
+    "9": (0b111, 0b101, 0b111, 0b001, 0b111),
+    ".": (0b000, 0b000, 0b000, 0b000, 0b010),
+    "-": (0b000, 0b000, 0b111, 0b000, 0b000),
+    " ": (0b000, 0b000, 0b000, 0b000, 0b000),
+}
+
+#: цвет текста и подложки легенды (§7.3 #123): светлый текст на тёмной
+#: полупрозрачной панели — читаем поверх любой карты
+_LEGEND_TEXT = (245, 245, 245)
+_LEGEND_PANEL = (17, 17, 17)
+_LEGEND_PANEL_ALPHA = 160
+
+
+def _text_px(text: str, k: int) -> int:
+    """Ширина строки в пикселях (глиф 3k + межбуквенный k)."""
+    return max(0, len(text) * 4 * k - k)
+
+
+def _draw_text(
+    rgb: np.ndarray, alpha: np.ndarray, text: str, x0: int, y0: int, *, k: int
+) -> None:
+    """Нарисовать строку мини-шрифтом 3×5 (символ = 4k × 5k), in-place.
+
+    Вызывающая сторона гарантирует, что глифы помещаются в растр.
+    """
+    for ch in text:
+        glyph = _FONT_3X5.get(ch, _FONT_3X5[" "])
+        for row, bits in enumerate(glyph):
+            for col in range(3):
+                if bits >> (2 - col) & 1:
+                    ys, xs = y0 + row * k, x0 + col * k
+                    rgb[ys : ys + k, xs : xs + k] = _LEGEND_TEXT
+                    alpha[ys : ys + k, xs : xs + k] = 255
+        x0 += 4 * k
+
+
+def _legend_panel(
+    alpha: np.ndarray, pw: int, ph: int
+) -> tuple[int, int] | tuple[int, int] | None:
+    """Координаты панели легенды в левом нижнем углу; None, если не помещается."""
+    h, w = alpha.shape
+    if pw > w or ph > h:
+        return None
+    return max(1, w // 200), h - ph - max(1, w // 200)
+
+
+def draw_gradient_legend(
+    rgb: np.ndarray,
+    alpha: np.ndarray,
+    palette: tuple[tuple[float, tuple[int, int, int]], ...],
+    lo_label: str,
+    hi_label: str,
+) -> bool:
+    """Шкала-легенда NDVI (§7.3, #123): градиент палитры + подписи min/max.
+
+    Рисуется поверх растра в левом нижнем углу БЕЗ изменения размеров
+    канвы — геопривязка (X-Field-Bbox/X-Image-Size) и растяжка палитры
+    не меняются. False — канва слишком мала, легенда пропущена.
+    """
+    h, w = alpha.shape
+    k = max(1, round(w / 200))
+    pad, bar_h, gap = 2 * k, 3 * k, k
+    bar_w = max(bar_h * 8, int(w * 0.3))
+    lo_px, hi_px = _text_px(lo_label, k), _text_px(hi_label, k)
+    inner = max(bar_w, lo_px + hi_px)
+    pw, ph = 2 * pad + inner, 2 * pad + bar_h + gap + 5 * k
+    pos = _legend_panel(alpha, pw, ph)
+    if pos is None:
+        return False
+    x0, y0 = pos
+    rgb[y0 : y0 + ph, x0 : x0 + pw] = _LEGEND_PANEL
+    alpha[y0 : y0 + ph, x0 : x0 + pw] = _LEGEND_PANEL_ALPHA
+
+    bx, by = x0 + pad, y0 + pad
+    t = np.linspace(0.0, 1.0, bar_w, dtype="float32")
+    rgb[by : by + bar_h, bx : bx + bar_w] = _palette_rgb(t, palette)[np.newaxis, :, :]
+    alpha[by : by + bar_h, bx : bx + bar_w] = 255
+
+    ty = by + bar_h + gap
+    _draw_text(rgb, alpha, lo_label, bx, ty, k=k)
+    _draw_text(rgb, alpha, hi_label, bx + bar_w - hi_px, ty, k=k)
+    return True
+
+
+def draw_zone_legend(
+    rgb: np.ndarray,
+    alpha: np.ndarray,
+    swatches: list[tuple[tuple[int, int, int], str]],
+) -> bool:
+    """Легенда зон VRA (§7.4, #123): свотч цвета зоны + диапазон NDVI.
+
+    Рисуется поверх растра в левом нижнем углу без изменения канвы.
+    False — нет свотчей или канва слишком мала.
+    """
+    if not swatches:
+        return False
+    h, w = alpha.shape
+    k = max(1, round(w / 200))
+    pad, gap, sw = 2 * k, k, 3 * k
+    items = [(color, label, _text_px(label, k)) for color, label in swatches]
+    inner = sum(sw + gap + lw for _, _, lw in items) + gap * (len(items) - 1)
+    pw, ph = 2 * pad + inner, 2 * pad + 5 * k
+    pos = _legend_panel(alpha, pw, ph)
+    if pos is None:
+        return False
+    x0, y0 = pos
+    rgb[y0 : y0 + ph, x0 : x0 + pw] = _LEGEND_PANEL
+    alpha[y0 : y0 + ph, x0 : x0 + pw] = _LEGEND_PANEL_ALPHA
+
+    x, ty = x0 + pad, y0 + pad
+    for color, label, lw in items:
+        rgb[ty : ty + 5 * k, x : x + sw] = color
+        alpha[ty : ty + 5 * k, x : x + sw] = 255
+        x += sw + gap
+        _draw_text(rgb, alpha, label, x, ty, k=k)
+        x += lw + gap
+    return True
+
+
 def render_path(render_dir: Path | str, field_id, variant: str, captured_at: date) -> Path:
     """Путь PNG рендера (§7.3): {render_dir}/{field_id}/{variant}/{date}.png."""
     return Path(render_dir) / str(field_id) / variant / f"{captured_at.isoformat()}.png"
