@@ -9,11 +9,11 @@
 import type { Transport, TransportResponse } from './transport'
 import type {
   AdapterStatus,
-  AdviceResponse,
   AgroInput,
   Api05FieldDetail,
   CropCycleDetail,
   Field,
+  FieldAdvice,
   FieldOperation,
   FieldStatus,
   GddPoint,
