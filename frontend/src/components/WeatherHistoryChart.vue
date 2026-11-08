@@ -1,14 +1,18 @@
 <script setup lang="ts">
-// График истории погоды (фидбек #391 п.2, #134): осадки — столбцами,
-// tmax/tmin — линиями. Подход как NdviTimeline (чистый SVG, без библиотек).
+// График истории погоды (фидбек #391 п.2, #134; полировка #149 п.1–3):
+// осадки — столбцами, tmax/tmin — плавными кривыми (Catmull-Rom без
+// искажения данных). Стиль приведён к эталону NdviTimeline.vue: тонкая сетка,
+// серые подписи осей, HTML-легенда под графиком (легенда внутри SVG
+// обрезалась по верхнему краю и наезжала на кривые — фидбек #429 п.1).
 import { computed } from 'vue'
 import type { WeatherHistoryDay } from '@/api/types'
+import { continuousSegments, smoothPath } from './chartCurve'
 
 const props = defineProps<{ days: WeatherHistoryDay[] }>()
 
 const W = 720
-const H = 240
-const PAD = { top: 16, right: 44, bottom: 26, left: 44 }
+const H = 220
+const PAD = { top: 12, right: 12, bottom: 24, left: 30 }
 const plotW = W - PAD.left - PAD.right
 const plotH = H - PAD.top - PAD.bottom
 
@@ -21,6 +25,15 @@ const tMax = computed(() => (temps.value.length ? Math.max(...temps.value, 1) : 
 const pMax = computed(() =>
   Math.max(5, ...props.days.map((d) => d.precip_mm)),
 )
+
+/** Круглые деления оси температур, как в NdviTimeline. */
+const tTicks = computed(() => {
+  const lo = Math.ceil(tMin.value / 5) * 5
+  const hi = Math.floor(tMax.value / 5) * 5
+  const out: number[] = []
+  for (let t = lo; t <= hi; t += 5) out.push(t)
+  return out
+})
 
 function x(i: number): number {
   return props.days.length > 1
@@ -37,17 +50,12 @@ function yP(v: number): number {
   return PAD.top + (1 - v / (pMax.value * 1.1)) * plotH
 }
 
-const tmaxPath = computed(() =>
-  props.days
-    .map((d, i) => (d.temp_max_c == null ? null : `${x(i)},${yT(d.temp_max_c)}`))
-    .filter((p): p is string => p != null)
-    .join(' '),
+/** Плавные кривые температур: отрезки непрерывных данных (null разрывает). */
+const tmaxPaths = computed(() =>
+  continuousSegments(props.days, (d) => d.temp_max_c, x, yT).map((seg) => smoothPath(seg)),
 )
-const tminPath = computed(() =>
-  props.days
-    .map((d, i) => (d.temp_min_c == null ? null : `${x(i)},${yT(d.temp_min_c)}`))
-    .filter((p): p is string => p != null)
-    .join(' '),
+const tminPaths = computed(() =>
+  continuousSegments(props.days, (d) => d.temp_min_c, x, yT).map((seg) => smoothPath(seg)),
 )
 
 /** Столбец осадков: ширина по числу дней, не больше 8 px. */
@@ -72,130 +80,108 @@ const monthTicks = computed(() => {
   })
   return out
 })
-
 </script>
 
 <template>
-  <svg
+  <div
+    v-if="days.length"
     class="whist"
-    :viewBox="`0 0 ${W} ${H}`"
-    role="img"
-    aria-label="История погоды: осадки и температура"
   >
-    <!-- сетка и ось температур -->
-    <line
-      v-for="t in [tMin, (tMin + tMax) / 2, tMax]"
-      :key="t"
-      :x1="PAD.left"
-      :x2="W - PAD.right"
-      :y1="yT(t)"
-      :y2="yT(t)"
-      class="whist__grid"
-    />
-    <text
-      v-for="t in [tMin, (tMin + tMax) / 2, tMax]"
-      :key="`l${t}`"
-      :x="PAD.left - 6"
-      :y="yT(t) + 4"
-      class="whist__tick"
-      text-anchor="end"
-    >{{ Math.round(t) }}°</text>
-
-    <!-- осадки (столбцы) -->
-    <rect
-      v-for="(d, i) in days"
-      :key="d.date"
-      class="whist__bar"
-      :x="x(i) - barW / 2"
-      :y="yP(d.precip_mm)"
-      :width="barW"
-      :height="Math.max(0, PAD.top + plotH - yP(d.precip_mm))"
+    <svg
+      class="whist__svg"
+      :viewBox="`0 0 ${W} ${H}`"
+      role="img"
+      aria-label="История погоды: осадки и температура"
     >
-      <title>{{ d.date }}: {{ d.precip_mm.toLocaleString('ru-RU') }} мм</title>
-    </rect>
+      <!-- сетка и ось температур -->
+      <g
+        v-for="t in tTicks"
+        :key="t"
+      >
+        <line
+          :x1="PAD.left"
+          :x2="W - PAD.right"
+          :y1="yT(t)"
+          :y2="yT(t)"
+          class="whist__grid"
+        />
+        <text
+          :x="PAD.left - 4"
+          :y="yT(t) + 2.5"
+          class="whist__tick"
+          text-anchor="end"
+        >{{ t }}°</text>
+      </g>
 
-    <!-- температуры -->
-    <polyline
-      class="whist__line whist__line--max"
-      :points="tmaxPath"
-    />
-    <polyline
-      class="whist__line whist__line--min"
-      :points="tminPath"
-    />
-
-    <!-- месяцы по X -->
-    <text
-      v-for="m in monthTicks"
-      :key="`m${m.i}`"
-      :x="x(m.i)"
-      :y="H - 8"
-      class="whist__tick"
-      text-anchor="middle"
-    >{{ m.label }}</text>
-
-    <!-- легенда -->
-    <g
-      class="whist__legend"
-      transform="translate(8, 4)"
-    >
+      <!-- осадки (столбцы) -->
       <rect
-        x="0"
-        y="-7"
-        width="10"
-        height="8"
+        v-for="(d, i) in days"
+        :key="d.date"
         class="whist__bar"
-      />
-      <text
-        x="14"
-        y="0"
-        class="whist__tick"
-      >осадки, мм (макс {{ Math.round(pMax) }})</text>
-      <line
-        x1="150"
-        y1="-3"
-        x2="172"
-        y2="-3"
+        :x="x(i) - barW / 2"
+        :y="yP(d.precip_mm)"
+        :width="barW"
+        :height="Math.max(0, PAD.top + plotH - yP(d.precip_mm))"
+      >
+        <title>{{ d.date }}: {{ d.precip_mm.toLocaleString('ru-RU') }} мм</title>
+      </rect>
+
+      <!-- температуры: плавные кривые, нули (null) разрывают линию -->
+      <path
+        v-for="(p, i) in tmaxPaths"
+        :key="`max${i}`"
         class="whist__line whist__line--max"
+        :d="p"
       />
-      <text
-        x="176"
-        y="0"
-        class="whist__tick"
-      >t дн., °C</text>
-      <line
-        x1="234"
-        y1="-3"
-        x2="256"
-        y2="-3"
+      <path
+        v-for="(p, i) in tminPaths"
+        :key="`min${i}`"
         class="whist__line whist__line--min"
+        :d="p"
       />
+
+      <!-- месяцы по X -->
       <text
-        x="260"
-        y="0"
+        v-for="m in monthTicks"
+        :key="`m${m.i}`"
+        :x="x(m.i)"
+        :y="H - 8"
         class="whist__tick"
-      >t ночи, °C</text>
-    </g>
-  </svg>
+        text-anchor="middle"
+      >{{ m.label }}</text>
+    </svg>
+
+    <!-- легенда под графиком (HTML, как у NdviTimeline) -->
+    <div class="whist__legend">
+      <span><i class="whist__lg-bar" /> осадки, мм (макс {{ Math.round(pMax) }})</span>
+      <span><i class="whist__lg-line whist__lg-line--max" /> t дн., °C</span>
+      <span><i class="whist__lg-line whist__lg-line--min" /> t ночи, °C</span>
+    </div>
+  </div>
 </template>
 
 <style scoped>
 .whist {
-  width: 100%;
-  height: auto;
-  background: #fff;
-  border: 1px solid #d7e0d8;
-  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
 }
 
+.whist__svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* стиль — эталон NdviTimeline: тонкая светлая сетка, серые мелкие подписи */
 .whist__grid {
-  stroke: #e4ebe5;
+  stroke: #e0e0e0;
   stroke-width: 1;
 }
 
 .whist__tick {
-  font-size: 11px;
-  fill: #66756a;
+  font-size: 9px;
+  fill: #9e9e9e;
 }
 
 .whist__bar {
@@ -207,6 +193,7 @@ const monthTicks = computed(() => {
   fill: none;
   stroke-width: 2;
   stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 .whist__line--max {
@@ -215,5 +202,41 @@ const monthTicks = computed(() => {
 
 .whist__line--min {
   stroke: #1e88e5;
+}
+
+.whist__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  font-size: 0.75rem;
+  color: #757575;
+}
+
+.whist__legend i {
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 0.25rem;
+}
+
+.whist__lg-bar {
+  width: 10px;
+  height: 8px;
+  border-radius: 2px;
+  background: #4d9fd6;
+  background: rgba(77, 159, 214, 0.75);
+}
+
+.whist__lg-line {
+  width: 14px;
+  height: 0;
+  border-top: 2px solid;
+}
+
+.whist__lg-line--max {
+  border-color: #d84315;
+}
+
+.whist__lg-line--min {
+  border-color: #1e88e5;
 }
 </style>
