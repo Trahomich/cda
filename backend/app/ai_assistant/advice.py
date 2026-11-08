@@ -310,9 +310,8 @@ def _yield_verdict(
     if cycle is None:
         return None
     _, culture = cycle
-    if culture is None or culture.kind == "fallow" or any(
-        v is None for v in (culture.yield_k_base, culture.yield_k_ndvi_max, culture.yield_k_ndvi_int)
-    ):
+    coeffs = (culture.yield_k_base, culture.yield_k_ndvi_max, culture.yield_k_ndvi_int)
+    if culture is None or culture.kind == "fallow" or any(v is None for v in coeffs):
         return None
     avgs = [float(s.index_avg) for s in scenes]
     ndvi_max = max(avgs)
