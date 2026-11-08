@@ -447,9 +447,9 @@ def vra_zones(
                     }
                     for row, zones in analyzed
                 ],
-        },
-        CACHE_TTL_SECONDS,
-    )
+            },
+            CACHE_TTL_SECONDS,
+        )
     return result
 
 
