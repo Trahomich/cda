@@ -36,6 +36,8 @@ import type {
   RotationPlan,
   RotationPlanDetail,
   SceneItem,
+  SeasonItem,
+  SeasonsResponse,
   SourceStatusItem,
   TreatmentPlan,
   TreatmentPlanRequest,
