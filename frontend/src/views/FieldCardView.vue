@@ -1239,43 +1239,6 @@ function fmtNum(v: number, digits = 1): string {
 </template>
 
 <style scoped>
-/* Переключатель сезонов (API-54, §7.5): годы кнопками, текущий помечен. */
-.card360__seasons {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0.4rem 0 0.6rem;
-  flex-wrap: wrap;
-}
-
-.card360__seasons-label {
-  color: #5f6b5f;
-  font-size: 0.9rem;
-}
-
-.card360__season-btn {
-  background: #fff;
-  border: 2px solid #c8e6c9;
-  border-radius: 999px;
-  padding: 0.3rem 0.9rem;
-  font-size: 0.95rem;
-  min-height: 36px;
-  cursor: pointer;
-  color: #1b5e20;
-}
-
-.card360__season-btn--active {
-  background: #e8f5e9;
-  font-weight: 700;
-  border-color: #66bb6a;
-}
-
-.card360__season-mark {
-  font-weight: 400;
-  font-size: 0.8rem;
-  color: #5f6b5f;
-}
-
 /* Бейдж прошлого сезона в заголовке карточки (§7.5). */
 .card360__season-badge {
   display: inline-block;
