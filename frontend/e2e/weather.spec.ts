@@ -9,7 +9,6 @@
 import { expect, test } from '@playwright/test'
 
 const FIELD1 = '0000000a-0000-4000-8000-000000000001'
-const FIELD4 = '0000000a-0000-4000-8000-000000000004'
 const FIELD7 = '0000000a-0000-4000-8000-000000000007'
 
 test.beforeEach(async ({ page }) => {
