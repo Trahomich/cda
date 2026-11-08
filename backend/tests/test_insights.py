@@ -1001,7 +1001,7 @@ class TestLlmVerdictEveryField138:
         short-circuit не ставил задачу)."""
         client, hdr = world
         fid = self._quiet_field(world, db_session)
-        spy = TestBackgroundFix101._get_with_ollama(client, monkeypatch)
+        spy = TestBackgroundFix101()._get_with_ollama(client, monkeypatch)
         resp = get_insights(client, hdr, fid)
         assert resp["items"] == []
         assert spy["n"] == 1
