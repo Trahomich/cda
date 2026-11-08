@@ -572,6 +572,7 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
         summary = strip_markdown(summary) if summary is not None else None
     finally:
         _llm_semaphore.release()
+    llm_ok = summary is not None  # вердикт LLM прошёл guardrail и санитайзер
     if summary is None and not items:
         # деградация §8.2 v1.3: провайдер недоступен/вернул пусто и детекторы
         # молчат — статическая строка (source=rules); при непустых items
@@ -582,7 +583,7 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
     resp = InsightsResponse(
         field_id=field_id,
         generated_at=datetime.now(UTC),
-        source="rules+llm" if summary is not None else "rules",
+        source="rules+llm" if llm_ok else "rules",
         summary=summary,
         items=items,
     )
