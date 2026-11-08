@@ -605,6 +605,10 @@ function fmtNum(v: number, digits = 1): string {
         <template v-if="card">
           {{ card.field.name }}
           <span class="card360__area">· {{ fmtNum(card.field.area_ga, 2) }} га</span>
+          <span
+            v-if="isPastSeason"
+            class="card360__season-badge"
+          >сезон {{ selectedYear }}</span>
         </template>
         <Skeleton
           v-else
