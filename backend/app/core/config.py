@@ -95,6 +95,14 @@ class Settings(BaseSettings):
     ollama_base_url: str = ""
     ollama_model: str = "qwen3.5:9b"
 
+    # LLM-провайдер (#115): ollama (по умолчанию — обратная совместимость)
+    # или anthropic-совместимое облако (api.z.ai, модель glm-5.3-flash —
+    # Messages API /v1/messages). Ключ — ТОЛЬКО из env, в репу не попадает.
+    llm_provider: str = "ollama"  # ollama | anthropic
+    anthropic_base_url: str = "https://api.z.ai/api/anthropic"
+    anthropic_api_key: str = ""
+    llm_model: str = "glm-5.3-flash"  # модель anthropic-провайдера
+
     @property
     def sqlalchemy_database_uri(self) -> str:
         """DSN для SQLAlchemy (psycopg 3)."""
