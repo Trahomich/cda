@@ -220,7 +220,7 @@ function styleFor(field: Field | undefined): L.PathOptions {
 
 /** Перекрасить контуры и балуны (смена режима/метрики/данных). */
 function restyleLayer(): void {
-  contoursLayer?.eachLayer((layer) => {
+  fieldsGeoLayer?.eachLayer((layer) => {
     const feature = (layer as L.Layer & { feature?: GeoJSON.Feature }).feature
     const field = feature?.properties as Field | undefined
     ;(layer as L.Path).setStyle(styleFor(field))
