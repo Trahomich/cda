@@ -86,7 +86,7 @@ test('карточка поля: индексный слой следует вы
   await expect(layer).toBeVisible()
 
   // Прошлый сезон 2026 — те же даты со сдвигом года: 31.07.2026.
-  await page.locator('.card360__season-cell, .crop-strip__cell').filter({ hasText: '2026' }).first().click()
+  await page.locator('.strip__cell--season').filter({ hasText: '2026' }).click()
   await expect(page.locator('.card360__layer-btn--ndre')).toHaveClass(
     /card360__layer-btn--active/,
   )
