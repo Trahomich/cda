@@ -243,7 +243,7 @@ onMounted(async () => {
   const savedView = loadMapView()
   if (savedView) {
     map.setView(savedView.center, savedView.zoom)
-    mapHasView = true
+    mapViewReady.value = true
   }
   map.on('moveend', saveMapView)
   // Тайлы OSM (провайдер офлайн-тайлов выбирается до MVP, 10-mobile-pwa §7).
