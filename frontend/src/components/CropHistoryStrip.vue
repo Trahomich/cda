@@ -109,7 +109,7 @@ function isSeason(year: number): boolean {
         :style="{ background: item.color_hex ?? '#9e9e9e' }"
       />
       <span class="strip__name">{{ shortName(item.culture_name) }}</span>
-    </span>
+    </component>
   </div>
   <p
     v-else
