@@ -921,7 +921,7 @@ class TestLlmVerdictEveryField138:
         fid = self._quiet_field(world, db_session)
         assert service.build_items(db_session, fid) == []
 
-        TestBackgroundFix101._fake_redis(monkeypatch)
+        store = TestBackgroundFix101._fake_redis(monkeypatch)
         monkeypatch.setattr(
             service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
         )
@@ -940,7 +940,7 @@ class TestLlmVerdictEveryField138:
 
         import json as _json
 
-        updated = _json.loads(monkeypatched_store(monkeypatch)[insights_key(fid, TODAY)])
+        updated = _json.loads(store[insights_key(fid, TODAY)])
         assert updated["source"] == "rules+llm"
         assert updated["summary"].startswith("Посев в норме")
 
@@ -953,7 +953,7 @@ class TestLlmVerdictEveryField138:
         client, hdr = world
         fid = self._quiet_field(world, db_session)
 
-        TestBackgroundFix101._fake_redis(monkeypatch)
+        store = TestBackgroundFix101._fake_redis(monkeypatch)
         monkeypatch.setattr(
             service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
         )
@@ -963,7 +963,7 @@ class TestLlmVerdictEveryField138:
         service.refresh_insights(fid, TODAY)
         import json as _json
 
-        updated = _json.loads(monkeypatched_store(monkeypatch)[insights_key(fid, TODAY)])
+        updated = _json.loads(store[insights_key(fid, TODAY)])
         assert updated["source"] == "rules"
         assert updated["summary"] == service.NO_DEVIATIONS_SUMMARY
 
@@ -976,7 +976,7 @@ class TestLlmVerdictEveryField138:
         client, hdr = world
         fid = self._quiet_field(world, db_session)
 
-        TestBackgroundFix101._fake_redis(monkeypatch)
+        store = TestBackgroundFix101._fake_redis(monkeypatch)
         monkeypatch.setattr(
             service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
         )
@@ -988,7 +988,7 @@ class TestLlmVerdictEveryField138:
         service.refresh_insights(fid, TODAY)
         import json as _json
 
-        updated = _json.loads(monkeypatched_store(monkeypatch)[insights_key(fid, TODAY)])
+        updated = _json.loads(store[insights_key(fid, TODAY)])
         assert updated["source"] == "rules"
         assert updated["summary"] == service.NO_DEVIATIONS_SUMMARY
 
