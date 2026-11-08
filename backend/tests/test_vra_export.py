@@ -107,10 +107,12 @@ class TestShapefile:
         assert len(reader) == 3
         doses = [r[5] for r in reader.records()]
         assert doses == [115.0, 100.0, 85.0]
-        # каждый shape замкнут и непуст
+        # каждая часть (кольцо) замкнута и непуста
         for shp in reader.shapes():
-            assert shp.points[0] == shp.points[-1]
-            assert len(shp.points) >= 4
+            bounds = [*shp.parts, len(shp.points)]
+            for start, end in zip(bounds, bounds[1:], strict=False):
+                ring = shp.points[start:end]
+                assert len(ring) >= 4 and ring[0] == ring[-1]
 
 
 class TestIsoxml:
