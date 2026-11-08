@@ -520,57 +520,60 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
             logger.warning("insights: VRA-расчёт не удался", exc_info=True)
 
         items = build_items(db, field_id, vra_peaks=vra_peaks, year=year)
-        context = (
-            _llm_context(db, field, items, vra_verdict=vra_verdict, year=year) if items else ""
-        )
+        # контекст обязателен и при items=[] (§8.2 v1.3, #138): вердикт
+        # «агронома по полю» строится по NDVI-динамике/агрохимии/работам
+        context = _llm_context(db, field, items, vra_verdict=vra_verdict, year=year)
     finally:
         db.close()  # вернуть соединение в пул ДО тяжёлого шага
 
-    # 2) инференс LLM — без БД, с ограничением параллелизма (CPU, #101)
+    # 2) инференс LLM — без БД, с ограничением параллелизма (CPU, #101).
+    #    v1.3 (#138): вердикт обязателен и при items=[] — short-circuit убран.
     summary: str | None = None
-    if items:
-        if not _llm_semaphore.acquire(timeout=LLM_QUEUE_TIMEOUT_SECONDS):
-            logger.warning(
-                "insights: очередь LLM (>%s c) — сводка поля %s отложена до повторного запроса",
-                LLM_QUEUE_TIMEOUT_SECONDS,
-                field_id,
-            )
-            return
-        try:
-            # vision-сводка (§8.5, #117): рендеры приложены только облачному
-            # провайдеру (REQ-F-036); ollama/нет файлов — текстовый PROMPT
-            prompt = PROMPT
-            images: list[bytes] = []
-            settings = get_settings()
-            if settings.llm_provider.strip().lower() == "anthropic" and llm.llm_enabled(settings):
-                renders = _vision_renders(field_id, day, peak_day)
-                if renders:
-                    images = [png for _, png in renders]
-                    # подпись рендеров в context — их даты легальны для guardrail
-                    context += (
-                        "\nПриложены рендеры поля (изображения): "
-                        + ", ".join(label for label, _ in renders)
-                        + "."
-                    )
-                    prompt = VISION_PROMPT
-            summary = _checked_summary(
-                llm.summarize(
-                    prompt,
-                    context,
-                    timeout=LLM_BACKGROUND_TIMEOUT_SECONDS,
-                    attempts=1,
-                    keep_alive=LLM_KEEP_ALIVE,
-                    num_predict=LLM_NUM_PREDICT,
-                    images=images or None,
-                ),
-                items,
+    if not _llm_semaphore.acquire(timeout=LLM_QUEUE_TIMEOUT_SECONDS):
+        logger.warning(
+            "insights: очередь LLM (>%s c) — сводка поля %s отложена до повторного запроса",
+            LLM_QUEUE_TIMEOUT_SECONDS,
+            field_id,
+        )
+        return
+    try:
+        # vision-сводка (§8.5, #117): рендеры приложены только облачному
+        # провайдеру (REQ-F-036); ollama/нет файлов — текстовый PROMPT
+        prompt = PROMPT
+        images: list[bytes] = []
+        settings = get_settings()
+        if settings.llm_provider.strip().lower() == "anthropic" and llm.llm_enabled(settings):
+            renders = _vision_renders(field_id, day, peak_day)
+            if renders:
+                images = [png for _, png in renders]
+                # подпись рендеров в context — их даты легальны для guardrail
+                context += (
+                    "\nПриложены рендеры поля (изображения): "
+                    + ", ".join(label for label, _ in renders)
+                    + "."
+                )
+                prompt = VISION_PROMPT
+        summary = _checked_summary(
+            llm.summarize(
+                prompt,
                 context,
-            )
-            # #131: после guardrail — санитайзер (вывод без markdown)
-            summary = strip_markdown(summary) if summary is not None else None
-        finally:
-            _llm_semaphore.release()
-    else:
+                timeout=LLM_BACKGROUND_TIMEOUT_SECONDS,
+                attempts=1,
+                keep_alive=LLM_KEEP_ALIVE,
+                num_predict=LLM_NUM_PREDICT,
+                images=images or None,
+            ),
+            items,
+            context,
+        )
+        # #131: после guardrail — санитайзер (вывод без markdown)
+        summary = strip_markdown(summary) if summary is not None else None
+    finally:
+        _llm_semaphore.release()
+    if summary is None and not items:
+        # деградация §8.2 v1.3: провайдер недоступен/вернул пусто и детекторы
+        # молчат — статическая строка (source=rules); при непустых items
+        # summary остаётся null и доработка перезапустится (#101)
         summary = NO_DEVIATIONS_SUMMARY
 
     # 3) публикация — только Redis, сессия БД не нужна
