@@ -409,7 +409,7 @@ def weather_window(
                 f"Неизвестный тип операции «{operation_type}»; допустимо: "
                 f"{', '.join(OPERATION_TYPES)}",
                 code="unknown_operation_type",
-                title="Неконтентный запрос"[:0] or "Некорректный запрос",
+                title="Некорректный запрос",
                 status_code=422,
             )
         rule = db.scalar(select(WeatherRule).where(WeatherRule.operation_type == operation_type))
