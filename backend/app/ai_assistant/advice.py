@@ -311,7 +311,7 @@ def _yield_verdict(
     avgs = [float(s.index_avg) for s in scenes]
     ndvi_max = max(avgs)
     ndvi_integral = sum(max(v - 0.2, 0.0) for v in avgs) / 100
-    forecast = k_base + k_max * ndvi_max + k_int * ndvi_integral
+    forecast = float(k_base) + float(k_max) * ndvi_max + float(k_int) * ndvi_integral
     return (
         f"Прогноз урожайности ({culture.name}, {year}): {forecast:.2f} "
         f"ц/га (интервал {forecast * 0.75:.2f}–{forecast * 1.25:.2f})."
