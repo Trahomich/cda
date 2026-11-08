@@ -567,24 +567,25 @@ export async function getWeatherWindowsPlanned(
 }
 
 /** API-57: GET /weather/history?field_id&date_from&date_to — дневные факты
- *  погоды за период ≤ 400 суток (#126/#132; 422 too_wide, 404 field_not_found). */
+ *  погоды за период (§7.8; полные имена полей как в API-07, дата — observed_at;
+ *  limit до 1500 закрывает несколько сезонов одним запросом). */
 export async function getWeatherHistory(
   fieldId: string,
   dateFrom: string,
   dateTo: string,
 ): Promise<WeatherHistory> {
   const page = await apiClient.request<Page<WeatherHistoryItem>>('/weather/history', {
-    query: { field_id: fieldId, date_from: dateFrom, date_to: dateTo, limit: 400 },
+    query: { field_id: fieldId, date_from: dateFrom, date_to: dateTo, limit: 1500 },
   })
   return {
     field_id: fieldId,
     items: page.items.map((d) => ({
-      date: d.date,
-      temp_max_c: d.temp_max_c,
-      temp_min_c: d.temp_min_c,
-      precip_mm: d.precip_mm,
-      cloud_pct: d.cloud_pct ?? null,
-      snow_mm: d.snow_mm ?? null,
+      date: d.observed_at.slice(0, 10),
+      temp_max_c: d.temperature_max_c,
+      temp_min_c: d.temperature_min_c,
+      precip_mm: d.precipitation_mm,
+      cloud_pct: d.cloud_cover_mean_pct ?? null,
+      snow_cm: d.snowfall_cm ?? null,
     })),
     total: page.total,
   }
