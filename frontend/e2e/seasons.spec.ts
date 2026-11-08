@@ -148,7 +148,7 @@ test('паспорт поля: порядок блоков по #372', async ({ 
   const order = titles.map((t) => t.trim())
   const idx = (needle: string) => order.findIndex((t) => t.includes(needle))
   const map = idx('Контур поля')
-  const insights = idx('Выводы ассистента')
+  const insights = idx('Выводы и рекомендации')
   const ndvi = idx('NDVI-таймлайн')
   const weather = idx('Погода')
   const plans = idx('Планы и журнал')
