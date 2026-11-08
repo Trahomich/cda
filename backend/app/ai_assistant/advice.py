@@ -296,14 +296,14 @@ def _yield_verdict(
     """Прогноз урожайности (§8.3, та же эмпирика, что API-53)."""
     if len(scenes) < 3:
         return None
-    cycle = db.scalar(
+    row = db.execute(
         select(CropCycle, Culture)
         .join(Culture, CropCycle.culture_id == Culture.id)
         .where(CropCycle.field_id == field_id, CropCycle.year == year, CropCycle.kind == "main")
-    )
-    if cycle is None:
+    ).first()
+    if row is None:
         return None
-    _, culture = cycle
+    _, culture = row
     coeffs = (culture.yield_k_base, culture.yield_k_ndvi_max, culture.yield_k_ndvi_int)
     if culture is None or culture.kind == "fallow" or any(v is None for v in coeffs):
         return None
