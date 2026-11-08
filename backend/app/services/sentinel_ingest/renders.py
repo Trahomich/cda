@@ -170,8 +170,12 @@ def _draw_text(rgb: np.ndarray, alpha: np.ndarray, text: str, x0: int, y0: int, 
 
 
 def _legend_scale(w: int, h: int) -> int:
-    """Масштаб легенды k: по ширине (~1 на 200 px), но контент ≤ высоты канвы."""
-    return max(1, min(round(w / 200), h // 13))
+    """Масштаб легенды k: по ширине (~1 на 200 px), но контент ≤ полосы.
+
+    Полоса легенды — низ канвы ≈7% её высоты (8% растра + запас), панель
+    легенды — 13k px: k ограничен, чтобы панерь не вылезала в растр.
+    """
+    return max(1, min(round(w / 200), max(1, round(h * 0.07) // 13)))
 
 
 def _legend_panel(
