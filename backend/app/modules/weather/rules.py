@@ -24,6 +24,11 @@ from sqlalchemy.orm import Session
 
 from app.models.references import WeatherRule
 
+#: База эффективных температур GDD, °C (§7.8, API-58): точка истины для
+#: gdd_day = max(0, (tmax+tmin)/2 − base); её импортирует детектор drought
+#: (ai_assistant/detectors.py #93) и эндпоинт /weather/gdd (#132).
+GDD_BASE_C = 5.0
+
 # Параметры (ключи params JSONB) и пороги по умолчанию — RULE-AGRO-09.
 # Ключи: t_avg_min/t_avg_max (°C), wind_max (м/с), precip_max (мм за сутки),
 # humidity_min/humidity_max (%), prev_precip_max (мм за предыдущие сутки).
