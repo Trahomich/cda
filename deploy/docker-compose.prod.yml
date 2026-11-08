@@ -17,11 +17,14 @@ services:
       ENV: prod
       WEATHER_POLL_ENABLED: "false" # опрос погоды перенесён в воркер weather-ingest (ADR-09)
       NDVI_RENDER_DIR: /var/lib/cda/ndvi-renders # §7.3: отдача PNG-рендеров сцен
-      # ИИ-ассистент (ADR-08, v3-02): внешний Ollama. Включено в v3-08 (#98):
-      # сервис слушает на хосте, из api-контейнера доступен по LAN-адресу
-      # (проверено из контейнера, 2026-11-07); qwen3.5:9b — по 09-ai §8.1.
-      OLLAMA_BASE_URL: http://192.168.99.201:11434
-      OLLAMA_MODEL: qwen3.5:9b
+      # ИИ-ассистент (ADR-08): облачная glm-5.3-flash через anthropic-
+      # совместимый Messages API api.z.ai (#115/#116). Ключ
+      # ANTHROPIC_API_KEY — только в ../.env на сервере (вне git).
+      # Локальный Ollama (qwen3.5:9b, http://192.168.99.201:11434)
+      # отключён по запросу пользователя #352; возврат — LLM_PROVIDER=ollama
+      # + OLLAMA_BASE_URL/OLLAMA_MODEL (docs/09-ai.md §8.1).
+      LLM_PROVIDER: anthropic
+      LLM_MODEL: glm-5.3-flash
       # 2026-11-07: SOCKS-прокси исключён по решению пользователя; исходящие
       # httpx-запросы идут напрямую. Если периметр снова начнёт резать
       # api.open-meteo.com / earth-search — вернуть ALL_PROXY (см. docs/deploy/README.md).
