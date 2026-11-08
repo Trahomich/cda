@@ -309,7 +309,7 @@ def _analyze_scene(
     left, top = transform * (0, 0)
     right, bottom = transform * (nir_d.shape[1], nir_d.shape[0])
     west, south, east, north = transform_bounds(
-        str(red_crs), "EPSG:4326", left, bottom, right, top, densify_pts=21
+        str(nir_crs), "EPSG:4326", left, bottom, right, top, densify_pts=21
     )
     # полоса легенды — часть канвы: юг расширяется пропорционально (#123),
     # поле в оверлее по-прежнему совпадает с контуром
@@ -329,7 +329,7 @@ def _analyze_scene(
         # не входит), transform без учёта полосы
         zone_masks=zone_masks,
         grid_transform=tuple(transform[:6]),
-        grid_crs=str(red_crs),
+        grid_crs=str(nir_crs),
     )
 
 
