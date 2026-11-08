@@ -255,8 +255,7 @@ def cmd_advice_refresh(args: argparse.Namespace) -> int:
         try:
             record = generate_advice(field_id, today=today)
         except Exception:
-            logger_msg = "advice-refresh: поле %s — ошибка генерации"
-            logging.getLogger(__name__).warning(logger_msg, field_id, exc_info=True)
+            logger.warning("advice-refresh: поле %s — ошибка генерации", field_id, exc_info=True)
             report[str(field_id)] = {"status": "error"}
             continue
         if record is None:
