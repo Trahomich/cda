@@ -382,6 +382,7 @@ def generate_advice(field_id: uuid.UUID, *, today: date | None = None) -> AIFiel
         )
         db.add(record)
         db.commit()
+        db.refresh(record)  # загрузить атрибуты до close (иначе detached)
         return record
     finally:
         db.close()
