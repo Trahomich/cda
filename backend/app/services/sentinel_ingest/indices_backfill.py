@@ -12,8 +12,11 @@ NDVI), запись — upsert по UQ, идемпотентно: повторн
 меняет (кандидатов без недостающих индексов просто нет).
 
 Рендеры (render_dir): сцены, у которых уже есть PNG-рендеры, перерендери-
-ваются с новыми вариантами индексов (§7.7); ошиб­ки рендера не влияют
-на сцены. Недоступность COG — unavailable, повторный запуск доберёт.
+ваются с новыми вариантами индексов (§7.7); ошибки рендера не влияют на
+сцены. Недоступность COG — unavailable, повторный запуск доберёт (05 §6).
+
+Потоки: сессия БД — только в главном потоке (контуры/строки каталога
+собираются заранее); воркеры читают COG и считают (rasterio отпускает GIL).
 """
 
 import logging
@@ -25,11 +28,13 @@ from datetime import date, timedelta
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from app.integrations import DataGapError, DataQualityError, SourceUnavailableError
 from app.integrations.stac import StacSearchClient
 from app.models.integrations import SatelliteCatalogItem, SatelliteScene
 from app.services.sentinel_ingest.catalog import farm_bbox
 from app.services.sentinel_ingest.indices import (
     EXTRA_INDICES,
+    IndexStat,
     compute_scene_indices,
     upsert_scene_indices,
 )
@@ -47,9 +52,10 @@ class IndicesBackfillReport:
     per_index: dict[str, int] = field(default_factory=dict)
     assets_refreshed: int = 0  # строк каталога с дозапрошенными полосами
     no_catalog: int = 0  # нет строки каталога (field_id, captured_at)
-    partial_bands: int = 0  # сцен без полос b05/b11 (часть индексов пропущена)
-    gaps: int = 0  # контура нет / данных нет
-    failed: int = 0  # ошибки расчёта
+    no_contour: int = 0  # поле без контура/неактивно
+    partial_bands: int = 0  # сцен без части индексов (нет полос b05/b11)
+    gaps: int = 0  # данных нет / сетки каналов не совпали
+    failed: int = 0  # прочие ошибки расчёта
     rendered: int = 0  # перерендерено сцен (новые варианты, §7.7)
     unavailable: list[str] = field(default_factory=list)  # COG недоступен — повтор
 
@@ -59,13 +65,23 @@ class IndicesBackfillReport:
         return data
 
 
+@dataclass(slots=True)
+class _Task:
+    """Кандидат с предвыбранными контуром и активами (без БД в воркерах)."""
+
+    field_id: uuid.UUID
+    captured_at: date
+    contour: dict
+    assets: dict
+    assets_refreshed: bool
+
+
 def _refresh_assets(
     db: Session, client: StacSearchClient, bbox: list[float], row: SatelliteCatalogItem
-) -> bool:
-    """Дозапросить активы item'а из STAC (окно ±1 сутки) и обновить строку.
+) -> dict | None:
+    """Дозапросить активы item'а из STAC (окно ±1 сутки); новые — словарь.
 
-    True — строка обновлена (полосы b05/b11 появились). Ложь — item не
-    найден/полос нет; не ошибка (индексы без полос пропустятся).
+    None — item не найден/полос нет; не ошибка (индексы без полос пропустятся).
     """
     try:
         items = client.search(
@@ -75,7 +91,7 @@ def _refresh_assets(
         )
     except Exception:  # noqa: BLE001 — STAC недоступен: работаем с тем, что есть
         logger.warning("indices-backfill: STAC-дозапрос %s не удался", row.item_id, exc_info=True)
-        return False
+        return None
     for item in items:
         if item.item_id != row.item_id:
             continue
@@ -87,9 +103,22 @@ def _refresh_assets(
                 .values(assets=merged)
             )
             db.commit()
-            return True
+            return merged
         break
-    return False
+    return None
+
+
+def _missing_indices(db: Session, field_id: uuid.UUID, captured_at: date) -> list[str]:
+    present = set(
+        db.scalars(
+            select(SatelliteScene.index).where(
+                SatelliteScene.field_id == field_id,
+                SatelliteScene.captured_at == captured_at,
+                SatelliteScene.index.in_(EXTRA_INDICES),
+            )
+        )
+    )
+    return [name for name in EXTRA_INDICES if name not in present]
 
 
 def run_indices_backfill(
@@ -106,7 +135,6 @@ def run_indices_backfill(
 
     report = IndicesBackfillReport(per_index={name: 0 for name in EXTRA_INDICES})
 
-    # кандидаты: сцены ndvi без полного набора индексов §7.7
     criteria = [SatelliteScene.index == "ndvi", SatelliteScene.cloud_pct <= 60.0]
     if date_from is not None:
         criteria.append(SatelliteScene.captured_at >= date_from)
@@ -118,91 +146,92 @@ def run_indices_backfill(
         )
         .all()
     )
-    candidates = [
-        (field_id, captured_at)
-        for field_id, captured_at in ndvi_scenes
-        if _missing_indices(db, field_id, captured_at)
-    ]
-    report.scenes = len(candidates)
-    if not candidates:
-        return report
+    report.scenes = len(ndvi_scenes)
 
+    # подготовка кандидатов — сессией в главном потоке
     lookup = contour_lookup_factory(db)
     bbox = farm_bbox(db) if client is not None else None
-
-    def compute_one(task: tuple[uuid.UUID, date]):
-        field_id, captured_at = task
+    tasks: list[_Task] = []
+    for field_id, captured_at in ndvi_scenes:
+        if not _missing_indices(db, field_id, captured_at):
+            continue  # идемпотентность: полный набор уже есть
         contour = lookup(str(field_id))
         if contour is None:
-            return task, None, ValueError(f"поле {field_id} без контура"), {}
+            report.no_contour += 1
+            continue
         row = db.execute(
             select(SatelliteCatalogItem)
             .where(
                 SatelliteCatalogItem.field_id == field_id,
                 SatelliteCatalogItem.captured_at == captured_at,
             )
-            .order_by(
-                # предпочитаем строку с новыми полосами (меньше дозапросов)
-                (SatelliteCatalogItem.assets["b05"].isnot(None)).desc()
-            )
+            # предпочитаем строку с новыми полосами (меньше дозапросов)
+            .order_by((SatelliteCatalogItem.assets["b05"].isnot(None)).desc())
         ).scalars().first()
         if row is None:
-            return task, None, ValueError("нет строки каталога"), {}
+            report.no_catalog += 1
+            continue
         assets = dict(row.assets or {})
         refreshed = False
         if client is not None and bbox and ("b05" not in assets or "b11" not in assets):
-            refreshed = _refresh_assets(db, client, bbox, row)
-            if refreshed:
-                assets = dict(row.assets or {})  # обновлённые значения
+            merged = _refresh_assets(db, client, bbox, row)
+            if merged is not None:
+                assets = merged
+                refreshed = True
+        tasks.append(_Task(field_id, captured_at, contour, assets, refreshed))
+    db.rollback()  # закрыть неявную транзакцию чтений перед записями
+
+    def compute(task: _Task) -> tuple[_Task, list[IndexStat] | None, Exception | None, bool]:
+        """Воркер: COG-чтение + расчёт (+ перерендер) — без БД."""
         try:
-            stats = compute_scene_indices(assets, contour)
-        except Exception as exc:  # noqa: BLE001 — классифицируем в основном потоке
-            return task, None, exc, {"refreshed": refreshed, "assets": assets}
-        return task, stats, None, {"refreshed": refreshed, "assets": assets, "row": row}
+            stats = compute_scene_indices(task.assets, task.contour)
+        except (DataGapError, DataQualityError, SourceUnavailableError, ValueError) as exc:
+            return task, None, exc, False
+        rendered = False
+        if render_dir and stats:
+            try:
+                if renders_exist(render_dir, task.field_id, task.captured_at):
+                    from app.services.sentinel_ingest.renders import render_scene, write_renders
+
+                    render = render_scene(task.assets, task.contour)
+                    if render is not None:
+                        write_renders(render_dir, task.field_id, task.captured_at, render)
+                        rendered = True
+            except Exception:  # noqa: BLE001 — рендер вторичен
+                logger.warning(
+                    "indices-backfill: рендер %s/%s не обновлён",
+                    task.field_id,
+                    task.captured_at,
+                    exc_info=True,
+                )
+        return task, stats, None, rendered
 
     with ThreadPoolExecutor(max_workers=max(1, max_workers)) as pool:
-        for task, stats, exc, extra in pool.map(compute_one, candidates):
-            field_id, captured_at = task
+        for task, stats, exc, rendered in pool.map(compute, tasks):
+            if task.assets_refreshed:
+                report.assets_refreshed += 1
             if exc is not None:
-                name = type(exc).__name__
-                if name == "SourceUnavailableError":
-                    report.unavailable.append(f"{field_id}/{captured_at}: {exc}")
-                elif name in ("DataGapError", "ValueError"):
-                    report.gaps += 1 if "контура" not in str(exc) else report.gaps
-                    if "строки каталога" in str(exc):
-                        report.no_catalog += 1
-                    else:
-                        report.gaps += 1
+                if isinstance(exc, SourceUnavailableError):
+                    report.unavailable.append(f"{task.field_id}/{task.captured_at}: {exc}")
+                elif isinstance(exc, (DataGapError, ValueError)):
+                    report.gaps += 1
                 else:
                     report.failed += 1
                 continue
-            if extra.get("refreshed"):
-                report.assets_refreshed += 1
-            written = upsert_scene_indices(db, field_id, captured_at, stats or [])
+            assert stats is not None
+            written = upsert_scene_indices(db, task.field_id, task.captured_at, stats)
             db.commit()
             if written:
                 report.scenes_written += 1
                 report.index_scenes += written
-                for st in stats or []:
+                for st in stats:
                     report.per_index[st.index] = report.per_index.get(st.index, 0) + 1
-            if not stats:
+            if rendered:
+                report.rendered += 1
+            if len(stats) < len(EXTRA_INDICES):
                 report.partial_bands += 1
-            # перерендер с новыми вариантами (§7.7): только уже отрендеренные сцены
-            if render_dir and stats:
-                try:
-                    if renders_exist(render_dir, field_id, captured_at):
-                        assets = extra.get("assets") or {}
-                        contour = lookup(str(field_id))
-                        render = render_scene(assets, contour)
-                        if render is not None:
-                            write_renders(render_dir, field_id, captured_at, render)
-                            report.rendered += 1
-                except Exception:  # noqa: BLE001 — рендер вторичен
-                    logger.warning(
-                        "indices-backfill: рендер %s/%s не обновлён", field_id, captured_at,
-                        exc_info=True,
-                    )
 
+    report.scenes = len(tasks)  # фактические кандидаты обработки
     logger.info(
         "indices-backfill: кандидатов=%d сцен с индексами=%d строк-индексов=%d "
         "дозапросов активов=%d гэпов=%d ошибок=%d недоступно=%d",
@@ -215,19 +244,6 @@ def run_indices_backfill(
         len(report.unavailable),
     )
     return report
-
-
-def _missing_indices(db: Session, field_id: uuid.UUID, captured_at: date) -> list[str]:
-    present = set(
-        db.scalars(
-            select(SatelliteScene.index).where(
-                SatelliteScene.field_id == field_id,
-                SatelliteScene.captured_at == captured_at,
-                SatelliteScene.index.in_(EXTRA_INDICES),
-            )
-        )
-    )
-    return [name for name in EXTRA_INDICES if name not in present]
 
 
 __all__ = ["IndicesBackfillReport", "run_indices_backfill"]
