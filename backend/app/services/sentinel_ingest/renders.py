@@ -314,7 +314,11 @@ def render_scene(assets: dict, contour_geojson: dict) -> SceneRender | None:
     t = np.clip((ndvi - _NDVI_LO) / (_NDVI_HI - _NDVI_LO), 0.0, 1.0)
     t[~np.isfinite(ndvi)] = 0.0
     alpha_ndvi = np.where(inside & np.isfinite(ndvi) & ~cloud_d, 255, 0).astype("uint8")
-    png_ndvi = _png_rgba(_palette_rgb(t, PALETTE), alpha_ndvi)
+    # шкала-легенда NDVI (§7.3, #123): градиент палитры + min/max растяжки
+    # (фиксированные −0.10/0.80); канва не меняется — геопривязка та же
+    rgb_ndvi = _palette_rgb(t, PALETTE)
+    draw_gradient_legend(rgb_ndvi, alpha_ndvi, PALETTE, f"{_NDVI_LO:.2f}", f"{_NDVI_HI:.2f}")
+    png_ndvi = _png_rgba(rgb_ndvi, alpha_ndvi)
 
     # --- вариант ndwi (§7.4): «сухо → влажно → вода», маски те же ---------
     ndwi = compute_ndwi_array(green_d.astype("float32"), nir_d.astype("float32"))
