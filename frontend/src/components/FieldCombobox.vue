@@ -33,7 +33,9 @@ function matches(f: Field, q: string): boolean {
 const results = computed(() => {
   const q = query.value.trim().toLowerCase()
   const pool = q ? props.fields.filter((f) => matches(f, q)) : props.fields
-  return pool
+  if (!q) return pool
+  // Точное совпадение номера («45» находит 45/ЖАМ раньше 33/…345га).
+  return [...pool].sort((a, b) => Number(b.name.split('/')[0] === q) - Number(a.name.split('/')[0] === q))
 })
 
 const recentFields = computed(() => {
