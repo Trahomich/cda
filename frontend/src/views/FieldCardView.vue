@@ -763,10 +763,14 @@ function fmtNum(v: number, digits = 1): string {
             v-else
             :items="cropHistory"
             :yields="cycleYields"
+            :season-years="seasonYearsList"
+            :selected-year="selectedYear"
+            @select="onSeasonCell"
           />
           <p class="card360__muted">
             Цвет полосы — культура справочника (API-48); пунктир — план, обводка —
-            текущий год.
+            текущий год.<template v-if="seasons.length > 1"> Клик по году с данными
+            сезона — показать карточку за тот сезон.</template>
           </p>
           <p
             v-if="card && currentCycle && card.rotation_check"
