@@ -701,6 +701,88 @@ onUnmounted(() => {
   transform: rotate(180deg);
 }
 
+/* ── Режим погодной карты (API-61, #143) ── */
+.map-screen__weather {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.map-screen__wbtn {
+  min-height: 36px;
+  padding: 0.15rem 0.8rem;
+  border: 1px solid #9db59e;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.map-screen__wbtn--active {
+  background: #2e7d32;
+  border-color: #2e7d32;
+  color: #fff;
+  font-weight: 600;
+}
+
+.map-screen__wbtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.map-screen__wmetric {
+  min-height: 36px;
+  border: 1px solid #9db59e;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.map-legend__weather {
+  padding: 0.35rem 0.75rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 13rem;
+}
+
+.map-legend__scale {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.map-legend__bar {
+  flex: 1;
+  height: 0.8rem;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.map-legend__scale-val {
+  font-size: 0.78rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.map-legend__nodata {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #55685a;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.map-legend__swatch--nodata {
+  background: repeating-linear-gradient(
+    45deg,
+    #eee,
+    #eee 4px,
+    #ccc 4px,
+    #ccc 8px
+  );
+}
+
 .map-legend__list {
   list-style: none;
   margin: 0;
