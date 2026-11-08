@@ -342,34 +342,23 @@ def peak_scenes(
     return sorted(rows, key=lambda s: s.captured_at)
 
 
-def _scene_iqr_and_zones(
-    db: Session, field: Field, scene: SatelliteScene
-) -> tuple[float, VraZones | None]:
-    """(IQR, зоны|null) пиковой сцены с кэшем 24 ч по дате сцены (§7.4).
-
-    Полный расчёт кэшируется под vra:{field_id}:{date}; однородная сцена —
-    только IQR под vra:iqr:{field_id}:{date} (зон у неё нет, перечитывать
-    COG ради IQR не нужно).
+def _scene_vra(db: Session, field: Field, scene: SatelliteScene) -> VraZones:
+    """Полный расчёт по сцене с кэшем 24 ч (§7.4 v1.7): зоны строятся всегда,
+    ключ vra:{field_id}:{date} (записи до #121 без spatial_spread
+    пересчитываются — _from_cache вернёт None).
     """
     key = f"vra:{field.id}:{scene.captured_at.isoformat()}"
     if (cached := cache_get(key)) is not None and (parsed := _from_cache(cached)) is not None:
-        return parsed.iqr_ndvi, parsed
-    iqr_key = f"vra:iqr:{field.id}:{scene.captured_at.isoformat()}"
-    iqr_cached = cache_get(iqr_key)
-    if isinstance(iqr_cached, dict) and isinstance(iqr_cached.get("iqr_ndvi"), (int, float)):
-        return float(iqr_cached["iqr_ndvi"]), None
-    iqr, zones = _analyze_scene(db, field, scene)
-    if zones is None:
-        cache_set(iqr_key, {"iqr_ndvi": iqr}, CACHE_TTL_SECONDS)
-    else:
-        cache_set(key, _to_cache(zones), CACHE_TTL_SECONDS)
-    return iqr, zones
+        return parsed
+    zones = _analyze_scene(db, field, scene)
+    cache_set(key, _to_cache(zones), CACHE_TTL_SECONDS)
+    return zones
 
 
 def vra_zones(db: Session, field: Field, *, year: int | None = None) -> VraZones:
-    """Зоны по пиковым сценам вегетации (§7.4 v1.4): топ-3 по index_avg,
-    стабильность — IQR ≥ порога минимум на 2 из 3 (при <3 сцен — на всех,
-    кроме максимум одной); зоны — по сцене с максимальным index_avg.
+    """Зоны по пиковым сценам вегетации (§7.4 v1.7): топ-3 по index_avg,
+    зоны и метрики — по сцене с максимальным index_avg (ворота однородности
+    удалены, #121: «просто записать результаты в дифвнесения»).
 
     Явный year (§7.5) — сцены сезона YYYY; сезона нет — 404 season_not_found.
     Без year — текущий сезон (год последней сцены)."""
@@ -382,24 +371,38 @@ def vra_zones(db: Session, field: Field, *, year: int | None = None) -> VraZones
                 title="Сезон не найден",
                 status_code=404,
             )
-        raise _err_no_data(field.id, "нет чистых NDVI-сцен")
+        raise AppError(
+            f"Зоны внесения недоступны для поля {field.id}: "
+            "нет чистых NDVI-сцен текущего сезона",
+            code="vra_no_season_data",
+            title="Нет данных сезона",
+            status_code=422,
+        )
     peak_dates = tuple(scene.captured_at for scene in peaks)
-    analyzed = [(scene, *_scene_iqr_and_zones(db, field, scene)) for scene in peaks]
-    confirmed = [row for row in analyzed if row[1] >= VRA_MIN_IQR]
-    required = max(1, len(peaks) - 1)  # 3 сцены → 2; 2 → 1; 1 → сама сцена
-    if len(confirmed) < required:
-        raise _uniform_error(min(row[1] for row in analyzed), peak_dates)
+    analyzed = [(scene, _scene_vra(db, field, scene)) for scene in peaks]
 
-    # зоны строим по подтверждённой сцене с максимальным index_avg (§7.4)
-    scene, _, zones = max(confirmed, key=lambda row: (row[0].index_avg, row[0].captured_at))
-    assert zones is not None  # подтверждённая сцена неоднородна по построению
-    result = replace(zones, peak_dates=peak_dates)
-    # указатель для «Выводов ассистента»: актуальные зоны поля (§8.2);
-    # сезонный год (§7.5) — отдельный ключ, ключ текущего сезона не трогаем
+    # зоны строим по пиковой сцене с максимальным index_avg (§7.4)
+    scene, result = max(analyzed, key=lambda row: (row[0].index_avg, row[0].captured_at))
+    result = replace(result, peak_dates=peak_dates)
+    # указатель для «Выводов ассистента»: актуальные зоны + метрики всех
+    # пиковых сцен (детектор §8.2 v1.7, #121); сезонный год (§7.5) —
+    # отдельный ключ, ключ текущего сезона не трогаем
     pointer_key = f"vra:peak:{field.id}" if year is None else f"vra:peak:{field.id}:{year}"
     cache_set(
         pointer_key,
-        {"date": result.captured_at.isoformat(), "iqr_ndvi": result.iqr_ndvi},
+        {
+            "date": result.captured_at.isoformat(),
+            "iqr_ndvi": result.iqr_ndvi,
+            "spatial_spread": result.spatial_spread,
+            "peaks": [
+                {
+                    "date": row.captured_at.isoformat(),
+                    "iqr_ndvi": zones.iqr_ndvi,
+                    "spatial_spread": zones.spatial_spread,
+                }
+                for row, zones in analyzed
+            ],
+        },
         CACHE_TTL_SECONDS,
     )
     return result
