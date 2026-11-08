@@ -265,6 +265,10 @@ class OpenMeteoAdapter:
             wind_max_ms=m["wind_speed_10m_max"],
             humidity_avg_pct=m["relative_humidity_2m_mean"],
             source_id=OpenMeteoAdapter.source_id,
+            cloud_cover_mean_pct=m["cloud_cover_mean"],
+            snowfall_cm=m["snowfall_sum"],
+            snow_depth_cm=m["snow_depth_max"],
+            precipitation_hours=m["precipitation_hours"],
         )
 
     @staticmethod
