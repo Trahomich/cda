@@ -548,7 +548,10 @@ class TestVraSpatialSpread:
         item = detect_vra_heterogeneity(peaks)
         assert item is not None
         assert item.code == "vra_heterogeneity"
-        assert "однородно" not in item.detail
+        # вердикта «поле однородно» нет (отдельное слово, не «Неоднородность»)
+        import re
+
+        assert re.search(r"\bоднородно\b", item.detail) is None
         assert "дифвнесени" in item.detail
         assert len(item.data_refs) == 3
         assert {"iqr_ndvi", "spatial_spread"} <= set(item.data_refs[0])
