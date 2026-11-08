@@ -73,6 +73,7 @@ def make_forecast_days(db: Session, field_id: uuid.UUID) -> None:
 
 @pytest.fixture
 def setup(client, db_session):
+    seed_weather_rules(db_session)  # ref_weather_rule: 4 типа (идемпотентно)
     make_user(db_session, login="win-agro", role=UserRole.AGRONOMIST, password="pw-win")
     auth = auth_header(client, "win-agro", "pw-win")
     field_id = make_db_field(db_session, name="Окна-1")
