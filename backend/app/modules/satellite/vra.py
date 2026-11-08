@@ -279,6 +279,7 @@ def _to_cache(vra: VraZones) -> dict:
     return {
         "captured_at": vra.captured_at.isoformat(),
         "iqr_ndvi": vra.iqr_ndvi,
+        "spatial_spread": vra.spatial_spread,
         "zones": [asdict(z) for z in vra.zones],
         "png": base64.b64encode(vra.png).decode("ascii"),
         "width": vra.width,
@@ -308,9 +309,11 @@ def _from_cache(data: dict) -> VraZones | None:
             height=int(data["height"]),
             bbox=tuple(float(v) for v in data["bbox"]),  # type: ignore[arg-type]
             peak_dates=tuple(date.fromisoformat(d) for d in data.get("peak_dates", [])),
+            # до v1.7 (#121) метрики spread в кэше не было — KeyError → пересчёт
+            spatial_spread=float(data["spatial_spread"]),
         )
     except (KeyError, ValueError, TypeError):
-        logger.warning("VRA: битый кэш — пересчитаю", exc_info=True)
+        logger.warning("VRA: битый/старый кэш — пересчитаю", exc_info=True)
         return None
 
 
