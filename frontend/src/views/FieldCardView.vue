@@ -12,6 +12,7 @@ import {
   getFieldSeasons,
   getFieldVra,
   getFieldVraMap,
+  exportFieldVra,
   getFieldWeather,
   getInsights,
   getNdviRender,
