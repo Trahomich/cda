@@ -1,6 +1,6 @@
 """Точка входа FastAPI: приложение, /healthz, планировщик погоды, ошибки."""
 
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
