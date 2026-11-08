@@ -31,7 +31,7 @@ from sqlalchemy.orm import Session
 from app.ai_assistant import detectors, llm
 from app.ai_assistant.schemas import InsightItem, InsightsResponse
 from app.core.cache import cache_get, cache_set
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
 from app.core.db import SessionLocal
 from app.core.errors import AppError
 from app.models.agronomy import CropCycle, Field, FieldOperation
