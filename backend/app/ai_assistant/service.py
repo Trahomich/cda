@@ -200,9 +200,9 @@ def get_insights(
     )
     cache_set(key, resp.model_dump(mode="json"), INSIGHTS_TTL_SECONDS)
 
-    if settings.ollama_base_url and items:
+    if llm.llm_enabled(settings) and items:
         # фоновая доработка: VRA по COG + LLM-сводка (повторный запрос увидит).
-        # В tests Ollama выключен — фон не запускается вовсе.
+        # В tests LLM выключен — фон не запускается вовсе.
         background.add_task(refresh_insights, field.id, day, year)
     return resp
 
