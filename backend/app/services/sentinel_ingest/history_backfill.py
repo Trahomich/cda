@@ -173,7 +173,11 @@ def run_history_backfill(
     field_ids = _active_field_ids(db)
     for field_id in field_ids:
         report.cache_deleted += cache_delete(
-            f"insights:{field_id}:*", f"vra:peak:{field_id}", f"vra:peak:{field_id}:*"
+            # v2 — текущая версия ключа insights (#138); без версии — legacy
+            f"insights:v2:{field_id}:*",
+            f"insights:{field_id}:*",
+            f"vra:peak:{field_id}",
+            f"vra:peak:{field_id}:*",
         )
     report.fields = len(field_ids)
 
