@@ -44,8 +44,12 @@ test('карта: легенда складывается (#55)', async ({ page 
 test('карта: балун поля — кликабельный заголовок вместо ссылки (#124, #368)', async ({
   page,
 }) => {
-  // Клик по контуру поля (интерактивный path слоя контуров) открывает балун.
-  await page.locator('path.leaflet-interactive').first().click({ timeout: 15_000 })
+  // Клик по контуру поля открывает балун; в центроиде — постоянная
+  // подпись-номер (тоже кликабельна), поэтому кликаем в угол контура.
+  await page
+    .locator('path.leaflet-interactive')
+    .first()
+    .click({ timeout: 15_000, position: { x: 2, y: 2 } })
   const popup = page.locator('.field-popup')
   await expect(popup).toBeVisible({ timeout: 10_000 })
 
