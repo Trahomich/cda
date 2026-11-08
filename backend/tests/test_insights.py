@@ -894,3 +894,132 @@ class TestStripMarkdown131:
         assert summary.startswith("Сводка по полю\nNDVI упал на 0.22 — проверить север.")
         assert "**" not in summary and "`" not in summary and "\n#" not in summary
         assert "0.22" in summary
+
+
+class TestLlmVerdictEveryField138:
+    """#138 (§8.2 v1.3): LLM-вердикт обязателен по каждому полю, включая
+    items=[]; статическая строка «отклонений не выявлено» — только
+    деградация при недоступном LLM; кэш — ключ версии v2."""
+
+    @staticmethod
+    def _quiet_field(world, db_session):
+        """Поле со стабильным NDVI (детекторы молчат, items=[])."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        make_scene(db_session, fid, TODAY - timedelta(days=6), 0.55)
+        make_scene(db_session, fid, TODAY, 0.56)
+        db_session.commit()
+        return fid
+
+    def test_llm_called_with_empty_items(self, world, db_session, monkeypatch):
+        """refresh_insights при items=[] зовёт LLM с непустым контекстом
+        и публикует rules+llm; промпты требуют вердикт без пустых ответов."""
+        from app.ai_assistant import service
+        from sqlalchemy.orm import sessionmaker
+
+        client, hdr = world
+        fid = self._quiet_field(world, db_session)
+        assert service.build_items(db_session, fid) == []
+
+        TestBackgroundFix101._fake_redis(monkeypatch)
+        monkeypatch.setattr(
+            service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
+        )
+        captured: dict[str, str] = {}
+        monkeypatch.setattr(
+            service.llm,
+            "summarize",
+            lambda p, c, **k: captured.update(prompt=p, context=c)
+            or "Посев в норме, NDVI 0.55–0.56; следите за динамикой.",
+        )
+        db_session.close()
+
+        service.refresh_insights(fid, TODAY)
+        assert "не повод для пустого ответа" in captured["prompt"]
+        assert "NDVI-динамика сезона" in captured["context"]  # контекст не пуст
+
+        import json as _json
+
+        updated = _json.loads(monkeypatched_store(monkeypatch)[insights_key(fid, TODAY)])
+        assert updated["source"] == "rules+llm"
+        assert updated["summary"].startswith("Посев в норме")
+
+    def test_degradation_static_when_llm_fails(self, world, db_session, monkeypatch):
+        """Провайдер недоступен (None) и items=[] — статическая строка
+        «отклонений не выявлено», source=rules (§8.2 v1.3)."""
+        from app.ai_assistant import service
+        from sqlalchemy.orm import sessionmaker
+
+        client, hdr = world
+        fid = self._quiet_field(world, db_session)
+
+        TestBackgroundFix101._fake_redis(monkeypatch)
+        monkeypatch.setattr(
+            service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
+        )
+        monkeypatch.setattr(service.llm, "summarize", lambda p, c, **k: None)
+        db_session.close()
+
+        service.refresh_insights(fid, TODAY)
+        import json as _json
+
+        updated = _json.loads(monkeypatched_store(monkeypatch)[insights_key(fid, TODAY)])
+        assert updated["source"] == "rules"
+        assert updated["summary"] == service.NO_DEVIATIONS_SUMMARY
+
+    def test_guardrail_empty_items_invented_numbers(self, world, db_session, monkeypatch):
+        """items=[] + выдуманные числа → guardrail отверг сводку, fallback
+        пуст → деградация статической строкой (не пустой текст)."""
+        from app.ai_assistant import service
+        from sqlalchemy.orm import sessionmaker
+
+        client, hdr = world
+        fid = self._quiet_field(world, db_session)
+
+        TestBackgroundFix101._fake_redis(monkeypatch)
+        monkeypatch.setattr(
+            service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
+        )
+        monkeypatch.setattr(
+            service.llm, "summarize", lambda p, c, **k: "Внесите 90 кг/га азота!"
+        )
+        db_session.close()
+
+        service.refresh_insights(fid, TODAY)
+        import json as _json
+
+        updated = _json.loads(monkeypatched_store(monkeypatch)[insights_key(fid, TODAY)])
+        assert updated["source"] == "rules"
+        assert updated["summary"] == service.NO_DEVIATIONS_SUMMARY
+
+    def test_sync_static_when_llm_disabled(self, world, db_session):
+        """LLM выключен (default) и items=[] — синхронный ответ содержит
+        статическую строку деградации, source=rules."""
+        client, hdr = world
+        fid = self._quiet_field(world, db_session)
+        resp = get_insights(client, hdr, fid)
+        assert resp["source"] == "rules"
+        assert resp["items"] == []
+        assert resp["summary"] == "Отклонений по данным детекторов не выявлено."
+
+    def test_bg_scheduled_with_empty_items(self, world, db_session, monkeypatch):
+        """llm_enabled + items=[] → фоновая доработка планируется (раньше
+        short-circuit не ставил задачу)."""
+        client, hdr = world
+        fid = self._quiet_field(world, db_session)
+        spy = TestBackgroundFix101._get_with_ollama(client, monkeypatch)
+        resp = get_insights(client, hdr, fid)
+        assert resp["items"] == []
+        assert spy["n"] == 1
+        client.app.dependency_overrides.clear()
+
+    def test_cache_key_versioned(self):
+        """Ключ кэша — v2 (#138): поднятие версии сбрасывает старые кэши
+        со статическими сводками."""
+        from app.ai_assistant import service
+
+        fid = uuid.UUID("c3b625bd-523d-42e8-8ab8-b7d60281ab06")
+        assert service._key(fid, date(2026, 10, 31)) == (
+            f"insights:v{service.INSIGHTS_CACHE_VERSION}:{fid}:2026-10-31"
+        )
+        assert service.INSIGHTS_CACHE_VERSION == 2
