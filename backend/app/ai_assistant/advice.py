@@ -114,9 +114,7 @@ def _fmt(v: float | None, nd: int = 1) -> str:
     return "нет" if v is None else f"{float(v):.{nd}f}"
 
 
-def build_advice_context(
-    db: Session, field_id: uuid.UUID, today: date
-) -> AdviceContext | None:
+def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> AdviceContext | None:
     """Контекст рекомендации §9.1; None — пустой сезон (чистых сцен нет).
 
     Региона в модели Field нет — секция опущена (решение Ивана, #381).
@@ -144,9 +142,7 @@ def build_advice_context(
     ).all()
     if rows:
         history = ", ".join(
-            f"{r[0].year} — {r[1]}"
-            + (f" (предшественник: {r[2]})" if r[2] else "")
-            for r in rows
+            f"{r[0].year} — {r[1]}" + (f" (предшественник: {r[2]})" if r[2] else "") for r in rows
         )
         parts.append(f"Севооборот (последние циклы): {history}.")
 
@@ -303,9 +299,7 @@ def _yield_verdict(
     cycle = db.scalar(
         select(CropCycle, Culture)
         .join(Culture, CropCycle.culture_id == Culture.id)
-        .where(
-            CropCycle.field_id == field_id, CropCycle.year == year, CropCycle.kind == "main"
-        )
+        .where(CropCycle.field_id == field_id, CropCycle.year == year, CropCycle.kind == "main")
     )
     if cycle is None:
         return None
@@ -316,9 +310,11 @@ def _yield_verdict(
     avgs = [float(s.index_avg) for s in scenes]
     ndvi_max = max(avgs)
     ndvi_integral = sum(max(v - 0.2, 0.0) for v in avgs) / 100
-    forecast = float(culture.yield_k_base) + float(culture.yield_k_ndvi_max) * ndvi_max + float(
-        culture.yield_k_ndvi_int
-    ) * ndvi_integral
+    forecast = (
+        float(culture.yield_k_base)
+        + float(culture.yield_k_ndvi_max) * ndvi_max
+        + float(culture.yield_k_ndvi_int) * ndvi_integral
+    )
     return (
         f"Прогноз урожайности ({culture.name}, {year}): {forecast:.2f} "
         f"ц/га (интервал {forecast * 0.75:.2f}–{forecast * 1.25:.2f})."
@@ -341,9 +337,7 @@ def _allowed_numbers(context: str, items: list[InsightItem]) -> set[str]:
     return allowed
 
 
-def generate_advice(
-    field_id: uuid.UUID, *, today: date | None = None
-) -> AIFieldAdvice | None:
+def generate_advice(field_id: uuid.UUID, *, today: date | None = None) -> AIFieldAdvice | None:
     """Полный цикл генерации рекомендации для поля (§9.1–9.3).
 
     None — провайдер не anthropic/выключен, поля/сезона нет или LLM
