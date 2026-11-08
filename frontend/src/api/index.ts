@@ -259,6 +259,48 @@ export async function getFieldVra(
   }
 }
 
+/** API-60 (§7.4, #140): файл выгрузки карты зон — blob + имя из
+ *  Content-Disposition (ISOXML/SHP — ZIP, GeoJSON — .geojson). */
+export interface VraExportFile {
+  blob: Blob
+  filename: string
+}
+
+/** API-60: GET /fields/{id}/vra/export?format=isoxml|shp|geojson — выгрузка
+ *  карты дифвнесения (§7.4). baseDoseKgHa — базовая доза, кг/га (иначе
+ *  бэкенд берёт последний approved fertilizing-план); year — сезон (§7.5).
+ *  'no-dose' — 422 vra_no_base_dose (нет базовой дозы: нужна из формы),
+ *  'error' — прочие ошибки (нет сцен, неизвестный формат и т.п.). */
+export async function exportFieldVra(
+  fieldId: string,
+  format: 'isoxml' | 'shp' | 'geojson',
+  opts: { baseDoseKgHa?: number; year?: number } = {},
+): Promise<
+  { kind: 'file'; file: VraExportFile } | { kind: 'no-dose' } | { kind: 'error' }
+> {
+  const params = new URLSearchParams({ format })
+  if (opts.baseDoseKgHa != null) params.set('base_dose_kg_ha', String(opts.baseDoseKgHa))
+  if (opts.year != null) params.set('year', String(opts.year))
+  const res = await apiClient.raw(`/fields/${fieldId}/vra/export?${params.toString()}`)
+  if (res.ok) {
+    const cd = res.headers.get('Content-Disposition') ?? ''
+    const filename =
+      /filename="([^"]+)"/.exec(cd)?.[1] ??
+      `vra_${fieldId.slice(0, 8)}.${format === 'geojson' ? 'geojson' : 'zip'}`
+    return { kind: 'file', file: { blob: res.blob, filename } }
+  }
+  if (res.status === 422) {
+    // различаем vra_no_base_dose от прочих 422 (например, битая доза)
+    try {
+      const problem = JSON.parse(await res.blob.text()) as { code?: string }
+      if (problem.code === 'vra_no_base_dose') return { kind: 'no-dose' }
+    } catch {
+      // тело не JSON — считаем общей ошибкой
+    }
+  }
+  return { kind: 'error' }
+}
+
 /** API-52: GET /fields/{id}/vra/map.png — PNG-карта зон (§7.4) с
  *  геопривязкой X-Field-Bbox/X-Image-Size (как §7.3); null, если нет. */
 export async function getFieldVraMap(fieldId: string, year?: number): Promise<NdviRender | null> {
