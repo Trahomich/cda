@@ -283,7 +283,8 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
     settings = get_settings()
     if settings.ndvi_render_dir and scenes:
         parts.append(
-            f"Рендеры NDVI (приложены): шкала раскраски от {_NDVI_LO:.2f} до {_NDVI_HI:.2f}."
+            "Рендеры NDVI (приложены): шкала раскраски "
+            f"от {NDVI_RENDER_LO:.2f} до {NDVI_RENDER_HI:.2f}."
         )
 
     context = "\n".join(parts)
