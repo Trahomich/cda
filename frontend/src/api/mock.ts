@@ -2043,6 +2043,7 @@ export class MockTransport implements Transport {
           wind_max_ms: d.wind_ms,
           humidity_avg_pct: d.humidity_pct,
           hazard: 'none',
+          hazards: d.hazards ?? [], // ОЯ суток (#139, docs/06 §7.8)
         }))
       return ok({
         items,
