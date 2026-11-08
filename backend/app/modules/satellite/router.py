@@ -215,7 +215,9 @@ def _register_index_routes() -> None:
             settings: SettingsDep,
             *,
             _index: str,
-            year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"),
+            year: int | None = Query(
+                default=None, ge=2000, le=2100, description="Сезон YYYY (§7.5)"
+            ),
             date_from: date | None = Query(default=None, description="Начало периода"),
             date_to: date | None = Query(default=None, description="Конец периода"),
             limit: int = Query(default=50, ge=1, le=366),
