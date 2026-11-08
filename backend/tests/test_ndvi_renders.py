@@ -418,7 +418,8 @@ class TestRenderLegend:
         assert render is not None
         cw, cs, ce, cn = _contour_wgs_bounds(contour)
         w, s, e, n = render.bbox
-        # bbox по-прежнему накрывает контур (растровая часть — сверху)
-        assert w <= cw and s <= cs and e >= ce and n >= cn
+        # bbox по-прежнему накрывает контур (растровая часть — сверху;
+        # 1e-5 — допуск округления bbox до 7 знаков)
+        assert w <= cw + 1e-5 and s <= cs + 1e-5 and e >= ce - 1e-5 and n >= cn - 1e-5
         # а юг расширен за контур: полоса легенды «ниже поля»
         assert s < cs - 1e-4
