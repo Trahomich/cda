@@ -20,6 +20,7 @@ import type {
   Field,
   FieldWeather,
   WeatherForecast,
+  WeatherForecastDay,
   WeatherGdd,
   WeatherHistory,
   WeatherWindowItem,
