@@ -40,7 +40,7 @@ from app.models.ai import AIFieldAdvice
 from app.models.integrations import Forecast, SatelliteScene
 from app.models.references import Culture
 from app.modules.satellite.waterlog import precip_sums_7d, waterlogged
-from app.services.sentinel_ingest.renders import render_path
+from app.services.sentinel_ingest.renders import NDVI_RENDER_HI, NDVI_RENDER_LO, render_path
 
 logger = logging.getLogger(__name__)
 
