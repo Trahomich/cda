@@ -430,20 +430,27 @@ class TestVraPeaks:
         assert body["date"] == "2026-06-20"
         assert body["peak_dates"] == ["2026-06-20", "2026-06-25"]
 
-    def test_two_uniform_scenes_422(self, client, db_session, tmp_path, agro_headers):
+    def test_two_uniform_scenes_zones(self, client, db_session, tmp_path, agro_headers):
+        """v1.7: однородный сезон из 2 сцен — зоны строятся, без 422."""
         make_satellite_source(db_session)
         field_id = make_field(db_session, name="Ровный сезон")
         for sub, day in (("s1", date(2026, 6, 20)), ("s2", date(2026, 6, 25))):
             self.add_scene(db_session, tmp_path, field_id, sub, day, np.full((N, N), 800), 0.7)
         resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
-        assert resp.status_code == 422, resp.text
-        assert resp.json()["code"] == "vra_uniform_field"
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["iqr_ndvi"] < 0.12
+        assert body["spatial_spread"] < 0.06
+        assert body["zones"]
 
-    def test_peak_cache_and_uniform_iqr_cached(
+    def test_peak_cache_full_for_all_scenes(
         self, client, db_session, tmp_path, agro_headers, monkeypatch
     ):
-        """Кэш: полный расчёт — по дате пиковой сцены, IQR однородных — отдельным
-        ключом; повторный запрос не перечитывает COG."""
+        """Кэш v1.7: полный расчёт (зоны+spread) — по дате КАЖДОЙ пиковой
+        сцены, ключей vra:iqr:* больше нет; повторный запрос не перечитывает
+        COG; указатель vra:peak хранит метрики всех пиков."""
+        import json as json_mod
+
         import app.core.cache as cache_mod
         from app.modules.satellite import vra
 
@@ -474,12 +481,104 @@ class TestVraPeaks:
 
         first = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
         assert first.status_code == 200, first.text
-        assert calls["n"] == 3  # по одному чтению COG на пиковую сцену
-        assert f"vra:{field_id}:2026-06-20" in fake.store  # полный расчёт — по пику
-        assert f"vra:iqr:{field_id}:2026-11-05" in fake.store  # однородная — только IQR
-        assert f"vra:peak:{field_id}" in fake.store
+        assert calls["n"] == 3  # по одному чтению COG на каждую пиковую сцену
+        for day in ("2026-06-20", "2026-06-25", "2026-11-05"):
+            key = f"vra:{field_id}:{day}"
+            assert key in fake.store  # полный расчёт для всех пиков (v1.7)
+        assert not any(k.startswith(f"vra:iqr:{field_id}") for k in fake.store)  # путь удалён
+
+        pointer = json_mod.loads(fake.store[f"vra:peak:{field_id}"])
+        assert [p["date"] for p in pointer["peaks"]] == [
+            "2026-06-20",
+            "2026-06-25",
+            "2026-11-05",
+        ]
+        assert all(
+            {"iqr_ndvi", "spatial_spread"} <= set(p) for p in pointer["peaks"]
+        )  # детектор §8.2 v1.7
 
         second = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
         assert second.status_code == 200, second.text
         assert calls["n"] == 3  # всё из кэша
         assert second.json() == first.json()
+
+
+def spotty_red() -> np.ndarray:
+    """Фон red≈340 (NDVI ≈ 0.80) с 6 пятнами 18×18 px (~3.2 га каждое,
+    red≈650 → NDVI ≈ 0.65): суммарно ~6 % пикселей — пиксельный IQR их не
+    видит, средние ячеек сетки 20×20 — видят (§7.4 v1.7, поле 50 #364)."""
+    red = np.full((N, N), 340)
+    spots = ((30, 40), (30, 130), (90, 70), (90, 160), (150, 35), (150, 125))
+    for y, x in spots:
+        red[y : y + 18, x : x + 18] = 650
+    return red
+
+
+class TestVraSpatialSpread:
+    """Пространственный критерий неоднородности (§7.4 v1.7, #121): мелкие
+    пятна ~1–3 га при узком пиксельном IQR — spatial_spread их видит."""
+
+    def test_spots_seen_by_spread_not_iqr(self, client, db_session, tmp_path, agro_headers):
+        make_satellite_source(db_session)
+        field_id = make_field(db_session, name="Пятна-1")
+        assets = make_vra_rasters(tmp_path, spotty_red(), seed=13)
+        make_scene(db_session, field_id, assets, index_avg=0.80)
+        resp = client.get(f"/api/v1/fields/{field_id}/vra", headers=agro_headers)
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["spatial_spread"] >= 0.06  # пятна видны пространственно
+        assert body["iqr_ndvi"] < 0.12  # ...но невидимы пиксельным IQR
+        low = [z for z in body["zones"] if z["ndvi_mean"] < 0.70]
+        assert low, "пятна образуют зону пониженного развития"
+        # 6 пятен × 18×18 px из ~180×180 полезных ≈ 6 % от 324 га ≈ 19 га
+        assert 12.0 < low[0]["area_ga"] < 26.0
+
+    def test_detector_spatial_criterion(self):
+        """Детектор §8.2 v1.7: spread ≥ 0.06 на 2 из 3 пиков при IQR < 0.12."""
+        from app.ai_assistant.detectors import detect_vra_heterogeneity
+
+        peaks = [
+            (date(2026, 6, 20), 0.031, 0.09),
+            (date(2026, 6, 25), 0.028, 0.075),
+            (date(2026, 7, 2), 0.042, 0.01),
+        ]
+        item = detect_vra_heterogeneity(peaks)
+        assert item is not None
+        assert item.code == "vra_heterogeneity"
+        assert "однородно" not in item.detail
+        assert "дифвнесени" in item.detail
+        assert len(item.data_refs) == 3
+        assert {"iqr_ndvi", "spatial_spread"} <= set(item.data_refs[0])
+
+    def test_detector_iqr_regression(self):
+        """Регресс: прежний критерий IQR ≥ 0.12 на 2 из 3 пиков — срабатывает."""
+        from app.ai_assistant.detectors import detect_vra_heterogeneity
+
+        peaks = [
+            (date(2026, 6, 20), 0.15, 0.0),
+            (date(2026, 6, 25), 0.13, 0.0),
+            (date(2026, 7, 2), 0.05, 0.0),
+        ]
+        assert detect_vra_heterogeneity(peaks) is not None
+
+    def test_detector_uniform_silent(self):
+        """Однородные пики (обе метрики ниже порогов) — детектор молчит."""
+        from app.ai_assistant.detectors import detect_vra_heterogeneity
+
+        peaks = [
+            (date(2026, 6, 20), 0.03, 0.01),
+            (date(2026, 6, 25), 0.04, 0.02),
+            (date(2026, 7, 2), 0.05, 0.0),
+        ]
+        assert detect_vra_heterogeneity(peaks) is None
+
+    def test_detector_single_noisy_scene_not_enough(self):
+        """Шум одной сцены (порог breached только на 1 из 3) — молчит."""
+        from app.ai_assistant.detectors import detect_vra_heterogeneity
+
+        peaks = [
+            (date(2026, 6, 20), 0.03, 0.01),
+            (date(2026, 6, 25), 0.20, 0.0),  # выброс одной сцены
+            (date(2026, 7, 2), 0.04, 0.02),
+        ]
+        assert detect_vra_heterogeneity(peaks) is None
