@@ -211,11 +211,14 @@ def _summarize_anthropic(
     api_key: str | None,
     timeout: float,
     attempts: int | None,
+    images: Sequence[bytes] | None = None,
 ) -> str | None:
     """Ветка anthropic-облака: POST {base}/v1/messages, glm-5.3-flash (#115).
 
     Ответ — content-блоки; берём первый type="text" (thinking-блок
     glm-5.3-flash пропускаем — он есть всегда, даже при disabled).
+    ``images`` — PNG bytes для vision-запросов (#119): content-блоки image
+    (base64, media_type image/png) перед текстовым блоком.
     """
     url_root = (settings.anthropic_base_url if base_url is None else base_url).strip()
     key = (settings.anthropic_api_key if api_key is None else api_key).strip()
@@ -226,12 +229,27 @@ def _summarize_anthropic(
     )
 
     max_attempts = RETRY_ATTEMPTS if attempts is None else max(1, int(attempts))
+    content: list[dict] = [
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": base64.b64encode(png).decode("ascii"),
+            },
+        }
+        for png in (images or [])
+    ]
+    content.append(
+        {
+            "type": "text",
+            "text": f"{prompt}\n\nДанные хозяйства (context):\n{context}",
+        }
+    )
     body = {
         "model": chosen_model,
         "max_tokens": ANTHROPIC_MAX_TOKENS,
-        "messages": [
-            {"role": "user", "content": f"{prompt}\n\nДанные хозяйства (context):\n{context}"}
-        ],
+        "messages": [{"role": "user", "content": content}],
     }
     headers = {"x-api-key": key, "anthropic-version": ANTHROPIC_VERSION}
 
