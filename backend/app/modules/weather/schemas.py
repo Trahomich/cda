@@ -79,6 +79,16 @@ class ForecastListResponse(BaseModel):
     meta: SourceMeta
 
 
+class HistoryListResponse(BaseModel):
+    """API: история фактов погоды по полю (карточка погоды, #126)."""
+
+    items: list[FactItem]
+    total: int
+    limit: int
+    offset: int
+    meta: SourceMeta
+
+
 class WindowDayItem(BaseModel):
     """Сутки горизонта: входят ли в погодное окно операции и почему нет."""
 
