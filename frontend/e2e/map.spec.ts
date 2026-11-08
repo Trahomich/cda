@@ -40,3 +40,24 @@ test('карта: легенда складывается (#55)', async ({ page 
   await page.locator('.map-legend__toggle').click()
   await expect(page.locator('.map-legend__list')).toBeHidden()
 })
+
+test('карта: балун поля — кликабельный заголовок вместо ссылки (#124, #368)', async ({
+  page,
+}) => {
+  // Клик по контуру поля открывает балун.
+  await page.locator('path[fill]').first().click({ timeout: 15_000 })
+  const popup = page.locator('.field-popup')
+  await expect(popup).toBeVisible({ timeout: 10_000 })
+
+  // Отдельной ссылки «Открыть карточку поля» больше нет; заголовок —
+  // название поля, оформлен как ссылка.
+  await expect(popup.locator('.field-popup__link')).toHaveCount(0)
+  const title = popup.locator('.field-popup__title')
+  await expect(title).toBeVisible()
+  await expect(title).toHaveAttribute('href', /^\/fields\//)
+
+  // Клик по заголовку — SPA-переход в карточку поля.
+  await title.click()
+  await page.waitForURL(/\/fields\/[\w-]+$/, { timeout: 10_000 })
+  await expect(page.locator('.card360__back')).toBeVisible({ timeout: 15_000 })
+})
