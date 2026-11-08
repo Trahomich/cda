@@ -12,7 +12,7 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
-from app.ai_assistant import advice_scheduler
+from app.ai_assistant import advice, advice_scheduler
 from app.core import events
 from app.models.agronomy import Field
 from app.models.ai import AIFieldAdvice
