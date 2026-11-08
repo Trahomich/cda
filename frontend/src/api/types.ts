@@ -606,6 +606,29 @@ export interface YieldForecastResponse {
   low_c_ha: number
   high_c_ha: number
   disclaimer: string
+  /** Год сезона расчёта (§7.5): дополняет ответ при ?year=YYYY;
+   *  совпадает с cycle_year — год, по которому считали прогноз. */
+  year?: number
+}
+
+/** Сезон NDVI поля — элемент items[] ответа API-54 (§7.5): distinct-год
+ *  чистых сцен поля; culture_name — культура основного цикла года | null. */
+export interface SeasonItem {
+  year: number
+  /** Число чистых (cloud ≤ 60) NDVI-сцен сезона. */
+  scenes: number
+  first_date: string
+  last_date: string
+  culture_name: string | null
+  /** true для года последней чистой сцены поля (текущий сезон). */
+  is_current: boolean
+}
+
+/** Ответ GET /fields/{id}/seasons (API-54, §7.5): годы по убыванию. */
+export interface SeasonsResponse {
+  field_id: string
+  items: SeasonItem[]
+  total: number
 }
 
 /** Градация важности числового детектора (API-51, §7.4; 09-ai §8.2). */
