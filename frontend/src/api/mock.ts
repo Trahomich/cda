@@ -2241,6 +2241,49 @@ export class MockTransport implements Transport {
       return ok({ items: items.slice(offset, offset + limit), total: items.length, limit, offset })
     }
 
+    if (method === 'GET' && pathname === '/weather/map') {
+      const metric = params.get('metric') ?? 'precip_7d'
+      if (!['precip_7d', 'precip_14d', 't_now', 'gdd_ytd'].includes(metric)) {
+        return problem(
+          422,
+          'https://cda.example/errors/unknown-metric',
+          'Неизвестная метрика',
+          `Метрика ${metric} не поддерживается`,
+        )
+      }
+      const year = new Date(NOW).getUTCFullYear()
+      const today = new Date(NOW).toISOString().slice(0, 10)
+      const items = FIELDS.filter((f) => f.status === 'active').map((f) => {
+        const n = FIELD_N.get(f.field_id)!
+        // Поле 4 — «нет наблюдений» (нейтральная заливка, value: null).
+        if (n === 4) {
+          return { field_id: f.field_id, name: f.name, contour: f.contour!, value: null, updated_at: null }
+        }
+        const hist = historyAll(n)
+        let value: number
+        if (metric === 'gdd_ytd') {
+          const curve = gddOfCache(n, year)
+          value = curve[curve.length - 1]?.gdd_cum ?? 0
+        } else if (metric === 't_now') {
+          const last = hist[hist.length - 1]!
+          value = last.temperature_avg_c ?? (last.temperature_min_c! + last.temperature_max_c!) / 2
+        } else {
+          const days = metric === 'precip_7d' ? 7 : 14
+          value = Number(
+            hist.slice(-days).reduce((s, d) => s + d.precipitation_mm, 0).toFixed(1),
+          )
+        }
+        return {
+          field_id: f.field_id,
+          name: f.name,
+          contour: f.contour!,
+          value: Number(value.toFixed(1)),
+          updated_at: today,
+        }
+      })
+      return ok({ metric, items })
+    }
+
     if (method === 'GET' && pathname === '/weather/gdd') {
       const fieldId = params.get('field_id') ?? ''
       const n = FIELD_N.get(fieldId)
