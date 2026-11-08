@@ -517,6 +517,7 @@ def _infer_with_guardrail(
 ) -> tuple[str | None, str]:
     """LLM-инференс с guardrail §9.2: ok / fallback / (None, —)."""
     allowed = _allowed_numbers(ctx.context, items)
+    allowed_pairs = _allowed_pairs(ctx.context, items)
     answer = llm.summarize(
         prompt,
         ctx.context,
@@ -528,7 +529,7 @@ def _infer_with_guardrail(
     )
     if answer is None:
         return None, ""
-    if _numbers_within(answer, allowed):
+    if _numbers_within(answer, allowed, allowed_pairs):
         return answer, "ok"
     logger.warning("advice: посторонние числа в ответе — повтор с уточнением")
     retry = llm.summarize(
@@ -540,10 +541,10 @@ def _infer_with_guardrail(
         model=model_name,
         images=ctx.images or None,
     )
-    if retry is not None and _numbers_within(retry, allowed):
+    if retry is not None and _numbers_within(retry, allowed, allowed_pairs):
         return retry, "ok"
     logger.warning("advice: guardrail дважды не пройден — fallback на items §8.2")
-    fallback = " ".join(f"{i.title}: {i.detail}" for i in items) or _NO_DATA_ANSWER
+    fallback = " ".join(f"{i.title}: {i.detail}" for i in items) or _GUARDRAIL_FAILED_ANSWER
     return fallback[:2000], "fallback"
 
 
