@@ -145,8 +145,14 @@ _OPERATION_TITLES = {
 }
 
 
+#: версия ключа кэша insights (§8.2 v1.3, #138): v2 — LLM-вердикт обязателен
+#: и при items=[]; поднятие версии сбрасывает кэш со старыми статическими
+#: сводками «отклонений не выявлено» (TTL 24 ч иначе держал бы их сутки)
+INSIGHTS_CACHE_VERSION = 2
+
+
 def _key(field_id: uuid.UUID, day: date) -> str:
-    return f"insights:{field_id}:{day.isoformat()}"
+    return f"insights:v{INSIGHTS_CACHE_VERSION}:{field_id}:{day.isoformat()}"
 
 
 def build_items(
