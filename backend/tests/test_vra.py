@@ -3,12 +3,14 @@
 Проверяется по синтетическим COG (b04/b08 10 м UTM + scl 20 м, как в
 test_sentinel_ndvi): три полосы развития NDVI → 3 зоны с подписями и
 множителями дозы 1.15/1.0/0.85, сумма площадей зон ≈ площади поля;
-dose_kg_ha от последнего approved fertilizing-плана (kg_ha; l_ha → null);
-однородное поле (IQR < 0.12) → 422 vra_uniform_field; поле без сцен →
-422 vra_no_data; 404/403; map.png (PNG-магия, X-Field-Bbox, X-Image-Size,
-Cache-Control 24 ч); кэш 24 ч по (field_id, дата сцены) — повторный запрос
-не пересчитывает. Наружу тесты не ходят: COG — локальные файлы; БД —
-DATABASE_URL_TEST; кэш — подменный FakeRedis.
+dose_kg_ha от последнего approved fertilizing-плана (kg_ha; l_ha → null).
+v1.7 (#121): ворота однородности удалены — зоны строятся ВСЕГДА при чистых
+сценах, в ответе метрики iqr_ndvi + spatial_spread (p90−p10 средних ячеек
+сетки ~20×20); поле без сцен → 422 vra_no_season_data; 404/403; map.png
+(PNG-магия, X-Field-Bbox, X-Image-Size, Cache-Control 24 ч); кэш 24 ч по
+(field_id, дата сцены) — повторный запрос не пересчитывает. Наружу тесты
+не ходят: COG — локальные файлы; БД — DATABASE_URL_TEST; кэш — подменный
+FakeRedis.
 """
 
 import json
