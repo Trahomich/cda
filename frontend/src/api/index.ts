@@ -232,30 +232,21 @@ export async function getNdviRender(
   }
 }
 
-/** API-52: GET /fields/{id}/vra — зоны дифференцированного внесения (§7.4).
- *  year (§7.5) — сезон YYYY вместо текущего; 404 season_not_found уходит
- *  в общий 'empty'. Результат: ok — зоны; uniform — поле однородно
- *  (422 vra_uniform_field, IQR < 0.12); empty — прочие ошибки.
- *  Запрос silent: 422-однородность — нормальное состояние, а не ошибка,
- *  красный тост problem+json здесь не нужен (фидбек user, #122). */
+/** API-52: GET /fields/{id}/vra — зоны дифференцированного внесения (§7.4
+ *  v1.7: зоны строятся ВСЕГДА при наличии чистых сцен сезона, код
+ *  422 vra_uniform_field больше не возвращается). year (§7.5) — сезон YYYY;
+ *  404 season_not_found и 422 vra_no_season_data → 'empty' («нет данных»). */
 export async function getFieldVra(
   fieldId: string,
   year?: number,
-): Promise<{ kind: 'ok'; data: VraZonesResponse } | { kind: 'uniform' } | { kind: 'empty' }> {
+): Promise<{ kind: 'ok'; data: VraZonesResponse } | { kind: 'empty' }> {
   const yearQuery = year ? `?year=${year}` : ''
   try {
-    const data = await apiClient.request<VraZonesResponse>(`/fields/${fieldId}/vra${yearQuery}`, {
-      silent: true,
-    })
-    return { kind: 'ok', data }
-  } catch (error) {
-    if (
-      error instanceof ApiError &&
-      error.status === 422 &&
-      error.problem?.code === 'vra_uniform_field'
-    ) {
-      return { kind: 'uniform' }
+    return {
+      kind: 'ok',
+      data: await apiClient.request<VraZonesResponse>(`/fields/${fieldId}/vra${yearQuery}`),
     }
+  } catch {
     return { kind: 'empty' }
   }
 }
