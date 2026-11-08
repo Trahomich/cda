@@ -17,8 +17,8 @@ from app.models.integrations import Forecast, Source
 from app.models.references import Agrochem, Culture
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
-from tests.test_inputs import headers, make_culture, make_cycle, make_field, make_fertilizer
-from tests.test_insights import TODAY, make_obs, make_scene
+from tests.test_inputs import headers, make_culture, make_fertilizer, make_field
+from tests.test_insights import make_obs, make_scene
 
 WEATHER_SOURCE = "weather.open-meteo"
 SATELLITE_SOURCE = "satellite.sentinel2-l2a"
@@ -67,7 +67,12 @@ def _season_world(db, client, hdr, *, culture_kwargs=None) -> tuple[uuid.UUID, C
 
     db.add(
         Agrochem(
-            field_id=fid, sample_date=date(2026, 4, 1), ph=5.9, humus_pct=3.1, p2o5_mg100=12.0, k2o_mg100=9.5
+            field_id=fid,
+            sample_date=date(2026, 4, 1),
+            ph=5.9,
+            humus_pct=3.1,
+            p2o5_mg100=12.0,
+            k2o_mg100=9.5,
         )
     )
 
