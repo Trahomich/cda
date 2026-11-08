@@ -16,14 +16,16 @@
 Права (07-ux §5): группа «weather» — все 5 ролей (E-06, E-10).
 """
 
+import json
 import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
+from app.core.cache import cache_get, cache_set
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
