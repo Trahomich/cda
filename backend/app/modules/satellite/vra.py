@@ -224,14 +224,12 @@ def _analyze_scene(
             red_arr, red_transform, _ = _read_band_window(assets["b04"], contour_geojson)
             if red_arr.shape != nir_arr.shape or red_transform != nir_transform:
                 raise DataGapError("каналы b04/b08 на разных сетках — окно не совпадает")
-            base_transform, base_crs, base_shape = red_transform, red_crs_placeholder(nir_crs), nir_arr.shape
-        else:  # ndre (§7.7 #129): B05 — 20 м, в сетку B08
+        else:  # ndre (§7.7 #129): B05 — 20 м, перепроицируем в сетку B08
             from app.services.sentinel_ingest.indices import read_band_into_grid
 
-            rededge_arr = read_band_into_grid(
+            red_arr = read_band_into_grid(
                 assets["b05"], contour_geojson, nir_transform, nir_crs, nir_arr.shape
             )
-            base_transform, base_crs, base_shape = nir_transform, nir_crs, nir_arr.shape
         scl = _read_scl_grid(assets, contour_geojson, nir_transform, nir_crs, nir_arr.shape)
     except SourceUnavailableError as exc:
         raise AppError(
