@@ -454,18 +454,18 @@ export interface WeatherWindows {
 
 /* ─── Погода: история, GDD, окна по планам (#132/#133, обсуждение #134/#393) ─── */
 
-/** Дневной факт истории погоды — GET /weather/history (API-57, #126/#132).
- *  cloud_pct/snow_mm — метрики бэкфилла #126 (могут отсутствовать в старых сутках). */
+/** Дневной факт истории погоды для UI (API-57, §7.8; mapped из полной формы
+ *  #126): cloud/snow — для будущих пометок на графике. */
 export interface WeatherHistoryDay {
   date: string
   temp_max_c: number | null
   temp_min_c: number | null
   precip_mm: number
   cloud_pct?: number | null
-  snow_mm?: number | null
+  snow_cm?: number | null
 }
 
-/** История за период (по возрастанию даты; > 400 суток — 422 too_wide). */
+/** История за период (по возрастанию даты; 422 invalid_period, 404 field_not_found). */
 export interface WeatherHistory {
   field_id: string
   items: WeatherHistoryDay[]
