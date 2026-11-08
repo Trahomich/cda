@@ -711,6 +711,20 @@ export async function getFieldAdviceHistory(
   })
 }
 
+/* ─── Погодная карта хозяйства (API-61, docs/06 §7.8, #143) ─── */
+
+/** GET /weather/map?metric=… — контуры активных полей со значением метрики
+ *  для цветовой заливки; 422 unknown_metric. Silent: слой погоды —
+ *  необязательный режим карты, ошибка не должна сыпать тостом. */
+export async function getWeatherMap(
+  metric: WeatherMapMetric,
+): Promise<WeatherMapResponse> {
+  return apiClient.request<WeatherMapResponse>('/weather/map', {
+    query: { metric },
+    silent: true,
+  })
+}
+
 /* ─── Экран E-14 «Источники данных» (API-28) ─── */
 
 const ADAPTER_STATES: AdapterState[] = ['ok', 'degraded', 'error']
