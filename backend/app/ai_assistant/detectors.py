@@ -391,6 +391,8 @@ def detect_drought(
         )
     if not signals:
         return None
+    text = "; ".join(signals)
+    text = text[0].upper() + text[1:]
     data_refs: list[dict] = [
         {
             "source": "weather",
@@ -405,7 +407,7 @@ def detect_drought(
         code="drought",
         severity="warn",
         title="Почвенная засуха",
-        detail="; ".join(signals).capitalize() + ". Проверьте запасы влаги в почве.",
+        detail=text + ". Проверьте запасы влаги в почве.",
         data_refs=data_refs,
     )
 
