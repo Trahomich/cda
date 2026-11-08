@@ -764,6 +764,8 @@ export interface WeatherForecastItem {
   wind_max_ms: number
   humidity_avg_pct: number
   hazard?: string | null
+  /** Опасные явления суток (#139, docs/06 §7.8); [] — явлений нет. */
+  hazards?: WeatherHazard[]
 }
 
 /** Ответ API-07: факты + прогноз + мета источника. */
