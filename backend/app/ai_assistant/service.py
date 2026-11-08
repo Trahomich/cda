@@ -387,29 +387,28 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
         if scene is None or scene.captured_at != day:
             return  # появилась новая сцена — её ключ дорабатывается отдельно
 
-        vra_iqr: float | None = None
-        vra_day: date | None = None
+        vra_peaks: list[tuple[date, float, float]] = []
         vra_verdict = VRA_NO_DATA_VERDICT
         try:
-            # зоны по пиковым сценам (#106): iqr и дата — подтверждённой пиковой
+            # зоны по пиковым сценам (#106): ворота однородности удалены (§7.4
+            # v1.7) — вердикт всегда о построенных зонах и метриках пиков
             result = vra.vra_zones(db, field, year=year)  # кэшируется у себя (24 ч)
-            vra_iqr, vra_day = result.iqr_ndvi, result.captured_at
+            vra_peaks = _vra_peaks_cached(field_id, year) or [
+                (result.captured_at, result.iqr_ndvi, result.spatial_spread)
+            ]
             vra_verdict = (
-                f"Модель дифвнесения: поле неоднородно, {len(result.zones)} зон дифвнесения, "
-                f"IQR NDVI = {result.iqr_ndvi:.3f} "
+                f"Модель дифвнесения: {len(result.zones)} зон дифвнесения, "
+                f"IQR NDVI = {result.iqr_ndvi:.3f}, пространственный разброс = "
+                f"{result.spatial_spread:.3f} "
                 f"(пиковая сцена {result.captured_at.isoformat()})."
             )
-        except AppError as exc:
-            if exc.code == "vra_uniform_field":
-                # IQR достаём из detail: «…IQR NDVI = 0.058 < 0.120…» (vra.py)
-                m = re.search(r"IQR NDVI = (\d+\.\d+)", exc.detail or "")
-                iqr_str = f", IQR NDVI = {m.group(1)}" if m else ""
-                vra_verdict = f"Модель дифвнесения: поле однородно{iqr_str} — зоны не строятся."
-            # прочие AppError (нет ассетов/сцен) — вердикт «нет расчёта»
+        except AppError:
+            # нет ассетов/сцен — вердикт «нет расчёта»
+            pass
         except Exception:
             logger.warning("insights: VRA-расчёт не удался", exc_info=True)
 
-        items = build_items(db, field_id, vra_iqr=vra_iqr, vra_day=vra_day, year=year)
+        items = build_items(db, field_id, vra_peaks=vra_peaks, year=year)
         context = (
             _llm_context(db, field, items, vra_verdict=vra_verdict, year=year) if items else ""
         )
