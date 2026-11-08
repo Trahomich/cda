@@ -439,7 +439,13 @@ watch([range, rangeYear], () => void loadHistory())
         Погодные окна по планам поля (RULE-AGRO-09)
       </h2>
       <p
-        v-if="windowsHint"
+        v-if="windowsState !== 'ok'"
+        class="wx__state wx__state--soon"
+      >
+        {{ windowsState === 'loading' ? 'Загрузка окон…' : 'Погодные окна по планам поля скоро появятся — сервис погоды обновляется' }}
+      </p>
+      <p
+        v-else-if="windowsHint"
         class="wx__state wx__state--soon"
       >
         На этом поле нет активных планов операций — погодные окна не оцениваются
