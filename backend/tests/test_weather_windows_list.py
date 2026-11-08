@@ -28,8 +28,8 @@ SEASON_YEAR = TODAY.year + 1 if TODAY.month >= 9 else TODAY.year
 
 
 def make_plan(
-    db: Session,
     cycle: CropCycle,
+    db: Session,
     *,
     operation_type: str = "spraying",
     status: str = "approved",
@@ -84,14 +84,14 @@ def setup(client, db_session):
     )
     db_session.add(cycle)
     db_session.commit()
-    return {"client": client, "auth": auth, "field_id": field_id, "cycle": cycle}
+    return {"client": client, "auth": auth, "field_id": field_id, "cycle": cycle, "db": db_session}
 
 
 class TestWindowsList:
     def test_list_only_planned_spraying(self, setup):
         """План опрыскивания approved → в списке только spraying (default true)."""
         c, s = setup["client"], setup
-        make_plan(s["cycle"])
+        make_plan(s["cycle"], s["db"])
         resp = c.get(
             f"{API}/weather/windows", headers=s["auth"], params={"field_id": s["field_id"]}
         )
@@ -129,7 +129,7 @@ class TestWindowsList:
     def test_list_only_planned_false_all_types(self, setup):
         """only_planned=false — все типы из ref_weather_rule."""
         c, s = setup["client"], setup
-        make_plan(s["cycle"], operation_type="fertilizing")
+        make_plan(s["cycle"], s["db"], operation_type="fertilizing")
         resp = c.get(
             f"{API}/weather/windows",
             headers=s["auth"],
@@ -146,9 +146,9 @@ class TestWindowsList:
     def test_list_multiple_plan_types_distinct(self, setup):
         """Планы spraying + fertilizing → оба типа, без дублей."""
         c, s = setup["client"], setup
-        make_plan(s["cycle"], operation_type="spraying")
-        make_plan(s["cycle"], operation_type="fertilizing")
-        make_plan(s["cycle"], operation_type="spraying", status="completed")
+        make_plan(s["cycle"], s["db"], operation_type="spraying")
+        make_plan(s["cycle"], s["db"], operation_type="fertilizing")
+        make_plan(s["cycle"], s["db"], operation_type="spraying", status="completed")
         resp = c.get(
             f"{API}/weather/windows", headers=s["auth"], params={"field_id": s["field_id"]}
         )
@@ -158,8 +158,8 @@ class TestWindowsList:
     def test_list_finished_plans_excluded(self, setup):
         """Только завершённые/отменённые планы → items=[] + hint."""
         c, s = setup["client"], setup
-        make_plan(s["cycle"], status="completed")
-        make_plan(s["cycle"], status="cancelled")
+        make_plan(s["cycle"], s["db"], status="completed")
+        make_plan(s["cycle"], s["db"], status="cancelled")
         resp = c.get(
             f"{API}/weather/windows", headers=s["auth"], params={"field_id": s["field_id"]}
         )
@@ -169,7 +169,7 @@ class TestWindowsList:
     def test_list_harvest_completed_excludes_vegetation(self, setup, db_session):
         """Цикл закрыт уборкой → вегетационные окна не показываются (§7.8)."""
         c, s = setup["client"], setup
-        make_plan(s["cycle"], operation_type="spraying")
+        make_plan(s["cycle"], s["db"], operation_type="spraying")
         s["cycle"].status = "completed"  # урожай убран
         db_session.commit()
         resp = c.get(
@@ -198,7 +198,7 @@ class TestWindowsList:
         )
         db_session.add(old)
         db_session.commit()
-        make_plan(old, operation_type="spraying")
+        make_plan(old, db_session, operation_type="spraying")
         resp = c.get(
             f"{API}/weather/windows", headers=s["auth"], params={"field_id": s["field_id"]}
         )
