@@ -207,7 +207,10 @@ def _analyze_scene(
     from rasterio.transform import Affine
     from rasterio.warp import transform_bounds, transform_geom
 
-    assets = _scene_assets(db, field.id, scene.captured_at)
+    assets = _scene_assets(
+        db, field.id, scene.captured_at,
+        bands=VRA_BANDS if index == "ndvi" else VRA_BANDS_NDRE,
+    )
     if not assets:
         raise _err_no_data(field.id, f"нет ассетов каталога за {scene.captured_at.isoformat()}")
 
@@ -216,11 +219,20 @@ def _analyze_scene(
         raise _err_no_data(field.id, "контур поля недоступен")
     contour_geojson = json.loads(geojson_str)
     try:
-        red_arr, red_transform, red_crs = _read_band_window(assets["b04"], contour_geojson)
-        nir_arr, nir_transform, _ = _read_band_window(assets["b08"], contour_geojson)
-        if red_arr.shape != nir_arr.shape or red_transform != nir_transform:
-            raise DataGapError("каналы b04/b08 на разных сетках — окно не совпадает")
-        scl = _read_scl_grid(assets, contour_geojson, nir_transform, red_crs, nir_arr.shape)
+        nir_arr, nir_transform, nir_crs = _read_band_window(assets["b08"], contour_geojson)
+        if index == "ndvi":
+            red_arr, red_transform, _ = _read_band_window(assets["b04"], contour_geojson)
+            if red_arr.shape != nir_arr.shape or red_transform != nir_transform:
+                raise DataGapError("каналы b04/b08 на разных сетках — окно не совпадает")
+            base_transform, base_crs, base_shape = red_transform, red_crs_placeholder(nir_crs), nir_arr.shape
+        else:  # ndre (§7.7 #129): B05 — 20 м, в сетку B08
+            from app.services.sentinel_ingest.indices import read_band_into_grid
+
+            rededge_arr = read_band_into_grid(
+                assets["b05"], contour_geojson, nir_transform, nir_crs, nir_arr.shape
+            )
+            base_transform, base_crs, base_shape = nir_transform, nir_crs, nir_arr.shape
+        scl = _read_scl_grid(assets, contour_geojson, nir_transform, nir_crs, nir_arr.shape)
     except SourceUnavailableError as exc:
         raise AppError(
             f"Спутниковые данные недоступны: {exc}",
