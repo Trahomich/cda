@@ -455,7 +455,8 @@ class TestAdviceCli:
         self._patched_session(monkeypatch)
         import json
 
+        self.captured.clear()
         code = cli_main(["advice-refresh", "--field-id", str(self.field_id)])
         assert code == 0
-        data = json.loads("\n".join(self.captured))
+        data = json.loads(self.captured[-1])
         assert data["fields"][str(self.field_id)]["status"] == "error"
