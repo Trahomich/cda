@@ -406,3 +406,36 @@ class TestQueue:
 
         rows = db_session.scalars(select(AIFieldAdvice).where(AIFieldAdvice.field_id == fid)).all()
         assert len(rows) == 1 and rows[0].status == "ok"
+
+
+class TestStripMarkdown131:
+    """#131: advice.answer — простой текст без markdown (§9.2): запрет в
+    промпте + strip_markdown после guardrail."""
+
+    def test_prompt_forbids_markdown(self) -> None:
+        assert "без markdown-разметки" in advice.ADVICE_PROMPT
+
+    def test_answer_sanitized_on_store(self, world, db_session, monkeypatch) -> None:
+        """Мок-LLM вернула ответ с **/#/` — в ai_field_advice записан чистый
+        текст, легальные числа сохранены."""
+        client, hdr = world
+        fid, _ = _season_world(db_session, client, hdr)
+        _anthropic_settings(monkeypatch)
+        TestGenerateAdvice._patch_db(monkeypatch, db_session)
+
+        md_answer = (
+            "# Рекомендации\n**Проверьте поле:** NDVI 0.410 на 2026-10-20.\n"
+            "* осмотреть север\n* окно работ после 2026-11-10"
+        )
+        monkeypatch.setattr(advice.llm, "summarize", lambda *a, **k: md_answer)
+        db_session.close()
+
+        record = advice.generate_advice(fid, today=ADVICE_DAY)
+        assert record is not None and record.status == "ok"
+        assert record.answer == (
+            "Рекомендации\nПроверьте поле: NDVI 0.410 на 2026-10-20.\n"
+            "- осмотреть север\n- окно работ после 2026-11-10"
+        )
+        for md in ("**", "`", "\n#"):
+            assert md not in record.answer
+        assert "0.410" in record.answer
