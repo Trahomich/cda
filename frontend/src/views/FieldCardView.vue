@@ -403,12 +403,13 @@ const vraMapRect = computed(() => {
   }
 })
 
-/** Доза зоны: «N кг/га» при рассчитанной; иначе отклонение от базовой. */
+/** Доза зоны: «N» (кг/га — в шапке таблицы) при рассчитанной; иначе
+ *  отклонение от базовой. */
 function doseLabel(zone: VraZoneItem): string {
-  if (zone.dose_kg_ha !== null) return `${fmtNum(zone.dose_kg_ha)} кг/га`
+  if (zone.dose_kg_ha !== null) return fmtNum(zone.dose_kg_ha)
   const pct = Math.round(Math.abs(zone.dose_factor - 1) * 100)
   if (!pct) return 'базовая'
-  return `${zone.dose_factor > 1 ? '+' : '−'}${pct} % от базовой`
+  return `${zone.dose_factor > 1 ? '+' : '−'}${pct} %`
 }
 
 /* ── Прогноз урожайности (API-53, §7.4) ── */
