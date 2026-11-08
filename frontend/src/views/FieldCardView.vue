@@ -278,7 +278,7 @@ async function exportVra(): Promise<void> {
       : (vra.value.base_dose_kg_ha ?? undefined)
   exportBusy.value = true
   try {
-    const res = await exportFieldVra(props.fieldId, exportFormat.value, {
+    const res = await exportFieldVra(fieldId, exportFormat.value, {
       baseDoseKgHa: dose,
       year: seasonQueryYear.value,
     })
