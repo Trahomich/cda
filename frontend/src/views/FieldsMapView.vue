@@ -190,12 +190,12 @@ onMounted(async () => {
     attribution: '&copy; участники OpenStreetMap',
   }).addTo(map)
   map.on('zoomend', syncLabelZoom)
-  // Ссылка «Открыть карточку поля» в попапе контура: SPA-переход без
-  // перезагрузки страницы (v2-fix-A, пункт 1).
+  // Заголовок балуна (название поля) открывает карточку поля (#368):
+  // SPA-переход без перезагрузки страницы.
   map.on('popupopen', (e) => {
     const link = e.popup
       .getElement()
-      ?.querySelector<HTMLAnchorElement>('.field-popup__link')
+      ?.querySelector<HTMLAnchorElement>('.field-popup__title')
     if (link) {
       L.DomEvent.on(link, 'click', (ev) => {
         L.DomEvent.preventDefault(ev)
