@@ -211,8 +211,9 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
     except DataGapError as exc:
         raise _err_no_data(field.id, str(exc)) from exc
 
-    # прореживание до MAX_SIDE_PX (ближайший сосед) — сетка общая для зон и PNG
-    factor = max(1, math.ceil(max(red_arr.shape) / MAX_SIDE_PX))
+    # прореживание (ближайший сосед) — сетка общая для зон и PNG; растр —
+    # до MAX_RASTER_PX, чтобы канва с полосой легенды не превысила MAX_SIDE_PX
+    factor = max(1, math.ceil(max(red_arr.shape) / MAX_RASTER_PX))
     sl = (slice(None, None, factor), slice(None, None, factor))
     transform = red_transform * Affine.scale(factor, factor)
     nir_d = nir_arr[sl].astype("float32")
