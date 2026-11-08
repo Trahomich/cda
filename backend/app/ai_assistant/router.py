@@ -119,9 +119,7 @@ def field_advice_history(
         stmt = stmt.where(AIFieldAdvice.advice_date >= date_from)
     if date_to is not None:
         stmt = stmt.where(AIFieldAdvice.advice_date <= date_to)
-    records = db.scalars(
-        stmt.order_by(AIFieldAdvice.created_at.desc()).limit(limit)
-    ).all()
+    records = db.scalars(stmt.order_by(AIFieldAdvice.created_at.desc()).limit(limit)).all()
     return AdviceHistoryResponse(
         items=[AdviceResponse.model_validate(r, from_attributes=True) for r in records]
     )
