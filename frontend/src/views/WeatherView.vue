@@ -141,28 +141,22 @@ async function load() {
   }
 }
 
-/** Окна: списочная форма API-59 (§7.8); если бэкенд её ещё не отдаёт
- *  (до #133) — фолбэк на одиночные запросы по всем типам (прошлое поведение,
- *  экран не ломается). */
+/** Окна по планам (API-59, §7.8): до деплоя #133 списочной формы на бэкенде
+ *  нет — блок деградирует нейтральным «скоро» (#416), без тоста (silent). */
+const windowsState = ref<'loading' | 'ok' | 'soon'>('loading')
+
 async function loadWindows() {
-  windows.value = []
+  if (!fieldId.value) return
+  windowsState.value = 'loading'
   windowsHint.value = null
   try {
     const win = await getWeatherWindowsPlanned(fieldId.value)
     windows.value = win.items
     windowsHint.value = win.hint
+    windowsState.value = 'ok'
   } catch {
-    const wins = await Promise.all(
-      (Object.keys(OP_LABELS) as WindowOperationType[]).map((t) => getWeatherWindows(fieldId.value, t)),
-    )
-    windows.value = wins.map((w) => ({
-      operation_type: w.operation_type,
-      rule_text: w.rule_text,
-      window_open: Boolean(w.window_open),
-      nearest_window_date: w.nearest_window_date,
-      days: w.days,
-      alert: w.alert ?? null,
-    }))
+    windows.value = []
+    windowsState.value = 'soon'
   }
 }
 
