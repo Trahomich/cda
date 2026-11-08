@@ -31,18 +31,21 @@ def upgrade() -> None:
             sa.ForeignKey("dat_field.id", name="fk_ai_field_advice_field"),
             nullable=False,
         ),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(),
-                  nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False
+        ),
         sa.Column("model", sa.String(length=100), nullable=False),
         sa.Column("provider", sa.String(length=20), nullable=False),
         sa.Column("advice_date", sa.Date(), nullable=False),
         sa.Column("answer", sa.Text(), nullable=False),
         sa.Column("context_hash", sa.String(length=64), nullable=False),
         sa.Column("status", sa.String(length=10), server_default="ok", nullable=False),
-        sa.CheckConstraint("status IN ('ok', 'fallback', 'empty')",
-                           name="ck_ai_field_advice_status"),
-        sa.CheckConstraint("provider IN ('anthropic', 'ollama')",
-                           name="ck_ai_field_advice_provider"),
+        sa.CheckConstraint(
+            "status IN ('ok', 'fallback', 'empty')", name="ck_ai_field_advice_status"
+        ),
+        sa.CheckConstraint(
+            "provider IN ('anthropic', 'ollama')", name="ck_ai_field_advice_provider"
+        ),
     )
     op.create_index(
         "ix_ai_field_advice_field_created", "ai_field_advice", ["field_id", "created_at"]
