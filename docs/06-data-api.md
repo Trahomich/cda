@@ -189,6 +189,7 @@ erDiagram
 | API-58 | GET /weather/gdd?field_id&year | накопительная GDD-кривая с 1 января года (base 5 °C): items {date, gdd_day, gdd_cum}, total, norm_cum (многолетняя норма, null при <2 годах; §7.8) | REQ-F-024; #132 |
 | API-59 | GET /weather/windows | два режима: ?operation_type&field_id — одиночное окно (RULE-AGRO-09, было раньше, +nearest_window_date); ?field_id[&only_planned=true] — список окон по типам операций из активных планов поля, планов нет → items=[]+hint (§7.8, #133) | REQ-F-025; #133 |
 | API-60 | GET /fields/{id}/vra/export?format=isoxml\|shp\|geojson | выгрузка карты зон дифвнесения с дозами: ISOXML (терминалы), Shapefile (ГИС), GeoJSON; 422 vra_no_base_dose (§7.4) | REQ-F-010; #125 |
+| API-61 | GET /weather/map?metric=precip_7d\|precip_14d\|t_now\|gdd_ytd | карта погоды хозяйства: контуры всех активных полей со значением метрики (осадки за 7/14 сут, последняя суточная температура, GDD с 1 января base 5 °C), кэш 1 ч (§7.8) | REQ-F-024; #135 |
 
 Пост-MVP (описаны в своих документах, здесь — только индекс): API-36..39 —
 агроскаутинг (docs/11-agroscouting.md §5), API-40..45 — экономика
