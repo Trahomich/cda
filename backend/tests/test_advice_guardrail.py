@@ -88,6 +88,16 @@ class TestNumbersWithin:
         assert advice._numbers_within("NDVI 0.99 на всём поле", nums, pairs) is False
         # агрегат-сумма чисел контекста — не буквальное число, отвергается
         assert advice._numbers_within("осадки суммарно 5.2 мм", nums, pairs) is False
+        # интервалы из пересчёта («риск 0–4 %» при 3.5 и 1.7 мм) — отвергаются
+        assert advice._numbers_within("риск 0–4 %", nums, pairs) is False
+        # число с PNG-рендера, отсутствующее в context («0.56» при 0.567)
+        assert advice._numbers_within("NDVI до 0.56 по снимку", nums, pairs) is False
+        assert advice._numbers_within("NDVI до 0.67 по снимку", nums, pairs) is False
+
+    def test_russian_date_interval_from_iso_context(self):
+        """«с 10.11 по 14.11» — легальные русские даты ISO-дат контекста."""
+        nums, pairs = _allowed()
+        assert advice._numbers_within("окно с 10.11 по 14.11", nums, pairs) is True
 
     def test_iso_date_outside_context(self):
         """ISO-дата с парой (день, месяц) не из контекста — посторонняя."""
