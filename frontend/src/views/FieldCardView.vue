@@ -1909,11 +1909,18 @@ polygon.card360__polygon {
   margin-top: 0.6rem;
 }
 
+/* #130/#468: перечень индексов не всегда влезает в ширину — лента с
+ * горизонтальной прокруткой (touch-friendly), max-width — ширина блока */
 .card360__layer-switch {
   display: inline-flex;
   border: 1px solid #c8e6c9;
   border-radius: 999px;
-  overflow: hidden;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* тонкий видимый индикатор прокрутки */
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .card360__layer-btn {
@@ -1922,6 +1929,9 @@ polygon.card360__polygon {
   color: #1b5e20;
   font-size: 0.85rem;
   padding: 0.35rem 0.75rem;
+  min-height: 36px;
+  white-space: nowrap;
+  flex: 0 0 auto;
   cursor: pointer;
 }
 
