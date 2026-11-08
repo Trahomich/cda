@@ -265,11 +265,7 @@ def get_insights(
         # сводки пока нет: LLM обязателен и при items=[] (§8.2 v1.3, #138).
         # Деградация: провайдер выключен и детекторы молчат — статическая
         # строка сразу (source=rules); при непустых items — null как раньше
-        summary=(
-            NO_DEVIATIONS_SUMMARY
-            if not items and not llm.llm_enabled(settings)
-            else None
-        ),
+        summary=(NO_DEVIATIONS_SUMMARY if not items and not llm.llm_enabled(settings) else None),
         items=items,
     )
     cache_set(key, resp.model_dump(mode="json"), INSIGHTS_TTL_SECONDS)

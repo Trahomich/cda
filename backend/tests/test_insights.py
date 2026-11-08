@@ -922,15 +922,15 @@ class TestLlmVerdictEveryField138:
         assert service.build_items(db_session, fid) == []
 
         store = TestBackgroundFix101._fake_redis(monkeypatch)
-        monkeypatch.setattr(
-            service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
-        )
+        monkeypatch.setattr(service, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
         captured: dict[str, str] = {}
         monkeypatch.setattr(
             service.llm,
             "summarize",
-            lambda p, c, **k: captured.update(prompt=p, context=c)
-            or "Посев в норме: вегетация идёт ровно, следите за динамикой.",
+            lambda p, c, **k: (
+                captured.update(prompt=p, context=c)
+                or "Посев в норме: вегетация идёт ровно, следите за динамикой."
+            ),
         )
         db_session.close()
 
@@ -954,9 +954,7 @@ class TestLlmVerdictEveryField138:
         fid = self._quiet_field(world, db_session)
 
         store = TestBackgroundFix101._fake_redis(monkeypatch)
-        monkeypatch.setattr(
-            service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
-        )
+        monkeypatch.setattr(service, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
         monkeypatch.setattr(service.llm, "summarize", lambda p, c, **k: None)
         db_session.close()
 
@@ -977,12 +975,8 @@ class TestLlmVerdictEveryField138:
         fid = self._quiet_field(world, db_session)
 
         store = TestBackgroundFix101._fake_redis(monkeypatch)
-        monkeypatch.setattr(
-            service, "SessionLocal", sessionmaker(bind=db_session.get_bind())
-        )
-        monkeypatch.setattr(
-            service.llm, "summarize", lambda p, c, **k: "Внесите 90 кг/га азота!"
-        )
+        monkeypatch.setattr(service, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
+        monkeypatch.setattr(service.llm, "summarize", lambda p, c, **k: "Внесите 90 кг/га азота!")
         db_session.close()
 
         service.refresh_insights(fid, TODAY)
