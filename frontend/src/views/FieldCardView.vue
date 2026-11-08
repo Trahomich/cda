@@ -1067,6 +1067,55 @@ function fmtNum(v: number, digits = 1): string {
                   : 'нет согласованного плана внесения — показано отклонение от базовой'
               }}
             </p>
+            <div class="card360__vra-export">
+              <label class="card360__vra-export-label">
+                Формат
+                <select
+                  v-model="exportFormat"
+                  class="card360__vra-export-format"
+                  aria-label="Формат выгрузки карты дифвнесения"
+                >
+                  <option
+                    v-for="f in EXPORT_FORMATS"
+                    :key="f.value"
+                    :value="f.value"
+                  >
+                    {{ f.label }}
+                  </option>
+                </select>
+              </label>
+              <button
+                type="button"
+                class="card360__vra-export-btn"
+                :disabled="exportBusy"
+                @click="exportVra"
+              >
+                {{ exportBusy ? 'Готовим файл…' : 'Выгрузить' }}
+              </button>
+              <label
+                v-if="exportNeedsDose"
+                class="card360__vra-export-dose"
+              >
+                Базовая доза, кг/га
+                <input
+                  v-model="exportDose"
+                  class="card360__vra-export-input"
+                  type="number"
+                  inputmode="decimal"
+                  min="1"
+                  max="2000"
+                  step="1"
+                  placeholder="например, 75"
+                >
+              </label>
+              <p
+                v-if="exportError"
+                class="card360__vra-export-error"
+                role="alert"
+              >
+                Выгрузка не удалась — попробуйте ещё раз
+              </p>
+            </div>
           </template>
         </div>
 
