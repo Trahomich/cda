@@ -181,17 +181,42 @@ def build_items(
         precip_14d, gdd_14d, gdd_days = detectors.weather_window_14d(
             db, field_id, latest.captured_at
         )
-        drought = detectors.detect_drought(precip_14d, gdd_14d, gdd_days, latest.captured_at)
+        # NDMI-сигнал (§7.7 #129): последняя ndmi-сцена сезона, NDVI — последняя сцена
+        ndmi_mean = detectors.latest_index_mean(
+            db, field_id, "ndmi", year=year if year is not None else latest.captured_at.year
+        )
+        drought = detectors.detect_drought(
+            precip_14d,
+            gdd_14d,
+            gdd_days,
+            latest.captured_at,
+            ndmi_mean=ndmi_mean,
+            ndvi_mean=latest.ndvi_mean,
+        )
 
     culture_name: str | None = None
     if latest is not None:
         culture_name = detectors.current_culture_name(db, field_id, latest.captured_at)
+
+    # перезимовка озимых (§7.7 #129): зимние сцены (дек–мар) сезона; сезон —
+    # год последней сцены (декабрьские сцены — уже сезон следующего года)
+    winterkill: InsightItem | None = None
+    if latest is not None:
+        season_year = (
+            year
+            if year is not None
+            else latest.captured_at.year + (1 if latest.captured_at.month == 12 else 0)
+        )
+        winterkill = detectors.detect_winterkill(
+            detectors.load_winter_pairs(db, field_id, season_year), culture_name
+        )
 
     candidates: list[InsightItem | None] = [
         detectors.detect_ndvi_drop(scenes),
         detectors.detect_ndvi_stagnation(scenes, culture_name),
         detectors.detect_waterlogging(scenes, precip_map),
         drought,
+        winterkill,
         detectors.detect_ndvi_lag_last_year(scenes),
         detectors.detect_agrochem_low(detectors.latest_agrochem(db, field_id)),
         detectors.detect_vra_heterogeneity(vra_peaks),
