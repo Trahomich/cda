@@ -411,9 +411,7 @@ def _is_dot_date(token: str, allowed_pairs: set[tuple[int, int]]) -> bool:
     return 1 <= d <= 31 and 1 <= m <= 12 and (d, m) in allowed_pairs
 
 
-def _numbers_within(
-    text: str, allowed_nums: set[str], allowed_pairs: set[tuple[int, int]]
-) -> bool:
+def _numbers_within(text: str, allowed_nums: set[str], allowed_pairs: set[tuple[int, int]]) -> bool:
     """Guardrail §9.2 (#144): числа и даты ответа обязаны быть из контекста.
 
     Даты обрабатываются отдельно от чисел: «17.08» — это 17 августа, а не
@@ -451,9 +449,7 @@ def _allowed_numbers(context: str, items: list[InsightItem]) -> set[str]:
 def _allowed_pairs(context: str, items: list[InsightItem]) -> set[tuple[int, int]]:
     """Пары (день, месяц) дат контекста и items (guardrail дат, #144)."""
     pairs = _date_pairs(context)
-    pairs |= _date_pairs(
-        json.dumps([i.model_dump(mode="json") for i in items], ensure_ascii=False)
-    )
+    pairs |= _date_pairs(json.dumps([i.model_dump(mode="json") for i in items], ensure_ascii=False))
     return pairs
 
 
