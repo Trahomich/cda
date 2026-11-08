@@ -92,9 +92,9 @@ test('погода: GDD с 1 января — накопительная кри�
   // Итог на сегодня и линия многолетней нормы.
   await expect(page.locator('.wx__gdd-total')).toContainText('°C·сут')
   const gddChart = page.locator('svg[aria-label*="эффективных температур"]')
-  await expect(gddChart.locator('polyline.gdd__line--fact')).toBeVisible()
-  await expect(gddChart.locator('polyline.gdd__line--norm')).toBeVisible()
-  await expect(gddChart.getByText('норма (многолетняя)')).toBeVisible()
+  await expect(gddChart.locator('path.gdd__line--fact')).toBeVisible()
+  await expect(gddChart.locator('path.gdd__line--norm')).toBeVisible()
+  await expect(page.getByText('норма (многолетняя)')).toBeVisible()
 })
 
 test('погода: окна только по типам из планов поля, без планов — hint', async ({
