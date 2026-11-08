@@ -802,7 +802,6 @@ watch([range, rangeYear], () => void loadHistory())
 }
 
 .wx__ico {
-  text-align: center;
   font-size: 1rem;
   line-height: 1.2;
 }
