@@ -2083,7 +2083,7 @@ export class MockTransport implements Transport {
       return ok(windowsOf(n, type, fieldId))
     }
 
-    /* ── История фактов (API-57, #126/#132) и GDD с начала года (#132) ── */
+    /* ── История фактов (API-57, §7.8) и GDD с начала года (API-58, §7.8) ── */
     if (method === 'GET' && pathname === '/weather/history') {
       const fieldId = params.get('field_id') ?? ''
       const n = FIELD_N.get(fieldId)
@@ -2105,17 +2105,13 @@ export class MockTransport implements Transport {
           'Укажите date_from и date_to (date_from ≤ date_to)',
         )
       }
-      const spanDays = Math.round((Date.parse(to) - Date.parse(from)) / DAY) + 1
-      if (spanDays > 400) {
-        return problem(
-          422,
-          'https://cda.example/errors/too-wide',
-          'Период слишком широк',
-          `Запрошено ${spanDays} суток, максимум 400`,
-        )
-      }
-      const items = historyAll(n).filter((d) => d.date >= from && d.date <= to)
-      return ok({ items, total: items.length, limit: 400, offset: 0 })
+      // Пагинация по §7.8: limit 1..1500 (default 366), без лимита периода.
+      const limit = Math.min(Math.max(Number(params.get('limit') ?? 366) || 366, 1), 1500)
+      const offset = Number(params.get('offset') ?? 0) || 0
+      const items = historyAll(n).filter(
+        (d) => d.observed_at >= from && d.observed_at <= to,
+      )
+      return ok({ items: items.slice(offset, offset + limit), total: items.length, limit, offset })
     }
 
     if (method === 'GET' && pathname === '/weather/gdd') {
