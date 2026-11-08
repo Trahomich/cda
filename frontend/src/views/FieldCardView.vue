@@ -361,6 +361,12 @@ async function loadSeasons() {
   } catch {
     seasons.value = [] // API-54 недоступен — карточка остаётся в режиме текущего сезона
   }
+  // NDVI успел загрузиться до Seasons (гонка параллельных блоков) и без ?year
+  // — перезагружаем с годом текущего сезона (#495).
+  if (ndviNeedsSeasonYear.value && currentSeasonYear.value != null) {
+    ndviNeedsSeasonYear.value = false
+    void loadNdvi()
+  }
 }
 
 /** Выбор сезона (§7.5): сезонозависимые блоки (NDVI, VRA, урожайность,
