@@ -45,7 +45,7 @@ test('карточка поля: график NDVI — оси, значения,
   // Последняя «чистая» точка выделена кольцом; значение — в строке под
   // графиком и в подсказке <title> точки.
   await expect(page.locator('.ndvi__ring')).toHaveCount(1)
-  await expect(page.locator('.ndvi__last')).toContainText('Последний снимок: 31.07 · NDVI 0,18')
+  await expect(page.locator('.ndvi__last')).toContainText('Последний снимок: 31.07.2027 · NDVI 0,18')
 
   // Легенда поясняет элементы графика.
   await expect(page.locator('.ndvi__legend')).toContainText('min–max')
