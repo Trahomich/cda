@@ -291,16 +291,16 @@ watch([range, rangeYear], () => void loadHistory())
           aria-label="Диапазон истории"
         >
           <button
-            v-for="r in (['90d', 'season', 'year'] as RangeKind[])"
-            :key="r"
+            v-for="r in RANGES"
+            :key="r.value"
             type="button"
             class="wx__range"
-            :class="{ 'wx__range--active': range === r }"
+            :class="{ 'wx__range--active': range === r.value }"
             role="tab"
-            :aria-selected="range === r"
-            @click="range = r"
+            :aria-selected="range === r.value"
+            @click="range = r.value"
           >
-            {{ r === '90d' ? '90 дней' : r === 'season' ? 'Сезон' : 'Год' }}
+            {{ r.label }}
           </button>
           <select
             v-if="range !== '90d'"
