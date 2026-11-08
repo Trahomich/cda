@@ -136,10 +136,10 @@ class TestVraYear(TestSeasonsBase):
             assert resp.json()["code"] == "season_not_found"
 
     def test_vra_without_year_regression(self):
-        """Без year и без сцен — прежняя 422 vra_no_data (не season_not_found)."""
+        """Без year и без сцен — 422 vra_no_season_data, не 404 (§7.4 v1.7)."""
         resp = self.client.get(f"{API}/fields/{self.field_id}/vra", headers=self.auth)
         assert resp.status_code == 422, resp.text
-        assert resp.json()["code"] == "vra_no_data"
+        assert resp.json()["code"] == "vra_no_season_data"
 
 
 class TestYieldYear(TestSeasonsBase):
