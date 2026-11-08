@@ -23,6 +23,8 @@ const tab = ref<'map' | 'list'>('map')
 
 let map: LeafletMap | null = null
 let contoursLayer: L.FeatureGroup | null = null
+/** GeoJSON-слой полей (для restyle: eachLayer FeatureGroup не рекурсивен). */
+let fieldsGeoLayer: L.GeoJSON | null = null
 /** У карты уже есть «её» вид: восстановленный из localStorage или fitBounds.
  * Пока false и идёт загрузка — оверлей «Загружаем поля…» вместо серой канвы. */
 const mapViewReady = ref(false)
