@@ -234,17 +234,94 @@ const vraLoading = ref(true)
 /** PNG-карта зон (raw + геопривязка X-Field-Bbox/X-Image-Size). */
 const vraMap = ref<NdviRender | null>(null)
 
-async function loadVra() {
+function resetVra(): void {
+  vra.value = null
+  vraUniform.value = false
+  if (vraMap.value) {
+    URL.revokeObjectURL(vraMap.value.url)
+    vraMap.value = null
+  }
+}
+
+onUnmounted(() => {
+  if (layer.value) URL.revokeObjectURL(layer.value.url)
+  if (vraMap.value) URL.revokeObjectURL(vraMap.value.url)
+})
+
+/* ── Сезоны NDVI (API-54, §7.5): переключатель в паспорте поля ── */
+
+/** Сезоны поля, годы по убыванию (текущий помечен is_current). */
+const seasons = ref<SeasonItem[]>([])
+/** Выбранный сезон; null — список ещё не загружен (данные = текущий). */
+const selectedYear = ref<number | null>(null)
+/** Токен защиты от гонок: клики по сезонам подряд, устаревшие ответы
+ *  (медленный прошлый сезон после быстрого текущего) не применяются. */
+let seasonToken = 0
+
+/** Год текущего сезона (is_current из API-54). */
+const currentSeasonYear = computed(
+  () => seasons.value.find((s) => s.is_current)?.year ?? null,
+)
+
+/** Выбран прошлый сезон — визуально отличим бейджем «сезон YYYY». */
+const isPastSeason = computed(
+  () =>
+    selectedYear.value !== null &&
+    currentSeasonYear.value !== null &&
+    selectedYear.value !== currentSeasonYear.value,
+)
+
+/** Выбранный год для запросов: null — без ?year (текущий сезон, §7.5). */
+const seasonQueryYear = computed(() => {
+  if (selectedYear.value === null) return undefined
+  // текущий сезон = отсутствие параметра — не гоняем лишний запрос иначе
+  return selectedYear.value === currentSeasonYear.value
+    ? undefined
+    : selectedYear.value
+})
+
+async function loadSeasons() {
   try {
-    const res = await getFieldVra(fieldId)
+    seasons.value = await getFieldSeasons(fieldId)
+    const current = seasons.value.find((s) => s.is_current) ?? seasons.value[0]
+    selectedYear.value = current ? current.year : null
+  } catch {
+    seasons.value = [] // API-54 недоступен — карточка остаётся в режиме текущего сезона
+  }
+}
+
+/** Выбор сезона (§7.5): сезонозависимые блоки (NDVI, VRA, урожайность,
+ *  выводы) перезагружаются с ?year=YYYY. */
+function selectSeason(year: number): void {
+  if (year === selectedYear.value) return
+  selectedYear.value = year
+  seasonToken++
+  void loadNdvi()
+  void loadVra()
+  void loadYield()
+  void loadInsights()
+}
+
+async function loadVra() {
+  const token = seasonToken
+  vraLoading.value = true
+  resetVra()
+  try {
+    const res = await getFieldVra(fieldId, seasonQueryYear.value)
+    if (token !== seasonToken) return
     if (res.kind === 'ok') {
       vra.value = res.data
-      vraMap.value = await getFieldVraMap(fieldId)
+      vraMap.value = await getFieldVraMap(fieldId, seasonQueryYear.value)
+      if (token !== seasonToken) {
+        if (vraMap.value) URL.revokeObjectURL(vraMap.value.url)
+        resetVra()
+        return
+      }
     } else if (res.kind === 'uniform') {
       vraUniform.value = true
     }
   } finally {
-    vraLoading.value = false
+    if (token === seasonToken) vraLoading.value = false
   }
 }
 
