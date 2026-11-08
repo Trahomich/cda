@@ -774,12 +774,14 @@ export interface WindowsDayItem {
   reasons: string[]
 }
 
-/** Ответ GET /weather/windows (RULE-AGRO-09). */
+/** Ответ GET /weather/windows (RULE-AGRO-09); nearest_window_date — дата
+ *  первого подходящих суток или null (§7.8 API-59). */
 export interface WindowsResponse {
   operation_type: string
   field_id: string
   rule_text: string
   window_open: boolean
+  nearest_window_date?: string | null
   days: WindowsDayItem[]
   alert: string | null
 }
