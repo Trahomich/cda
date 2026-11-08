@@ -117,6 +117,7 @@ def summarize(
             api_key=api_key,
             timeout=timeout,
             attempts=attempts,
+            images=images,
         )
     return _summarize_ollama(
         prompt,
