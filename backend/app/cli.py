@@ -206,6 +206,64 @@ def cmd_backfill_history(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_advice_refresh(args: argparse.Namespace) -> int:
+    """Генерация AI-рекомендаций синхронно (docs/09 §9.4 п.3, #120).
+
+    Идемпотентность: поле с advice за сегодня с тем же context_hash
+    пропускается. Отчёт — JSON по каждому полю: empty / skipped / ok /
+    fallback / no_llm / error.
+    """
+    import json
+    from datetime import date
+
+    from sqlalchemy import select as sa_select
+
+    from app.ai_assistant.advice import build_advice_context, generate_advice
+    from app.models.agronomy import Field
+    from app.models.ai import AIFieldAdvice
+
+    today = date.today()
+    if args.field_id:
+        field_ids = [uuid.UUID(args.field_id)]
+    else:
+        with SessionLocal() as db:
+            field_ids = list(
+                db.scalars(sa_select(Field.id).where(Field.status == "active").order_by(Field.name))
+            )
+
+    report: dict[str, dict[str, str]] = {}
+    for field_id in field_ids:
+        with SessionLocal() as db:
+            ctx = build_advice_context(db, field_id, today)
+            if ctx is None:
+                report[str(field_id)] = {"status": "empty"}
+                continue
+            existing = db.scalars(
+                sa_select(AIFieldAdvice.id).where(
+                    AIFieldAdvice.field_id == field_id,
+                    AIFieldAdvice.advice_date == today,
+                    AIFieldAdvice.context_hash == ctx.context_hash,
+                )
+            ).first()
+        if existing is not None:
+            report[str(field_id)] = {"status": "skipped"}
+            continue
+        try:
+            record = generate_advice(field_id, today=today)
+        except Exception:
+            logger_msg = "advice-refresh: поле %s — ошибка генерации"
+            logging.getLogger(__name__).warning(logger_msg, field_id, exc_info=True)
+            report[str(field_id)] = {"status": "error"}
+            continue
+        if record is None:
+            report[str(field_id)] = {"status": "no_llm"}
+        else:
+            report[str(field_id)] = {"status": record.status}
+
+    print(json.dumps({"date": today.isoformat(), "fields": report}, ensure_ascii=False, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="CLI ИС ЦДА")
     sub = parser.add_subparsers(dest="command", required=True)
