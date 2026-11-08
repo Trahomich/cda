@@ -454,7 +454,8 @@ def detect_vra_heterogeneity(
             f"пространственный разброс p90−p10 ≥ {VRA_SPREAD_MIN:.2f} на "
             f"{len(spread_hits)} из {len(peaks)} сцен, IQR NDVI ≥ {VRA_MIN_IQR:.2f} на "
             f"{len(iqr_hits)} — есть зоны для дифференцированного внесения. "
-            "Раздел «Зоны VRA» карточки поля (GET /fields/{id}/vra)."
+            "Подробные зоны и дозы — в разделе «Дифференцированное внесение» "
+            "карточки поля."
         ),
         data_refs=[
             {
