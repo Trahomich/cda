@@ -532,7 +532,9 @@ async function loadNdvi() {
   try {
     const points = await getFieldNdvi(fieldId, seasonQueryYear.value)
     if (token !== seasonToken) return // сезон уже переключили — ответ устарел
-    ndvi.value = points
+    // API-06 отдаёт desc (свежая первой); фронту нужен asc: график слева-направо
+    // по времени и «последний снимок»/дефолт слоя мини-карты = свежая сцена (#142).
+    ndvi.value = [...points].sort((a, b) => a.date.localeCompare(b.date))
   } catch {
     if (token === seasonToken) ndvi.value = []
   } finally {
