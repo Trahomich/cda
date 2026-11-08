@@ -47,7 +47,7 @@ from app.services.sentinel_ingest.ndvi import (
     _read_scl_grid,
 )
 from app.services.sentinel_ingest.renders import (
-    MAX_SIDE_PX,
+    MAX_RASTER_PX,
     canvas_with_strip,
     draw_zone_legend,
     legend_strip_height,
