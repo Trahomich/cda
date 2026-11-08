@@ -316,8 +316,8 @@ class TestVraMap:
         flat = rgb[ys, xs].reshape(-1, 3)
         for color in ZONE_COLORS:
             assert (flat == np.array(color)).all(axis=1).any(), color
-        # размеры канвы не изменились (геопривязка X-Image-Size валидна)
-        assert 178 < w <= 184 and 178 < h <= 184
+        # размеры канвы: окно ~180 px + полоса легенды (#123) — ~195 px
+        assert 178 < w <= 184 and 190 < h <= 200
 
     def test_machine_operator_403(self, client, db_session, vra_world):
         make_user(db_session, login="vra-op2", role=UserRole.MACHINE_OPERATOR, password="pw-op")
