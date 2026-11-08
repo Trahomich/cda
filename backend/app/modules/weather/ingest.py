@@ -188,6 +188,10 @@ class WeatherIngest:
                 "precipitation_mm": excluded.precipitation_mm,
                 "wind_max_ms": excluded.wind_max_ms,
                 "humidity_avg_pct": excluded.humidity_avg_pct,
+                "cloud_cover_mean_pct": excluded.cloud_cover_mean_pct,
+                "snowfall_cm": excluded.snowfall_cm,
+                "snow_depth_cm": excluded.snow_depth_cm,
+                "precipitation_hours": excluded.precipitation_hours,
                 "updated_at": datetime.now(tz=UTC),
             },
         )
