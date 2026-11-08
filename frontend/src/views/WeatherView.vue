@@ -616,6 +616,31 @@ watch([range, rangeYear], () => void loadHistory())
   margin: 0;
 }
 
+/* Баннер ОЯ #139: warn — жёлтый, alert — красный; не перекрывает контент */
+.wx__hazards {
+  background: #fff8e1;
+  border: 1px solid #e6a23c;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin: 0 0 0.5rem;
+  font-weight: 500;
+}
+
+.wx__hazards--alert {
+  background: #fdecea;
+  border-color: #d32f2f;
+  color: #b71c1c;
+}
+
+.wx__row--warn td {
+  background: #fff8e1;
+}
+
+.wx__row--alert td {
+  background: #fdecea;
+}
+
+
 .wx__now {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
