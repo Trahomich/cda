@@ -85,9 +85,10 @@ test('паспорт поля: VRA и урожайность следуют вы
 
   await seasonCells(page).locator('button', { hasText: '2026' }).click()
 
-  // Зоны VRA — по чистой сцене сезона 2026.
+  // Зоны VRA — по пиковой чистой сцене сезона 2026 (§7.4 v1.7: пик
+  // вегетации 19.06, не последняя сцена).
   await expect(vraBlock.locator('.card360__muted').first()).toContainText(
-    'По чистой сцене 31.07.2026',
+    'По чистой сцене 19.06.2026',
   )
   await expect(vraBlock.locator('.card360__vra-table tbody tr')).toHaveCount(3)
 
