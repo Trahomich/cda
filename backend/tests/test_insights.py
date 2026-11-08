@@ -388,7 +388,7 @@ class TestInsightsContract:
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         make_scene(db_session, fid, TODAY, 0.5)
         first = get_insights(client, hdr, fid)
-        assert f"insights:{fid}:{TODAY.isoformat()}" in store
+        assert insights_key(fid, TODAY) in store
         # даже если данные изменились — кэш до новой сцены/TTL держит ответ
         make_scene(db_session, fid, TODAY - timedelta(days=3), 0.9)
         second = get_insights(client, hdr, fid)
@@ -631,7 +631,7 @@ class TestBackgroundFix101:
 
         import json as _json
 
-        updated = _json.loads(store[f"insights:{fid}:{TODAY.isoformat()}"])
+        updated = _json.loads(store[insights_key(fid, TODAY)])
         assert updated["source"] == "rules+llm"
         assert updated["summary"] == "NDVI упал на 0.22 — проверьте поле."
 
@@ -663,7 +663,7 @@ class TestBackgroundFix101:
         finally:
             service._llm_semaphore.release()
         assert called["llm"] is False
-        assert f"insights:{fid}:{TODAY.isoformat()}" not in store
+        assert insights_key(fid, TODAY) not in store
 
     def _get_with_ollama(self, client, monkeypatch, ollama="http://ollama:11434"):
         """GET /insights с включённым Ollama (settings через DI) и шпионом фона."""
@@ -698,7 +698,7 @@ class TestBackgroundFix101:
 
         import app.core.cache as cache_mod
 
-        key = f"insights:{fid}:{TODAY.isoformat()}"
+        key = insights_key(fid, TODAY)
         cached = cache_mod.cache_get(key)  # cache_get уже возвращает разобранный JSON
         cached["source"] = "rules+llm"
         cached["summary"] = "готово"
@@ -847,7 +847,7 @@ class TestVisionRenders117:
 
         from app.core.cache import cache_get  # уже отдаёт разобранный JSON
 
-        updated = cache_get(f"insights:{fid}:{TODAY.isoformat()}")
+        updated = cache_get(insights_key(fid, TODAY))
         # выдуманное число отброшено, опубликован fallback из items §8.2
         assert updated["summary"].startswith("Резкое падение NDVI")
         assert "90" not in updated["summary"]
@@ -888,7 +888,7 @@ class TestStripMarkdown131:
 
         from app.core.cache import cache_get  # уже отдаёт разобранный JSON
 
-        updated = cache_get(f"insights:{fid}:{TODAY.isoformat()}")
+        updated = cache_get(insights_key(fid, TODAY))
         summary = updated["summary"]
         assert summary.startswith("Сводка по полю\nNDVI упал на 0.22 — проверить север.")
         assert "**" not in summary and "`" not in summary and "\n#" not in summary
