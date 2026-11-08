@@ -207,9 +207,7 @@ class TestWindowsList:
 
     def test_list_field_not_found(self, setup):
         c, s = setup["client"], setup
-        resp = c.get(
-            f"{API}/weather/windows", headers=s["auth"], params={"field_id": uuid.uuid4()}
-        )
+        resp = c.get(f"{API}/weather/windows", headers=s["auth"], params={"field_id": uuid.uuid4()})
         assert resp.status_code == 404
         assert resp.json()["code"] == "field_not_found"
 
@@ -261,7 +259,5 @@ class TestWindowSingle:
         c, s = setup["client"], setup
         make_user(db_session, login="win-mach", role=UserRole.MACHINE_OPERATOR, password="pw-m2")
         auth = auth_header(c, "win-mach", "pw-m2")
-        resp = c.get(
-            f"{API}/weather/windows", headers=auth, params={"field_id": s["field_id"]}
-        )
+        resp = c.get(f"{API}/weather/windows", headers=auth, params={"field_id": s["field_id"]})
         assert resp.status_code == 200
