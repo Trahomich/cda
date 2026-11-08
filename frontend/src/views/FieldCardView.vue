@@ -953,7 +953,7 @@ function fmtNum(v: number, digits = 1): string {
             v-else-if="!vra"
             class="card360__muted"
           >
-            Нет данных для зон внесения (нужна чистая NDVI-сцена)
+            Нет данных для зон внесения за сезон {{ selectedYear ?? '—' }} (нужна чистая NDVI-сцена)
           </p>
           <template v-else>
             <p class="card360__muted">
