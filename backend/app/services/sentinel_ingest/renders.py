@@ -525,6 +525,8 @@ __all__ = [
     "MAX_RASTER_PX",
     "MAX_SIDE_PX",
     "PALETTE",
+    "PALETTE_BSI",
+    "PALETTE_NDSI",
     "PALETTE_NDWI",
     "RENDER_VARIANTS",
     "REQUIRED_VARIANTS",
