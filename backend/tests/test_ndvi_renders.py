@@ -97,8 +97,8 @@ class TestRenderScene:
                 assert ds.count == 4 and ds.dtypes[0] == "uint8"
                 alpha = ds.read(4)
         top = alpha[: alpha.shape[0] // 4]
-        # средняя полоса (нижняя теперь занята пустой полосой легенды, #123)
-        middle = alpha[alpha.shape[0] // 4 : alpha.shape[0] // 2]
+        # полоса ниже облака (нижние ~25% теперь занимает полоса легенды, #123)
+        middle = alpha[int(alpha.shape[0] * 0.55) : int(alpha.shape[0] * 0.85)]
         assert not top.any()  # облачная зона прозрачна
         assert middle.mean() > 200  # растительность непрозрачна
 
