@@ -1935,6 +1935,12 @@ polygon.card360__polygon {
   font-weight: 600;
 }
 
+/* #130: индекс без сцен за сезон — кнопка задизейблена (title-подсказка) */
+.card360__layer-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .card360__layer-date-label {
   display: inline-flex;
   align-items: center;
