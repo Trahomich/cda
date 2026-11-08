@@ -250,7 +250,8 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
         if mask.any()
     ]
 
-    # PNG зон: заливка 3 оттенками, вне контура/облака — прозрачные (§7.4)
+    # PNG зон: заливка 3 оттенками, вне контура/облака — прозрачные (§7.4);
+    # под растром — полоса легенды (вне контура поля, §7.3 #123/#385)
     from app.services.sentinel_ingest.renders import _png_rgba
 
     rgb = np.zeros(nir_d.shape + (3,), dtype="uint8")
@@ -259,8 +260,9 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
         rgb[mask] = color
         alpha[mask] = 255
 
-    # легенда зон (#123): свотч цвета + диапазон NDVI зоны, min/max сцены;
-    # рисуется поверх канвы — геопривязка PNG не меняется
+    strip_h = legend_strip_height(nir_d.shape[0])
+    canvas_rgb, canvas_alpha = canvas_with_strip(rgb, alpha, strip_h)
+    # легенда зон (#123): свотч цвета + диапазон NDVI зоны, min/max сцены
     vmin, vmax = float(values.min()), float(values.max())
     zone_bounds = ((vmin, float(p30)), (float(p30), float(p70)), (float(p70), vmax))
     swatches = [
@@ -268,8 +270,8 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
         for mask, color, (lo, hi) in zip(zone_masks, ZONE_COLORS, zone_bounds, strict=False)
         if mask.any()
     ]
-    draw_zone_legend(rgb, alpha, swatches)
-    png = _png_rgba(rgb, alpha)
+    draw_zone_legend(canvas_rgb, canvas_alpha, swatches)
+    png = _png_rgba(canvas_rgb, canvas_alpha)
 
     left, top = transform * (0, 0)
     right, bottom = transform * (nir_d.shape[1], nir_d.shape[0])
