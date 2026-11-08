@@ -572,19 +572,32 @@ function uuid(n: number): string {
   return `f1e2d3c4-0000-4000-8000-00000000${String(n).padStart(4, '0')}`
 }
 
-/** NDVI-таймлайн сезона 2027: 9 точек апрель–июль, детерминированно от поля. */
-function ndviOf(n: number): NdviPoint[] {
+/** NDVI-таймлайн сезона (§7.5): 9 точек апрель–июль, детерминированно
+ *  от поля; year — сезон (мок-мир: 2027 текущий, 2026 прошлый), прошлые
+ *  сезоны чуть ниже кривой, чтобы данные сезонов различались на графике. */
+function ndviOf(n: number, year = 2027): NdviPoint[] {
   const dates = [
-    '2027-04-10', '2027-04-24', '2027-05-08', '2027-05-22', '2027-06-05',
-    '2027-06-19', '2027-07-03', '2027-07-17', '2027-07-31',
-  ]
-  const base = 0.62 + n * 0.013
+    '04-10', '04-24', '05-08', '05-22', '06-05',
+    '06-19', '07-03', '07-17', '07-31',
+  ].map((md) => `${year}-${md}`)
+  const base = 0.62 + n * 0.013 - (2027 - year) * 0.04
   return dates.map((date, i) => {
     const wave = Math.sin((i / (dates.length - 1)) * Math.PI) // рост → пик → спад
     const ndvi = Math.round((0.18 + wave * base) * 100) / 100
     const cloudy = i === 2 || i === 6
     return { date, ndvi: cloudy ? Math.round((0.3 + n * 0.01) * 100) / 100 : ndvi, cloud_pct: cloudy ? 92 : 5 + ((n + i) % 12) }
   })
+}
+
+/** §7.5 (API-54): сезоны NDVI мока — текущий 2027 и прошлый 2026 у всех
+ *  полей (культура сезона — из истории/матрицы циклов, main | null). */
+const SEASON_YEARS = [2027, 2026]
+
+function seasonCultureName(n: number, year: number): string | null {
+  const rec = cycleAt(n, year)
+  if (!rec) return null
+  const culture = cultureBySuffix(rec.cid)
+  return culture.kind === 'main' ? culture.name : null
 }
 
 /** API-52 (§7.4, #97): зоны дифвнесения по последней чистой NDVI-сцене —
