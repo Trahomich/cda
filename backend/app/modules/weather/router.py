@@ -161,7 +161,7 @@ def weather_forecast(
     )
     window = forecasts[offset : offset + days]
     return ForecastListResponse(
-        items=[ForecastDayItem.model_validate(f) for f in window],
+        items=_forecast_items(db, field.id, window),
         total=len(forecasts),
         limit=days,
         offset=offset,
