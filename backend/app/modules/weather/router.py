@@ -287,11 +287,6 @@ def weather_gdd(
     )
 
 
-@router.get(
-    "/weather/windows",
-    response_model=WindowResponse,
-    summary="Погодное окно операции (RULE-AGRO-09, docs/03 §3.3)",
-)
 def _planned_treatment_types(db: Session, field_id: uuid.UUID, today: date) -> set[str]:
     """Типы операций из незавершённых планов внесения текущего сезона (§7.8).
 
