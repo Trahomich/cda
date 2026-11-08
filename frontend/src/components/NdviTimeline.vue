@@ -39,10 +39,14 @@ const TRUST_LIMIT = 0.9
 const isCloudy = (p: NdviPoint) => p.cloud_pct > CLOUD_LIMIT
 
 const fmtVal = (v: number) => v.toLocaleString('ru-RU', { maximumFractionDigits: 2 })
-const fmtDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}`
+const fmtDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`
+
+/** API-06 отдаёт сцены по убыванию (desc); график — время слева-направо,
+ *  поэтому defensive-сортировка по возрастанию даты (#142). */
+const sorted = computed(() => [...props.points].sort((a, b) => a.date.localeCompare(b.date)))
 
 /** Шаг подписей дат: при плотном ряде подписываем не каждую дату. */
-const dateStep = computed(() => Math.max(1, Math.ceil(props.points.length / 9)))
+const dateStep = computed(() => Math.max(1, Math.ceil(sorted.value.length / 9)))
 
 const x = (i: number, n: number) => PAD_L + (i * (W - PAD_L - PAD_R)) / (n - 1 || 1)
 const y = (v: number) =>
@@ -50,33 +54,34 @@ const y = (v: number) =>
 
 /** Последняя «чистая» (не облачная) точка — текущее значение NDVI. */
 const lastClearIdx = computed(() => {
-  for (let i = props.points.length - 1; i >= 0; i--) {
-    if (!isCloudy(props.points[i]!)) return i
+  for (let i = sorted.value.length - 1; i >= 0; i--) {
+    if (!isCloudy(sorted.value[i]!)) return i
   }
   return -1
 })
 
 const layout = computed(() => {
-  const n = props.points.length
-  const clear = props.points
+  const pts = sorted.value
+  const n = pts.length
+  const clear = pts
     .map((p, i) => ({ p, i }))
     .filter(({ p }) => !isCloudy(p))
 
   // Полоса min–max по сценам (там, где индексы есть): верх по index_max,
   // обратный ход по index_min; значение зажимаем в [0, 1].
-  const bandTop = props.points.map((p, i) => `${x(i, n).toFixed(1)},${y(p.index_max ?? p.ndvi).toFixed(1)}`)
-  const bandBottom = [...props.points]
+  const bandTop = pts.map((p, i) => `${x(i, n).toFixed(1)},${y(p.index_max ?? p.ndvi).toFixed(1)}`)
+  const bandBottom = [...pts]
     .reverse()
     .map((p, ri) => {
       const i = n - 1 - ri
-      return `${x(i, n).toFixed(1)},${y(p.index_min ?? p.ndvi).toFixed(1)}`
+      return `${x(i, n).toFixed(1)},${y(p.index_min ?? p.ndvi).toFixed(1)}}`
     })
 
   return {
     line: clear.map(({ p, i }) => `${x(i, n).toFixed(1)},${y(p.ndvi).toFixed(1)}`).join(' '),
     band: [...bandTop, ...bandBottom].join(' '),
     ticks: TICKS.map((t) => ({ v: t, y: +y(t).toFixed(1), label: fmtVal(t) })),
-    dots: props.points.map((p, i) => ({
+    dots: pts.map((p, i) => ({
       cx: +x(i, n).toFixed(1),
       cy: +y(p.ndvi).toFixed(1),
       r: i === lastClearIdx.value ? 4 : 3,
@@ -87,14 +92,19 @@ const layout = computed(() => {
       selectable: (props.selectable ?? []).includes(p.date),
       selected: props.selected != null && props.selected === p.date,
       date: p.date,
-      dateShort: fmtDate(p.date),
+      // Короткая подпись DD.MM; первая точка — с годом (DD.MM.YY): сезон озимых
+      // пересекает календарный год, без года подписи читаются перемешанными.
+      dateShort:
+        i === 0
+          ? `${p.date.slice(8, 10)}.${p.date.slice(5, 7)}.${p.date.slice(2, 4)}`
+          : `${p.date.slice(8, 10)}.${p.date.slice(5, 7)}`,
       cloudPct: p.cloud_pct,
       trust: p.trust,
     })),
   }
 })
 
-const lastPoint = computed(() => props.points[lastClearIdx.value] ?? null)
+const lastPoint = computed(() => sorted.value[lastClearIdx.value] ?? null)
 </script>
 
 <template>
