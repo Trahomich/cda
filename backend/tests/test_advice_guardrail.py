@@ -157,15 +157,11 @@ class TestFallbackBranch:
 class TestGetReturnsFallback:
     def test_get_advice_returns_fallback_answer(self, client, db_session):
         """GET отдаёт непустой answer и при status=fallback (регрессия #144)."""
-        import uuid
 
-        from app.models.agronomy import Field
         from app.models.ai import AIFieldAdvice
-        from sqlalchemy import select
-
-        from tests.test_satellite import make_field
-        from tests.test_auth import auth_header, make_user
         from app.models.auth import UserRole
+        from tests.test_auth import auth_header, make_user
+        from tests.test_satellite import make_field
 
         make_user(db_session, login="adv144", role=UserRole.AGRONOMIST, password="pw144")
         field_id = make_field(db_session)
