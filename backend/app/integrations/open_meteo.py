@@ -297,7 +297,7 @@ class OpenMeteoAdapter:
             humidity_avg_pct=m["relative_humidity_2m_mean"],
             precip_prob_pct=(
                 None
-                if m["precipitation_probability_max"] is None
+                if m.get("precipitation_probability_max") is None  # архив не отдаёт
                 else int(m["precipitation_probability_max"])
             ),
             hazard=hazard,
