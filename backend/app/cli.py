@@ -442,6 +442,23 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_wx.set_defaults(func=cmd_weather_backfill)
 
+    p_idx = sub.add_parser(
+        "scene-indices-backfill",
+        help="бэкфилл индексов NDRE/NDMI/NDSI/EVI/SAVI/BSI по историческим сценам "
+        "(#128, docs/06 §7.7)",
+    )
+    p_idx.add_argument(
+        "--from",
+        dest="date_from",
+        type=date.fromisoformat,
+        default=date(2023, 1, 1),
+        help="начало периода, ISO-дата (по умолчанию 2023-01-01)",
+    )
+    p_idx.add_argument(
+        "--workers", type=int, default=4, help="потоков чтения COG (по умолчанию 4)"
+    )
+    p_idx.set_defaults(func=cmd_scene_indices_backfill)
+
     args = parser.parse_args(argv)
     return args.func(args)
 
