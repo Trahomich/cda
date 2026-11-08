@@ -4,7 +4,7 @@
 // (перетаскивание); закрытие — ✕, Esc, клик по фону.
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
-const props = defineProps<{
+defineProps<{
   url: string
   caption?: string
 }>()
