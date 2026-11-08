@@ -85,15 +85,15 @@ def day_hazards(
     return hazards
 
 
-def forecast_hazards(db: Session, field_id: uuid.UUID, forecasts: list[Forecast]) -> list[list[dict[str, str]]]:
+def forecast_hazards(
+    db: Session, field_id: uuid.UUID, forecasts: list[Forecast]
+) -> list[list[dict[str, str]]]:
     """hazards для каждого элемента прогноза (по порядку forecasts).
 
     Культура сезона — один запрос к БД (§8.2 current_culture_name).
     """
     culture = current_culture_name(db, field_id, date.today())
     return [
-        day_hazards(
-            f.forecast_for, f.temperature_min_c, f.precipitation_mm, f.wind_max_ms, culture
-        )
+        day_hazards(f.forecast_for, f.temperature_min_c, f.precipitation_mm, f.wind_max_ms, culture)
         for f in forecasts
     ]
