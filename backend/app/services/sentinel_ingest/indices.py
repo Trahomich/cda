@@ -168,6 +168,20 @@ def compute_scene_indices(assets: dict, contour_geojson: dict) -> list[IndexStat
     def _nd(name: str, a: np.ndarray, b: np.ndarray) -> np.ndarray:
         return compute_index_array(name, a, b)
 
+    # EVI/SAVI: константы формул (6; 7,5; 1; L=0,5) рассчитаны на отражения
+    # 0–1 — DN Sentinel-2 (0–10000) делим на 10000; ND* индексы
+    # масштабоинвариантны (§7.7 #128)
+    dn = 10000.0
+    nir_s, red_s, blue_s = nir / dn, red / dn, bands.get("b02", np.zeros_like(nir)) / dn
+    evi_lo, evi_hi = INDEX_BOUNDS.get("evi", (-1.0, 3.0))
+
+    def _evi() -> np.ndarray | None:
+        if "b02" not in bands:
+            return None
+        evi = compute_evi_array(nir_s, red_s, blue_s)
+        # пиксели с вырожденным знаменателем (≈0) дают артефакты — отбрасываем
+        return np.where((evi >= evi_lo) & (evi <= evi_hi), evi, np.nan).astype("float32")
+
     arrays: dict[str, np.ndarray | None] = {
         "ndwi": _nd("ndwi", bands["b03"], nir) if "b03" in bands else None,
         "ndre": _nd("ndre", nir, bands["b05"]) if "b05" in bands else None,
@@ -175,8 +189,8 @@ def compute_scene_indices(assets: dict, contour_geojson: dict) -> list[IndexStat
         "ndsi": _nd("ndsi", bands["b03"], bands["b11"])
         if "b03" in bands and "b11" in bands
         else None,
-        "evi": compute_evi_array(nir, red, bands["b02"]) if "b02" in bands else None,
-        "savi": _nd("savi", nir, red),
+        "evi": _evi(),
+        "savi": _nd("savi", nir_s, red_s),
         "bsi": compute_bsi_array(nir, red, bands["b02"], bands["b11"])
         if "b02" in bands and "b11" in bands
         else None,
