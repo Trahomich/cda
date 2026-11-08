@@ -600,22 +600,29 @@ function seasonCultureName(n: number, year: number): string | null {
   return culture.kind === 'main' ? culture.name : null
 }
 
-/** API-52 (§7.4, #97): зоны дифвнесения по последней чистой NDVI-сцене —
- *  3 зоны по перцентилям; доли площади/NDVI детерминированы от поля.
- *  Поле 6 — однородное (IQR < 0.12 → бэкенд отдал бы 422 vra_uniform_field,
- *  здесь формируем problem-ответ в маршруте). */
+/** API-52 (§7.4 v1.7, #97/#122): зоны дифвнесения по пиковой чистой NDVI-сцене
+ *  сезона — 3 зоны по перцентилям; строятся ВСЕГДА при наличии чистых сцен
+ *  (ворота однородности удалены, фидбек #364). Однородность — метрики в
+ *  ответе: iqr_ndvi и spatial_spread (у поля 6 обе малы — зон меньше
+ *  контраста, но они есть). */
 function vraOf(n: number, fieldId: string, year = 2027): {
   field_id: string
   date: string
   iqr_ndvi: number
+  spatial_spread: number
+  peak_dates: string[]
   base_dose_kg_ha: number | null
   zones: Array<{ zone: number; label: string; area_ga: number; ndvi_mean: number; dose_factor: number; dose_kg_ha: number | null }>
   map_png_url: string
 } {
   const points = ndviOf(n, year)
-  const lastClear = [...points].reverse().find((p) => p.cloud_pct <= 60)!
+  // пиковая сцена — максимальный NDVI среди чистых; топ-3 для peak_dates
+  const clear = points.filter((p) => p.cloud_pct <= 60)
+  const byPeak = [...clear].sort((a, b) => b.ndvi - a.ndvi)
+  const peak = byPeak[0] ?? points[points.length - 1]
+  const peakDates = byPeak.slice(0, 3).map((p) => p.date)
   const area = 60 + n * 18.7
-  const share = [0.32, 0.45, 0.23] // доли площади зон 1/2/3 (фикс. для демо)
+  const share = n === 6 ? [0.42, 0.5, 0.08] : [0.32, 0.45, 0.23] // доли зон 1/2/3
   const means = [0.52, 0.63, 0.75].map((v) => Math.round((v + n * 0.005) * 100) / 100)
   const factors = [1.15, 1.0, 0.85]
   const labels = ['пониженное развитие', 'среднее развитие', 'повышенное развитие']
@@ -623,8 +630,10 @@ function vraOf(n: number, fieldId: string, year = 2027): {
   const base = n === 3 ? null : 70 + (n % 4) * 5
   return {
     field_id: fieldId,
-    date: lastClear.date,
-    iqr_ndvi: 0.18 + (n % 3) * 0.02,
+    date: peak.date,
+    iqr_ndvi: Math.round((n === 6 ? 0.04 : 0.18 + (n % 3) * 0.02) * 1000) / 1000,
+    spatial_spread: Math.round((n === 6 ? 0.02 : 0.05 + (n % 3) * 0.015) * 1000) / 1000,
+    peak_dates: peakDates,
     base_dose_kg_ha: base,
     zones: share.map((s, i) => ({
       zone: i + 1,
