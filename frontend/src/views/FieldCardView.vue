@@ -1896,6 +1896,89 @@ polygon.card360__polygon {
   font-size: 0.78rem;
 }
 
+/* ── «Что делать сейчас» (API-55/56, #137) ── */
+.card360__advice-text {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.card360__advice-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0;
+}
+
+.card360__advice-btn {
+  min-height: 40px;
+  padding: 0.35rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #2e7d32;
+  background: #2e7d32;
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.card360__advice-btn:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.card360__advice-error {
+  margin: 0.3rem 0;
+  color: #b3261e;
+  font-size: 0.9rem;
+}
+
+.card360__advice-toggle {
+  border: 0;
+  background: none;
+  padding: 0.3rem 0;
+  color: #2e7d32;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.card360__advice-list {
+  list-style: none;
+  margin: 0.4rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.card360__advice-list li {
+  border-left: 3px solid #a5d6a7;
+  padding-left: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.card360__advice-date {
+  font-size: 0.78rem;
+  color: #66756a;
+}
+
+.card360__advice-item-text {
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.card360__advice-more {
+  border: 1px solid #9db59e;
+  border-radius: 8px;
+  background: #fff;
+  min-height: 36px;
+  padding: 0.2rem 0.9rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+
 .card360__check {
   margin: 0.6rem 0 0;
   padding: 0.5rem 0.6rem;
