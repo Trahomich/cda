@@ -15,9 +15,17 @@ const props = withDefaults(
     maxYears?: number
     /** Урожайность по году (ц/га) — в подсказку ячейки (если известна). */
     yields?: Record<number, number>
+    /** Годы с сезонными данными (API-54): ячейки кликабельны и переключают
+     *  сезон карточки поля (фидбек user, #122). Пусто — лента некликабельна
+     *  (экран севооборота E-04). */
+    seasonYears?: number[]
+    /** Выбранный сезон карточки поля — ячейка года выделена. */
+    selectedYear?: number | null
   }>(),
-  { maxYears: 8, yields: () => ({}) },
+  { maxYears: 8, yields: () => ({}), seasonYears: () => [], selectedYear: null },
 )
+
+const emit = defineEmits<{ select: [year: number] }>()
 
 const STATUS_LABELS: Record<string, string> = {
   completed: 'прошедший',
