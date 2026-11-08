@@ -575,3 +575,59 @@ dat_satellite_scene.index, как ndvi/ndwi):
   сценам (декабрь–март) NDSI < 0.4 ∧ NDVI < 0.2 — оголённость/выпадение
   (info/warn по доле таких сцен); VRA-зоны могут строиться по NDRE
   (поздние фазы: опция index=ndre у API-52, зоны те же 3 перцентиля).
+
+### 7.8. Вкладка Погода: история, GDD, окна по планам (2026-11-08, задачи #132–#134; фидбек #391)
+
+**API-57 `GET /weather/history`** — реализован (#126). Параметры:
+`field_id, date_from, date_to, limit (1..1500, default 366), offset`.
+Ответ постраничный, по возрастанию даты:
+
+```json
+{"items": [{"observed_at": "2026-05-01", "temperature_avg_c": 14.2,
+  "temperature_min_c": 8.1, "temperature_max_c": 21.4, "precipitation_mm": 2.3,
+  "wind_max_ms": 4.0, "humidity_avg_pct": 65,
+  "cloud_cover_mean_pct": 40, "snowfall_cm": 0.0, "snow_depth_cm": 0.0}],
+ "total": 366, "limit": 1500, "offset": 0, "meta": {…}}
+```
+
+Имена полей факта — как в API-07 (полные); сокращённые синонимы
+(`temp_max_c`, `precip_mm` и т.п.) НЕ вводятся. Период НЕ ограничивается
+400 сутками: 3–4 сезона закрываются одним запросом limit=1500. Ошибки:
+422 invalid_period (date_from > date_to), 404 field_not_found.
+
+**API-58 `GET /weather/gdd?field_id&year=YYYY`** (default — текущий год) → 200:
+
+```json
+{"field_id": "…", "year": 2026, "base_c": 5, "total": 1834.5,
+ "items": [{"date": "2026-01-02", "gdd_day": 3.5, "gdd_cum": 3.5}],
+ "norm_cum": [{"date": "2026-01-02", "norm_cum": 4.1}]}
+```
+
+- `items` — дни с наблюдениями с 1 января по последний факт года,
+  по возрастанию; `gdd_day = max(0, (tmax+tmin)/2 − 5)` (base 5 °C, как
+  в GDD-правилах сейчас); день без обеих tmin/tmax в сумму не входит
+  (`gdd_day: null`); `total` — последний `gdd_cum`.
+- `norm_cum` — многолетнее среднее `gdd_cum` по тем же календарным датам
+  (день+месяц) по доступным прошлым годам истории; `null`, если полных
+  прошлых лет < 2. Отдельным массивом по тем же датам — линия нормы
+  на графике.
+
+**API-59 `GET /weather/windows`** — два режима (обратная совместимость):
+
+- Одиночный (существующий): `?operation_type&field_id` → WindowResponse
+  `{operation_type, field_id, rule_text, window_open, nearest_window_date,
+  days: [{day, ok, reasons}], alert}`; `nearest_window_date` — дата первого
+  подходящих суток или null (новое поле, добавляется и сюда).
+- Список: `?field_id[&only_planned=true]` (default true) →
+
+```json
+{"field_id": "…", "only_planned": true,
+ "items": [{…WindowResponse по каждому типу…}],
+ "hint": "нет активных планов операций"}
+```
+
+Типы операций списка ограничены типами из НЕзавершённых планов поля
+текущего сезона (статусы planned/in_progress; цикл, закрытый уборкой,
+исключает вегетационные операции). Планов нет → `items: []` + `hint`
+(не ошибка, `hint: null` когда список непуст). `only_planned=false` без
+`operation_type` — все типы из ref_weather_rule.
