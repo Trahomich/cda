@@ -14,6 +14,7 @@ import zipfile
 from xml.etree.ElementTree import fromstring
 
 import numpy as np
+import pytest
 from app.models.auth import UserRole
 from rasterio.transform import Affine
 from shapely.geometry import shape
