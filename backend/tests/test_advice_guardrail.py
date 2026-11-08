@@ -99,6 +99,18 @@ class TestNumbersWithin:
         nums, pairs = _allowed()
         assert advice._numbers_within("окно с 10.11 по 14.11", nums, pairs) is True
 
+    def test_render_legend_scale_legal_via_context(self):
+        """Цитата легенды рендера («шкала −0.10…0.80», #145).
+
+        Без строки о шкале в context число 0.80 постороннее (guardrail
+        отвергает); AdviceContext дописывает строку «шкала раскраски от
+        −0.10 до 0.80» — цитата становится легальной.
+        """
+        nums_no, pairs = _allowed()
+        assert advice._numbers_within("шкала легенды −0.10…0.80", nums_no, pairs) is False
+        nums_yes, pairs_yes = _allowed(REAL_CONTEXT + "\nРендеры NDVI (приложены): шкала раскраски от -0.10 до 0.80.")
+        assert advice._numbers_within("шкала легенды −0.10…0.80", nums_yes, pairs_yes) is True
+
     def test_iso_date_outside_context(self):
         """ISO-дата с парой (день, месяц) не из контекста — посторонняя."""
         nums, pairs = _allowed()
