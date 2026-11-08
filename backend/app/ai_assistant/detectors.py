@@ -608,6 +608,8 @@ def detect_vra_heterogeneity(
 __all__ = [
     "AGROCHEM_HUMUS_MIN_PCT",
     "AGROCHEM_PH_MIN",
+    "DROUGHT_NDMI_MIN",
+    "DROUGHT_NDMI_NDVI_MIN",
     "DROUGHT_PRECIP_MM",
     "GDD_BASE_C",
     "GDD_NORM_DAILY_C",
@@ -621,7 +623,10 @@ __all__ = [
     "detect_ndvi_stagnation",
     "detect_vra_heterogeneity",
     "detect_waterlogging",
+    "detect_winterkill",
     "latest_agrochem",
+    "latest_index_mean",
     "load_scenes",
+    "load_winter_pairs",
     "weather_window_14d",
 ]
