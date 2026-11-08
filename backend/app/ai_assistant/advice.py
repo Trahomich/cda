@@ -404,6 +404,8 @@ def generate_advice(field_id: uuid.UUID, *, today: date | None = None) -> AIFiel
     answer, status = _infer_with_guardrail(prompt, ctx, items, model_name)
     if answer is None:
         return None  # провайдер недоступен/пуст — записи нет (§9.5)
+    # #131: после guardrail — санитайзер (вывод без markdown, §9.2)
+    answer = service.strip_markdown(answer)
 
     # 3) запись — короткой сессией
     db = SessionLocal()
