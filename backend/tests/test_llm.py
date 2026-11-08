@@ -186,6 +186,9 @@ def test_anthropic_thinking_then_text_returns_text() -> None:
         }
     ]
     assert "think" not in body  # num_predict/think — только у ollama-ветки
+    # glm-5.3-flash думающая: thinking явно выключаем (#116), иначе блок
+    # съедает max_tokens и text-блок не успевает родиться
+    assert body["thinking"] == {"type": "disabled"}
 
 
 def test_anthropic_only_thinking_returns_none() -> None:
