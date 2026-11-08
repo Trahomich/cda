@@ -231,13 +231,16 @@ export async function getNdviRender(
 }
 
 /** API-52: GET /fields/{id}/vra — зоны дифференцированного внесения (§7.4).
- *  Результат: ok — зоны; uniform — поле однородно (422 vra_uniform_field,
- *  IQR < 0.12); empty — прочие ошибки (404 нет сцен, сеть). */
+ *  year (§7.5) — сезон YYYY вместо текущего; 404 season_not_found уходит
+ *  в общий 'empty'. Результат: ok — зоны; uniform — поле однородно
+ *  (422 vra_uniform_field, IQR < 0.12); empty — прочие ошибки. */
 export async function getFieldVra(
   fieldId: string,
+  year?: number,
 ): Promise<{ kind: 'ok'; data: VraZonesResponse } | { kind: 'uniform' } | { kind: 'empty' }> {
+  const yearQuery = year ? `?year=${year}` : ''
   try {
-    const data = await apiClient.request<VraZonesResponse>(`/fields/${fieldId}/vra`)
+    const data = await apiClient.request<VraZonesResponse>(`/fields/${fieldId}/vra${yearQuery}`)
     return { kind: 'ok', data }
   } catch (error) {
     if (
@@ -253,8 +256,9 @@ export async function getFieldVra(
 
 /** API-52: GET /fields/{id}/vra/map.png — PNG-карта зон (§7.4) с
  *  геопривязкой X-Field-Bbox/X-Image-Size (как §7.3); null, если нет. */
-export async function getFieldVraMap(fieldId: string): Promise<NdviRender | null> {
-  const res = await apiClient.raw(`/fields/${fieldId}/vra/map.png`)
+export async function getFieldVraMap(fieldId: string, year?: number): Promise<NdviRender | null> {
+  const yearQuery = year ? `?year=${year}` : ''
+  const res = await apiClient.raw(`/fields/${fieldId}/vra/map.png${yearQuery}`)
   if (!res.ok) return null
   const bboxRaw = (res.headers.get('X-Field-Bbox') ?? '').split(',').map(Number)
   if (bboxRaw.length !== 4 || bboxRaw.some((v) => !Number.isFinite(v))) return null
