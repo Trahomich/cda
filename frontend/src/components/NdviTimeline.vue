@@ -203,7 +203,7 @@ const lastPoint = computed(() => sorted.value[lastClearIdx.value] ?? null)
           class="ndvi__trust-mark"
         />
         <text
-          v-if="i % dateStep === 0 || i === points.length - 1"
+          v-if="i % dateStep === 0 || i === layout.dots.length - 1"
           :x="dot.cx"
           :y="H - 8"
           class="ndvi__date"
