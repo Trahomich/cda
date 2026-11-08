@@ -409,8 +409,6 @@ class TestRenderLegend:
     def test_bbox_extended_for_legend_strip(self, color_rasters):
         """Юг bbox расширен пропорционально полосе: равномерное отображение
         пиксель↔градус — растровая часть совпадает с окном поля."""
-        from rasterio.warp import transform_bounds
-
         # пересчитаем окно растра напрямую нельзя (внутри render_scene),
         # поэтому проверяем пропорцию: полоса ~8% → юг ниже растрового окна
         contour = wgs_box(300100, 5760100, 301900, 5760900)
