@@ -278,6 +278,9 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
     west, south, east, north = transform_bounds(
         str(red_crs), "EPSG:4326", left, bottom, right, top, densify_pts=21
     )
+    # полоса легенды — часть канвы: юг расширяется пропорционально (#123),
+    # поле в оверлее по-прежнему совпадает с контуром
+    south -= (north - south) * strip_h / nir_d.shape[0]
     bbox = tuple(round(v, 7) for v in (west, south, east, north))
 
     return VraZones(
@@ -286,7 +289,7 @@ def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones
         zones=zones,
         png=png,
         width=nir_d.shape[1],
-        height=nir_d.shape[0],
+        height=nir_d.shape[0] + strip_h,
         bbox=bbox,  # type: ignore[arg-type]
         spatial_spread=spread,
     )
