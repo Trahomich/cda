@@ -258,12 +258,10 @@ def ndre_world(tmp_path, db_session):
 class TestVraNdre:
     def test_vra_zones_by_ndre(self, ndre_world, db_session) -> None:
         """Зоны по NDRE строятся: 3 зоны, метрики по NDRE-массиву."""
+        from app.models.agronomy import Field
         from app.modules.satellite import vra
 
-        field = db_session.execute(
-            db_text("SELECT * FROM dat_field WHERE id = :id"), {"id": ndre_world[0]}
-        ).first()
-        field_obj = db_session.get(__import__("app.models.agronomy", fromlist=["Field"]).Field, ndre_world[0])
+        field_obj = db_session.get(Field, ndre_world[0])
         result = vra.vra_zones(db_session, field_obj, index="ndre")
         assert len(result.zones) == 3
         means = [z.ndvi_mean for z in result.zones]  # средние NDRE зон
