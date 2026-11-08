@@ -435,7 +435,7 @@ watch([range, rangeYear], () => void loadHistory())
       </p>
       <template v-else-if="gdd">
         <p class="wx__gdd-total">
-          Накоплено на {{ gdd.items[gdd.items.length - 1]?.date }}:
+          Накоплено на {{ gdd.items[gdd.items.length - 1] ? fmtDate(gdd.items[gdd.items.length - 1]!.date) : '' }}:
           <strong>{{ gdd.total.toLocaleString('ru-RU') }} °C·сут</strong>
           (база {{ gdd.base_c }} °C)
         </p>
