@@ -13,8 +13,8 @@ from typing import Annotated
 from fastapi import APIRouter, BackgroundTasks, Depends, Query
 from sqlalchemy.orm import Session
 
-from app.ai_assistant import service
-from app.ai_assistant.schemas import InsightsResponse
+from app.ai_assistant import advice, service
+from app.ai_assistant.schemas import AdviceHistoryResponse, AdviceResponse, InsightsResponse
 from app.core.config import Settings, get_settings
 from app.core.db import get_db
 from app.core.errors import AppError
