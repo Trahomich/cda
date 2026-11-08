@@ -32,6 +32,7 @@ from sqlalchemy.orm import Session, aliased
 
 from app.ai_assistant import detectors, llm, service
 from app.ai_assistant.schemas import InsightItem
+from app.core.cache import cache_get
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.models.agronomy import AgroInput, CropCycle, Field, FieldOperation, Recommendation
