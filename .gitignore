@@ -13,3 +13,10 @@ frontend/playwright-report/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# SSH-ключи и секреты — никогда не коммитить (репо публичное)
+deploy/keys/id_ed25519
+deploy/keys/id_ed25519.pub
+deploy/keys/*.key
+*.pem
+.env
