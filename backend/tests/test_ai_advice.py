@@ -363,9 +363,10 @@ class TestAdviceCli:
         argv = ["advice-refresh"]
         if field_id:
             argv += ["--field-id", str(field_id)]
+        self.captured.clear()  # отчёт CLI — единственный print после очистки
         code = cli_main(argv)
         assert code == 0
-        return json.loads("\n".join(self.captured))
+        return json.loads(self.captured[-1])
 
     @pytest.fixture(autouse=True)
     def _capture_stdout(self, monkeypatch):
