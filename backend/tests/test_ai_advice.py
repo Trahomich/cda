@@ -236,15 +236,22 @@ class TestAdviceTriggers:
         assert queued == []
 
     def test_candidate_field_ids(self):
-        """Кандидаты — активные поля с чистой NDVI-сценой текущего года."""
+        """Кандидаты — активные поля с NDVI-сценой текущего года.
+
+        Заоблачных сцен в БД не бывает (check cloud ≤ 60 = CLEAN_CLOUD_PCT),
+        поэтому кейс «облачная сцена» проверять через БД нельзя — фильтр
+        по чистоте покрывается констрейнтом и тестом шины выше.
+        """
         make_scene(self.db, self.field_id, TODAY)
         last_year = make_field(self.db, name="Прошлый сезон")
         make_scene(self.db, last_year, TODAY - timedelta(days=400))
         archived = make_field(self.db, name="В архиве", status="archived")
         make_scene(self.db, archived, TODAY)
-        cloudy = make_field(self.db, name="Заоблачное")
-        make_scene(self.db, cloudy, TODAY, cloud_pct=80.0)
-        assert advice_scheduler.candidate_field_ids(self.db, TODAY) == [self.field_id]
+        no_scenes = make_field(self.db, name="Без сцен")
+        candidates = advice_scheduler.candidate_field_ids(self.db, TODAY)
+        assert self.field_id in candidates
+        assert last_year not in candidates and archived not in candidates
+        assert no_scenes not in candidates
 
     def test_daily_job_queues_candidates(self, monkeypatch):
         """Суточный прогон ставит всех кандидатов в очередь."""
