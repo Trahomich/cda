@@ -34,7 +34,9 @@
 """
 
 import argparse
+import logging
 import sys
+import uuid
 
 from sqlalchemy import select
 
