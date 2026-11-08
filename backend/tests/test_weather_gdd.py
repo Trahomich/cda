@@ -14,7 +14,7 @@ from app.models.integrations import WeatherObservation
 from app.modules.weather.rules import GDD_BASE_C
 from sqlalchemy.orm import Session
 from tests.test_auth import auth_header, make_user
-from tests.test_weather import API, OpenMeteoAdapter, make_field
+from tests.test_weather import API, OpenMeteoAdapter, make_field, make_weather_source
 
 SOURCE = OpenMeteoAdapter.source_id
 
@@ -39,6 +39,7 @@ def add_obs(
 
 @pytest.fixture()
 def headers(client, db_session) -> dict:
+    make_weather_source(db_session)  # FK dat_weather_observation → ref_source
     make_user(db_session, login="gdd-user", role=UserRole.AGRONOMIST, password="secret123")
     return auth_header(client, "gdd-user", "secret123")
 
