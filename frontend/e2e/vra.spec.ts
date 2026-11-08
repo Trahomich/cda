@@ -90,3 +90,58 @@ test('карточка поля: пар — «данных сезона недо
   await expect(yieldBlock.locator('.card360__yield-value')).toHaveCount(0)
   await expect(yieldBlock).toContainText('Данных сезона недостаточно для прогноза')
 })
+
+test('выгрузка карты дифвнесения: три формата отдают файл (API-60, §7.4)', async ({ page }) => {
+  await page.goto(`/fields/${FIRST_FIELD}`)
+  const vraBlock = page.locator('#vra')
+  await expect(vraBlock).toBeVisible({ timeout: 15_000 })
+
+  const format = page.getByLabel('Формат выгрузки карты дифвнесения')
+  const btn = vraBlock.getByRole('button', { name: 'Выгрузить' })
+
+  // Поле 1: базовая доза есть (75) — файл сразу, без формы дозы
+  const dl1 = page.waitForEvent('download')
+  await btn.click()
+  const geo = await dl1
+  expect(geo.suggestedFilename()).toMatch(/^vra_\w+_20\d\d-\d\d-\d\d\.geojson$/)
+
+  await format.selectOption('shp')
+  const dl2 = page.waitForEvent('download')
+  await btn.click()
+  expect((await dl2).suggestedFilename()).toMatch(/_shp\.zip$/)
+
+  await format.selectOption('isoxml')
+  const dl3 = page.waitForEvent('download')
+  await btn.click()
+  expect((await dl3).suggestedFilename()).toMatch(/_isoxml\.zip$/)
+  await expect(vraBlock.locator('.card360__vra-export-dose')).toBeHidden()
+})
+
+test('выгрузка без базовой дозы: 422 → форма ввода дозы и повтор с параметром (API-60)', async ({
+  page,
+}) => {
+  // Поле 3: нет approved fertilizing-плана → base_dose_kg_ha=null
+  await page.goto('/fields/0000000a-0000-4000-8000-000000000003')
+  const vraBlock = page.locator('#vra')
+  await expect(vraBlock).toBeVisible({ timeout: 15_000 })
+  const btn = vraBlock.getByRole('button', { name: 'Выгрузить' })
+  await expect(vraBlock.locator('.card360__muted').first()).toContainText(
+    'нет согласованного плана',
+  )
+
+  // Первый запрос без дозы → 422 vra_no_base_dose → форма ввода
+  await btn.click()
+  const doseField = vraBlock.locator('.card360__vra-export-dose')
+  await expect(doseField).toBeVisible({ timeout: 10_000 })
+
+  // Повтор с дозой: запрос уходит с base_dose_kg_ha=90, файл скачивается
+  const seen: string[] = []
+  page.on('request', (req) => {
+    if (req.url().includes('/vra/export')) seen.push(req.url())
+  })
+  await doseField.getByRole('textbox').fill('90')
+  const dl = page.waitForEvent('download')
+  await btn.click()
+  expect((await dl).suggestedFilename()).toMatch(/\.geojson$|\.zip$/)
+  expect(seen.some((url) => url.includes('base_dose_kg_ha=90'))).toBe(true)
+})
