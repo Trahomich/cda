@@ -93,9 +93,10 @@ class TestWinterkill:
             (date(2027, 1, 5), 0.12, 0.1),  # оголено
             (date(2027, 1, 15), 0.55, 0.1),  # живой посев
             (date(2027, 2, 1), 0.6, 0.2),  # живой посев
+            (date(2027, 2, 20), 0.58, 0.15),  # живой посев
         ]
         item = detectors.detect_winterkill(pairs, "Рожь озимая")
-        assert item is not None and item.severity == "info"
+        assert item is not None and item.severity == "info"  # 25 % < 30 %
 
     def test_snow_protects(self) -> None:
         """NDSI ≥ 0.4 — снег закрыл посев, оголением не считается."""
