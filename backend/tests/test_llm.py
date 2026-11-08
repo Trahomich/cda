@@ -180,7 +180,10 @@ def test_anthropic_thinking_then_text_returns_text() -> None:
     assert body["model"] == ANTHROPIC_DEFAULT_MODEL  # glm-5.3-flash
     assert body["max_tokens"] == 1024  # с запасом: thinking съедает малые лимиты
     assert body["messages"] == [
-        {"role": "user", "content": [{"type": "text", "text": "p\n\nДанные хозяйства (context):\nc"}]}
+        {
+            "role": "user",
+            "content": [{"type": "text", "text": "p\n\nДанные хозяйства (context):\nc"}],
+        }
     ]
     assert "think" not in body  # num_predict/think — только у ollama-ветки
 
