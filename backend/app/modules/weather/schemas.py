@@ -33,6 +33,19 @@ class FactItem(BaseModel):
     source_id: str
 
 
+class HazardItem(BaseModel):
+    """Опасное погодное явление суток прогноза (#139, §7.8).
+
+    code: frost | high_wind | heavy_rain; severity: заморозки warn при
+    tmin ≤ +2 °C, alert при ≤ 0 °C (вне активной вегетации — info);
+    ветер ≥ 15 м/с и ливень ≥ 15 мм/сут — warn.
+    """
+
+    code: str = Field(description="frost | high_wind | heavy_rain")
+    severity: str = Field(description="info | warn | alert")
+    text: str = Field(description="Краткое описание явления для пользователя")
+
+
 class ForecastDayItem(BaseModel):
     """Прогноз на сутки (ENT-FORECAST, последняя версия)."""
 
@@ -49,6 +62,10 @@ class ForecastDayItem(BaseModel):
         default=None, description="Вероятность осадков, %; null — провайдер не отдаёт (§7.2)"
     )
     hazard: str
+    hazards: list[HazardItem] = Field(
+        default_factory=list,
+        description="Опасные явления суток (#139): пусто — явлений нет",
+    )
 
 
 class SourceMeta(BaseModel):
