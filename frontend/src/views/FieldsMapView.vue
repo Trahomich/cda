@@ -75,13 +75,12 @@ function popupHtml(field: Field): string {
   const area = field.area_ga.toLocaleString('ru-RU', { maximumFractionDigits: 2 })
   return (
     `<div class="field-popup">` +
-    `<strong>${field.name}</strong><br/>` +
+    // Заголовок балуна (название поля) — кликабельный: открывает карточку
+    // поля (фидбек #368): отдельная ссылка «Открыть карточку поля» убрана.
+    `<a href="/fields/${field.field_id}" data-field-id="${field.field_id}" class="field-popup__title">${field.name}</a><br/>` +
     `Площадь: ${area} га<br/>` +
     `Культура сезона: ${culture}<br/>` +
-    `Статус: ${STATUS_LABELS[field.status]}<br/>` +
-    // Пункт 1 (v2-fix-A): из попапа контура — в карточку поля, тот же роут,
-    // что у клика по подписи и строке списка.
-    `<a href="/fields/${field.field_id}" data-field-id="${field.field_id}" class="field-popup__link">Открыть карточку поля →</a>` +
+    `Статус: ${STATUS_LABELS[field.status]}` +
     `</div>`
   )
 }
