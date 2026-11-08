@@ -230,6 +230,8 @@ onUnmounted(() => {
 
 const vra = ref<VraZonesResponse | null>(null)
 const vraLoading = ref(true)
+/** Лайтбокс карты дифвнесения (#141): открыт по клику на превью. */
+const vraLightbox = ref(false)
 /** PNG-карта зон (raw + геопривязка X-Field-Bbox/X-Image-Size). */
 const vraMap = ref<NdviRender | null>(null)
 
