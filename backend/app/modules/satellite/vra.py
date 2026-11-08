@@ -173,13 +173,12 @@ def _spatial_spread(ndvi: np.ndarray, valid: np.ndarray) -> float:
     return round(float(np.percentile(means, 90) - np.percentile(means, 10)), 3)
 
 
-def _analyze_scene(
-    db: Session, field: Field, scene: SatelliteScene
-) -> tuple[float, VraZones | None]:
-    """IQR NDVI сцены и (если поле неоднородно) полные зоны; None — однородно.
+def _analyze_scene(db: Session, field: Field, scene: SatelliteScene) -> VraZones:
+    """Зоны по COG сцены (§7.4 v1.7): всегда — кластеризация на 3 по
+    перцентилям, метрики iqr_ndvi и spatial_spread той же сцены.
 
-    Общий путь чтения COG для пиковых сцен: IQR нужен каждой сцене для
-    подтверждения стабильности (§7.4 v1.4), зоны — только выбранной.
+    Общий путь чтения COG (окно как в §7.3: целочисленное окно по контуру,
+    SCL → сетка 10 м nearest, прореживание до 1024 px).
     """
     from rasterio.transform import Affine
     from rasterio.warp import transform_bounds, transform_geom
