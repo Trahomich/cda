@@ -41,6 +41,11 @@ const failed = ref(false)
 
 /** Диапазоны истории: 90 дней / сезон / год (фидбек #391 п.2). */
 type RangeKind = '90d' | 'season' | 'year'
+const RANGES: Array<{ value: RangeKind; label: string }> = [
+  { value: '90d', label: '90 дней' },
+  { value: 'season', label: 'Сезон' },
+  { value: 'year', label: 'Год' },
+]
 const range = ref<RangeKind>('90d')
 const rangeYear = ref(new Date().getFullYear())
 const CURRENT_YEAR = new Date().getFullYear()
