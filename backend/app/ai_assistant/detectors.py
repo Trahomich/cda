@@ -59,7 +59,6 @@ WINTER_CULTURE_MARKERS = ("озим", "рожь", "тритикале")
 DROUGHT_WINDOW_DAYS = 14
 DROUGHT_PRECIP_MM = 10.0
 GDD_NORM_DAILY_C = 10.0
-GDD_NORM_DAILY_C = 10.0
 GDD_MIN_DAYS = 7  # меньше — окно непредставительно, детектор молчит
 
 #: ndvi_lag_last_year: отставание от прошлой даты ± окно поиска сцены
