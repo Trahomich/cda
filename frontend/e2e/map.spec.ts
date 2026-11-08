@@ -70,7 +70,8 @@ test('карта: вьюпорт запоминается и восстанав�
   // Первый заход без сохранённого вида: оверлей «Загружаем поля…» вместо
   // произвольной точки; после загрузки вид (fitBounds) сохраняется.
   // Оверлей транзиентен — замедляем мок, чтобы поймать его надёжно.
-  await page.evaluate(() => {
+  // addInitScript: обычный evaluate до reload() теряется вместе со страницей.
+  await page.addInitScript(() => {
     ;(globalThis as { __CDA_MOCK_DELAY__?: number }).__CDA_MOCK_DELAY__ = 700
   })
   await page.evaluate(() => localStorage.removeItem('cda.map.view'))
