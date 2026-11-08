@@ -126,7 +126,7 @@ class TestCycleRenders:
         report = run_ndvi_cycle(db_session, render_dir=str(tmp_path))
 
         assert report.status == "ok" and report.scenes == 1
-        for variant in RENDER_VARIANTS:
+        for variant in {"ndvi", "truecolor", "ndwi", "evi", "savi"}:
             path = render_path(tmp_path, field_id, variant, SCENE_DATE)
             assert path.is_file(), path
             assert path.read_bytes().startswith(PNG_MAGIC)
