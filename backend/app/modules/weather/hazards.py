@@ -12,13 +12,14 @@ from datetime import date
 
 from sqlalchemy.orm import Session
 
-from app.ai_assistant.detectors import (
-    NDVI_STAGNATION_SEASON_MONTHS,
-    NDVI_STAGNATION_WINTER_MONTHS,
-    WINTER_CULTURE_MARKERS,
-    current_culture_name,
-)
 from app.models.integrations import Forecast
+
+#: окно вегетации для оценки опасности заморозка (#139): как детекторы
+#: §8.2 v1.1 (app/ai_assistant/detectors.py) — дублируется здесь, чтобы не
+#: заводить цикл импорта weather → ai_assistant → weather
+VEGETATION_SEASON_MONTHS = frozenset(range(4, 11))  # обычные — апрель–октябрь
+VEGETATION_WINTER_MONTHS = frozenset({3, 4, 5, 6, 9, 10, 11})  # озимые
+WINTER_CULTURE_MARKERS = ("озим", "рожь", "тритикале")
 
 #: frost (заморозки): tmin ≤ +2 °C — warn; ≤ 0 °C и ≤ −5 °C — alert
 FROST_WARN_C = 2.0
