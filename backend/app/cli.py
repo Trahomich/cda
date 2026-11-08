@@ -458,9 +458,7 @@ def main(argv: list[str] | None = None) -> int:
         default=date(2023, 1, 1),
         help="начало периода, ISO-дата (по умолчанию 2023-01-01)",
     )
-    p_idx.add_argument(
-        "--workers", type=int, default=4, help="потоков чтения COG (по умолчанию 4)"
-    )
+    p_idx.add_argument("--workers", type=int, default=4, help="потоков чтения COG (по умолчанию 4)")
     p_idx.set_defaults(func=cmd_scene_indices_backfill)
 
     args = parser.parse_args(argv)

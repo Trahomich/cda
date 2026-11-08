@@ -149,8 +149,9 @@ def compute_scene_indices(assets: dict, contour_geojson: dict) -> list[IndexStat
                 href, contour_geojson, nir_transform, nir_crs, nir_arr.shape
             )
         except Exception:  # noqa: BLE001 — полоса вторична, индекс пропустим
-            logger.warning("indices: полоса %s не прочитана — индексы с ней пропущены", key,
-                           exc_info=True)
+            logger.warning(
+                "indices: полоса %s не прочитана — индексы с ней пропущены", key, exc_info=True
+            )
 
     scl = _read_scl_grid(assets, contour_geojson, nir_transform, nir_crs, nir_arr.shape)
     cloud = np.isin(scl, CLOUD_SCL_VALUES)

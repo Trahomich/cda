@@ -115,9 +115,15 @@ def field_ndvi(
     offset: int = Query(default=0, ge=0),
 ) -> NdviTimelineResponse:
     return _field_index_timeline(
-        field_id, db, settings,
-        index=index, year=year, date_from=date_from, date_to=date_to,
-        limit=limit, offset=offset,
+        field_id,
+        db,
+        settings,
+        index=index,
+        year=year,
+        date_from=date_from,
+        date_to=date_to,
+        limit=limit,
+        offset=offset,
     )
 
 

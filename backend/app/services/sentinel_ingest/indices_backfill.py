@@ -138,14 +138,11 @@ def run_indices_backfill(
     criteria = [SatelliteScene.index == "ndvi", SatelliteScene.cloud_pct <= 60.0]
     if date_from is not None:
         criteria.append(SatelliteScene.captured_at >= date_from)
-    ndvi_scenes = (
-        db.execute(
-            select(SatelliteScene.field_id, SatelliteScene.captured_at)
-            .where(*criteria)
-            .order_by(SatelliteScene.captured_at, SatelliteScene.field_id)
-        )
-        .all()
-    )
+    ndvi_scenes = db.execute(
+        select(SatelliteScene.field_id, SatelliteScene.captured_at)
+        .where(*criteria)
+        .order_by(SatelliteScene.captured_at, SatelliteScene.field_id)
+    ).all()
     report.scenes = len(ndvi_scenes)
 
     # подготовка кандидатов — сессией в главном потоке
@@ -159,15 +156,19 @@ def run_indices_backfill(
         if contour is None:
             report.no_contour += 1
             continue
-        row = db.execute(
-            select(SatelliteCatalogItem)
-            .where(
-                SatelliteCatalogItem.field_id == field_id,
-                SatelliteCatalogItem.captured_at == captured_at,
+        row = (
+            db.execute(
+                select(SatelliteCatalogItem)
+                .where(
+                    SatelliteCatalogItem.field_id == field_id,
+                    SatelliteCatalogItem.captured_at == captured_at,
+                )
+                # предпочитаем строку с новыми полосами (меньше дозапросов)
+                .order_by((SatelliteCatalogItem.assets["b05"].isnot(None)).desc())
             )
-            # предпочитаем строку с новыми полосами (меньше дозапросов)
-            .order_by((SatelliteCatalogItem.assets["b05"].isnot(None)).desc())
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         if row is None:
             report.no_catalog += 1
             continue

@@ -200,9 +200,7 @@ def _legend_scale(w: int, h: int) -> int:
     return max(1, min(round(w / 200), max(1, round(h * 0.07) // 13)))
 
 
-def _legend_panel(
-    alpha: np.ndarray, pw: int, ph: int, k: int
-) -> tuple[int, int] | None:
+def _legend_panel(alpha: np.ndarray, pw: int, ph: int, k: int) -> tuple[int, int] | None:
     """Координаты панели легенды в левом нижнем углу; None, если не помещается."""
     h, w = alpha.shape
     if pw > w or ph > h:
