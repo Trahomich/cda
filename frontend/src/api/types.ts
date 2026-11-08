@@ -804,14 +804,19 @@ export interface WindowsPlannedResponse {
   hint?: string | null
 }
 
-/** Дневное наблюдение в ответе /weather/history (API-57, сырая форма). */
+/** Дневное наблюдение в ответе /weather/history (API-57, §7.8): имена полей —
+ *  полные, как в API-07 (#126); дата — observed_at. */
 export interface WeatherHistoryItem {
-  date: string
-  temp_max_c: number | null
-  temp_min_c: number | null
-  precip_mm: number
-  cloud_pct?: number | null
-  snow_mm?: number | null
+  observed_at: string
+  temperature_avg_c: number | null
+  temperature_min_c: number | null
+  temperature_max_c: number | null
+  precipitation_mm: number
+  wind_max_ms?: number | null
+  humidity_avg_pct?: number | null
+  cloud_cover_mean_pct?: number | null
+  snowfall_cm?: number | null
+  snow_depth_cm?: number | null
 }
 
 /** Ответ GET /weather/gdd (#132, сырая форма). */
