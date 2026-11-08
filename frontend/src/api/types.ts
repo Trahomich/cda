@@ -549,6 +549,28 @@ export interface FieldAdviceHistory {
   items: FieldAdvice[]
 }
 
+/* ─── Погодная карта хозяйства (API-61, docs/06 §7.8, #143) ─── */
+
+/** Метрика погодной карты: осадки за 7/14 сут, температура последних суток,
+ *  GDD с 1 января (base 5 °C). */
+export type WeatherMapMetric = 'precip_7d' | 'precip_14d' | 't_now' | 'gdd_ytd'
+
+/** Поле на погодной карте: упрощённый контур + значение метрики
+ *  (null — наблюдений нет). */
+export interface WeatherMapItem {
+  field_id: string
+  name: string
+  contour: GeoJsonPolygon | { type: 'MultiPolygon'; coordinates: number[][][][] }
+  value: number | null
+  updated_at: string | null
+}
+
+/** Ответ GET /weather/map?metric=… (§7.8): только активные поля, кэш 1 ч. */
+export interface WeatherMapResponse {
+  metric: WeatherMapMetric
+  items: WeatherMapItem[]
+}
+
 /* ─── Источники данных (API-28, экран E-14; ref_source, 06 §3) ─── */
 
 /** Статус адаптера: ok / degraded / error (05 §6). */
