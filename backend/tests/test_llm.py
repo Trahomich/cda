@@ -260,6 +260,9 @@ def test_ollama_branch_ignores_images() -> None:
     assert summarize("p", "c", **kwargs) == "ok"
     assert "images" not in bodies[-1]
     assert bodies[-1]["prompt"].startswith("p\n")  # тело прежнее (только prompt)
+
+
+def test_anthropic_no_key_returns_none_without_network() -> None:
     """Пустой ключ (по умолчанию env пуст) → None, запросов нет вовсе."""
 
     def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
