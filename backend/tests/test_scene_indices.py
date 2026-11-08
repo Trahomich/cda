@@ -203,38 +203,39 @@ class TestNdviCycleIndices:
 # -- бэкфилл (#128) ---------------------------------------------------------
 
 
-class TestIndicesBackfill:
-    def _seed(self, db_session, assets) -> uuid.UUID:
-        """ndvi-сцена без индексов + строка каталога с теми же активами."""
-        make_satellite_source(db_session)
-        field_id = make_ndvi_field(db_session)
-        db_session.add(
-            SatelliteScene(
-                field_id=field_id,
-                index="ndvi",
-                captured_at=DAY,
-                resolution_m=10,
-                index_avg=0.5,
-                index_min=0.2,
-                index_max=0.7,
-                cloud_pct=5.0,
-                source_id="satellite.sentinel2-l2a",
-                trust=0.95,
-            )
+def _seed_ndvi_scene(db_session, assets) -> uuid.UUID:
+    """ndvi-сцена без индексов + строка каталога с теми же активами."""
+    from tests.test_satellite import make_satellite_source
+
+    make_satellite_source(db_session)
+    field_id = make_ndvi_field(db_session)
+    db_session.add(
+        SatelliteScene(
+            field_id=field_id,
+            index="ndvi",
+            captured_at=DAY,
+            resolution_m=10,
+            index_avg=0.5,
+            index_min=0.2,
+            index_max=0.7,
+            cloud_pct=5.0,
+            source_id="satellite.sentinel2-l2a",
+            trust=0.95,
         )
-        db_session.add(
-            SatelliteCatalogItem(
-                item_id="S2_37UFT_BF1",
-                field_id=field_id,
-                captured_at=DAY,
-                tile_id="37UFT",
-                cloud_pct=5.0,
-                assets=assets,
-                status="processed",
-            )
+    )
+    db_session.add(
+        SatelliteCatalogItem(
+            item_id="S2_37UFT_BF1",
+            field_id=field_id,
+            captured_at=DAY,
+            tile_id="37UFT",
+            cloud_pct=5.0,
+            assets=assets,
+            status="processed",
         )
-        db_session.commit()
-        return field_id
+    )
+    db_session.commit()
+    return field_id
 
     def test_backfill_writes_and_idempotent(self, db_session, band_rasters) -> None:
         field_id = self._seed(db_session, band_rasters["assets"])
@@ -258,7 +259,7 @@ class TestIndicesBackfill:
         assets = {
             k: v for k, v in band_rasters["assets"].items() if k not in ("b05", "b11")
         }
-        self._seed(db_session, assets)
+        _seed_ndvi_scene(db_session, assets)
         report = run_indices_backfill(db_session, render_dir=None)
         assert report.scenes_written == 1
         assert report.index_scenes == 3  # ndwi/evi/savi
@@ -278,7 +279,7 @@ def _api_headers(client, db_session) -> dict:
 class TestIndexApi:
     def test_path_form_all_indices(self, client, db_session, band_rasters) -> None:
         """/fields/{id}/{index} отдаёт таймлайн каждого индекса §7.7."""
-        self._seed(db_session, band_rasters["assets"])
+        _seed_ndvi_scene(db_session, band_rasters["assets"])
         headers = _api_headers(client, db_session)
         field_id = db_session.scalar(db_text("SELECT id FROM dat_field LIMIT 1"))
         for name in EXTRA_INDICES:
@@ -301,7 +302,7 @@ class TestIndexApi:
         assert resp.json()["code"] == "unknown_index"
 
     def test_year_filter(self, client, db_session, band_rasters) -> None:
-        self._seed(db_session, band_rasters["assets"])
+        _seed_ndvi_scene(db_session, band_rasters["assets"])
         run_indices_backfill(db_session, render_dir=None)
         headers = _api_headers(client, db_session)
         field_id = db_session.scalar(db_text("SELECT id FROM dat_field LIMIT 1"))
