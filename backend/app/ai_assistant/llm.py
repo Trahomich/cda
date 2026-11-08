@@ -252,6 +252,11 @@ def _summarize_anthropic(
     body = {
         "model": chosen_model,
         "max_tokens": ANTHROPIC_MAX_TOKENS,
+        # glm-5.3-flash думающая: без явного disable thinking-блок (1600–2400
+        # токенов, варьируется) съедает бюджет и text не успевает родиться
+        # (#116, замеры ivan.kulikov: disabled → thinking исчезает, text
+        # полный, ~6 с вместо 15–16 с); не-think модели параметр игнорируют
+        "thinking": {"type": "disabled"},
         "messages": [{"role": "user", "content": content}],
     }
     headers = {"x-api-key": key, "anthropic-version": ANTHROPIC_VERSION}
