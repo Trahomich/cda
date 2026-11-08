@@ -156,7 +156,9 @@ class TestErrorsAndRbac:
         field_id = make_field(db_session, name="Без дозы")
         make_scene(db_session, field_id, make_vra_rasters(tmp_path, striped_red()))
         resp = client.get(
-            f"{API}/fields/{field_id}/vra/export", params={"format": "geojson"}, headers=agro_headers
+            f"{API}/fields/{field_id}/vra/export",
+            params={"format": "geojson"},
+            headers=agro_headers,
         )
         assert resp.status_code == 422, resp.text
         assert resp.json()["code"] == "vra_no_base_dose"
