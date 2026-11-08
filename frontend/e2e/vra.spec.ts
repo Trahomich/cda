@@ -179,7 +179,7 @@ test('выгрузка без базовой дозы: 422 → форма вво
   const vraBlock = page.locator('#vra')
   await expect(vraBlock).toBeVisible({ timeout: 15_000 })
   const btn = vraBlock.getByRole('button', { name: 'Выгрузить' })
-  await expect(vraBlock.locator('.card360__muted').first()).toContainText(
+  await expect(vraBlock.locator('.card360__muted', { hasText: 'Базовая доза' })).toContainText(
     'нет согласованного плана',
   )
 
