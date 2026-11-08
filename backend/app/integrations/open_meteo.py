@@ -166,6 +166,18 @@ class OpenMeteoAdapter:
         prob = metrics.get("precipitation_probability_max")
         if prob is not None and not 0 <= prob <= 100:
             raise DataQualityError(f"{day}: вероятность осадков {prob} вне 0–100 %")
+        cloud = metrics.get("cloud_cover_mean")
+        if cloud is not None and not 0 <= cloud <= 100:
+            raise DataQualityError(f"{day}: облачность {cloud} вне 0–100 %")
+        for name, value in (
+            ("снегопад", metrics.get("snowfall_sum")),
+            ("высота снега", metrics.get("snow_depth_max")),
+        ):
+            if value is not None and value < 0:
+                raise DataQualityError(f"{day}: {name} {value} см < 0")
+        hours = metrics.get("precipitation_hours")
+        if hours is not None and not 0 <= hours <= 24:
+            raise DataQualityError(f"{day}: часы осадков {hours} вне 0–24")
 
     # -- публичные методы контракта IF-WEATHER (05 §2) -----------------------
 
