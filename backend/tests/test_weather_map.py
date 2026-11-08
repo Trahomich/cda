@@ -13,7 +13,7 @@ from datetime import date, timedelta
 from app.integrations.open_meteo import OpenMeteoAdapter
 from app.models.integrations import WeatherObservation
 from sqlalchemy.orm import Session
-from tests.test_weather import SQUARE_GEOJSON, api_headers, make_field
+from tests.test_weather import api_headers, make_field
 
 API = "/api/v1"
 
@@ -162,7 +162,7 @@ class TestWeatherMapApi:
 
         first = client.get(f"{API}/weather/map", headers=headers)
         assert first.status_code == 200
-        assert f"weather:map:precip_7d" in store
+        assert "weather:map:precip_7d" in store
         # новое наблюдение после кэширования не видно до TTL
         make_obs(db_session, f1, today, precip=100.0)
         second = client.get(f"{API}/weather/map", headers=headers)
