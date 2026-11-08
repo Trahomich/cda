@@ -1400,8 +1400,8 @@ export class MockTransport implements Transport {
       })
     }
 
-    /* ── Зоны дифвнесения (API-52, §7.4, #97); поле 6 — однородное;
-       ?year=YYYY (§7.5) — сезон; нет сезона — 404 season_not_found ── */
+    /* ── Зоны дифвнесения (API-52, §7.4 v1.7): строятся всегда при чистых
+       сценах; ?year=YYYY (§7.5) — сезон; нет сезона — 404 season_not_found ── */
     const vraMatch = /^\/fields\/([\w-]+)\/vra$/.exec(pathname)
     if (method === 'GET' && vraMatch) {
       const field = FIELDS.find((f) => f.field_id === vraMatch[1])
@@ -1417,15 +1417,6 @@ export class MockTransport implements Transport {
           'Нет сезона',
           `У поля нет чистых NDVI-сцен сезона ${yearParam}`,
           'season_not_found',
-        )
-      }
-      if (n === 6) {
-        return problem(
-          422,
-          'https://cda.example/errors/uniform-field',
-          'Прогноз недоступен',
-          'Поле однородно по NDVI (IQR < 0,12): зоны дифференцированного внесения не выделяются',
-          'vra_uniform_field',
         )
       }
       return ok(vraOf(n, field.field_id, yearParam || 2027))
