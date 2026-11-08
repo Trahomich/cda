@@ -168,6 +168,10 @@ class WeatherIngest:
                     "precipitation_mm": item.precipitation_mm,
                     "wind_max_ms": item.wind_max_ms,
                     "humidity_avg_pct": item.humidity_avg_pct,
+                    "cloud_cover_mean_pct": item.cloud_cover_mean_pct,
+                    "snowfall_cm": item.snowfall_cm,
+                    "snow_depth_cm": item.snow_depth_cm,
+                    "precipitation_hours": item.precipitation_hours,
                     "source_id": item.source_id,
                     "trust": item.trust,
                 }
