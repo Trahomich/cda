@@ -123,15 +123,13 @@ async function load() {
   windows.value = []
   windowsHint.value = null
   try {
-    const [w, fc, win] = await Promise.all([
+    const [w, fc] = await Promise.all([
       getFieldWeather(fieldId.value),
       getWeatherForecast(fieldId.value, 7),
-      getWeatherWindowsPlanned(fieldId.value),
     ])
     weather.value = w
     forecast.value = fc
-    windows.value = win.items
-    windowsHint.value = win.hint
+    await loadWindows()
     // История/GDD грузим параллельно с остальным экраном (не блокируем его).
     void loadHistory()
     void loadGdd()
@@ -139,6 +137,31 @@ async function load() {
     failed.value = true // тост уже показан
   } finally {
     loading.value = false
+  }
+}
+
+/** Окна: списочная форма API-59 (§7.8); если бэкенд её ещё не отдаёт
+ *  (до #133) — фолбэк на одиночные запросы по всем типам (прошлое поведение,
+ *  экран не ломается). */
+async function loadWindows() {
+  windows.value = []
+  windowsHint.value = null
+  try {
+    const win = await getWeatherWindowsPlanned(fieldId.value)
+    windows.value = win.items
+    windowsHint.value = win.hint
+  } catch {
+    const wins = await Promise.all(
+      (Object.keys(OP_LABELS) as WindowOperationType[]).map((t) => getWeatherWindows(fieldId.value, t)),
+    )
+    windows.value = wins.map((w) => ({
+      operation_type: w.operation_type,
+      rule_text: w.rule_text,
+      window_open: Boolean(w.window_open),
+      nearest_window_date: w.nearest_window_date,
+      days: w.days,
+      alert: w.alert ?? null,
+    }))
   }
 }
 
