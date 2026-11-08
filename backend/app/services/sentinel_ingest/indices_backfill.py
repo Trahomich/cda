@@ -188,7 +188,7 @@ def run_indices_backfill(
             # (на стенде 309 уникальных item на 27 тыс. строк каталога) —
             # ищем один раз на item, дальше берём из кэша прогона
             if row.item_id in refreshed_by_item:
-                merged = refreshed_by_item[row.item_id]
+                merged: dict | None = refreshed_by_item[row.item_id]
             else:
                 merged = _refresh_assets(db, client, bbox, row)
                 if merged is not None:
