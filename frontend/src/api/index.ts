@@ -235,14 +235,18 @@ export async function getNdviRender(
 /** API-52: GET /fields/{id}/vra — зоны дифференцированного внесения (§7.4).
  *  year (§7.5) — сезон YYYY вместо текущего; 404 season_not_found уходит
  *  в общий 'empty'. Результат: ok — зоны; uniform — поле однородно
- *  (422 vra_uniform_field, IQR < 0.12); empty — прочие ошибки. */
+ *  (422 vra_uniform_field, IQR < 0.12); empty — прочие ошибки.
+ *  Запрос silent: 422-однородность — нормальное состояние, а не ошибка,
+ *  красный тост problem+json здесь не нужен (фидбек user, #122). */
 export async function getFieldVra(
   fieldId: string,
   year?: number,
 ): Promise<{ kind: 'ok'; data: VraZonesResponse } | { kind: 'uniform' } | { kind: 'empty' }> {
   const yearQuery = year ? `?year=${year}` : ''
   try {
-    const data = await apiClient.request<VraZonesResponse>(`/fields/${fieldId}/vra${yearQuery}`)
+    const data = await apiClient.request<VraZonesResponse>(`/fields/${fieldId}/vra${yearQuery}`, {
+      silent: true,
+    })
     return { kind: 'ok', data }
   } catch (error) {
     if (
