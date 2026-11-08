@@ -151,6 +151,9 @@ class TestComputeSceneIndices:
 
     def test_upsert_idempotent(self, band_rasters, db_session) -> None:
         """UQ(field, index, date, source): повторный upsert не дублирует."""
+        from tests.test_satellite import make_satellite_source
+
+        make_satellite_source(db_session)
         field_id = make_ndvi_field(db_session)
         stats = [IndexStat("ndre", 0.1, 0.25, 0.4, 5.0), IndexStat("bsi", -0.4, -0.1, 0.1, 5.0)]
         assert upsert_scene_indices(db_session, field_id, DAY, stats) == 2
