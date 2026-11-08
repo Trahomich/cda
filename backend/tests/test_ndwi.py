@@ -149,7 +149,8 @@ class TestNdwiRender:
         rgb, alpha = _read_png_rgba(png)
 
         top = alpha[: alpha.shape[0] // 4]
-        bottom = alpha[-alpha.shape[0] // 4 :]
+        # полоса ниже облака (нижние ~25% теперь занимает полоса легенды, #123)
+        bottom = alpha[int(alpha.shape[0] * 0.55) : int(alpha.shape[0] * 0.85)]
         assert not top.any()  # облачная зона (SCL 9) прозрачна
         assert bottom.mean() > 200  # полезная площадь непрозрачна
 
