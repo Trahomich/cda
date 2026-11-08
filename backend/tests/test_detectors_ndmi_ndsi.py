@@ -273,12 +273,15 @@ class TestVraNdre:
         assert means[0] < means[2]
         assert 0.2 < means[0] < 0.7
 
-    def test_vra_ndre_cache_key_separate(self, ndre_world, db_session) -> None:
+    def test_vra_ndre_cache_key_separate(self, ndre_world, db_session, monkeypatch) -> None:
         """Не-ndvi кэш — с суффиксом :ndre; vra:peak не пишется для ndre."""
-        from app.core.cache import cache_get
+        import app.core.cache as cache_mod
         from app.models.agronomy import Field
         from app.modules.satellite import vra
+        from tests.test_vra import FakeRedis
 
+        fake = FakeRedis()
+        monkeypatch.setattr(cache_mod, "_redis", fake)
         field_obj = db_session.get(Field, ndre_world[0])
         vra.vra_zones(db_session, field_obj, index="ndre")
         day = db_session.scalar(
@@ -288,9 +291,9 @@ class TestVraNdre:
             ),
             {"fid": ndre_world[0]},
         )
-        assert cache_get(f"vra:{ndre_world[0]}:{day}:ndre") is not None
-        assert cache_get(f"vra:{ndre_world[0]}:{day}") is None  # ndvi-ключ не занят
-        assert cache_get(f"vra:peak:{ndre_world[0]}") is None  # указатель не писался
+        assert f"vra:{ndre_world[0]}:{day}:ndre" in fake.store
+        assert f"vra:{ndre_world[0]}:{day}" not in fake.store  # ndvi-ключ не занят
+        assert f"vra:peak:{ndre_world[0]}" not in fake.store  # указатель не писался
 
     def test_api_vra_index_ndre(self, client, ndre_world, db_session) -> None:
         """/vra?index=ndre: зоны по NDRE + поле index; 422 на чужой индекс."""
