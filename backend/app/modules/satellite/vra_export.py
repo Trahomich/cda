@@ -277,7 +277,8 @@ def isoxml_zip(data: ExportedVra, field: Field) -> bytes:
     SubElement(root, "PDT", {"A": "Удобрение (дифвнесение)"})
 
     pfd = SubElement(root, "PFD", {"A": f"{field.name} {data.captured_at.isoformat()}"})
-    boundary = unary_union([z.geometry for z in data.zones]).convex_hull
+    # граница поля = объединение зон (кластеризация делит всё валидное поле)
+    boundary = unary_union([z.geometry for z in data.zones])
     _polygon_xml(pfd, boundary, "1")
     for z in data.zones:
         trt = SubElement(pfd, "TRT", {"A": f"Зона {z.zone} ({z.label})"})
