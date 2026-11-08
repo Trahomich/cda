@@ -1745,12 +1745,34 @@ polygon.card360__polygon {
 
 /* ── Дифференцированное внесение (§7.4): карта зон + таблица ── */
 
+/* Превью карты — кнопка, открывающая лайтбокс (#141) */
+.card360__vra-map-btn {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+}
+
+.card360__vra-map-btn:disabled {
+  cursor: default;
+}
+
+.card360__vra-map-btn .card360__vra-map {
+  display: block;
+}
+
 .card360__vra-map {
   width: 100%;
   max-width: 280px;
   background: #f1f8e9;
   border: 1px solid #c5e1a5;
   border-radius: 6px;
+}
+
+.card360__vra-legend {
+  font-size: 0.8rem;
+  margin: 0;
 }
 
 .card360__vra-contour {
