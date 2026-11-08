@@ -539,7 +539,9 @@ def weather_map(
         observations = per_field.get(field_id, {})
         value: float | None = None
         updated_at: date | None = max(observations) if observations else None
-        if metric in ("precip_7d", "precip_14d"):
+        if not observations:
+            value = None  # наблюдений нет — метрика не определена (§7.8)
+        elif metric in ("precip_7d", "precip_14d"):
             value = round(
                 sum(
                     float(o.precipitation_mm or 0.0)
@@ -548,7 +550,7 @@ def weather_map(
                 ),
                 1,
             )
-        elif observations:
+        else:
             latest = observations[max(observations)]
             if metric == "t_now":
                 if latest.temperature_avg_c is not None:
