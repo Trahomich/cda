@@ -1,7 +1,8 @@
-"""Схемы «Выводов ассистента» (AI-01b, docs/06 §7.4, 09-ai §8.2, задача #93)."""
+"""Схемы «Выводов ассистента» (AI-01b, docs/06 §7.4, 09-ai §8.2, задача #93)
+и AI-рекомендаций «что делать сейчас» (API-55/56, 09-ai §9.3, задача #120)."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel
