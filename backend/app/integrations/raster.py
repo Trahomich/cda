@@ -103,12 +103,18 @@ def compute_ndwi_array(green: np.ndarray, nir: np.ndarray) -> np.ndarray:
 
 
 def validate_index_values(index: str, values: np.ndarray) -> None:
-    """Диапазон [−1; 1] — иначе DataQualityError (05 §5, правило 4)."""
+    """Диапазон по INDEX_BOUNDS (по умолчанию [−1; 1]) — иначе DataQualityError.
+
+    EVI — исключение (§7.7): физический диапазон шире, до ~2.5.
+    """
     if values.size == 0:
         return
+    lo_bound, hi_bound = INDEX_BOUNDS.get(index, (-1.0, 1.0))
     lo, hi = float(np.nanmin(values)), float(np.nanmax(values))
-    if lo < -1.0 or hi > 1.0:
-        raise DataQualityError(f"Индекс {index} вне [−1; 1]: min={lo:.3f}, max={hi:.3f} (05 §5)")
+    if lo < lo_bound or hi > hi_bound:
+        raise DataQualityError(
+            f"Индекс {index} вне [{lo_bound}; {hi_bound}]: min={lo:.3f}, max={hi:.3f} (05 §5)"
+        )
 
 
 def stats_over_mask(values: np.ndarray, mask: np.ndarray) -> tuple[float, float, float]:
