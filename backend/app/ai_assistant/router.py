@@ -51,3 +51,77 @@ def field_insights(
             status_code=404,
         )
     return service.get_insights(db, field, background, settings, year=year)
+
+
+def _get_field_or_404(db: Session, field_id: uuid.UUID) -> Field:
+    field = db.get(Field, field_id)
+    if field is None:
+        raise AppError(
+            f"Поле {field_id} не найдено",
+            code="field_not_found",
+            title="Не найдено",
+            status_code=404,
+        )
+    return field
+
+
+@router.get(
+    "/fields/{field_id}/ai/advice",
+    response_model=AdviceResponse,
+    summary="Последняя AI-рекомендация «что делать сейчас» (API-55)",
+)
+def field_advice(field_id: uuid.UUID, db: DbSession) -> AdviceResponse:
+    _get_field_or_404(db, field_id)
+    record = db.scalars(
+        select(AIFieldAdvice)
+        .where(AIFieldAdvice.field_id == field_id)
+        .order_by(AIFieldAdvice.created_at.desc())
+        .limit(1)
+    ).first()
+    if record is None:
+        raise AppError(
+            f"Для поля {field_id} ещё нет AI-рекомендации",
+            code="advice_not_found",
+            title="Не найдено",
+            status_code=404,
+        )
+    return AdviceResponse.model_validate(record, from_attributes=True)
+
+
+@router.post(
+    "/fields/{field_id}/ai/advice",
+    status_code=http_status.HTTP_202_ACCEPTED,
+    summary="Принудительный пересчёт AI-рекомендации в фоне (API-55)",
+)
+def field_advice_refresh(field_id: uuid.UUID, db: DbSession) -> dict[str, str]:
+    _get_field_or_404(db, field_id)
+    advice.queue_advice(field_id)
+    return {"status": "queued"}
+
+
+@router.get(
+    "/fields/{field_id}/ai/advice/history",
+    response_model=AdviceHistoryResponse,
+    summary="История AI-рекомендаций поля, desc по created_at (API-56)",
+)
+def field_advice_history(
+    field_id: uuid.UUID,
+    db: DbSession,
+    *,
+    date_from: Annotated[date | None, Query(alias="from")] = None,
+    date_to: Annotated[date | None, Query(alias="to")] = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 30,
+) -> AdviceHistoryResponse:
+    """История рекомендаций (§9.3); ``from``/``to`` — по ``advice_date``."""
+    _get_field_or_404(db, field_id)
+    stmt = select(AIFieldAdvice).where(AIFieldAdvice.field_id == field_id)
+    if date_from is not None:
+        stmt = stmt.where(AIFieldAdvice.advice_date >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(AIFieldAdvice.advice_date <= date_to)
+    records = db.scalars(
+        stmt.order_by(AIFieldAdvice.created_at.desc()).limit(limit)
+    ).all()
+    return AdviceHistoryResponse(
+        items=[AdviceResponse.model_validate(r, from_attributes=True) for r in records]
+    )
