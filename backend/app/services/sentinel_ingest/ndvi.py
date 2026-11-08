@@ -321,12 +321,16 @@ def _finish(item: SatelliteCatalogItem, status: str, error: str | None) -> None:
     item.processed_at = datetime.now(tz=UTC)
 
 
-def apply_row_result(db: Session, item: SatelliteCatalogItem, result) -> str:
+def apply_row_result(db: Session, item: SatelliteCatalogItem, result, extras=None) -> str:
     """Готовый результат zonal_ndvi (или исключение) → запись БД, исход.
 
     'scene' — сцена записана; 'cloud' — >60 %, не сохранена; 'gap'/'failed' —
     строка каталога failed с причиной. SourceUnavailableError пробрасывается
     (строка остаётся cataloged — повтор следующим циклом).
+
+    extras — статистика индексов §7.7 (#128, indices.IndexStat): пишется
+    отдельными сценами вместе со сценой ndvi; сбой одного индекса не влияет
+    на сцену (indices сам решает, что пропустить).
     """
     if isinstance(result, BaseException):
         if isinstance(result, SourceUnavailableError):
@@ -347,6 +351,10 @@ def apply_row_result(db: Session, item: SatelliteCatalogItem, result) -> str:
         return "cloud"
 
     inserted = scene_upsert(db, item.field_id, item.captured_at, stats)
+    if extras:
+        from app.services.sentinel_ingest.indices import upsert_scene_indices
+
+        upsert_scene_indices(db, item.field_id, item.captured_at, extras)
     _finish(item, "processed", None)
     logger.info(
         "sentinel-ndvi: %s поле %s — ndvi avg %.3f (min %.3f, max %.3f, std %.3f), "
