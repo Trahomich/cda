@@ -174,8 +174,8 @@ onMounted(async () => {
       saved && fields.value.some((f) => f.field_id === saved)
         ? saved
         : (fields.value[0]?.field_id ?? '')
-    if (fieldId.value) rememberField(fieldId.value)
-    await load()
+    // Смена fieldId запускает загрузку (watch ниже); без полей — не грузим.
+    if (!fieldId.value) loading.value = false
   } catch {
     failed.value = true
     loading.value = false
