@@ -147,9 +147,7 @@ class TestIsoxml:
 def _uniform_rasters(tmp_path) -> dict:
     """Полностью однородная сцена (NIR без шума): зоны 1 и 3 пусты —
     только зона 2 «среднее» (кластеризация при p30 == p70 == всем пикселям)."""
-    import numpy as np
-
-    from tests.test_vra import _write_tif
+    from tests.test_vra import CRS, N, _write_tif
 
     t10 = Affine(10.0, 0.0, 300000.0, 0.0, -10.0, 5762000.0)
     t20 = Affine(20.0, 0.0, 300000.0, 0.0, -20.0, 5762000.0)
@@ -162,7 +160,9 @@ def _uniform_rasters(tmp_path) -> dict:
 class TestEmptyZoneAlignment:
     """Ревью #125: пустые зоны не должны сдвигать выравнивание зон и доз."""
 
-    def test_uniform_field_single_zone_correct_dose(self, client, db_session, tmp_path, agro_headers):
+    def test_uniform_field_single_zone_correct_dose(
+        self, client, db_session, tmp_path, agro_headers
+    ):
         """Однородное поле: единственная зона 2 (dose_factor 1.0, доза = базе).
 
         Наивный zip зон с тремя масками терял зону 2 (маска 1 пуста).
@@ -175,7 +175,9 @@ class TestEmptyZoneAlignment:
         make_approved_fertilizing(db_session, field_id, "kg_ha", dose=100.0)
 
         resp = client.get(
-            f"{API}/fields/{field_id}/vra/export", params={"format": "geojson"}, headers=agro_headers
+            f"{API}/fields/{field_id}/vra/export",
+            params={"format": "geojson"},
+            headers=agro_headers,
         )
         assert resp.status_code == 200, resp.text
         feats = json.loads(resp.text)["features"]
