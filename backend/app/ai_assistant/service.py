@@ -546,6 +546,8 @@ def refresh_insights(field_id: uuid.UUID, day: date, year: int | None = None) ->
                 items,
                 context,
             )
+            # #131: после guardrail — санитайзер (вывод без markdown)
+            summary = strip_markdown(summary) if summary is not None else None
         finally:
             _llm_semaphore.release()
     else:
