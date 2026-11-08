@@ -46,14 +46,11 @@ const gridVals = computed(() =>
 
 /** Метки месяцев (фиксированная сетка месяцев года). */
 const monthTicks = computed(() => {
-  const n = props.items.length
-  const out: Array<{ px: number; label: string }> = []
   const names = ['янв', 'мар', 'май', 'июл', 'сен', 'ноя']
-  names.forEach((label, k) => {
-    out.push({ px: PAD.left + (plotW * k) / (names.length - 1), label })
-  })
-  void n
-  return out
+  return names.map((label, k) => ({
+    px: PAD.left + (plotW * k) / (names.length - 1),
+    label,
+  }))
 })
 </script>
 
