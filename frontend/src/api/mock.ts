@@ -770,7 +770,7 @@ function insightsOf(
   }
   return {
     field_id: fieldId,
-    generated_at: '2027-07-31T10:00:00Z',
+    generated_at: `${year}-07-31T10:00:00Z`,
     source: 'rules',
     summary: null,
     items,
