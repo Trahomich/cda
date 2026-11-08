@@ -188,6 +188,7 @@ erDiagram
 | API-57 | GET /weather/history?field_id&date_from&date_to&limit&offset | ежедневная история фактов погоды по полю, включая облачность/снег/часы осадков (#126, карточка погоды); постранично, поля факта — как в API-07 (§7.8); 422 invalid_period, 404 field_not_found | REQ-F-024 |
 | API-58 | GET /weather/gdd?field_id&year | накопительная GDD-кривая с 1 января года (base 5 °C): items {date, gdd_day, gdd_cum}, total, norm_cum (многолетняя норма, null при <2 годах; §7.8) | REQ-F-024; #132 |
 | API-59 | GET /weather/windows | два режима: ?operation_type&field_id — одиночное окно (RULE-AGRO-09, было раньше, +nearest_window_date); ?field_id[&only_planned=true] — список окон по типам операций из активных планов поля, планов нет → items=[]+hint (§7.8, #133) | REQ-F-025; #133 |
+| API-60 | GET /fields/{id}/vra/export?format=isoxml\|shp\|geojson | выгрузка карты зон дифвнесения с дозами: ISOXML (терминалы), Shapefile (ГИС), GeoJSON; 422 vra_no_base_dose (§7.4) | REQ-F-010; #125 |
 
 Пост-MVP (описаны в своих документах, здесь — только индекс): API-36..39 —
 агроскаутинг (docs/11-agroscouting.md §5), API-40..45 — экономика
