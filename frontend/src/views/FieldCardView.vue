@@ -414,6 +414,90 @@ function doseLabel(zone: VraZoneItem): string {
   return `${zone.dose_factor > 1 ? '+' : '−'}${pct} %`
 }
 
+/* ── «Что делать сейчас»: AI-рекомендация (API-55/56, §9.3, #137) ── */
+
+const advice = ref<FieldAdvice | null>(null)
+const adviceLoading = ref(true)
+/** POST прошёл (202 queued) — опрашиваем результат. */
+const adviceBusy = ref(false)
+const adviceError = ref(false)
+const adviceHistory = ref<FieldAdvice[]>([])
+const adviceTotal = ref(0)
+const adviceHistoryOpen = ref(false)
+const ADVICE_PAGE = 20
+/** Поллинг после 202 queued: каждые 10 с, максимум 12 попыток (~2 мин). */
+const ADVICE_POLL_MS = 10_000
+const ADVICE_POLL_MAX = 12
+let advicePollTimer: ReturnType<typeof setTimeout> | null = null
+let advicePollLeft = 0
+/** Метка, по которой отличаем «свою» серию опросов от перезагрузки. */
+let advicePollToken = 0
+
+async function loadAdvice(): Promise<void> {
+  const got = await getFieldAdvice(fieldId)
+  if (got && adviceBusy.value && got.created_at !== advice.value?.created_at) {
+    // Пересчёт завершился — останавливаем поллинг.
+    stopAdvicePoll()
+  }
+  advice.value = got
+  adviceLoading.value = false
+}
+
+function stopAdvicePoll(): void {
+  adviceBusy.value = false
+  if (advicePollTimer != null) {
+    clearTimeout(advicePollTimer)
+    advicePollTimer = null
+  }
+}
+
+function scheduleAdvicePoll(token: number): void {
+  if (token !== advicePollToken || advicePollLeft <= 0) {
+    stopAdvicePoll()
+    return
+  }
+  advicePollLeft--
+  advicePollTimer = setTimeout(async () => {
+    await loadAdvice()
+    if (adviceBusy.value) scheduleAdvicePoll(token)
+  }, ADVICE_POLL_MS)
+}
+
+/** POST → 202 queued → индикатор + поллинг GET до новой записи (~2 мин). */
+async function recalcAdvice(): Promise<void> {
+  adviceError.value = false
+  try {
+    await refreshFieldAdvice(fieldId)
+    adviceBusy.value = true
+    advicePollLeft = ADVICE_POLL_MAX
+    advicePollToken++
+    scheduleAdvicePoll(advicePollToken)
+  } catch {
+    adviceError.value = true
+  }
+}
+
+async function loadAdviceHistory(): Promise<void> {
+  try {
+    const page = await getFieldAdviceHistory(fieldId, {
+      limit: ADVICE_PAGE,
+      offset: adviceHistory.value.length,
+    })
+    adviceHistory.value = [...adviceHistory.value, ...page.items]
+    adviceTotal.value = Math.max(adviceTotal.value, adviceHistory.value.length)
+    // «Показать ещё» прячем, когда страница пришла неполной.
+    if (page.items.length < ADVICE_PAGE) adviceTotal.value = adviceHistory.value.length
+  } catch {
+    adviceTotal.value = adviceHistory.value.length
+  }
+}
+
+watch(adviceHistoryOpen, (open) => {
+  if (open && !adviceHistory.value.length) void loadAdviceHistory()
+})
+
+onUnmounted(() => stopAdvicePoll())
+
 /* ── Прогноз урожайности (API-53, §7.4) ── */
 
 const yieldForecast = ref<YieldForecastResponse | 'insufficient' | null>(null)
