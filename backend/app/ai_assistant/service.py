@@ -38,6 +38,7 @@ from app.models.agronomy import CropCycle, Field, FieldOperation
 from app.models.references import Culture
 from app.modules.satellite import vra
 from app.modules.satellite.waterlog import precip_sums_7d, waterlogged
+from app.services.sentinel_ingest.renders import render_path
 
 logger = logging.getLogger(__name__)
 
