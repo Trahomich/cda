@@ -427,7 +427,7 @@ approve (API-16) ответ (200/201) дополняется объектом `w
   Дозы — рекомендация, а не план: корректировка применяется агрономом при
   создании плана API-15 (создание VRA-плана одной кнопкой — не MVP).
 
-- **Выгрузка карты дифвнесения (API-57, #125)**: `GET /fields/{id}/vra/
+- **Выгрузка карты дифвнесения (API-60, #125)**: `GET /fields/{id}/vra/
   export?format=isoxml|shp|geojson[&base_dose_kg_ha=…][&year=YYYY]` — файл
   для бортового терминала / ГИС: ISOXML (ISO 11783-10 TASKDATA v4, ZIP с
   TASKDATA.XML: PFD с границей поля PLN type 1 + зоны как TRT с PDV DDI 1
