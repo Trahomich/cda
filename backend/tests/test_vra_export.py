@@ -144,6 +144,48 @@ class TestIsoxml:
             assert all(0 < int(p.get("D")) < 180_000_000 for p in points)
 
 
+def _uniform_rasters(tmp_path) -> dict:
+    """Полностью однородная сцена (NIR без шума): зоны 1 и 3 пусты —
+    только зона 2 «среднее» (кластеризация при p30 == p70 == всем пикселям)."""
+    import numpy as np
+
+    from tests.test_vra import _write_tif
+
+    t10 = Affine(10.0, 0.0, 300000.0, 0.0, -10.0, 5762000.0)
+    t20 = Affine(20.0, 0.0, 300000.0, 0.0, -20.0, 5762000.0)
+    red = _write_tif(tmp_path / "b04.tif", np.full((N, N), 800, "uint16"), t10, CRS)
+    nir = _write_tif(tmp_path / "b08.tif", np.full((N, N), 3000, "uint16"), t10, CRS)
+    scl = _write_tif(tmp_path / "scl.tif", np.full((N // 2, N), 4, "uint8"), t20, CRS)
+    return {"b04": red, "b08": nir, "scl": scl}
+
+
+class TestEmptyZoneAlignment:
+    """Ревью #125: пустые зоны не должны сдвигать выравнивание зон и доз."""
+
+    def test_uniform_field_single_zone_correct_dose(self, client, db_session, tmp_path, agro_headers):
+        """Однородное поле: единственная зона 2 (dose_factor 1.0, доза = базе).
+
+        Наивный zip зон с тремя масками терял зону 2 (маска 1 пуста).
+        """
+        from tests.test_vra import make_approved_fertilizing
+
+        make_satellite_source(db_session)
+        field_id = make_field(db_session, name="Однородное-эксп")
+        make_scene(db_session, field_id, _uniform_rasters(tmp_path / "uni"))
+        make_approved_fertilizing(db_session, field_id, "kg_ha", dose=100.0)
+
+        resp = client.get(
+            f"{API}/fields/{field_id}/vra/export", params={"format": "geojson"}, headers=agro_headers
+        )
+        assert resp.status_code == 200, resp.text
+        feats = json.loads(resp.text)["features"]
+        assert len(feats) == 1
+        props = feats[0]["properties"]
+        assert props["zone"] == 2
+        assert props["dose_factor"] == 1.0
+        assert props["dose_kg_ha"] == 100.0  # не сдвинутая доза зоны 3
+
+
 class TestErrorsAndRbac:
     def test_no_base_dose_422(self, client, db_session, tmp_path, agro_headers):
         make_satellite_source(db_session)
