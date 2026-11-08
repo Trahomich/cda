@@ -426,20 +426,45 @@ def detect_agrochem_low(probe: Agrochem | None) -> InsightItem | None:
     )
 
 
-def detect_vra_heterogeneity(iqr_ndvi: float | None, day: date | None) -> InsightItem | None:
-    """info: IQR NDVI ≥ 0.12 — поле неоднородно, есть зоны для дифвнесения."""
-    if iqr_ndvi is None or day is None or iqr_ndvi < VRA_MIN_IQR:
+def detect_vra_heterogeneity(
+    peaks: Sequence[tuple[date, float, float]],
+) -> InsightItem | None:
+    """info: неоднородность подтверждена по пиковым сценам вегетации (§8.2 v1.7).
+
+    peaks — кортежи (дата, IQR NDVI, spatial_spread) топ-пиковых сцен сезона.
+    Срабатывает при p90−p10 средних ячеек ≥ VRA_SPREAD_MIN минимум на
+    max(1, len−1) сценах (при 3 пиках — на 2, §7.4 v1.7) ИЛИ при пиксельном
+    IQR ≥ VRA_MIN_IQR на стольких же: устойчивая неоднородность, а не шум
+    одной сцены. Ворота однородности удалены: зоны строятся всегда, детектор
+    лишь информирует, что дифвнесение обосновано.
+    """
+    if not peaks:
+        return None
+    need = max(1, len(peaks) - 1)
+    spread_hits = [p for p in peaks if p[2] >= VRA_SPREAD_MIN]
+    iqr_hits = [p for p in peaks if p[1] >= VRA_MIN_IQR]
+    if len(spread_hits) < need and len(iqr_hits) < need:
         return None
     return InsightItem(
         code="vra_heterogeneity",
         severity="info",
         title="Неоднородность посева — дифвнесение",
         detail=(
-            f"IQR NDVI {iqr_ndvi:.2f} ≥ {VRA_MIN_IQR:.2f} (сцена {day.isoformat()}) — "
-            "разброс развития внутри поля значим. Постройте зоны дифференцированного "
-            "внесения: раздел «Зоны VRA» карточки поля (GET /fields/{id}/vra)."
+            f"Неоднородность подтверждена по пиковым сценам вегетации: "
+            f"пространственный разброс p90−p10 ≥ {VRA_SPREAD_MIN:.2f} на "
+            f"{len(spread_hits)} из {len(peaks)} сцен, IQR NDVI ≥ {VRA_MIN_IQR:.2f} на "
+            f"{len(iqr_hits)} — есть зоны для дифференцированного внесения. "
+            "Раздел «Зоны VRA» карточки поля (GET /fields/{id}/vra)."
         ),
-        data_refs=[{"source": "vra", "captured_at": day.isoformat(), "iqr_ndvi": iqr_ndvi}],
+        data_refs=[
+            {
+                "source": "vra",
+                "captured_at": d.isoformat(),
+                "iqr_ndvi": iqr,
+                "spatial_spread": spread,
+            }
+            for d, iqr, spread in peaks
+        ],
     )
 
 
