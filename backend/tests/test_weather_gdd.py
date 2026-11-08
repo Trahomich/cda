@@ -160,12 +160,15 @@ class TestGddErrors:
         assert resp.status_code == 404
         assert resp.json()["code"] == "field_not_found"
 
-    def test_invalid_year_422(self, client, db_session, headers):
+    def test_invalid_year_400(self, client, db_session, headers):
+        """Невалидный год — ошибка валидации 400 (422 в проекте зарезервирован
+        под бизнес-правила, errors.py: RequestValidationError → 400)."""
         field_id = make_field(db_session, name="GDD-err")
         resp = client.get(
             f"{API}/weather/gdd", params={"field_id": field_id, "year": 1999}, headers=headers
         )
-        assert resp.status_code == 422
+        assert resp.status_code == 400
+        assert resp.json()["code"] == "validation_error"
 
     def test_no_data_year_empty_items(self, client, db_session, headers):
         """Года без наблюдений — items=[], total=0, norm=null."""
