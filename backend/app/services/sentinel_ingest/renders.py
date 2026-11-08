@@ -104,10 +104,40 @@ _FONT_3X5: dict[str, tuple[int, ...]] = {
 }
 
 #: цвет текста и подложки легенды (§7.3 #123): светлый текст на тёмной
-#: полупрозрачной панели — читаем поверх любой карты
+#: полупрозрачной панели — читаем на любом фоне
 _LEGEND_TEXT = (245, 245, 245)
 _LEGEND_PANEL = (17, 17, 17)
 _LEGEND_PANEL_ALPHA = 160
+
+#: полоса легенды ПОД полем (вне контура, §7.3 #123, уточнение #385):
+#: канва выше растра на ~8% (13–96 px); bbox расширяется на юг
+#: пропорционально — отображение пиксель↔градус остаётся равномерным,
+#: поле в оверлее по-прежнему совпадает с контуром
+LEGEND_STRIP_FRAC = 0.08
+LEGEND_STRIP_MIN_PX = 13  # легенда масштаба k=1: панель 13 px в высоту
+LEGEND_STRIP_MAX_PX = 96
+
+#: растр (без полосы легенды) прореживается до этого размера, чтобы канва
+#: с легендой не превысила MAX_SIDE_PX
+MAX_RASTER_PX = MAX_SIDE_PX - LEGEND_STRIP_MAX_PX
+
+
+def legend_strip_height(raster_h: int) -> int:
+    """Высота полосы легенды под растром: ~8% высоты растра, 13–96 px."""
+    return min(
+        LEGEND_STRIP_MAX_PX, max(LEGEND_STRIP_MIN_PX, math.ceil(raster_h * LEGEND_STRIP_FRAC))
+    )
+
+
+def canvas_with_strip(
+    rgb: np.ndarray, alpha: np.ndarray, strip_h: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """Канва (растр + пустая полоса легенды снизу), копия массивов."""
+    h, w = alpha.shape
+    rgb_c = np.zeros((h + strip_h, w, 3), dtype="uint8")
+    alpha_c = np.zeros((h + strip_h, w), dtype="uint8")
+    rgb_c[:h], alpha_c[:h] = rgb, alpha
+    return rgb_c, alpha_c
 
 
 def _text_px(text: str, k: int) -> int:
