@@ -27,10 +27,10 @@ test('карточка поля: график NDVI — оси, значения,
   await expect(ticks.first()).toHaveText('0')
   await expect(ticks.last()).toHaveText('1')
 
-  // Даты всех 9 сцен, читаемо: первая и последняя на местах.
+  // Даты всех 9 сцен, читаемо: первая (с годом — #142) и последняя на местах.
   const dates = page.locator('.ndvi__date')
   await expect.poll(async () => await dates.count()).toBeGreaterThanOrEqual(9)
-  await expect(dates.first()).toHaveText('10.04')
+  await expect(dates.first()).toHaveText('10.04.27')
   await expect(dates.last()).toHaveText('31.07')
 
   // Полоса min–max по сценам и линия по «чистым» точкам есть.
