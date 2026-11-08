@@ -2048,7 +2048,23 @@ export class MockTransport implements Transport {
         )
       }
       const type = params.get('operation_type') as WindowOperationType | null
-      if (!type || !(type in OP_WINDOW_LABELS)) {
+      // Списочная форма only_planned (#133, обсуждение #134 #393): только типы
+      // операций из активных планов поля; без планов — hint, не ошибка.
+      if (!type) {
+        const planned = new Set(
+          TREATMENTS.filter((t) => {
+            const ctx = fieldOfCycle(t.cycle_id)
+            return ctx?.field.field_id === fieldId && t.status !== 'completed' && t.status !== 'cancelled'
+          }).map((t) => t.operation_type),
+        )
+        return ok({
+          field_id: fieldId,
+          only_planned: params.get('only_planned') !== 'false',
+          items: [...planned].map((op) => windowsOf(n, op as WindowOperationType, fieldId)),
+          hint: planned.size ? null : 'нет активных планов операций',
+        })
+      }
+      if (!(type in OP_WINDOW_LABELS)) {
         return problem(
           400,
           'https://cda.example/errors/validation',
@@ -2057,6 +2073,64 @@ export class MockTransport implements Transport {
         )
       }
       return ok(windowsOf(n, type, fieldId))
+    }
+
+    /* ── История фактов (API-57, #126/#132) и GDD с начала года (#132) ── */
+    if (method === 'GET' && pathname === '/weather/history') {
+      const fieldId = params.get('field_id') ?? ''
+      const n = FIELD_N.get(fieldId)
+      if (n === undefined) {
+        return problem(
+          404,
+          'https://cda.example/errors/field-not-found',
+          'Поле не найдено',
+          `Поле ${fieldId} не найдено`,
+        )
+      }
+      const from = params.get('date_from')
+      const to = params.get('date_to')
+      if (!from || !to || from > to) {
+        return problem(
+          422,
+          'https://cda.example/errors/invalid-period',
+          'Некорректный период',
+          'Укажите date_from и date_to (date_from ≤ date_to)',
+        )
+      }
+      const spanDays = Math.round((Date.parse(to) - Date.parse(from)) / DAY) + 1
+      if (spanDays > 400) {
+        return problem(
+          422,
+          'https://cda.example/errors/too-wide',
+          'Период слишком широк',
+          `Запрошено ${spanDays} суток, максимум 400`,
+        )
+      }
+      const items = historyAll(n).filter((d) => d.date >= from && d.date <= to)
+      return ok({ items, total: items.length, limit: 400, offset: 0 })
+    }
+
+    if (method === 'GET' && pathname === '/weather/gdd') {
+      const fieldId = params.get('field_id') ?? ''
+      const n = FIELD_N.get(fieldId)
+      if (n === undefined) {
+        return problem(
+          404,
+          'https://cda.example/errors/field-not-found',
+          'Поле не найдено',
+          `Поле ${fieldId} не найдено`,
+        )
+      }
+      const year = Number(params.get('year') ?? new Date(NOW).getUTCFullYear())
+      const { items, norm_cum } = gddOf(n, year)
+      return ok({
+        field_id: fieldId,
+        year,
+        base_c: 5,
+        total: items.at(-1)?.gdd_cum ?? 0,
+        items,
+        norm_cum,
+      })
     }
 
     /* ── Источники данных (E-14, API-28) ── */
