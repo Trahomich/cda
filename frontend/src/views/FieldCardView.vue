@@ -1765,6 +1765,58 @@ polygon.card360__polygon {
   box-shadow: inset 3px 0 0 #81c784;
 }
 
+/* Выгрузка карты дифвнесения (API-60, #140): формат + кнопка,
+   при 422 vra_no_base_dose — поле ввода базовой дозы. */
+.card360__vra-export {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.card360__vra-export-label,
+.card360__vra-export-dose {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #455a64;
+}
+
+.card360__vra-export-format,
+.card360__vra-export-input {
+  border: 1px solid #cfd8dc;
+  border-radius: 6px;
+  padding: 0.3rem 0.45rem;
+  font-size: 0.85rem;
+  background: #fff;
+}
+
+.card360__vra-export-btn {
+  border: 1px solid var(--cda-green, #2e7d32);
+  background: var(--cda-green, #2e7d32);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.card360__vra-export-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.card360__vra-export-input {
+  width: 7.5rem;
+}
+
+.card360__vra-export-error {
+  margin: 0;
+  color: #c62828;
+}
+
 /* ── Прогноз урожайности (§7.4) ── */
 
 .card360__yield-value {
