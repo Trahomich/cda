@@ -98,3 +98,21 @@ test('выход из полевого режима: кнопка в шапке 
   await page.waitForURL(/\/fields\/map/)
   await expect(page.locator('.cabinet__header')).toBeVisible()
 })
+
+test('меню кабинета: точка-индикация «почти готово» у Поля/Календарь/Погода (#136)', async ({
+  page,
+}) => {
+  await page.goto('/login')
+  await page.locator('.login__submit').click()
+  await page.waitForURL(/\/fields\/map/)
+
+  // Лёгкая индикация — только у трёх разделов, остальные пункты не тронуты.
+  const ready = page.locator('.cabinet__nav--ready')
+  await expect(ready).toHaveCount(3)
+  for (const label of ['Поля', 'Календарь', 'Погода']) {
+    await expect(page.locator('.cabinet__nav--ready', { hasText: label })).toBeVisible()
+  }
+  await expect(page.locator('.cabinet__nav', { hasText: 'Севооборот' })).not.toHaveClass(
+    /cabinet__nav--ready/,
+  )
+})
