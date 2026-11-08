@@ -94,7 +94,6 @@ class TestAdviceAPI:
         assert data["model"] == "glm-5.3-flash"
         assert data["provider"] == "anthropic"
         assert data["status"] == "fallback"
-        assert data["context_hash"] if "context_hash" in data else True  # в схеме нет
         assert data["answer"] == last.answer
 
     def test_get_advice_not_found(self):
