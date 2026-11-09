@@ -102,9 +102,8 @@ def main() -> int:
     # 1) справочник: что изменится
     rate_changes = {t: (rates.get(t), v) for t, v in RATE_RUB_GA.items() if rates.get(t) != v}
     print(f"операций 2023–2026 (без cancelled): {len(ops)}")
-    print(
-        f"нормативы к обновлению: { {t: f'{old} → {new}' for t, (old, new) in rate_changes.items()} }"
-    )
+    printable = {t: f"{old} → {new}" for t, (old, new) in rate_changes.items()}
+    print(f"нормативы к обновлению: {printable}")
 
     # 2) стоимости
     to_update = []
@@ -142,7 +141,7 @@ def main() -> int:
     if args.fix:
         backup = []
         with engine.begin() as db:
-            for t, (old, new) in rate_changes.items():
+            for t, (_old, new) in rate_changes.items():
                 db.execute(
                     text("update ref_operation_cost set rub_per_ga = :v where operation_type = :t"),
                     {"v": new, "t": t},
@@ -151,7 +150,8 @@ def main() -> int:
                 row = dict(
                     db.execute(
                         text(
-                            "select id, cost_mode, cost_value from dat_field_operation where id = :i"
+                            "select id, cost_mode, cost_value from dat_field_operation "
+                            "where id = :i"
                         ),
                         {"i": r["id"]},
                     )
