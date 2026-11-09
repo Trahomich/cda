@@ -530,13 +530,19 @@ _EXTRA_INDEX_HINTS = {
 
 
 def extra_indices_series(
-    db: Session, field_id: uuid.UUID, *, year: int | None = None, limit: int = 3
+    db: Session,
+    field_id: uuid.UUID,
+    *,
+    year: int | None = None,
+    limit: int = 3,
+    as_of: date | None = None,
 ) -> list[tuple[str, list[tuple[date, float]]]]:
     """Последние limit сцен каждого нового индекса сезона (#153).
 
     Вегетационные индексы (ndre/ndmi/evi) — сцены апреля–октября, NDSI —
     зимние (декабрь Y−1 … март Y для сезона Y), BSI — любые. Внутри дня
     одна сцена (UQ); порядок — по убыванию даты, как у load_scenes.
+    as_of (ретро-режим #159): только сцены, снятые не позже этой даты.
     """
     out: list[tuple[str, list[tuple[date, float]]]] = []
     for index in EXTRA_CONTEXT_INDICES:
@@ -551,6 +557,8 @@ def extra_indices_series(
         else:
             if year is not None:
                 filters.append(func.extract("year", SatelliteScene.captured_at) == year)
+        if as_of is not None:
+            filters.append(SatelliteScene.captured_at <= as_of)
         rows = db.execute(
             select(SatelliteScene.captured_at, SatelliteScene.index_avg)
             .where(*filters)
