@@ -577,14 +577,20 @@ def extra_indices_series(
 
 
 def extra_indices_context(
-    db: Session, field_id: uuid.UUID, *, year: int | None = None, limit: int = 3
+    db: Session,
+    field_id: uuid.UUID,
+    *,
+    year: int | None = None,
+    limit: int = 3,
+    as_of: date | None = None,
 ) -> str | None:
     """Секция «Другие индексы сезона» для LLM-контекста (§8.2/§9.1, #153).
 
     None — ни одного рассчитанного индекса сезона (секция не пишется).
     Только реально рассчитанные значения; null не упоминается.
+    as_of (ретро #159) — только сцены ≤ даты.
     """
-    series = extra_indices_series(db, field_id, year=year, limit=limit)
+    series = extra_indices_series(db, field_id, year=year, limit=limit, as_of=as_of)
     if not series:
         return None
     parts = [
