@@ -156,6 +156,7 @@ test('паспорт поля: порядок блоков по #372/#150', asyn
   const agro = idx('Агрохимия')
   const vra = idx('Дифференцированное внесение')
   const forecast = idx('Прогноз урожайности')
+  const econ = idx('Экономика сезона')
   expect(map).toBeGreaterThanOrEqual(0)
   expect(ndvi).toBeGreaterThan(map)
   expect(weather).toBeGreaterThan(ndvi)
@@ -163,7 +164,9 @@ test('паспорт поля: порядок блоков по #372/#150', asyn
   expect(agro).toBeGreaterThan(plans)
   expect(vra).toBeGreaterThan(agro)
   expect(forecast).toBeGreaterThan(vra)
+  // #163: экономика — после прогноза, до ассистента
+  expect(econ).toBeGreaterThan(forecast)
+  expect(insights).toBeGreaterThan(econ)
   // #150: блок ассистента — самый последний
-  expect(insights).toBeGreaterThan(forecast)
   expect(insights).toBe(order.length - 1)
 })
