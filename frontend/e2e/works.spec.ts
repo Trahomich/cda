@@ -124,7 +124,7 @@ test('карточка поля: вкладка «Работы» — план и
   await expect(works).toBeVisible()
   // Мок: у поля №1 — план внесения (25.04.2027) и факт обработки почвы
   // (02.07.2027); хронология свежими сверху.
-  await expect(works.locator('.card360__works-chip--fact')).toContainText('факт')
-  await expect(works.locator('.card360__works-chip--plan')).toContainText('план')
+  await expect(works.locator('.card360__works-chip--fact').first()).toContainText('факт')
+  await expect(works.locator('.card360__works-chip--plan').first()).toContainText('план')
   await expect(works.locator('.card360__works-item').first()).toContainText('2027-07-02')
 })
