@@ -17,11 +17,13 @@ test('карточка поля: оверлей NDVI-сцены появляет
 }) => {
   await page.goto(`/fields/${FIRST_FIELD}`)
 
-  // Контролы слоя у NDVI-таймлайна (после загрузки блока).
+  // Контролы слоя у NDVI-таймлайна (после загрузки блока); #583: «Контура»
+  // больше нет, «Снимок» переименован в «RGB».
   await expect(page.locator('.card360__layer-switch')).toBeVisible({ timeout: 15_000 })
   await expect(page.locator('.card360__layer-btn--ndvi')).toBeVisible()
   await expect(page.locator('.card360__layer-btn--truecolor')).toBeVisible()
-  await expect(page.locator('.card360__layer-btn--contour')).toBeVisible()
+  await expect(page.locator('.card360__layer-btn--truecolor')).toHaveText('RGB')
+  await expect(page.locator('.card360__layer-btn--contour')).toHaveCount(0)
 
   // По умолчанию — NDVI на последнюю дату с рендером (2027-07-31).
   await expect(page.locator('.card360__layer-btn--ndvi')).toHaveClass(/card360__layer-btn--active/)
