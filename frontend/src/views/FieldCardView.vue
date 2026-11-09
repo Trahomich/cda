@@ -29,6 +29,7 @@ import type {
   FieldAdvice,
   FieldCard,
   FieldCycle,
+  FieldEconomics,
   FieldOperation,
   FieldWeather,
   InsightSeverity,
