@@ -353,6 +353,7 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
     from app.ai_assistant.advice import generate_advice
     from app.models.agronomy import Field
     from app.models.ai import AIFieldAdvice
+    from app.models.integrations import SatelliteScene
 
     today = Date.today()
     pruned = 0
