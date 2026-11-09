@@ -19,7 +19,8 @@ from datetime import date, timedelta
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.agronomy import CropCycle, FieldOperation, Field
+from app.models.agronomy import CropCycle, FieldOperation
+from app.models.references import Culture
 
 logger = logging.getLogger(__name__)
 
