@@ -1,15 +1,19 @@
 <script setup lang="ts">
-// График NDVI-таймлайна (E-03, v2-fix-B): ось Y фиксирована [0, 1]
-// (вегетационный диапазон NDVI), сетка с делениями (значения у точек не
-// подписываем — v2-fix-G, только подсказка <title> и строка «Последний
-// снимок»), полоса min–max по сцене, последняя «чистая» точка выделена, облачные
-// снимки (cloud_pct > 80, 07-ux §3.2) — пустые кружки ◌ вне линии,
+// График временного ряда индекса (E-03, v2-fix-B; #151 — обобщение на все
+// индексы API-06): ось Y — фиксированный вегетационный диапазон [0, 1] для
+// NDVI (как раньше) или масштаб по фактическому диапазону выбранного индекса
+// (значения + полоса min–max по сцене), сетка с делениями (значения у точек
+// не подписываем — v2-fix-G, только подсказка <title> и строка «Последний
+// снимок»), полоса min–max по сцене, последняя «чистая» точка выделена,
+// облачные снимки (cloud_pct > 80, 07-ux §3.2) — пустые кружки ◌ вне линии,
 // низкое доверие источника (trust < 0.9) — штрих под точкой.
+// #544: если свежей сцены на «сегодня» нет (asOf), под строкой «Последний
+// снимок» — явная подпись «нет данных на …, показано за …».
 // Интерактивность (v2-fix-H): точки дат с PNG-снимком (selectable) кликабельны —
 // событие select выбирает дату слоя мини-карты; выбранная точка выделена.
 // SVG без зависимостей; доступность — role="img" + <title> у точек.
 import { computed } from 'vue'
-import type { NdviPoint } from '@/api/types'
+import type { NdviPoint, SceneIndex } from '@/api/types'
 
 const props = defineProps<{
   points: NdviPoint[]
@@ -17,6 +21,14 @@ const props = defineProps<{
   selectable?: string[]
   /** Выбранная дата слоя (выделяется на графике). */
   selected?: string
+  /** Индекс ряда (#151): NDVI — ось [0, 1]; прочие — по данным сезона. */
+  index?: SceneIndex
+  /** Короткая подпись индекса (NDVI/NDRE/…); по умолчанию — из index. */
+  label?: string
+  /** Русское название индекса (как у слоёв мини-карты #130). */
+  hint?: string
+  /** «Сегодня» (ISO-дата) для подписи «нет данных на …» (#544). */
+  asOf?: string
 }>()
 
 const emit = defineEmits<{ (e: 'select', date: string): void }>()
@@ -28,18 +40,48 @@ const PAD_R = 10
 const PAD_T = 18
 const PAD_B = 24
 
-/** Ось Y — фиксированный вегетационный диапазон NDVI [0, 1]. */
-const V_MIN = 0
-const V_MAX = 1
-const TICKS = [0, 0.25, 0.5, 0.75, 1]
-
 const CLOUD_LIMIT = 80
 const TRUST_LIMIT = 0.9
+
+const LABEL = computed(() => props.label ?? (props.index ?? 'ndvi').toUpperCase())
 
 const isCloudy = (p: NdviPoint) => p.cloud_pct > CLOUD_LIMIT
 
 const fmtVal = (v: number) => v.toLocaleString('ru-RU', { maximumFractionDigits: 2 })
 const fmtDate = (iso: string) => `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`
+
+/** Масштаб оси Y (#151): NDVI — фиксированный вегетационный диапазон [0, 1]
+ *  (прежнее поведение); прочие индексы — по фактическому диапазону данных
+ *  (значения точек и полосы min–max) с запасом и круглыми делениями. */
+const scale = computed(() => {
+  if ((props.index ?? 'ndvi') === 'ndvi') {
+    return { min: 0, max: 1, ticks: [0, 0.25, 0.5, 0.75, 1] }
+  }
+  const vals: number[] = []
+  for (const p of props.points) {
+    vals.push(p.ndvi)
+    if (p.index_min != null) vals.push(p.index_min)
+    if (p.index_max != null) vals.push(p.index_max)
+  }
+  if (!vals.length) return { min: 0, max: 1, ticks: [0, 0.5, 1] }
+  let lo = Math.min(...vals)
+  let hi = Math.max(...vals)
+  if (hi - lo < 0.15) {
+    const mid = (hi + lo) / 2
+    lo = mid - 0.1
+    hi = mid + 0.1
+  }
+  const span = hi - lo
+  const step = span <= 0.6 ? 0.1 : span <= 1.5 ? 0.2 : 0.5
+  const min = Math.floor((lo - span * 0.1) / step) * step
+  const max = Math.ceil((hi + span * 0.1) / step) * step
+  const ticks: number[] = []
+  for (let t = min; t <= max + 1e-9; t += step) ticks.push(+t.toFixed(2))
+  return { min, max, ticks }
+})
+
+const yMin = computed(() => scale.value.min)
+const yMax = computed(() => scale.value.max)
 
 /** API-06 отдаёт сцены по убыванию (desc); график — время слева-направо,
  *  поэтому defensive-сортировка по возрастанию даты (#142). */
@@ -50,9 +92,9 @@ const dateStep = computed(() => Math.max(1, Math.ceil(sorted.value.length / 9)))
 
 const x = (i: number, n: number) => PAD_L + (i * (W - PAD_L - PAD_R)) / (n - 1 || 1)
 const y = (v: number) =>
-  H - PAD_B - ((Math.min(V_MAX, Math.max(V_MIN, v)) - V_MIN) * (H - PAD_T - PAD_B)) / (V_MAX - V_MIN)
+  H - PAD_B - ((Math.min(yMax.value, Math.max(yMin.value, v)) - yMin.value) * (H - PAD_T - PAD_B)) / (yMax.value - yMin.value || 1)
 
-/** Последняя «чистая» (не облачная) точка — текущее значение NDVI. */
+/** Последняя «чистая» (не облачная) точка — текущее значение индекса. */
 const lastClearIdx = computed(() => {
   for (let i = sorted.value.length - 1; i >= 0; i--) {
     if (!isCloudy(sorted.value[i]!)) return i
@@ -68,7 +110,7 @@ const layout = computed(() => {
     .filter(({ p }) => !isCloudy(p))
 
   // Полоса min–max по сценам (там, где индексы есть): верх по index_max,
-  // обратный ход по index_min; значение зажимаем в [0, 1].
+  // обратный ход по index_min; значение зажимаем в масштаб оси.
   const bandTop = pts.map((p, i) => `${x(i, n).toFixed(1)},${y(p.index_max ?? p.ndvi).toFixed(1)}`)
   const bandBottom = [...pts]
     .reverse()
@@ -80,7 +122,7 @@ const layout = computed(() => {
   return {
     line: clear.map(({ p, i }) => `${x(i, n).toFixed(1)},${y(p.ndvi).toFixed(1)}`).join(' '),
     band: [...bandTop, ...bandBottom].join(' '),
-    ticks: TICKS.map((t) => ({ v: t, y: +y(t).toFixed(1), label: fmtVal(t) })),
+    ticks: scale.value.ticks.map((t) => ({ v: t, y: +y(t).toFixed(1), label: fmtVal(t) })),
     dots: pts.map((p, i) => ({
       cx: +x(i, n).toFixed(1),
       cy: +y(p.ndvi).toFixed(1),
@@ -105,6 +147,12 @@ const layout = computed(() => {
 })
 
 const lastPoint = computed(() => sorted.value[lastClearIdx.value] ?? null)
+
+/** #544: сцены на «сегодня» нет — явная подпись, какой датой показано. */
+const asOfNote = computed(() => {
+  if (!props.asOf || !lastPoint.value || lastPoint.value.date === props.asOf) return ''
+  return `нет данных на ${fmtDate(props.asOf)}, показано за ${fmtDate(lastPoint.value.date)}`
+})
 </script>
 
 <template>
@@ -116,9 +164,9 @@ const lastPoint = computed(() => sorted.value[lastClearIdx.value] ?? null)
       class="ndvi__svg"
       :viewBox="`0 0 ${W} ${H}`"
       role="img"
-      aria-label="NDVI-таймлайн сезона"
+      :aria-label="`${LABEL}-таймлайн сезона`"
     >
-      <!-- Сетка и ось Y [0, 1] -->
+      <!-- Сетка и ось Y (NDVI — [0, 1]; прочие — по диапазону данных, #151) -->
       <g
         v-for="t in layout.ticks"
         :key="t.v"
@@ -179,7 +227,7 @@ const lastPoint = computed(() => sorted.value[lastClearIdx.value] ?? null)
             dot.selectable && !dot.cloudy ? 'ndvi__dot--selectable' : '',
           ]"
         >
-          <title>{{ dot.date }} · NDVI {{ dot.val }} · облачность {{ dot.cloudPct }} %<template v-if="dot.trust != null"> · доверие {{ dot.trust }}</template></title>
+          <title>{{ dot.date }} · {{ LABEL }} {{ dot.val }} · облачность {{ dot.cloudPct }} %<template v-if="dot.trust != null"> · доверие {{ dot.trust }}</template></title>
         </circle>
         <!-- Невидимая зона клика поверх точки, чтобы не перекрывалась ею -->
         <circle
@@ -212,7 +260,7 @@ const lastPoint = computed(() => sorted.value[lastClearIdx.value] ?? null)
       </g>
     </svg>
     <div class="ndvi__legend">
-      <span><i class="ndvi__lg-dot" /> NDVI (средн. по полю)</span>
+      <span><i class="ndvi__lg-dot" /> {{ LABEL }}<template v-if="hint"> · {{ hint }}</template> (средн. по полю)</span>
       <span><i class="ndvi__lg-band" /> min–max</span>
       <span><i class="ndvi__lg-cloud" /> облачный снимок</span>
       <span v-if="selectable && selectable.length"><i class="ndvi__lg-select" /> клик — снимок этой даты</span>
@@ -221,14 +269,27 @@ const lastPoint = computed(() => sorted.value[lastClearIdx.value] ?? null)
       v-if="lastPoint"
       class="ndvi__last"
     >
-      Последний снимок: {{ fmtDate(lastPoint.date) }} · NDVI {{ fmtVal(lastPoint.ndvi) }}
+      Последний снимок: {{ fmtDate(lastPoint.date) }} · {{ LABEL }} {{ fmtVal(lastPoint.ndvi) }}
+    </p>
+    <!-- #544: сцены на «сегодня» нет — показано ближайшей доступной датой -->
+    <p
+      v-if="asOfNote"
+      class="ndvi__asof"
+    >
+      {{ asOfNote }}
     </p>
   </div>
+  <p
+    v-else-if="(index ?? 'ndvi') === 'ndvi'"
+    class="ndvi__empty"
+  >
+    Спутниковых снимков за сезон нет — график появится после первой ясной сцены
+  </p>
   <p
     v-else
     class="ndvi__empty"
   >
-    Спутниковых снимков за сезон нет — график появится после первой ясной сцены
+    Нет данных по индексу {{ LABEL }} за сезон — история догружается
   </p>
 </template>
 
@@ -357,6 +418,13 @@ const lastPoint = computed(() => sorted.value[lastClearIdx.value] ?? null)
   font-size: 0.8rem;
   color: #2e7d32;
   font-weight: 600;
+}
+
+/* #544: нейтральная подпись о фактической дате показа */
+.ndvi__asof {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #757575;
 }
 
 .ndvi__empty {
