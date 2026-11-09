@@ -548,32 +548,52 @@ def _allowed_pairs(context: str, items: list[InsightItem]) -> set[tuple[int, int
     return pairs
 
 
-def generate_advice(field_id: uuid.UUID, *, today: date | None = None) -> AIFieldAdvice | None:
+def generate_advice(
+    field_id: uuid.UUID,
+    *,
+    today: date | None = None,
+    as_of: date | None = None,
+    skip_existing: bool = False,
+) -> AIFieldAdvice | None:
     """Полный цикл генерации рекомендации для поля (§9.1–9.3).
 
     None — провайдер не anthropic/выключен, поля/сезона нет или LLM
     недоступен/пуст (§9.5: записи не создаём). Успех — запись ok/fallback
     в ai_field_advice (возвращается тем же объектом).
+
+    Ретро-режим (#159): as_of=T — контекст и детекторы только по данным
+    ≤ T, advice_date = T. skip_existing — идемпотентность CLI-бэкфилла:
+    при существующей записи (поле, advice_date) инференс не выполняется.
     """
     settings = get_settings()
     if settings.llm_provider.strip().lower() != "anthropic" or not llm.llm_enabled(settings):
         return None  # деградация §9: advice только у облачного провайдера
     day = today or date.today()
+    effective_date = as_of or day
 
     # 1) сбор контекста и items — с сессией БД (#101: закрыть до инференса)
     db = SessionLocal()
     try:
         if db.get(Field, field_id) is None:
             return None
-        ctx = build_advice_context(db, field_id, day)
+        if skip_existing:
+            exists = db.scalar(
+                select(func.count()).select_from(AIFieldAdvice).where(
+                    AIFieldAdvice.field_id == field_id,
+                    AIFieldAdvice.advice_date == effective_date,
+                )
+            )
+            if exists:
+                return None  # уже сгенерировано (идемпотентность #159)
+        ctx = build_advice_context(db, field_id, day, as_of=as_of)
         if ctx is None:
             return None  # пустой сезон — empty не пишем (§9.3)
-        items = service.build_items(db, field_id)
+        items = service.build_items(db, field_id, as_of=as_of)
     finally:
         db.close()
 
     # 2) инференс — без БД; guardrail §9.2 (повтор с уточнением → fallback)
-    prompt = ADVICE_PROMPT.format(date=day.isoformat())
+    prompt = ADVICE_PROMPT.format(date=effective_date.isoformat())
     model_name = (settings.llm_model or llm.ANTHROPIC_DEFAULT_MODEL).strip()
     answer, status = _infer_with_guardrail(prompt, ctx, items, model_name)
     if answer is None:
@@ -588,7 +608,7 @@ def generate_advice(field_id: uuid.UUID, *, today: date | None = None) -> AIFiel
             field_id=field_id,
             model=model_name,
             provider="anthropic",
-            advice_date=day,
+            advice_date=effective_date,
             answer=answer,
             context_hash=ctx.context_hash,
             status=status,
