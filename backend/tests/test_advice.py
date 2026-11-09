@@ -13,7 +13,7 @@ import pytest
 from app.ai_assistant import advice
 from app.models.agronomy import CropCycle, FieldOperation, Recommendation
 from app.models.ai import AIFieldAdvice
-from app.models.integrations import Forecast
+from app.models.integrations import Forecast, SatelliteScene
 from app.models.references import Agrochem, Culture, Source
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
