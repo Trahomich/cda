@@ -158,9 +158,8 @@ def main() -> int:
             return None
         group = group_of[culture]
         # seed_treatment планов проверяем по окну seeding
-        win = windows.get("seed_treatment" if False else None) or windows.get(
-            "seeding" if op_type == "seed_treatment" else op_type
-        )
+        lookup = "seeding" if op_type == "seed_treatment" else op_type
+        win = windows.get(lookup)
         if win is None and op_type == "other":
             return None  # «прочее» не нормируется
         if group == "fallow" and win is None:
