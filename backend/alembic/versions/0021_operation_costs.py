@@ -60,15 +60,14 @@ def upgrade() -> None:
         sa.CheckConstraint("rub_per_ga >= 0", name="ck_ref_operation_cost_rub"),
     )
     # seed идемпотентен: существующие нормативы хозяйства не перезаписываем
+    values = ", ".join(
+        f"('{op_type}', {value})" for op_type, value in OPERATION_COSTS.items()
+    )
     op.execute(
-        pg_insert(sa.table("ref_operation_cost"))
-        .values(
-            [
-                {"operation_type": t, "rub_per_ga": v}
-                for t, v in OPERATION_COSTS.items()
-            ]
+        sa.text(
+            "INSERT INTO ref_operation_cost (operation_type, rub_per_ga) "
+            f"VALUES {values} ON CONFLICT (operation_type) DO NOTHING"
         )
-        .on_conflict_do_nothing(index_elements=["operation_type"])
     )
 
 
