@@ -806,7 +806,6 @@ function economicsOf(
   )
   const planCost = operations.reduce((s, o) => s + (o.plan?.cost_rub ?? 0), 0)
   const factCost = operations.reduce((s, o) => s + (o.fact?.cost_rub ?? 0), 0)
-  const n = FIELD_N.get(field.field_id)!
   const yieldC = HISTORY[n]?.find((h) => h.year === year)?.yield_c_ha ?? null
   const perTon =
     yieldC != null ? Math.round(factCost / ((yieldC * area) / 100)) : null
