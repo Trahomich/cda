@@ -224,7 +224,11 @@ def run_indices_backfill(
             report.no_catalog += 1
             continue
         assets = dict(row.assets or {})
-        refreshed = False
+        need_render = bool(render_dir) and renders_incomplete(
+            render_dir, field_id, captured_at, assets
+        )
+        if not _missing_indices(db, field_id, captured_at) and not need_render:
+            continue  # идемпотентность: индексы и рендеры полны
         if client is not None and bbox and ("b05" not in assets or "b11" not in assets):
             # дедупликация по item_id: одна плашка STAC закрывает много полей
             # (на стенде 309 уникальных item на 27 тыс. строк каталога) —
