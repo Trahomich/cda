@@ -376,10 +376,13 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
                 db.commit()
             pruned = len(drop_ids)
 
+    counters: Counter = Counter()
+    per_season: dict[int, int] = {}
+    errors: list[str] = []
     today_refreshed = 0
     if args.refresh_today:
         # журнал/данные изменились (#157/#158) — сегодняшние рекомендации
-        # устарели: пересоздаём все поля (старые записи дня удаляем)
+        # устарели: пересоздаём все активные поля (старые записи дня удаляем)
         with SessionLocal() as db:
             field_ids_now = list(
                 db.scalars(sa_select(Field.id).where(Field.status == "active"))
@@ -396,7 +399,6 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
                 if generate_advice(field_id, today=today) is not None:
                     today_refreshed += 1
             except Exception:
-                counters_note = True  # ошибка не критична — счётчик ниже
                 logger.warning(
                     "advice-refresh-backfill: сегодня поле %s — ошибка", field_id, exc_info=True
                 )
@@ -404,9 +406,6 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
 
     year_to = today.year
     year_from = year_to - max(1, args.years) + 1
-    counters: Counter = Counter()
-    per_season: dict[int, int] = {}
-    errors: list[str] = []
 
     with SessionLocal() as db:
         field_ids = list(
