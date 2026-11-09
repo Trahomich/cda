@@ -1318,7 +1318,7 @@ function fmtNum(v: number, digits = 1): string {
         <!-- Планы и журнал -->
         <div class="card360__block card360__block--plans">
           <h2 class="card360__block-title">
-            Планы и журнал {{ currentCycle?.year ?? '' }}
+            Планы и журнал {{ selectedYear ?? currentCycle?.year ?? '' }}
           </h2>
           <Skeleton
             v-if="!card || journalLoading"
