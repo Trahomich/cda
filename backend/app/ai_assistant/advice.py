@@ -307,7 +307,7 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
     images: list[bytes] = []
     render_dir = settings.ndvi_render_dir
     if render_dir and scenes:
-        seen_days: set[date] = set()
+        seen_days: set[tuple[date, str]] = set()
         for day, variant in (
             (scenes[-1].captured_at, "ndvi"),
             (peak.captured_at if peak else None, "ndvi"),
