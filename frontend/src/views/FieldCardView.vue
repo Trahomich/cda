@@ -10,6 +10,7 @@ import {
   getFieldCropCycles,
   getFieldAdvice,
   getFieldAdviceHistory,
+  getFieldEconomics,
   getFieldNdvi,
   getFieldSeasons,
   getFieldVra,
