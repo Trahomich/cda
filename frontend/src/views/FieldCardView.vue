@@ -208,9 +208,14 @@ const indexLoading = ref(true)
 
 /** Доступность индексного слоя: сцены с рендерами сезона (API-06 ?index=).
  *  Ошибки/пусто — слой недоступен (кнопка задизейблена). */
+/** Флаг: индексные слои загружены без ?year (год сезона ещё не был известен) —
+ *  перезапросить вместе с NDVI, когда loadSeasons определит сезон (#495). */
+const indexNeedsSeasonYear = ref(false)
+
 async function loadIndexLayers(): Promise<void> {
   const token = seasonToken
   indexLoading.value = true
+  indexNeedsSeasonYear.value = false
   const loaded = await Promise.all(
     EXTRA_INDEX_KEYS.map(async (key) => {
       try {
@@ -218,6 +223,7 @@ async function loadIndexLayers(): Promise<void> {
         // лет (бэкфилл 2023+) и годы смешиваются (регрессия #146/#495).
         const year =
           seasonQueryYear.value ?? selectedYear.value ?? currentSeasonYear.value ?? undefined
+        indexNeedsSeasonYear.value = year === undefined
         const points = await getFieldNdvi(fieldId, year, key)
         return [key, points] as const
       } catch {
