@@ -45,9 +45,7 @@ class CostedOperation:
     cost_rub: float | None
 
 
-def _op_cost(
-    op: FieldOperation, rates: dict[str, float], *, is_fact: bool
-) -> float | None:
+def _op_cost(op: FieldOperation, rates: dict[str, float], *, is_fact: bool) -> float | None:
     """Стоимость операции: unit/total по операции, fallback норматива факта."""
     if op.cost_mode == "total" and op.cost_value is not None:
         return float(op.cost_value)
@@ -70,9 +68,7 @@ def _latest_yield(db: Session, cycle_id: uuid.UUID) -> float | None:
     return None if value is None else float(value)
 
 
-def field_economics(
-    db: Session, field_id: uuid.UUID, year: int
-) -> dict:
+def field_economics(db: Session, field_id: uuid.UUID, year: int) -> dict:
     """Агрегаты экономики цикла сезона (§7.9): план/факт суммы, руб/га,
     руб/т, детализация по типам операций. Цикла нет — пустые суммы."""
     field = db.get(Field, field_id)
@@ -95,14 +91,11 @@ def field_economics(
     plans: list[CostedOperation] = []
     facts: list[CostedOperation] = []
     if cycle is not None:
-        ops = (
-            db.scalars(
-                select(FieldOperation)
-                .where(FieldOperation.cycle_id == cycle.id)
-                .order_by(FieldOperation.date)
-            )
-            .all()
-        )
+        ops = db.scalars(
+            select(FieldOperation)
+            .where(FieldOperation.cycle_id == cycle.id)
+            .order_by(FieldOperation.date)
+        ).all()
         for op in ops:
             if op.status in PLAN_STATUSES:
                 plans.append(
@@ -147,9 +140,7 @@ def field_economics(
                 "title": OPERATION_TITLES.get(op_type, op_type),
                 "plan": _summary(type_plans),
                 "fact": _summary(type_facts),
-                "_sort": max(
-                    [i.day for i in type_facts + type_plans], default=date.min
-                ),
+                "_sort": max([i.day for i in type_facts + type_plans], default=date.min),
             }
         )
     operations.sort(key=lambda row: row.pop("_sort"), reverse=True)  # type: ignore[arg-type,attr-defined]

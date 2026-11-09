@@ -76,9 +76,7 @@ def world(client, db_session):
 
 
 def _economics(client, hdr, field_id, year=YEAR):
-    return client.get(
-        f"{API}/fields/{field_id}/economics", params={"year": year}, headers=hdr
-    )
+    return client.get(f"{API}/fields/{field_id}/economics", params={"year": year}, headers=hdr)
 
 
 class TestEconomicsSums:
@@ -88,13 +86,37 @@ class TestEconomicsSums:
         fid = uuid.UUID(make_field(client, hdr, name="Эконом-1")["field_id"])
         cycle = make_cycle(db, fid)
         # план: вспашка 700 руб/га × 100 га + опрыскивание фикс 5000
-        make_op(db, fid, cycle.id, "tillage", "2026-05-02", status="planned",
-                cost_mode="unit", cost_value=700.0)
-        make_op(db, fid, cycle.id, "spraying", "2026-06-01", status="draft",
-                cost_mode="total", cost_value=5000.0)
+        make_op(
+            db,
+            fid,
+            cycle.id,
+            "tillage",
+            "2026-05-02",
+            status="planned",
+            cost_mode="unit",
+            cost_value=700.0,
+        )
+        make_op(
+            db,
+            fid,
+            cycle.id,
+            "spraying",
+            "2026-06-01",
+            status="draft",
+            cost_mode="total",
+            cost_value=5000.0,
+        )
         # факт: вспашка выполнена дороже (750 руб/га), опрыскивание — норматив 350×100
-        make_op(db, fid, cycle.id, "tillage", "2026-05-03", status="done",
-                cost_mode="unit", cost_value=750.0)
+        make_op(
+            db,
+            fid,
+            cycle.id,
+            "tillage",
+            "2026-05-03",
+            status="done",
+            cost_mode="unit",
+            cost_value=750.0,
+        )
         make_op(db, fid, cycle.id, "spraying", "2026-06-02", status="done")
         db.commit()
 
@@ -119,12 +141,23 @@ class TestEconomicsSums:
         client, hdr, db = world
         fid = uuid.UUID(make_field(client, hdr, name="Эконом-2")["field_id"])
         cycle = make_cycle(db, fid)
-        make_op(db, fid, cycle.id, "harvesting", "2026-08-20", status="done",
-                cost_mode="total", cost_value=120000.0)
+        make_op(
+            db,
+            fid,
+            cycle.id,
+            "harvesting",
+            "2026-08-20",
+            status="done",
+            cost_mode="total",
+            cost_value=120000.0,
+        )
         db.add(
             YieldRecord(
-                cycle_id=cycle.id, yield_c_ha=30.0, gross_t=None,
-                source="scales", date=date(2026, 9, 1),
+                cycle_id=cycle.id,
+                yield_c_ha=30.0,
+                gross_t=None,
+                source="scales",
+                date=date(2026, 9, 1),
             )
         )
         db.commit()
@@ -154,8 +187,16 @@ class TestEconomicsSums:
         client, hdr, db = world
         fid = uuid.UUID(make_field(client, hdr, name="Эконом-4")["field_id"])
         cycle = make_cycle(db, fid)
-        make_op(db, fid, cycle.id, "seeding", "2026-04-20", status="planned",
-                cost_mode="total", cost_value=90000.0)  # не выполнено
+        make_op(
+            db,
+            fid,
+            cycle.id,
+            "seeding",
+            "2026-04-20",
+            status="planned",
+            cost_mode="total",
+            cost_value=90000.0,
+        )  # не выполнено
         make_op(db, fid, cycle.id, "spraying", "2026-06-11", status="done")  # без плана
         db.commit()
         body = _economics(client, hdr, fid).json()
@@ -168,10 +209,26 @@ class TestEconomicsSums:
         fid = uuid.UUID(make_field(client, hdr, name="Эконом-5")["field_id"])
         cycle = make_cycle(db, fid)
         other = make_cycle(db, fid, year=2025)
-        make_op(db, fid, cycle.id, "tillage", "2026-05-01", status="cancelled",
-                cost_mode="total", cost_value=99999.0)
-        make_op(db, fid, other.id, "tillage", "2025-05-01", status="done",
-                cost_mode="total", cost_value=88888.0)
+        make_op(
+            db,
+            fid,
+            cycle.id,
+            "tillage",
+            "2026-05-01",
+            status="cancelled",
+            cost_mode="total",
+            cost_value=99999.0,
+        )
+        make_op(
+            db,
+            fid,
+            other.id,
+            "tillage",
+            "2025-05-01",
+            status="done",
+            cost_mode="total",
+            cost_value=88888.0,
+        )
         db.commit()
         body = _economics(client, hdr, fid).json()
         assert body["plan_cost_rub"] == 0.0 and body["fact_cost_rub"] == 0.0
