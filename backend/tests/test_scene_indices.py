@@ -382,7 +382,7 @@ class TestEnsureRenders:
         """Сцена с полными индексами, но без PNG новых вариантов — кандидат:
         джоба дописывает рендеры (ensure-renders, #152); повтор — не кандидат.
         """
-        from app.services.sentinel_ingest.renders import meta_path, render_path, write_renders
+        from app.services.sentinel_ingest.renders import meta_path, render_path
 
         _seed_ndvi_scene(db_session, band_rasters["assets"])
         run_indices_backfill(db_session, render_dir=None)  # индексы без рендеров
