@@ -130,7 +130,7 @@ def field_economics(db: Session, field_id: uuid.UUID, year: int) -> dict:
             "cost_rub": round(sum(i.cost_rub for i in items if i.cost_rub is not None), 2),
         }
 
-    operations = []
+    rows: list[tuple[date, dict]] = []
     for op_type in types:
         type_plans = [p for p in plans if p.operation_type == op_type]
         type_facts = [f for f in facts if f.operation_type == op_type]
