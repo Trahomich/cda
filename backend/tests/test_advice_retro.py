@@ -10,19 +10,33 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
+
 from app.ai_assistant import advice, advice_key_dates
 from app.models.agronomy import CropCycle, FieldOperation
 from app.models.ai import AIFieldAdvice
-from app.models.references import Source
 from sqlalchemy import select
-from sqlalchemy.orm import Session
-from tests.test_advice import _anthropic_settings, world
+from sqlalchemy.orm import Session, sessionmaker
+from tests.test_advice import _anthropic_settings
 from tests.test_inputs import make_culture, make_field
 from tests.test_insights import make_obs, make_scene
 
 SATELLITE_SOURCE = "satellite.sentinel2-l2a"
 WEATHER_SOURCE = "weather.open-meteo"
 T = date(2026, 6, 15)  # «дата ретро» — до конца сезона 2026
+
+
+@pytest.fixture()
+def world(client, db_session):
+    """Как test_advice.world: агроном, источники (satellite+weather)."""
+    from tests.test_inputs import headers
+
+    hdr = headers(client, db_session)
+    from app.models.references import Source
+
+    db_session.add(Source(source_id=SATELLITE_SOURCE, kind="satellite"))
+    db_session.add(Source(source_id=WEATHER_SOURCE, kind="weather"))
+    db_session.commit()
+    return client, hdr
 
 
 def _retro_field(db: Session, client, hdr) -> uuid.UUID:
@@ -172,8 +186,8 @@ class TestKeyDates:
     def test_season_cultures(self, world, db_session):
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
-        c1 = make_culture(db, name="Гречиха")
-        c2 = make_culture(db, name="Овёс")
+        c1 = make_culture(db_session, name="Гречиха")
+        c2 = make_culture(db_session, name="Овёс")
         db_session.add(CropCycle(field_id=fid, year=2025, culture_id=c1.id, kind="main"))
         db_session.add(CropCycle(field_id=fid, year=2026, culture_id=c2.id, kind="main"))
         db_session.commit()
@@ -188,7 +202,7 @@ class TestRetroGenerate:
         """generate_advice(as_of=T): advice_date=T; повтор с skip_existing — без новой записи."""
         client, hdr = world
         fid = _retro_field(db_session, client, hdr)
-        settings = _anthropic_settings(monkeypatch)
+        _anthropic_settings(monkeypatch)
         monkeypatch.setattr(
             advice.llm,
             "summarize",
