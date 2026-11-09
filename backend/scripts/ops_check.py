@@ -227,18 +227,16 @@ def main() -> int:
         # среди кандидатов ищем цикл, чьё окно операции легально покрывает
         # дату (поздние яровые: уборка кукурузы/свёклы в октябре относится
         # к циклу того же года, а не к озимым следующего)
-        year = cands[0]
-        culture = by_field[r["field_id"]][year][1]
         verdict = None
         for y in cands:
             cult = by_field[r["field_id"]][y][1]
-            if classify("op", r, cult, r["date"], r["operation_type"], y) is None:
-                year, culture = y, cult
+            v = classify("op", r, cult, r["date"], r["operation_type"], y)
+            if v is None:  # легально в цикле y
                 verdict = None
                 break
             if verdict is None:
+                verdict = v
                 year, culture = y, cult
-                verdict = classify("op", r, cult, r["date"], r["operation_type"], y)
         if verdict is None:
             continue
         violations.append(
