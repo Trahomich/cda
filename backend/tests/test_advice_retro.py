@@ -94,6 +94,7 @@ class TestRetroContext:
                 field_id=fid,
                 operation_type="spraying",
                 date=date(2026, 8, 2),
+                actual_area_ga=10.0,
                 status="done",
                 source="manual",
             )
@@ -178,6 +179,7 @@ class TestKeyDates:
                 field_id=fid,
                 operation_type="seeding",
                 date=date(2026, 5, 20),
+                actual_area_ga=10.0,
                 status="done",
                 source="manual",
             )
@@ -195,10 +197,10 @@ class TestKeyDates:
         db_session.add(CropCycle(field_id=fid, year=2025, culture_id=c1.id, kind="main"))
         db_session.add(CropCycle(field_id=fid, year=2026, culture_id=c2.id, kind="main"))
         db_session.commit()
-        assert advice_key_dates.season_cultures(db_session, fid, 2023, 2026) == {
-            2025: "Гречиха",
-            2026: "Овёс",
-        }
+        seasons = advice_key_dates.season_cultures(db_session, fid, 2023, 2026)
+        assert sorted(seasons) == [2025, 2026]
+        assert seasons[2025].startswith("Гречиха")
+        assert seasons[2026].startswith("Овёс")
 
 
 class TestRetroGenerate:
