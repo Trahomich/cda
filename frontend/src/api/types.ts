@@ -734,7 +734,7 @@ export interface YieldForecastResponse {
   disclaimer: string
   /** Год сезона расчёта (§7.5): дополняет ответ при ?year=YYYY;
    *  совпадает с cycle_year — год, по которому считали прогноз. */
-  year?: string extends '' ? never : number
+  year?: number
 }
 
 /* ─── Экономика сезона поля (API-62, docs/06 §7.9; #161/#163) ─── */
