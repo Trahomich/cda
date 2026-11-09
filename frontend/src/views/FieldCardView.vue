@@ -1604,12 +1604,12 @@ function fmtNum(v: number, digits = 1): string {
               <template v-if="econ.fact_cost_per_ton_rub != null">
                 Себестоимость зерна:
                 <strong>{{ fmtRub(econ.fact_cost_per_ton_rub) }}/т</strong>
-                <span class="card360__muted">
+                <span class="card360__muted card360__econ-unit">
                   (фактическая урожайность {{ fmtNum(econ.yield_c_ha ?? 0) }} ц/га)
                 </span>
               </template>
               <template v-else>
-                Себестоимость руб/т: —
+                Себестоимость зерна: —
                 <span class="card360__muted">укажите фактическую урожайность цикла</span>
               </template>
             </p>
