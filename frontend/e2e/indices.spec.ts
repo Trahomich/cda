@@ -122,3 +122,68 @@ test('карточка поля: индексный слой следует вы
   })
   await expect(layer).toBeVisible()
 })
+
+// E2E #151 (фидбек #540/#544): график временного ряда — тот же индекс, что и
+// слой мини-карты (единый переключатель); подпись «нет данных на …, показано
+// за …» (#544); пустое состояние индекса без сцен в выбранном сезоне.
+// Мок-мир: NDRE-значение = NDVI×0.82 (последняя чистая сцена поля 1: 0,67);
+// BSI в сезоне 2026 — сцен нет (специально для пустого состояния).
+
+test('карточка поля: график временного ряда следует выбранному индексу (#151)', async ({
+  page,
+}) => {
+  await page.goto(`/fields/${FIRST_FIELD}`)
+  await expect(page.locator('.card360__layer-btn--ndre')).toBeEnabled({ timeout: 15_000 })
+
+  // По умолчанию — NDVI: прежнее поведение, фиксированная ось [0, 1].
+  await expect(page.locator('.ndvi__last')).toContainText('· NDVI', { timeout: 15_000 })
+  const ticks = page.locator('.ndvi__tick')
+  await expect(ticks.filter({ hasText: '1' })).toHaveCount(1)
+
+  // Выбор слоя NDRE перестраивает график тем же индексом: заголовок, ось,
+  // легенда с русским названием, строка «Последний снимок» со значением.
+  await page.locator('.card360__layer-btn--ndre').click()
+  await expect(page.getByRole('heading', { name: /NDRE-таймлайн/ })).toBeVisible()
+  await expect(page.locator('.ndvi__svg')).toHaveAttribute('aria-label', 'NDRE-таймлайн сезона')
+  await expect(page.locator('.ndvi__legend')).toContainText('азотный статус')
+  await expect(page.locator('.ndvi__last')).toContainText('· NDRE 0,67')
+  await expect(page.locator('.ndvi__svg .ndvi__band')).toBeVisible()
+  await expect(page.locator('.ndvi__svg .ndvi__line')).toBeVisible()
+
+  // #544: сцены на «сегодня» нет — явная подпись датой показа (у графика
+  // и у слоя мини-карты рядом с датой снимка).
+  await expect(page.locator('.ndvi__asof')).toContainText('нет данных на ')
+  await expect(page.locator('.ndvi__asof')).toContainText('показано за 31.07.2027')
+  await expect(page.locator('.card360__layer-asof')).toContainText('показано за 31.07.2027')
+
+  // Смена сезона перестраивает ряд: только даты сезона 2026 (первая точка
+  // подписана с годом) — ?year в запросе ряда отфильтровал чужие сезоны.
+  await page.locator('.strip__cell--season').filter({ hasText: '2026' }).click()
+  await expect(page.locator('.ndvi__last')).toContainText('· NDRE 0,6', { timeout: 15_000 })
+  await expect(page.locator('.ndvi__last')).toContainText('31.07.2026')
+  await expect(page.locator('.ndvi__asof')).toContainText('показано за 31.07.2026')
+})
+
+test('карточка поля: индекс без сцен в сезоне — пустое состояние графика (#151)', async ({
+  page,
+}) => {
+  await page.goto(`/fields/${FIRST_FIELD}`)
+  await expect(page.locator('.card360__layer-btn--bsi')).toBeEnabled({ timeout: 15_000 })
+
+  // BSI текущего сезона (2027): график построен, значения отрицательные
+  // (голая почва) — ось масштабируется по данным.
+  await page.locator('.card360__layer-btn--bsi').click()
+  await expect(page.getByRole('heading', { name: /BSI-таймлайн/ })).toBeVisible()
+  await expect(page.locator('.ndvi__last')).toContainText('· BSI −0,09')
+
+  // Сезон 2026: у BSI сцен нет — нейтральное пустое состояние графика,
+  // кнопка слоя задизейблена, активный слой сброшен на NDVI.
+  await page.locator('.strip__cell--season').filter({ hasText: '2026' }).click()
+  await expect(page.locator('.ndvi__empty')).toContainText('Нет данных по индексу BSI за сезон', {
+    timeout: 15_000,
+  })
+  await expect(page.locator('.card360__layer-btn--bsi')).toBeDisabled()
+  await expect(page.locator('.card360__layer-btn--ndvi')).toHaveClass(
+    /card360__layer-btn--active/,
+  )
+})
