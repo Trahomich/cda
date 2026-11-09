@@ -707,6 +707,15 @@ const econDiff = computed(() =>
   econ.value ? econ.value.fact_cost_rub - econ.value.plan_cost_rub : 0,
 )
 
+/** Есть плановые операции, но ни один факт не выполнен (#635/#165):
+ *  к плитке факта — нейтральная подпись «работы не начаты». */
+const econNoFacts = computed(
+  () =>
+    econ.value != null &&
+    econ.value.fact_cost_rub === 0 &&
+    econ.value.operations.some((o) => o.plan != null),
+)
+
 function fmtRub(v: number): string {
   return `${Math.round(v).toLocaleString('ru-RU')} ₽`
 }
