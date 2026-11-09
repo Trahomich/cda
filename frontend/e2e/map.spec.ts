@@ -8,8 +8,7 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel('Пароль', { exact: true }).fill('demo')
   await page.getByRole('button', { name: 'Войти' }).click()
   // Ждём именно экран карты: URL /login?redirect=/fields/map тоже заканчивается
-  // на /fields/map, и регекс ложно срабатывал до завершения логина — тест
-  # placeholder
+  // на /fields/map, и регекс ложно срабатывал до завершения логина (гонка).
   await page.waitForURL((url) => new URL(url).pathname.startsWith('/fields/map'), {
     timeout: 15_000,
   })
