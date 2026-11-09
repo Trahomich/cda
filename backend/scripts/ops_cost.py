@@ -102,7 +102,9 @@ def main() -> int:
     # 1) справочник: что изменится
     rate_changes = {t: (rates.get(t), v) for t, v in RATE_RUB_GA.items() if rates.get(t) != v}
     print(f"операций 2023–2026 (без cancelled): {len(ops)}")
-    print(f"нормативы к обновлению: { {t: f'{old} → {new}' for t, (old, new) in rate_changes.items()} }")
+    print(
+        f"нормативы к обновлению: { {t: f'{old} → {new}' for t, (old, new) in rate_changes.items()} }"
+    )
 
     # 2) стоимости
     to_update = []
@@ -127,8 +129,10 @@ def main() -> int:
         base = RATE_RUB_GA.get(r["operation_type"])
         if base is None:
             continue
-        v = r["cost_value"] if (r["cost_mode"] == "unit" and r["cost_value"]) else base * (
-            variation(str(r["id"])) if r["status"] == "done" else 1.0
+        v = (
+            r["cost_value"]
+            if (r["cost_mode"] == "unit" and r["cost_value"])
+            else base * (variation(str(r["id"])) if r["status"] == "done" else 1.0)
         )
         sum_by_field[str(r["field"])] = sum_by_field.get(str(r["field"]), 0.0) + float(v)
     for name, total in sorted(sum_by_field.items()):
@@ -146,9 +150,13 @@ def main() -> int:
             for r in to_update:
                 row = dict(
                     db.execute(
-                        text("select id, cost_mode, cost_value from dat_field_operation where id = :i"),
+                        text(
+                            "select id, cost_mode, cost_value from dat_field_operation where id = :i"
+                        ),
                         {"i": r["id"]},
-                    ).mappings().first()
+                    )
+                    .mappings()
+                    .first()
                 )
                 backup.append(row)
                 db.execute(
@@ -159,9 +167,13 @@ def main() -> int:
                     {"v": r["new_value"], "i": r["id"]},
                 )
         path = Path(args.backup or f"cost_backup_{date.today():%Y%m%d}.json")
-        path.write_text(json.dumps(backup, default=str, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(f"\n--fix: нормативов обновлено {len(rate_changes)}, стоимостей проставлено "
-              f"{len(to_update)}, бэкап: {path}")
+        path.write_text(
+            json.dumps(backup, default=str, ensure_ascii=False, indent=1), encoding="utf-8"
+        )
+        print(
+            f"\n--fix: нормативов обновлено {len(rate_changes)}, стоимостей проставлено "
+            f"{len(to_update)}, бэкап: {path}"
+        )
     return 0
 
 
