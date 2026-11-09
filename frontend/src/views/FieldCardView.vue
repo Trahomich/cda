@@ -1981,7 +1981,7 @@ polygon.card360__polygon {
 .card360__layer-switch {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 1px;
   border: 1px solid #c8e6c9;
   border-radius: 10px;
   padding: 2px;
@@ -1994,7 +1994,7 @@ polygon.card360__polygon {
   background: #f1f8f1;
   color: #1b5e20;
   font-size: 0.8rem;
-  padding: 0.22rem 0.45rem;
+  padding: 0.22rem 0.4rem;
   min-height: 32px;
   white-space: nowrap;
   flex: 0 0 auto;
