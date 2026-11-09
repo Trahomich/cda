@@ -134,16 +134,15 @@ def field_economics(db: Session, field_id: uuid.UUID, year: int) -> dict:
     for op_type in types:
         type_plans = [p for p in plans if p.operation_type == op_type]
         type_facts = [f for f in facts if f.operation_type == op_type]
-        operations.append(
-            {
-                "type": op_type,
-                "title": OPERATION_TITLES.get(op_type, op_type),
-                "plan": _summary(type_plans),
-                "fact": _summary(type_facts),
-                "_sort": max([i.day for i in type_facts + type_plans], default=date.min),
-            }
-        )
-    operations.sort(key=lambda row: row.pop("_sort"), reverse=True)  # type: ignore[arg-type,attr-defined]
+        row = {
+            "type": op_type,
+            "title": OPERATION_TITLES.get(op_type, op_type),
+            "plan": _summary(type_plans),
+            "fact": _summary(type_facts),
+        }
+        rows.append((max((i.day for i in type_facts + type_plans), default=date.min), row))
+    rows.sort(key=lambda pair: pair[0], reverse=True)
+    operations = [row for _, row in rows]
 
     return {
         "field_id": field_id,
