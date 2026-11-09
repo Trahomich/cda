@@ -102,7 +102,7 @@ test('карточка поля: журнал следует выбранном�
   // Прошлый сезон 2026: наоборот — уборка 2026-го, без работ 2027-го.
   await page.locator('.strip__cell--season').filter({ hasText: '2026' }).click()
   await expect(block).toContainText('Планы и журнал 2026', { timeout: 15_000 })
-  await expect(block.locator('li', { hasText: '✓' })).toContainText('15.08.2026')
+  await expect(block.locator('li', { hasText: '✓' }).first()).toContainText('15.08.2026')
   await expect(block).not.toContainText('02.07.2027')
 })
 
