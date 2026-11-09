@@ -499,12 +499,18 @@ def detect_winterkill(
 
 
 def latest_index_mean(
-    db: Session, field_id: uuid.UUID, index: str, *, year: int | None = None
+    db: Session, field_id: uuid.UUID, index: str, *, year: int | None = None,
+    as_of: date | None = None,
 ) -> float | None:
-    """Среднее последней чистой сцены индекса (для drought-сигнала NDMI #129)."""
+    """Среднее последней чистой сцены индекса (для drought-сигнала NDMI #129).
+
+    as_of (ретро #159) — последняя сцена не позже даты.
+    """
     filters = [SatelliteScene.field_id == field_id, SatelliteScene.index == index]
     if year is not None:
         filters.append(func.extract("year", SatelliteScene.captured_at) == year)
+    if as_of is not None:
+        filters.append(SatelliteScene.captured_at <= as_of)
     value = db.scalar(
         select(SatelliteScene.index_avg)
         .where(*filters)
