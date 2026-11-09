@@ -201,8 +201,6 @@ def run_indices_backfill(
     refreshed_by_item: dict[str, dict] = {}
     tasks: list[_Task] = []
     for field_id, captured_at in ndvi_scenes:
-        if not _missing_indices(db, field_id, captured_at):
-            continue  # идемпотентность: полный набор уже есть
         contour = lookup(str(field_id))
         if contour is None:
             report.no_contour += 1
@@ -224,11 +222,15 @@ def run_indices_backfill(
             report.no_catalog += 1
             continue
         assets = dict(row.assets or {})
+        # кандидат: не хватает сцен индексов §7.7 ИЛИ рендеров ожидаемых
+        # вариантов (ensure-renders: сцены с полными индексами, но без PNG
+        # новых вариантов — суточная джоба дописывает их сама, #152)
         need_render = bool(render_dir) and renders_incomplete(
             render_dir, field_id, captured_at, assets
         )
         if not _missing_indices(db, field_id, captured_at) and not need_render:
             continue  # идемпотентность: индексы и рендеры полны
+        refreshed = False
         if client is not None and bbox and ("b05" not in assets or "b11" not in assets):
             # дедупликация по item_id: одна плашка STAC закрывает много полей
             # (на стенде 309 уникальных item на 27 тыс. строк каталога) —
