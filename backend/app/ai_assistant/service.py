@@ -426,6 +426,12 @@ def _llm_context(
         else:
             parts.append(f"Модель вымокания: признаков вымокания нет по {checked} сценам.")
 
+    # новые индексы §7.7 в рассуждениях LLM (§8.2, #153): NDRE/NDMI/EVI/NDSI/BSI
+    season_year = year if year is not None else (scenes[-1].captured_at.year if scenes else None)
+    extra = detectors.extra_indices_context(db, field.id, year=season_year)
+    if extra:
+        parts.append(extra)
+
     parts.append(vra_verdict)
     parts.append(
         "Детекторы (items):\n"
