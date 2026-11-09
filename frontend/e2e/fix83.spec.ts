@@ -42,13 +42,13 @@ test('карточка поля: оверлей NDVI-сцены появляет
   await expect(page.locator('.card360__layer-date-label')).toContainText('17.07.2027')
   await expect(layer).toBeVisible()
 
-  // «Контур» скрывает оверлей; клик по точке снова включает NDVI (v2-fix-H).
-  await page.locator('.card360__layer-btn--contour').click()
-  await expect(page.locator('.card360__layer-btn--contour')).toHaveClass(
+  // RGB-снимок скрывает индексный оверлей (другой PNG, blob-URL);
+  // клик по точке графика снова включает слой NDVI (v2-fix-H).
+  await page.locator('.card360__layer-btn--truecolor').click()
+  await expect(page.locator('.card360__layer-btn--truecolor')).toHaveClass(
     /card360__layer-btn--active/,
   )
-  await expect(layer).toHaveCount(0)
-  await expect(page.locator('polygon.card360__polygon')).toBeVisible()
+  await expect(page.locator('.card360__layer-date-label')).toContainText('RGB-снимок')
   await page.locator('.ndvi__hit[data-date="2027-07-31"]').click()
   await expect(page.locator('.card360__layer-btn--ndvi')).toHaveClass(
     /card360__layer-btn--active/,
