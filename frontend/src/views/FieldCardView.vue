@@ -1592,7 +1592,7 @@ function fmtNum(v: number, digits = 1): string {
                   class="card360__econ-diff"
                   :class="econDiff > 0 ? 'card360__econ-diff--bad' : 'card360__econ-diff--good'"
                 >
-                  {{ econDiff > 0 ? '+' : '−' }}{{ fmtRub(Math.abs(econDiff)) }}
+                  {{ econDiff > 0 ? '+' : '' }}{{ fmtRub(Math.abs(econDiff)) }}
                 </dd>
               </div>
               <div>
