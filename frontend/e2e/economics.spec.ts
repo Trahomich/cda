@@ -96,7 +96,7 @@ test('карточка поля: журнал следует выбранном�
   // Текущий сезон 2027: только факт 02.07.2027 (год в дате), уборки
   // 15.08.2026 из прошлого сезона в списке нет.
   await expect(block).toContainText('Планы и журнал 2027')
-  await expect(block.locator('li', { hasText: '✓' })).toContainText('02.07.2027')
+  await expect(block.locator('li', { hasText: '✓' }).first()).toContainText('02.07.2027')
   await expect(block).not.toContainText('15.08.2026')
 
   // Прошлый сезон 2026: наоборот — уборка 2026-го, без работ 2027-го.
