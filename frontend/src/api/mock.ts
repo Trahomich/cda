@@ -778,7 +778,7 @@ function economicsOf(
       title,
       plan: { date: `${year}-${planMd}`, cost_rub: rub(rate) },
       fact:
-        factMd != null
+        factMd != null && !noFacts
           ? { date: `${year}-${factMd}`, cost_rub: Math.round(rub(rate) * k) }
           : null,
     }),
