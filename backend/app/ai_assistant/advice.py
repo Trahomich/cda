@@ -234,7 +234,7 @@ def build_advice_context(
     journal_ops = db.execute(
         select(FieldOperation, AgroInput.name)
         .outerjoin(AgroInput, FieldOperation.input_id == AgroInput.id)
-        .where(FieldOperation.field_id == field_id, FieldOperation.status == "done")
+        .where(*op_filters, FieldOperation.status == "done")
         .order_by(FieldOperation.date.desc())
         .limit(10)
     ).all()
