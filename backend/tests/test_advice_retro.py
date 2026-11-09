@@ -10,7 +10,6 @@ import uuid
 from datetime import UTC, date, datetime, timedelta
 
 import pytest
-
 from app.ai_assistant import advice, advice_key_dates
 from app.models.agronomy import CropCycle, FieldOperation
 from app.models.ai import AIFieldAdvice
@@ -117,7 +116,10 @@ class TestRetroContext:
         """T раньше всех сцен — контекста нет (нет данных «на дату»)."""
         client, hdr = world
         fid = _retro_field(db_session, client, hdr)
-        assert advice.build_advice_context(db_session, fid, date(2026, 11, 5), as_of=date(2025, 1, 1)) is None
+        assert (
+            advice.build_advice_context(db_session, fid, date(2026, 11, 5), as_of=date(2025, 1, 1))
+            is None
+        )
 
 
 class TestKeyDates:
@@ -159,7 +161,9 @@ class TestKeyDates:
             (date(2026, 6, 20), 0.75),
             (date(2026, 6, 25), 0.40),  # второй укос 06-28
         ]
-        kds = advice_key_dates.season_key_dates(db_session, fid, "Многолетние травы", 2026, scenes=scenes)
+        kds = advice_key_dates.season_key_dates(
+            db_session, fid, "Многолетние травы", 2026, scenes=scenes
+        )
         dates = [kd.date for kd in kds]
         assert date(2026, 4, 15) in dates
         assert date(2026, 5, 28) in dates
@@ -208,9 +212,7 @@ class TestRetroGenerate:
             "summarize",
             lambda p, c, **k: f"На {T.isoformat()} поле в норме: NDVI 0.60, осадки 5.0 мм.",
         )
-        monkeypatch.setattr(
-            advice, "SessionLocal", sessionmaker(bind=db_session.get_bind())
-        )
+        monkeypatch.setattr(advice, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
 
         record = advice.generate_advice(fid, as_of=T)
         assert record is not None
@@ -219,9 +221,7 @@ class TestRetroGenerate:
 
         again = advice.generate_advice(fid, as_of=T, skip_existing=True)
         assert again is None  # идемпотентность
-        rows = db_session.scalars(
-            select(AIFieldAdvice).where(AIFieldAdvice.field_id == fid)
-        ).all()
+        rows = db_session.scalars(select(AIFieldAdvice).where(AIFieldAdvice.field_id == fid)).all()
         assert len(rows) == 1
 
     def test_retro_answer_guardrail_no_future_numbers(self, world, db_session, monkeypatch):
@@ -229,9 +229,7 @@ class TestRetroGenerate:
         client, hdr = world
         fid = _retro_field(db_session, client, hdr)
         _anthropic_settings(monkeypatch)
-        monkeypatch.setattr(
-            advice, "SessionLocal", sessionmaker(bind=db_session.get_bind())
-        )
+        monkeypatch.setattr(advice, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
         # 0.75 — сцена 2026-08-01 (> T), в контексте её нет
         monkeypatch.setattr(advice.llm, "summarize", lambda p, c, **k: "Пик сезона 0.75!")
 
@@ -267,12 +265,8 @@ class TestPruneToday:
         db_session.commit()
         monkeypatch.setattr(cli, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
 
-        code = cli.cmd_advice_refresh_backfill(
-            argparse.Namespace(years=1, prune_today=True)
-        )
+        code = cli.cmd_advice_refresh_backfill(argparse.Namespace(years=1, prune_today=True))
         assert code == 0
-        rows = db_session.scalars(
-            select(AIFieldAdvice).where(AIFieldAdvice.field_id == fid)
-        ).all()
+        rows = db_session.scalars(select(AIFieldAdvice).where(AIFieldAdvice.field_id == fid)).all()
         assert len(rows) == 1
         assert rows[0].answer == "вариант 2"
