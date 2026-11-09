@@ -97,8 +97,10 @@ def main() -> int:
                 db.execute(text("delete from dat_yield_record where id = :i"), {"i": y})
             for p in data.get("plans", []):
                 db.execute(text("delete from dat_field_operation where id = :i"), {"i": p})
-        print(f"restore: удалено планов {len(data.get('plans', []))}, "
-              f"урожайностей {len(data.get('yields', []))}")
+        print(
+            f"restore: удалено планов {len(data.get('plans', []))}, "
+            f"урожайностей {len(data.get('yields', []))}"
+        )
         return 0
 
     cal = json.loads(Path(args.json).read_text(encoding="utf-8"))
@@ -112,9 +114,7 @@ def main() -> int:
         for g, gdata in cal["groups"].items()
     }
     culture_group: dict[str, str] = {
-        name: gkey
-        for gkey, gdata in cal["groups"].items()
-        for name in gdata.get("cultures", [])
+        name: gkey for gkey, gdata in cal["groups"].items() for name in gdata.get("cultures", [])
     }
 
     def mid_of(win: tuple[str, str], year: int) -> date:
@@ -155,8 +155,10 @@ def main() -> int:
         has_plans = set(
             r[0]
             for r in db.execute(
-                text("select distinct cycle_id from dat_field_operation "
-                     "where status in ('draft','planned','in_progress')")
+                text(
+                    "select distinct cycle_id from dat_field_operation "
+                    "where status in ('draft','planned','in_progress')"
+                )
             ).all()
         )
         has_yield = set(
@@ -218,8 +220,11 @@ def main() -> int:
         for op_type, win in windows.items():
             if op_type in planned_days:
                 continue
-            year = 2025 if (group in ("winter_cereals", "winter_oilseeds")
-                            and op_type == "seeding") else 2026
+            year = (
+                2025
+                if (group in ("winter_cereals", "winter_oilseeds") and op_type == "seeding")
+                else 2026
+            )
             planned_days[op_type] = mid_of(win, year)
         for op_type, day in planned_days.items():
             rate = rates.get(op_type)
@@ -244,7 +249,8 @@ def main() -> int:
             continue
         cycle_ops = ops_by_cycle.get(cy["id"], [])
         harvest_days = [
-            o["date"] for o in cycle_ops
+            o["date"]
+            for o in cycle_ops
             if o["operation_type"] == "harvesting" and o["status"] == "done"
         ]
         finished = cy["year"] < 2026 or bool(harvest_days)
@@ -273,8 +279,10 @@ def main() -> int:
         )
 
     print(f"циклов 2023–2026: {len(cycles)}, операций журнала: {len(ops)}")
-    print(f"планов к созданию: {len(new_plans)} (2026-незакрытых в них: "
-          f"{sum(1 for p in new_plans if p['date'] >= '2026-01-01')})")
+    print(
+        f"планов к созданию: {len(new_plans)} (2026-незакрытых в них: "
+        f"{sum(1 for p in new_plans if p['date'] >= '2026-01-01')})"
+    )
     print(f"урожайностей к созданию: {len(new_yields)}")
 
     if args.fix:
@@ -289,8 +297,15 @@ def main() -> int:
                         "actual_area_ga, cost_mode, cost_value, source) "
                         "values (:id, :f, :c, :d, :t, 'planned', :a, 'unit', :v, 'manual')"
                     ),
-                    {"id": pid, "f": p["field_id"], "c": p["cycle_id"], "d": p["date"],
-                     "t": p["operation_type"], "a": p["area"], "v": p["cost"]},
+                    {
+                        "id": pid,
+                        "f": p["field_id"],
+                        "c": p["cycle_id"],
+                        "d": p["date"],
+                        "t": p["operation_type"],
+                        "a": p["area"],
+                        "v": p["cost"],
+                    },
                 )
                 created["plans"].append(str(pid))
             for y in new_yields:
@@ -301,14 +316,21 @@ def main() -> int:
                         "(id, cycle_id, yield_c_ha, gross_t, source, date) "
                         "values (:id, :c, :v, :g, 'scales', :d)"
                     ),
-                    {"id": yid, "c": y["cycle_id"], "v": y["yield_c_ha"],
-                     "g": y["gross_t"], "d": y["date"]},
+                    {
+                        "id": yid,
+                        "c": y["cycle_id"],
+                        "v": y["yield_c_ha"],
+                        "g": y["gross_t"],
+                        "d": y["date"],
+                    },
                 )
                 created["yields"].append(str(yid))
         path = Path(args.backup or f"plan_yield_backup_{date.today():%Y%m%d}.json")
         path.write_text(json.dumps(created, ensure_ascii=False, indent=1), encoding="utf-8")
-        print(f"--fix: создано планов {len(created['plans'])}, урожайностей "
-              f"{len(created['yields'])}; бэкап (для --restore): {path}")
+        print(
+            f"--fix: создано планов {len(created['plans'])}, урожайностей "
+            f"{len(created['yields'])}; бэкап (для --restore): {path}"
+        )
     return 0
 
 
