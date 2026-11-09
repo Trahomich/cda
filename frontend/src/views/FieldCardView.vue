@@ -1618,6 +1618,10 @@ function fmtNum(v: number, digits = 1): string {
               <div>
                 <dt>Факт</dt>
                 <dd>{{ fmtRub(econ.fact_cost_rub) }}</dd>
+                <span
+                  v-if="econNoFacts"
+                  class="card360__muted card360__econ-hint"
+                >работы не начаты</span>
               </div>
               <div>
                 <dt>{{ econDiff > 0 ? 'Перерасход' : 'Экономия' }}</dt>
