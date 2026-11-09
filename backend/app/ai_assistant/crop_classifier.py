@@ -49,6 +49,8 @@ WINTER_AUTUMN_MIN_SCENES = 2
 WINTER_SPRING_NDVI = 0.30
 #: яровая: осенней вегетации нет — NDVI ниже уровня всходов
 SPRING_AUTUMN_NDVI_MAX = 0.25
+#: яровая: развитой пик вегетации (ниже — это скорее пар/сорняки)
+SPRING_PEAK_NDVI_MIN = 0.40
 #: травы: провал между укосами (после укоса NDVI падает, потом отрастание)
 GRASS_DIP = 0.15
 GRASS_MIN_PEAKS = 2
@@ -144,6 +146,23 @@ def classify_curve(
             WINTER_GRAIN, CONF_BASE_STRONG, ["озимая зерновая: " + "; ".join(winter_evidences)]
         )
 
+    # --- пар: NDVI у пола + BSI голой почвы (до яровой: яровая требует
+    # развитого пика, иначе низкий NDVI примет за яровую) --------------
+    if season_max < FALLOW_NDVI_MAX:
+        if bsi_max is None or bsi_max >= FALLOW_BSI_MIN:
+            return CropClassification(
+                FALLOW,
+                CONF_BASE_STRONG if bsi_max is not None else CONF_BASE_WEAK,
+                [
+                    f"пар: max NDVI сезона {season_max:.2f} < {FALLOW_NDVI_MAX:.2f}"
+                    + (
+                        f", BSI до {bsi_max:.2f} ≥ {FALLOW_BSI_MIN:.2f} — голая почва"
+                        if bsi_max is not None
+                        else " (BSI нет — по одному NDVI)"
+                    ),
+                ],
+            )
+
     # --- травы: укосные циклы (пики с провалами) ----------------------
     if season_max >= FALLOW_NDVI_MAX:
         peaks = _local_maxima(apr_sep)
@@ -169,16 +188,25 @@ def classify_curve(
 
     # --- яровая: без осенней вегетации, один главный пик май–июль -----
     autumn_max = max((v for _, v in autumn), default=None)
-    if autumn_max is not None and autumn_max < SPRING_AUTUMN_NDVI_MAX and may_july:
+    if (
+        autumn_max is not None
+        and autumn_max < SPRING_AUTUMN_NDVI_MAX
+        and may_july
+        and season_max >= SPRING_PEAK_NDVI_MIN
+    ):
         top = max(may_july, key=lambda dv: dv[1])
         evidences.append(
             f"осенней вегетации нет (max NDVI осени {autumn_max:.2f} < "
             f"{SPRING_AUTUMN_NDVI_MAX:.2f})"
         )
         evidences.append(f"главный пик {top[0].isoformat()}: NDVI {top[1]:.2f} в мае–июле")
-        # противоречие: несколько сопоставимых пиков — это скорее травы
-        comparable = [v for d, v in may_july if d != top[0] and v >= top[1] - GRASS_DIP]
-        if comparable:
+        # противоречие: несколько сопоставимых ЛОКАЛЬНЫХ максимумов — укосы?
+        rival_peaks = [
+            (d, v)
+            for d, v in _local_maxima(may_july)
+            if d != top[0] and v >= top[1] - GRASS_DIP
+        ]
+        if rival_peaks:
             return CropClassification(
                 UNCERTAIN,
                 CONF_BASE_WEAK,
@@ -187,22 +215,6 @@ def classify_curve(
         return CropClassification(
             SPRING_GRAIN, CONF_BASE_STRONG, ["яровая: " + "; ".join(evidences)]
         )
-
-    # --- пар: NDVI у пола + BSI голой почвы ----------------------------
-    if season_max < FALLOW_NDVI_MAX:
-        if bsi_max is None or bsi_max >= FALLOW_BSI_MIN:
-            return CropClassification(
-                FALLOW,
-                CONF_BASE_STRONG if bsi_max is not None else CONF_BASE_WEAK,
-                [
-                    f"пар: max NDVI сезона {season_max:.2f} < {FALLOW_NDVI_MAX:.2f}"
-                    + (
-                        f", BSI до {bsi_max:.2f} ≥ {FALLOW_BSI_MIN:.2f} — голая почва"
-                        if bsi_max is not None
-                        else " (BSI нет — по одному NDVI)"
-                    ),
-                ],
-            )
 
     return CropClassification(
         UNCERTAIN, CONF_BASE_WEAK, ["правила противоречат или кривая нетипична — не гадаем"]
@@ -216,7 +228,7 @@ def classify_field_season(db: Session, field_id: uuid.UUID, year: int) -> CropCl
     годы с данными, кроме текущего) с тем же классом — мультисезонность
     2023–2026 усиливает вывод (травы остаются травами, пар полем).
     """
-    ndvi = _scenes_by_index(db, field_id, "ndvi", date(year - 1, 9, 1), date(year, 7, 31))
+    ndvi = _scenes_by_index(db, field_id, "ndvi", date(year - 1, 9, 1), date(year, 9, 30))
     if not ndvi:
         return CropClassification(UNCERTAIN, 0.0, ["нет NDVI-сцен сезона"])
     ndsi = _scenes_by_index(db, field_id, "ndsi", date(year - 1, 12, 1), date(year, 3, 31))
@@ -237,7 +249,7 @@ def classify_field_season(db: Session, field_id: uuid.UUID, year: int) -> CropCl
     checked = 0
     for other in years:
         other_ndvi = _scenes_by_index(
-            db, field_id, "ndvi", date(other - 1, 9, 1), date(other, 7, 31)
+            db, field_id, "ndvi", date(other - 1, 9, 1), date(other, 9, 30)
         )
         other_cls = classify_curve(other_ndvi, season_year=other)
         if other_cls.crop_class == UNCERTAIN:
