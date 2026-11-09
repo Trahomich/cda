@@ -95,15 +95,19 @@ class SceneStat:
 
 
 def load_scenes(
-    db: Session, field_id: uuid.UUID, limit: int = 200, *, year: int | None = None
+    db: Session, field_id: uuid.UUID, limit: int = 200, *, year: int | None = None,
+    as_of: date | None = None,
 ) -> list[SceneStat]:
     """Чистые NDVI-сцены поля по возрастанию даты (для трендов и лага).
 
     year — сцены только сезона YYYY (§7.5, исторические выводы ассистента).
+    as_of (ретро #159) — только сцены, снятые не позже даты.
     """
     filters = [SatelliteScene.field_id == field_id, SatelliteScene.index == "ndvi"]
     if year is not None:
         filters.append(func.extract("year", SatelliteScene.captured_at) == year)
+    if as_of is not None:
+        filters.append(SatelliteScene.captured_at <= as_of)
     rows = db.execute(
         select(
             SatelliteScene.id,
