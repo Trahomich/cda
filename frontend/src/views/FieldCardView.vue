@@ -320,7 +320,7 @@ let layerToken = 0
 
 async function loadLayer() {
   const token = ++layerToken
-  if (layerMode.value === 'none' || !renderDate.value) {
+  if (!renderDate.value) {
     const prev = layer.value
     layer.value = null
     if (prev) URL.revokeObjectURL(prev.url)
@@ -339,19 +339,20 @@ async function loadLayer() {
   layer.value = r
   if (prev) URL.revokeObjectURL(prev.url)
   if (!r) {
-    // Рендера нет (404) или заголовки битые — показываем просто контур.
-    layerMode.value = 'none'
+    // Рендера нет (404) или заголовки битые — оверлей чистим, режим
+    // не меняем (#583: режима «Контур» больше нет).
+    layer.value = null
   }
 }
 
 watch([renderDate, layerMode], () => void loadLayer())
 
 /** Клик по точке графика (v2-fix-H; #151): даты без рендера не выбираем;
- *  если слой выключен («Контур»/«Снимок»), включаем слой индекса графика. */
+ *  при RGB-снимке включаем слой индекса графика. */
 function onDotSelect(date: string): void {
   if (!chartSelectable.value.includes(date)) return
   renderDate.value = date
-  if (layerMode.value === 'none' || layerMode.value === 'truecolor') {
+  if (layerMode.value === 'truecolor') {
     layerMode.value = chartIndex.value
   }
 }
