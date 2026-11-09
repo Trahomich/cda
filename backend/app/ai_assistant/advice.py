@@ -149,29 +149,45 @@ def _fmt(v: float | None, nd: int = 1) -> str:
     return "нет" if v is None else f"{float(v):.{nd}f}"
 
 
-def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> AdviceContext | None:
+def build_advice_context(
+    db: Session, field_id: uuid.UUID, today: date, *, as_of: date | None = None
+) -> AdviceContext | None:
     """Контекст рекомендации §9.1; None — пустой сезон (чистых сцен нет).
 
+    Ретро-режим (#159): as_of=T — контекст «на дату T», только данные
+    ДО T включительно (сцены, погода-факты, работы, агрохимия, индексы);
+    прогноза нет — секции будущих данных не пишутся.
     Региона в модели Field нет — секция опущена (решение Ивана, #381).
     """
+    retro = as_of is not None
+    day = as_of if retro else today
     f = db.get(Field, field_id)
     if f is None:
         return None
-    season_year = _latest_clean_scene_year(db, field_id)
+    season_year = _latest_clean_scene_year(db, field_id, as_of=day if retro else None)
     if season_year is None:
         return None
     season_year = int(season_year)
     parts: list[str] = [f"Поле «{f.name}», площадь {float(f.area_ga):.1f} га, сезон {season_year}."]
+    if retro:
+        parts.append(
+            f"Ретроспективная рекомендация на дату {day.isoformat()}: доступны только "
+            "данные, полученные до этой даты включительно; прогноза погоды нет."
+        )
 
-    # 2. культура сезона + история севооборота (последние 5 main-циклов)
+    # 2. культура сезона + история севооборота (последние 5 main-циклов);
+    # ретро: цикл «будущего» сезона известен только с осени (посев озимых)
     pred_cycle = aliased(CropCycle)
     pred_culture = aliased(Culture)
+    cycle_filters = [CropCycle.field_id == field_id, CropCycle.kind == "main"]
+    if retro:
+        cycle_filters.append(CropCycle.year <= season_year + (1 if day.month >= 9 else 0))
     rows = db.execute(
         select(CropCycle, Culture.name, pred_culture.name)
         .join(Culture, CropCycle.culture_id == Culture.id)
         .outerjoin(pred_cycle, CropCycle.predecessor_cycle_id == pred_cycle.id)
         .outerjoin(pred_culture, pred_cycle.culture_id == pred_culture.id)
-        .where(CropCycle.field_id == field_id, CropCycle.kind == "main")
+        .where(*cycle_filters)
         .order_by(CropCycle.year.desc())
         .limit(5)
     ).all()
@@ -181,8 +197,8 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
         )
         parts.append(f"Севооборот (последние циклы): {history}.")
 
-    # 3. агрохимия: последняя проба
-    probe = detectors.latest_agrochem(db, field_id)
+    # 3. агрохимия: последняя проба (ретро — взятая не позже даты)
+    probe = detectors.latest_agrochem(db, field_id, as_of=day if retro else None)
     if probe is not None:
         parts.append(
             f"Агрохимия (проба {probe.sample_date.isoformat()}): "
@@ -191,12 +207,16 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
             f"K2O {_fmt(probe.k2o_mg100, 1)} мг/100 г."
         )
 
-    # 4. работы: план (незавершённые) + журнал (последние 10)
+    # 4. работы: план (незавершённые) + журнал (последние 10); ретро —
+    # только работы, датируемые не позже даты (планы на будущее не видны)
+    op_filters = [FieldOperation.field_id == field_id]
+    if retro:
+        op_filters.append(FieldOperation.date <= day)
     plan_ops = db.execute(
         select(FieldOperation, AgroInput.name)
         .outerjoin(AgroInput, FieldOperation.input_id == AgroInput.id)
         .where(
-            FieldOperation.field_id == field_id,
+            *op_filters,
             FieldOperation.status.in_(("draft", "planned", "in_progress")),
         )
         .order_by(FieldOperation.date)
