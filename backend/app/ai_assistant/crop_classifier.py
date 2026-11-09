@@ -29,7 +29,6 @@ from sqlalchemy.orm import Session
 from app.models.agronomy import CropCycle
 from app.models.integrations import SatelliteScene
 from app.models.references import Culture
-from app.modules.weather import __name__ as _weather_pkg  # noqa: F401 — совместимость
 
 logger = logging.getLogger(__name__)
 
