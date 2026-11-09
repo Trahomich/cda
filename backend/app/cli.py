@@ -390,15 +390,9 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
                 scenes = [
                     (s.captured_at, float(s.index_avg))
                     for s in db.scalars(
-                        sa_select(AIFieldAdvice.__table__.none if False else __import__(
-                            "app.models.integrations", fromlist=["SatelliteScene"]
-                        ).SatelliteScene).where(
-                            __import__("app.models.integrations", fromlist=["SatelliteScene"])
-                            .SatelliteScene.field_id
-                            == field_id,
-                            __import__("app.models.integrations", fromlist=["SatelliteScene"])
-                            .SatelliteScene.index
-                            == "ndvi",
+                        sa_select(SatelliteScene.captured_at, SatelliteScene.index_avg).where(
+                            SatelliteScene.field_id == field_id,
+                            SatelliteScene.index == "ndvi",
                         )
                     )
                 ]
