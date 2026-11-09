@@ -75,51 +75,111 @@ TECH_CALENDAR: dict[str, dict] = {
     },
     "spring_cereals": {
         "cultures": ["Яровая пшеница", "Ячмень", "Овёс"],
-        "windows": {"seeding": "04-05", "fertilizing": "03-25", "spraying": "05-01", "harvesting": "07-10"},
+        "windows": {
+            "seeding": "04-05"
+            "fertilizing": "03-25"
+            "spraying": "05-01"
+            "harvesting": "07-10"
+        },
     },
     "buckwheat_millet": {
         "cultures": ["Гречиха", "Просо"],
-        "windows": {"seeding": "05-05", "fertilizing": "04-20", "spraying": "06-01", "harvesting": "08-15"},
+        "windows": {
+            "seeding": "05-05"
+            "fertilizing": "04-20"
+            "spraying": "06-01"
+            "harvesting": "08-15"
+        },
     },
     "corn": {
         "cultures": ["Кукуруза", "Кукуруза на силос"],
-        "windows": {"seeding": "04-25", "fertilizing": "04-15", "spraying": "05-10", "harvesting": "08-20"},
+        "windows": {
+            "seeding": "04-25"
+            "fertilizing": "04-15"
+            "spraying": "05-10"
+            "harvesting": "08-20"
+        },
     },
     "legumes": {
         "cultures": ["Горох", "Чечевица"],
-        "windows": {"seeding": "04-05", "fertilizing": "03-25", "spraying": "05-05", "harvesting": "07-10"},
+        "windows": {
+            "seeding": "04-05"
+            "fertilizing": "03-25"
+            "spraying": "05-05"
+            "harvesting": "07-10"
+        },
     },
     "soy": {
         "cultures": ["Соя"],
-        "windows": {"seeding": "04-25", "fertilizing": "04-20", "spraying": "05-25", "harvesting": "09-05"},
+        "windows": {
+            "seeding": "04-25"
+            "fertilizing": "04-20"
+            "spraying": "05-25"
+            "harvesting": "09-05"
+        },
     },
     "winter_oilseeds": {
         "cultures": ["Рапс озимый"],
-        "windows": {"seeding": "08-05", "fertilizing": "03-05", "spraying": "03-20", "harvesting": "07-05"},
+        "windows": {
+            "seeding": "08-05"
+            "fertilizing": "03-05"
+            "spraying": "03-20"
+            "harvesting": "07-05"
+        },
     },
     "spring_oilseeds": {
         "cultures": ["Рапс", "Подсолнечник"],
-        "windows": {"seeding": "04-15", "fertilizing": "04-10", "spraying": "05-10", "harvesting": "08-01"},
+        "windows": {
+            "seeding": "04-15"
+            "fertilizing": "04-10"
+            "spraying": "05-10"
+            "harvesting": "08-01"
+        },
     },
     "perennial_grasses": {
         "cultures": ["Люцерна", "Клевер с тимофеевкой", "Многолетние травы"],
-        "windows": {"seeding": "04-10", "fertilizing": "03-15", "spraying": "04-10", "harvesting": "05-25"},
+        "windows": {
+            "seeding": "04-10"
+            "fertilizing": "03-15"
+            "spraying": "04-10"
+            "harvesting": "05-25"
+        },
     },
     "annual_grasses": {
         "cultures": ["Однолетние травы"],
-        "windows": {"seeding": "04-20", "fertilizing": "04-15", "spraying": "05-20", "harvesting": "06-25"},
+        "windows": {
+            "seeding": "04-20"
+            "fertilizing": "04-15"
+            "spraying": "05-20"
+            "harvesting": "06-25"
+        },
     },
     "sugar_beet": {
         "cultures": ["Свёкла сахарная"],
-        "windows": {"seeding": "04-05", "fertilizing": "03-25", "spraying": "05-05", "harvesting": "09-15"},
+        "windows": {
+            "seeding": "04-05"
+            "fertilizing": "03-25"
+            "spraying": "05-05"
+            "harvesting": "09-15"
+        },
     },
     "potato": {
         "cultures": ["Картофель"],
-        "windows": {"seeding": "04-20", "fertilizing": "04-10", "spraying": "05-25", "harvesting": "08-20"},
+        "windows": {
+            "seeding": "04-20"
+            "fertilizing": "04-10"
+            "spraying": "05-25"
+            "harvesting": "08-20"
+        },
     },
     "vegetables": {
         "cultures": ["Овощи открытого грунта"],
-        "windows": {"seeding": "05-05", "fertilizing": "04-20", "spraying": "06-01", "harvesting": "07-10"},
+        "windows": {
+            "seeding": "05-05"
+            "fertilizing": "04-20"
+            "spraying": "06-01"
+            "harvesting": "07-10"
+        },
     },
     "fallow": {
         "cultures": ["Пар", "Пар занятый"],
