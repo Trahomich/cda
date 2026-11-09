@@ -106,29 +106,42 @@ class AdviceContext:
     images: list[bytes] = field(default_factory=list)
 
 
-def _season_scene_rows(db: Session, field_id: uuid.UUID, year: int) -> list[SatelliteScene]:
-    """Чистые NDVI-сцены сезона year по возрастанию даты (§7.5)."""
+def _season_scene_rows(
+    db: Session, field_id: uuid.UUID, year: int, *, as_of: date | None = None
+) -> list[SatelliteScene]:
+    """Чистые NDVI-сцены сезона year по возрастанию даты (§7.5).
+
+    as_of (ретро #159) — только сцены, снятые не позже даты.
+    """
+    filters = [
+        SatelliteScene.field_id == field_id,
+        SatelliteScene.index == "ndvi",
+        SatelliteScene.cloud_pct <= CLEAN_CLOUD_PCT,
+        func.extract("year", SatelliteScene.captured_at) == year,
+    ]
+    if as_of is not None:
+        filters.append(SatelliteScene.captured_at <= as_of)
     return list(
         db.scalars(
             select(SatelliteScene)
-            .where(
-                SatelliteScene.field_id == field_id,
-                SatelliteScene.index == "ndvi",
-                SatelliteScene.cloud_pct <= CLEAN_CLOUD_PCT,
-                func.extract("year", SatelliteScene.captured_at) == year,
-            )
+            .where(*filters)
             .order_by(SatelliteScene.captured_at, SatelliteScene.created_at)
         )
     )
 
 
-def _latest_clean_scene_year(db: Session, field_id: uuid.UUID) -> int | None:
+def _latest_clean_scene_year(
+    db: Session, field_id: uuid.UUID, *, as_of: date | None = None
+) -> int | None:
+    filters = [
+        SatelliteScene.field_id == field_id,
+        SatelliteScene.index == "ndvi",
+        SatelliteScene.cloud_pct <= CLEAN_CLOUD_PCT,
+    ]
+    if as_of is not None:
+        filters.append(SatelliteScene.captured_at <= as_of)
     return db.scalar(
-        select(func.extract("year", func.max(SatelliteScene.captured_at))).where(
-            SatelliteScene.field_id == field_id,
-            SatelliteScene.index == "ndvi",
-            SatelliteScene.cloud_pct <= CLEAN_CLOUD_PCT,
-        )
+        select(func.extract("year", func.max(SatelliteScene.captured_at))).where(*filters)
     )
 
 
