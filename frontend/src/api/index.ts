@@ -363,6 +363,18 @@ export async function getYieldForecast(
   }
 }
 
+/** API-62 (§7.9, #161): GET /fields/{id}/economics?year=YYYY — экономика
+ *  сезона поля: суммы план/факт стоимости техработ, руб/га, руб/т (null без
+ *  фактической урожайности) и детализация по операциям (plan/fact по типу).
+ *  year (§7.5) — сезон YYYY; без параметра — текущий сезон. */
+export async function getFieldEconomics(
+  fieldId: string,
+  year?: number,
+): Promise<FieldEconomics> {
+  const yearQuery = year ? `?year=${year}` : ''
+  return apiClient.request<FieldEconomics>(`/fields/${fieldId}/economics${yearQuery}`)
+}
+
 /** API-51: GET /fields/{id}/insights — «Выводы ассистента» (§7.4):
  *  items — числовые детекторы (всегда), summary — LLM-сводка
  *  (null при source=rules); year (§7.5) — детекторы и сводка по сезону
