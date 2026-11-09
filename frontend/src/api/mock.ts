@@ -573,11 +573,12 @@ const OPERATIONS: Array<FieldOperation & { created_at: string }> = [
   },
   {
     // Факт прошлого сезона (2026) у поля 1: для #165 — журнал карточки
-    // фильтруется по выбранному сезону, работы 2026 не смешиваются с 2027.
+    // фильтруется по выбранному сезону, работы 2026 не смешиваются с 2027
+    // (озимая пшеница: уборка июля 2026 входит в окно сезона 2026).
     client_id: 'seed-0006-0000-4000-8000-000000000006',
     field_id: FIELDS[0].field_id,
     operation_type: 'harvesting',
-    date: '2026-08-15',
+    date: '2026-07-20',
     input_id: null,
     actual_dose: null,
     actual_area_ga: 121.9,
@@ -587,7 +588,7 @@ const OPERATIONS: Array<FieldOperation & { created_at: string }> = [
     deviation_flag: false,
     needs_review: false,
     status: 'done',
-    created_at: '2026-08-15T19:10:00Z',
+    created_at: '2026-07-20T19:10:00Z',
   },
 ]
 
