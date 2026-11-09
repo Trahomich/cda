@@ -2348,6 +2348,93 @@ polygon.card360__polygon {
   margin: 0.2rem 0;
 }
 
+/* ── Экономика сезона (API-62, §7.9; #163) ── */
+
+.card360__econ-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.5rem;
+  margin: 0.4rem 0;
+}
+
+.card360__econ-tiles > div {
+  border: 1px solid #d7e0d8;
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  background: #f7faf7;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.card360__econ-tiles dt {
+  font-size: 0.8rem;
+  color: #66756a;
+}
+
+.card360__econ-tiles dd {
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.card360__econ-diff--good {
+  color: #1b5e20;
+}
+
+.card360__econ-diff--bad {
+  color: #b3261e;
+}
+
+.card360__econ-ton {
+  margin: 0.2rem 0 0.4rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.card360__econ-toggle {
+  border: none;
+  background: none;
+  padding: 0.2rem 0;
+  color: #2e7d32;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card360__econ-ops {
+  list-style: none;
+  margin: 0.3rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.card360__econ-op {
+  border: 1px solid #e0e8e1;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.88rem;
+}
+
+/* план без факта — приглушаем всю строку (§7.9: fact=null — не выполнено) */
+.card360__econ-op--todo {
+  background: #f5f5f5;
+  color: #757575;
+}
+
+.card360__econ-op-title {
+  font-weight: 600;
+}
+
+.card360__econ-op-side {
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+}
+
 .card360__agrochem,
 .card360__weather {
   line-height: 1.6;
