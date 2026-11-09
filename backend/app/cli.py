@@ -447,6 +447,7 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
         "years": [year_from, year_to],
         "fields": len(field_ids),
         "pruned_today": pruned,
+        "today_refreshed": today_refreshed,
         **dict(counters),
         "per_season": per_season,
         "errors": errors[:20],
