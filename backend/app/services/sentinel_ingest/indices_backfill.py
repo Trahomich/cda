@@ -190,7 +190,9 @@ def run_indices_backfill(
     ndvi_scenes = db.execute(
         select(SatelliteScene.field_id, SatelliteScene.captured_at)
         .where(*criteria)
-        .order_by(SatelliteScene.captured_at, SatelliteScene.field_id)
+        # CONTRACTS §11 (#565): бэкфиллы идут от текущей даты НАЗАД —
+        # свежие данные первыми (пользователь смотрит их прямо сейчас)
+        .order_by(SatelliteScene.captured_at.desc(), SatelliteScene.field_id)
     ).all()
     report.scenes = len(ndvi_scenes)
 
