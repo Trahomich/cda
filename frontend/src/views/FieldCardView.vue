@@ -1116,17 +1116,21 @@ function fmtNum(v: number, digits = 1): string {
         <!-- NDVI -->
         <div class="card360__block">
           <h2 class="card360__block-title">
-            NDVI-таймлайн (сезон {{ selectedYear ?? currentCycle?.year ?? '—' }})
+            {{ chartMeta.label }}-таймлайн (сезон {{ selectedYear ?? currentCycle?.year ?? '—' }})
           </h2>
           <!-- Пустое состояние («снимков нет») рендерит сам компонент -->
           <Skeleton
-            v-if="ndviLoading"
+            v-if="chartLoading"
             :lines="3"
           />
           <NdviTimeline
             v-else
-            :points="ndvi"
-            :selectable="renderDates"
+            :points="chartPoints"
+            :index="chartIndex"
+            :label="chartMeta.label"
+            :hint="chartMeta.hint"
+            :as-of="todayIso"
+            :selectable="chartSelectable"
             :selected="renderDate"
             @select="onDotSelect"
           />
