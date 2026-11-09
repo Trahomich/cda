@@ -439,3 +439,59 @@ class TestStripMarkdown131:
         for md in ("**", "`", "\n#"):
             assert md not in record.answer
         assert "0.410" in record.answer
+
+
+class TestExtraIndicesContext:
+    """Секция «Другие индексы сезона» в контексте advice (§9.1, #153)."""
+
+    @staticmethod
+    def _index_scene(db, fid, index, day, avg):
+        from datetime import date as d
+
+        db.add(
+            SatelliteScene(
+                field_id=fid,
+                index=index,
+                captured_at=d.fromisoformat(day),
+                resolution_m=10,
+                index_min=avg - 0.1,
+                index_avg=avg,
+                index_max=avg + 0.1,
+                cloud_pct=0.0,
+                composite_days=1,
+                source_id=SATELLITE_SOURCE,
+                trust=1.0,
+            )
+        )
+
+    def test_section_present(self, world, db_session) -> None:
+        client, hdr = world
+        fid, _ = _season_world(db_session, client, hdr)
+        self._index_scene(db_session, fid, "ndre", "2026-07-01", 0.42)
+        self._index_scene(db_session, fid, "ndre", "2026-06-11", 0.38)
+        self._index_scene(db_session, fid, "ndmi", "2026-07-01", -0.12)
+        self._index_scene(db_session, fid, "evi", "2026-05-01", 0.51)
+        self._index_scene(db_session, fid, "bsi", "2026-07-01", -0.2)
+        # зимний NDSI сезона 2026: декабрь 2025
+        self._index_scene(db_session, fid, "ndsi", "2025-12-20", 0.6)
+        # чужой сезон и вне месяцев (ноябрьская evi) — не попадают
+        self._index_scene(db_session, fid, "ndre", "2024-07-01", 0.5)
+        self._index_scene(db_session, fid, "evi", "2026-11-20", 0.4)
+        db_session.commit()
+
+        ctx = advice.build_advice_context(db_session, fid, ADVICE_DAY)
+        assert ctx is not None
+        assert "Другие индексы сезона" in ctx.context
+        assert "NDRE (азотный статус): 2026-06-11: 0.380, 2026-07-01: 0.420" in ctx.context
+        assert "NDMI (влажность биомассы): 2026-07-01: -0.120" in ctx.context
+        assert "EVI (вегетация): 2026-05-01: 0.510" in ctx.context
+        assert "BSI (голая почва): 2026-07-01: -0.200" in ctx.context
+        assert "NDSI (снег): 2025-12-20: 0.600" in ctx.context
+        assert "2024-07-01" not in ctx.context and "2026-11-20" not in ctx.context
+
+    def test_section_absent_without_indices(self, world, db_session) -> None:
+        client, hdr = world
+        fid, _ = _season_world(db_session, client, hdr)
+        ctx = advice.build_advice_context(db_session, fid, ADVICE_DAY)
+        assert ctx is not None
+        assert "Другие индексы сезона" not in ctx.context
