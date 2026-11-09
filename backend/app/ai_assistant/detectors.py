@@ -423,15 +423,18 @@ def detect_drought(
 
 
 def load_winter_pairs(
-    db: Session, field_id: uuid.UUID, season_year: int
+    db: Session, field_id: uuid.UUID, season_year: int, *, as_of: date | None = None
 ) -> list[tuple[date, float, float]]:
     """Зимние сцены сезона (декабрь Y−1 … март Y, §7.7 #129): (дата, NDVI, NDSI).
 
     NDVI- и NDSI-сцены сопоставляются по дате; в пары идут только даты,
     где есть обе (пороговая логика winterkill требует NDSI).
+    as_of (ретро #159) — окно обрезается датой (сцен позже даты нет).
     """
     window_from = date(season_year - 1, 12, 1)
     window_to = date(season_year, 3, 31)
+    if as_of is not None and as_of < window_to:
+        window_to = as_of
 
     def _index_by_date(index: str) -> dict[date, float]:
         return {
