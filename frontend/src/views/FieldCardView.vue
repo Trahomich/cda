@@ -244,7 +244,7 @@ async function loadIndexLayers(): Promise<void> {
   ) as Record<ExtraIndexKey, string[]>
   // Выбранный индекс в новом сезоне недоступен — возвращаем NDVI.
   const mode = layerMode.value
-  if (mode !== 'ndvi' && mode !== 'truecolor' && mode !== 'none' && !indexDates.value[mode].length) {
+  if (mode !== 'ndvi' && mode !== 'truecolor' && !indexDates.value[mode].length) {
     layerMode.value = 'ndvi'
   }
   indexLoading.value = false
