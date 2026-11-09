@@ -2391,6 +2391,12 @@ polygon.card360__polygon {
   font-variant-numeric: tabular-nums;
 }
 
+/* единицы («₽/т», «ц/га») не рвутся при переносе строки */
+.card360__econ-ton strong,
+.card360__econ-unit {
+  white-space: nowrap;
+}
+
 .card360__econ-toggle {
   border: none;
   background: none;
