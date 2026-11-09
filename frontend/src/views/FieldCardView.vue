@@ -1566,6 +1566,106 @@ function fmtNum(v: number, digits = 1): string {
           </div>
         </div>
 
+        <!-- Экономика сезона (API-62, §7.9; #163): план/факт стоимости
+             техработ, руб/га, руб/т + детализация по операциям -->
+        <div class="card360__block card360__block--econ">
+          <h2 class="card360__block-title">
+            Экономика сезона {{ selectedYear ?? currentCycle?.year ?? '' }}
+          </h2>
+          <Skeleton
+            v-if="econLoading"
+            :lines="3"
+          />
+          <template v-else-if="econ">
+            <dl class="card360__econ-tiles">
+              <div>
+                <dt>План</dt>
+                <dd>{{ fmtRub(econ.plan_cost_rub) }}</dd>
+              </div>
+              <div>
+                <dt>Факт</dt>
+                <dd>{{ fmtRub(econ.fact_cost_rub) }}</dd>
+              </div>
+              <div>
+                <dt>{{ econDiff > 0 ? 'Перерасход' : 'Экономия' }}</dt>
+                <dd
+                  class="card360__econ-diff"
+                  :class="econDiff > 0 ? 'card360__econ-diff--bad' : 'card360__econ-diff--good'"
+                >
+                  {{ econDiff > 0 ? '+' : '−' }}{{ fmtRub(Math.abs(econDiff)) }}
+                </dd>
+              </div>
+              <div>
+                <dt>Руб/га</dt>
+                <dd>{{ fmtRub(econ.cost_per_ga_rub) }}</dd>
+              </div>
+            </dl>
+            <p class="card360__econ-ton">
+              <template v-if="econ.fact_cost_per_ton_rub != null">
+                Себестоимость зерна:
+                <strong>{{ fmtRub(econ.fact_cost_per_ton_rub) }}/т</strong>
+                <span class="card360__muted">
+                  (фактическая урожайность {{ fmtNum(econ.yield_c_ha ?? 0) }} ц/га)
+                </span>
+              </template>
+              <template v-else>
+                Себестоимость руб/т: —
+                <span class="card360__muted">укажите фактическую урожайность цикла</span>
+              </template>
+            </p>
+            <div
+              v-if="econ.operations.length"
+              class="card360__econ-details"
+            >
+              <button
+                type="button"
+                class="card360__econ-toggle"
+                @click="econOpen = !econOpen"
+              >
+                Детализация по операциям ({{ econ.operations.length }})
+                {{ econOpen ? '▴' : '▾' }}
+              </button>
+              <ul
+                v-if="econOpen"
+                class="card360__econ-ops"
+              >
+                <li
+                  v-for="op in econ.operations"
+                  :key="`${op.type}-${op.title}`"
+                  class="card360__econ-op"
+                  :class="{ 'card360__econ-op--todo': op.fact == null }"
+                >
+                  <span class="card360__econ-op-title">
+                    {{ op.title }}<template v-if="op.plan == null"> · вне плана</template>
+                  </span>
+                  <span class="card360__econ-op-side">
+                    план:
+                    <template v-if="op.plan">
+                      {{ op.plan.date ? fmtDate(op.plan.date) : '—' }} ·
+                      {{ op.plan.cost_rub != null ? fmtRub(op.plan.cost_rub) : 'стоимость не задана' }}
+                    </template>
+                    <template v-else>—</template>
+                  </span>
+                  <span class="card360__econ-op-side">
+                    факт:
+                    <template v-if="op.fact">
+                      {{ op.fact.date ? fmtDate(op.fact.date) : '—' }} ·
+                      {{ op.fact.cost_rub != null ? fmtRub(op.fact.cost_rub) : 'стоимость не задана' }}
+                    </template>
+                    <template v-else>не выполнено</template>
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </template>
+          <p
+            v-else
+            class="card360__muted"
+          >
+            Экономика сезона недоступна
+          </p>
+        </div>
+
         <!-- Агрохимия -->
         <!-- Ассистент (#148): выводы (API-51) + «что делать сейчас» (API-55/56,
              §9.3) одним блоком с одной кнопкой «Пересчитать» -->
