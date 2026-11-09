@@ -342,10 +342,13 @@ def season_key_dates(
     group = culture_group(culture_name)
     entries: list[tuple[str, int, int, str]] | None = None
     winter_calendar = False
+    from_calendar = False
     if tech_map is not None:
         entries = _calendar_entries_tech_map(tech_map, culture_name)
+        from_calendar = entries is not None
     if entries is None:
         entries = _calendar_entries(culture_name)
+        from_calendar = entries is not None
         winter_calendar = _is_winter_calendar_group(culture_name)
     if entries is None:
         entries = _DEFAULTS[group]
