@@ -51,7 +51,7 @@ CLEAN_CLOUD_PCT = 60
 ADVICE_LLM_TIMEOUT_SECONDS = 120.0
 
 #: максимум PNG-рендеров в одном запросе (§9.1: не более 2 картинок)
-MAX_IMAGES = 2
+MAX_IMAGES = 3  # NDVI-последняя, NDVI-пик, NDRE-последняя (§9.1, #153)
 
 ADVICE_PROMPT = (
     "Ты — агроном-ассистент цифрового двойника хозяйства. Сегодня {date}. "
