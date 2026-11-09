@@ -373,3 +373,46 @@ class TestIndicesAutoBackfill:
 
         disabled = create_worker(Settings(ingest_satellite_indices_enabled=False))
         assert not [j for j in disabled.get_jobs() if j.id == JOB_INDICES_BACKFILL]
+
+
+class TestEnsureRenders:
+    def test_full_indices_scene_renders_new_variants(
+        self, db_session, tmp_path, band_rasters
+    ) -> None:
+        """Сцена с полными индексами, но без PNG новых вариантов — кандидат:
+        джоба дописывает рендеры (ensure-renders, #152); повтор — не кандидат.
+        """
+        from app.services.sentinel_ingest.renders import meta_path, render_path, write_renders
+
+        _seed_ndvi_scene(db_session, band_rasters["assets"])
+        run_indices_backfill(db_session, render_dir=None)  # индексы без рендеров
+        field_id = db_session.scalar(db_text("SELECT id FROM dat_field LIMIT 1"))
+        # сцена рендерилась конвейером: сайдкар + обязательные варианты есть,
+        # новых (ndre/ndmi/ndsi/bsi/evi/savi) нет
+        meta_path(tmp_path, field_id, DAY).parent.mkdir(parents=True, exist_ok=True)
+        meta_path(tmp_path, field_id, DAY).write_text("{}", encoding="utf-8")
+        for variant in ("ndvi", "truecolor"):
+            p = render_path(tmp_path, field_id, variant, DAY)
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(b"png")
+
+        report = run_indices_backfill(db_session, render_dir=str(tmp_path))
+        assert report.scenes == 1
+        assert report.rendered == 1
+        for variant in ("ndre", "ndmi", "ndsi", "evi", "savi", "bsi"):
+            assert render_path(tmp_path, field_id, variant, DAY).is_file(), variant
+
+        # повтор: индексы и рендеры полны — кандидатов нет
+        report2 = run_indices_backfill(db_session, render_dir=str(tmp_path))
+        assert report2.scenes == 0 and report2.rendered == 0
+
+    def test_scene_without_meta_not_render_candidate(
+        self, db_session, tmp_path, band_rasters
+    ) -> None:
+        """Нет сайдкара meta — сцена не рендерилась конвейером: не кандидат
+        по рендерам (индексы при этом добираются)."""
+        _seed_ndvi_scene(db_session, band_rasters["assets"])
+        run_indices_backfill(db_session, render_dir=None)
+        report = run_indices_backfill(db_session, render_dir=str(tmp_path))
+        assert report.scenes == 0  # индексы полны, рендеры не ждём
+        assert report.rendered == 0
