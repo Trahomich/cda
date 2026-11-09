@@ -60,6 +60,13 @@ class Settings(BaseSettings):
     ingest_satellite_retry_base_seconds: float = 60.0  # 0 — без пауз (тесты)
     ingest_satellite_ndvi_batch: int = 200  # строк каталога за цикл расчёта NDVI
     ingest_satellite_ndvi_workers: int = 4  # потоков чтения COG (окна полей, 05 §2)
+    #: догоняющий бэкфилл индексов §7.7 (#152): суточная джоба sentinel-воркера;
+    #: добирает сцены без полного набора индексов (идемпотентна, без кандидатов —
+    #: один дешёвый SELECT); руками запускать ничего не нужно
+    ingest_satellite_indices_enabled: bool = True
+    ingest_satellite_indices_from_date: date = date(2023, 1, 1)
+    ingest_satellite_indices_daily_at_hour: int = 2  # UTC
+    ingest_satellite_indices_daily_at_minute: int = 10
     # PNG-рендеры сцен (docs/06 §7.3, #83): пусто — рендеры выключены
     # (render_available=false; на проде /var/lib/cda/ndvi-renders, volume)
     ndvi_render_dir: str = ""

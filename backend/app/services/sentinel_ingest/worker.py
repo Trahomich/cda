@@ -51,6 +51,7 @@ from app.services.sentinel_ingest.ndvi import run_ndvi_cycle
 logger = logging.getLogger(__name__)
 
 JOB_CATALOG = "sentinel_catalog"
+JOB_INDICES_BACKFILL = "sentinel_indices_backfill"
 
 
 def catalog_window(settings: Settings) -> tuple[date, date]:
