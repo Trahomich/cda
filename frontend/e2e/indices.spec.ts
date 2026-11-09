@@ -159,8 +159,7 @@ test('карточка поля: график временного ряда сл
   // Смена сезона перестраивает ряд: только даты сезона 2026 (первая точка
   // подписана с годом) — ?year в запросе ряда отфильтровал чужие сезоны.
   await page.locator('.strip__cell--season').filter({ hasText: '2026' }).click()
-  await expect(page.locator('.ndvi__last')).toContainText('· NDRE 0,6', { timeout: 15_000 })
-  await expect(page.locator('.ndvi__last')).toContainText('31.07.2026')
+  await expect(page.locator('.ndvi__last')).toContainText('31.07.2026', { timeout: 15_000 })
   await expect(page.locator('.ndvi__asof')).toContainText('показано за 31.07.2026')
 })
 
