@@ -412,14 +412,16 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
         for field_id in field_ids:
             cultures = advice_key_dates.season_cultures(db, field_id, year_from, year_to)
             for season, culture_name in sorted(cultures.items()):
+                # db.execute(...).all() — Row-кортежи (scalars вернул бы
+                # только первые элементы — captured_at без index_avg, #159 fix)
                 scenes = [
-                    (s.captured_at, float(s.index_avg))
-                    for s in db.scalars(
+                    (row[0], float(row[1]))
+                    for row in db.execute(
                         sa_select(SatelliteScene.captured_at, SatelliteScene.index_avg).where(
                             SatelliteScene.field_id == field_id,
                             SatelliteScene.index == "ndvi",
                         )
-                    )
+                    ).all()
                 ]
                 key_dates = advice_key_dates.season_key_dates(
                     db, field_id, culture_name, season, scenes=scenes
