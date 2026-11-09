@@ -258,7 +258,7 @@ function indexLayerDisabled(key: IndexLayerKey): boolean {
 
 const renderDates = computed(() => {
   const mode = layerMode.value
-  if (mode !== 'ndvi' && mode !== 'truecolor' && mode !== 'none') {
+  if (mode !== 'ndvi' && mode !== 'truecolor') {
     return indexDates.value[mode]
   }
   return ndvi.value.filter((p) => p.render_available).map((p) => p.date)
