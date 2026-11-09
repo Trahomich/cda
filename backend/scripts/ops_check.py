@@ -382,8 +382,10 @@ def main() -> int:
         print(f"\n--fix: правок применено {len(violations)}, бэкап: {path}")
 
         # ── разведение дублей (field, date, operation_type) после сдвигов ──
-        # clamp мог свести несколько операций в одну дату; лишним записям
-        # группы даём +14 дней, если дата остаётся в окне их цикла
+        # clamp мог свести несколько операций в одну дату; записям группы
+        # начиная со второй даём ±14 дней, оставаясь в окне их цикла
+        from datetime import timedelta
+
         with engine.begin() as db:
             dupes = db.execute(text(
                 "select o.id, o.field_id, o.date, o.operation_type "
@@ -398,28 +400,29 @@ def main() -> int:
             seen_first: set = set()
             for r in dupes:
                 key = (r["field_id"], r["date"], r["operation_type"])
-                if key in seen_first:
-                    continue  # первую запись группы оставляем
-                seen_first.add(key)
-                # остальные записи группы (после первой) — сдвигаем
-            # повторно: записи групп, начиная со второй
-            seen_first.clear()
-            for r in dupes:
-                key = (r["field_id"], r["date"], r["operation_type"])
-                if key in seen_first:
-                    new_date = r["date"] + timedelta(days=14)
-                    db.execute(
-                        text("update dat_field_operation set date = :d where id = :i"),
-                        {"d": new_date, "i": r["id"]},
+                if key not in seen_first:
+                    seen_first.add(key)  # первую запись группы оставляем
+                    continue
+                for delta in (timedelta(days=14), timedelta(days=-14)):
+                    new_date = r["date"] + delta
+                    cands = cycle_years(r["field_id"], new_date)
+                    if not cands:
+                        continue
+                    legal = any(
+                        classify("op", r, by_field[r["field_id"]][y][1], new_date,
+                                 r["operation_type"], y)
+                        is None
+                        for y in cands
                     )
-                    spread += 1
-                else:
-                    seen_first.add(key)
+                    if legal:
+                        db.execute(
+                            text("update dat_field_operation set date = :d where id = :i"),
+                            {"d": new_date, "i": r["id"]},
+                        )
+                        spread += 1
+                        break
         if spread:
-            print(f"--fix: дублей дат разведено (+14 дней): {spread}")
-            # сверка после разведения: даты могли выйти за допуск — проверить
-            with engine.connect() as db:
-                pass  # повторный запуск скрипта без --fix покажет итог
+            print(f"--fix: дублей дат разведено (±14 дней): {spread}")
     return 0
 
 
