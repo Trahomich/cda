@@ -720,6 +720,84 @@ function yieldOf(n: number, fieldId: string, cultureName: string, year = 2027): 
   }
 }
 
+/** API-62 (§7.9, #161): экономика сезона — мок: типовые техработы цикла
+ *  с расценками руб/га × площадь поля. Текущий сезон (2027) идёт: часть
+ *  работ выполнена, опрыскивание — план без стоимости (норматив не задан),
+ *  уборка — план без факта; прошлый сезон (2026) закрыт с урожайностью
+ *  (история циклов) + боронование вне плана. Факт слегка отличается от
+ *  плана (детерминированные множители), чтобы сводка показывала
+ *  экономию/перерасход. Года без цикла — пустые суммы и []. */
+function economicsOf(field: Field, year: number): FieldEconomics {
+  const area = field.area_ga
+  const rub = (r: number) => Math.round((r * area) / 100) * 100
+  // [type, title, ММ-ДД плана, руб/га, ММ-ДД факта | null, множитель факта]
+  const rows: Array<[string, string, string, number, string | null, number]> =
+    year === 2026
+      ? [
+          ['tillage', 'Вспашка', '09-01', 1150, '09-02', 1.02],
+          ['tillage', 'Культивация', '04-20', 520, '04-21', 1.03],
+          ['seeding', 'Посев', '04-28', 1730, '04-28', 0.99],
+          ['fertilizing', 'Внесение удобрений', '04-12', 810, '04-14', 1.01],
+          ['spraying', 'Опрыскивание', '05-20', 430, '05-21', 1.04],
+          ['harvesting', 'Уборка', '08-10', 2050, '08-12', 1.05],
+        ]
+      : [
+          ['tillage', 'Культивация', '04-18', 520, '04-19', 1.03],
+          ['seeding', 'Посев', '04-26', 1730, '04-27', 1.0],
+          ['fertilizing', 'Внесение удобрений', '04-25', 810, '04-25', 0.99],
+          ['harvesting', 'Уборка', '08-10', 2050, null, 1],
+        ]
+  const operations: FieldEconomicsOperation[] = rows.map(
+    ([type, title, planMd, rate, factMd, k]) => ({
+      type,
+      title,
+      plan: { date: `${year}-${planMd}`, cost_rub: rub(rate) },
+      fact:
+        factMd != null
+          ? { date: `${year}-${factMd}`, cost_rub: Math.round(rub(rate) * k) }
+          : null,
+    }),
+  )
+  if (year === 2026) {
+    // Факт без плана: боронование сделали вне плана (§7.9: plan=null).
+    operations.push({
+      type: 'other',
+      title: 'Боронование',
+      plan: null,
+      fact: { date: `${year}-04-05`, cost_rub: rub(240) },
+    })
+  } else {
+    // План без стоимости (норматив не задан) и без факта: в суммы не входит.
+    operations.push({
+      type: 'spraying',
+      title: 'Опрыскивание',
+      plan: { date: `${year}-05-20`, cost_rub: null },
+      fact: null,
+    })
+  }
+  // Сортировка §7.9: по дате факта, иначе плана.
+  operations.sort((a, b) =>
+    (a.fact?.date ?? a.plan?.date ?? '').localeCompare(b.fact?.date ?? b.plan?.date ?? ''),
+  )
+  const planCost = operations.reduce((s, o) => s + (o.plan?.cost_rub ?? 0), 0)
+  const factCost = operations.reduce((s, o) => s + (o.fact?.cost_rub ?? 0), 0)
+  const n = FIELD_N.get(field.field_id)!
+  const yieldC = HISTORY[n]?.find((h) => h.year === year)?.yield_c_ha ?? null
+  const perTon =
+    yieldC != null ? Math.round(factCost / ((yieldC * area) / 100)) : null
+  return {
+    field_id: field.field_id,
+    year,
+    area_ga: area,
+    plan_cost_rub: planCost,
+    fact_cost_rub: factCost,
+    cost_per_ga_rub: Math.round((factCost / area) * 10) / 10,
+    fact_cost_per_ton_rub: perTon,
+    yield_c_ha: yieldC,
+    operations,
+  }
+}
+
 /** API-51 (§7.4, #96): «Выводы ассистента» — только числовые детекторы
  *  (source='rules': Ollama недоступен → summary=null, UI покажет items);
  *  состав детерминирован от поля. Поле 7 — без отклонений (пустые items),
