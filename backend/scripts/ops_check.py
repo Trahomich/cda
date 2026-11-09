@@ -161,22 +161,18 @@ def main() -> int:
     for r in cycles:
         by_field.setdefault(r["field_id"], {})[r["year"]] = (r["id"], r["culture"])
 
-    def cycle_for(field_id, day: date):
-        """Цикл операции по правилу §2 tech-calendar (год = год уборки)."""
+    def cycle_years(field_id, day: date):
+        """Кандидаты циклов операции по правилу §2 (год = год уборки),
+        в порядке предпочтения: месяц ≥ 9 → (Y+1, Y); ≤ 7 → (Y, Y−1);
+        август → (Y+1, Y, Y−1)."""
         years = by_field.get(field_id, {})
         if day.month >= 9:
-            for y in (day.year + 1, day.year):
-                if y in years:
-                    return y, years[y][1]
+            order = (day.year + 1, day.year)
         elif day.month <= 7:
-            for y in (day.year, day.year - 1):
-                if y in years:
-                    return y, years[y][1]
-        else:  # август
-            for y in (day.year + 1, day.year, day.year - 1):
-                if y in years:
-                    return y, years[y][1]
-        return None, None
+            order = (day.year, day.year - 1)
+        else:
+            order = (day.year + 1, day.year, day.year - 1)
+        return [y for y in order if y in years]
 
     unknown = Counter()
     violations: list[dict] = []
