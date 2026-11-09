@@ -124,8 +124,20 @@ class TestRetroContext:
 
 
 class TestKeyDates:
-    def test_winter_season_spans_two_years(self, world, db_session):
-        """Озимые, сезон 2026: перед посевом — 15.09.2025, уборка — 2026."""
+    def test_winter_calendar_culture_spans_two_years(self, world, db_session):
+        """Озимая пшеница (техкарты #158): посев 15.08.2025 (окно−3), уборка 2026."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        kds = advice_key_dates.season_key_dates(db_session, fid, "Озимая пшеница", 2026)
+        assert [(kd.label, kd.date) for kd in kds] == [
+            ("перед посевом", date(2025, 8, 12)),  # окно сева 08-15 − 3 сут
+            ("перед подкормкой", date(2026, 3, 7)),
+            ("перед обработкой СЗР", date(2026, 3, 17)),
+            ("перед уборкой", date(2026, 6, 28)),
+        ]
+
+    def test_winter_fallback_markers(self, world, db_session):
+        """Культуры нет в календаре — дефолты задачи #159 по маркеру озимости."""
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         kds = advice_key_dates.season_key_dates(db_session, fid, "Пшеница озимая", 2026)
@@ -135,29 +147,32 @@ class TestKeyDates:
             ("перед уборкой", date(2026, 7, 1)),
         ]
 
-    def test_spring_and_row_crop_defaults(self, world, db_session):
+    def test_spring_and_row_crop_from_calendar(self, world, db_session):
+        """Ячмень и кукуруза — даты из техкарт #158 (начало окна − 3 сут)."""
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         spring = advice_key_dates.season_key_dates(db_session, fid, "Ячмень", 2026)
         assert [kd.date for kd in spring] == [
-            date(2026, 4, 25),
-            date(2026, 6, 5),
-            date(2026, 8, 1),
+            date(2026, 3, 22),  # подкормка 03-25 − 3
+            date(2026, 4, 2),  # посев 04-05 − 3
+            date(2026, 4, 28),  # СЗР 05-01 − 3
+            date(2026, 7, 7),  # уборка 07-10 − 3
         ]
         corn = advice_key_dates.season_key_dates(db_session, fid, "Кукуруза на силос", 2026)
         assert [kd.date for kd in corn] == [
-            date(2026, 5, 10),
-            date(2026, 6, 15),
-            date(2026, 9, 5),
+            date(2026, 4, 12),  # подкормка 04-15 − 3
+            date(2026, 4, 22),  # посев 04-25 − 3
+            date(2026, 5, 7),  # СЗР 05-10 − 3
+            date(2026, 8, 17),  # уборка 08-20 − 3
         ]
 
     def test_grass_cut_dates_from_ndvi_dips(self, world, db_session):
-        """Травы: старт отрастания + укосы по провалам NDVI ≥ 0.15."""
+        """Травы: окна техкарт + укосы по провалам NDVI ≥ 0.15."""
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         scenes = [
             (date(2026, 4, 20), 0.30),
-            (date(2026, 5, 20), 0.80),  # пик → укос
+            (date(2026, 5, 20), 0.80),  # пик
             (date(2026, 5, 25), 0.35),  # провал 0.45 ≥ 0.15 → укос 05-28
             (date(2026, 6, 20), 0.75),
             (date(2026, 6, 25), 0.40),  # второй укос 06-28
@@ -166,12 +181,13 @@ class TestKeyDates:
             db_session, fid, "Многолетние травы", 2026, scenes=scenes
         )
         dates = [kd.date for kd in kds]
-        assert date(2026, 4, 15) in dates
-        assert date(2026, 5, 28) in dates
+        assert date(2026, 3, 12) in dates  # подкормка трав 03-15 − 3 (техкарта)
+        assert date(2026, 5, 22) in dates  # первый укос-окно 05-25 − 3
+        assert date(2026, 5, 28) in dates  # укос по провалу NDVI
         assert date(2026, 6, 28) in dates
 
     def test_plan_date_shifts_key_date(self, world, db_session):
-        """Есть реальный план того же типа в окне ±25 сут — дата плана − 3 сут."""
+        """Есть реальная работа того же типа в окне ±25 сут — дата плана − 3 сут."""
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
         db_session.add(
