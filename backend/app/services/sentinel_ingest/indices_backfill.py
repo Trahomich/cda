@@ -243,16 +243,30 @@ def run_indices_backfill(
                     report.failed += 1
                 continue
             assert stats is not None
-            written = upsert_scene_indices(db, task.field_id, task.captured_at, stats)
+            # честная облачность пересчитанной сцены может быть > 60 (в БД
+            # лежит ndvi-сцена по ДРУГОЙ строке каталога той же даты, или
+            #/catalog-строка честнее старого расчёта) — такие сцены-индексы
+            # не пишем, констрейнт cloud ≤ 60 (05 §5 п.2); это не ошибка
+            stats_ok = [st for st in stats if st.cloud_pct <= MAX_SCENE_CLOUD_PCT]
+            if len(stats_ok) < len(stats):
+                report.cloud_skipped += 1
+                logger.info(
+                    "indices-backfill: %s/%s — облачность %.1f > %.0f, индексы не сохранены",
+                    task.field_id,
+                    task.captured_at,
+                    stats[0].cloud_pct,
+                    MAX_SCENE_CLOUD_PCT,
+                )
+            written = upsert_scene_indices(db, task.field_id, task.captured_at, stats_ok)
             db.commit()
             if written:
                 report.scenes_written += 1
                 report.index_scenes += written
-                for st in stats:
+                for st in stats_ok:
                     report.per_index[st.index] = report.per_index.get(st.index, 0) + 1
             if rendered:
                 report.rendered += 1
-            if len(stats) < len(EXTRA_INDICES):
+            if len(stats_ok) < len(EXTRA_INDICES):
                 report.partial_bands += 1
 
     report.scenes = len(tasks)  # фактические кандидаты обработки
