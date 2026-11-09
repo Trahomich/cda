@@ -2002,6 +2002,16 @@ polygon.card360__polygon {
   cursor: pointer;
 }
 
+/* #608/#609: на десктопе плашки крупнее и читабельнее (~+10% к прежним
+ * 0.8rem/0.22×0.4rem), ряд всё равно один — места хватает */
+@media (min-width: 600px) {
+  .card360__layer-btn {
+    font-size: 0.88rem;
+    padding: 0.24rem 0.45rem;
+    min-height: 34px;
+  }
+}
+
 .card360__layer-btn--active {
   background: #2e7d32;
   color: #fff;
