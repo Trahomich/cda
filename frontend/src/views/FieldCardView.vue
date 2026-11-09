@@ -910,9 +910,32 @@ async function loadWeather() {
   }
 }
 
+/** Окно сезона для журнала карточки (#635/#165): операции выбранного сезона
+ *  без смешения лет; яровые — календарный год, озимые (культура «озимая») —
+ *  с августа Y−1 по июль Y (посев осенью, уборка летом Y). */
+const journalWindow = computed(() => {
+  const year = selectedYear.value ?? currentSeasonYear.value
+  if (year == null) return null
+  const culture = cropHistory.value.find((c) => c.year === year)?.culture_name ?? ''
+  const winter = /озим/i.test(culture)
+  return winter
+    ? { from: `${year - 1}-08-01`, to: `${year}-07-31` }
+    : { from: `${year}-01-01`, to: `${year}-12-31` }
+})
+
 async function loadJournal() {
+  journalLoading.value = true
   try {
-    operations.value = (await getOperations({ field_id: fieldId, limit: 5 })).items
+    // #165: только операции выбранного сезона (окно с озимыми), не последние
+    // работы всех лет — иначе журнал противоречил экономике сезона на экране.
+    const w = journalWindow.value
+    operations.value = (
+      await getOperations({
+        field_id: fieldId,
+        limit: 5,
+        ...(w ? { date_from: w.from, date_to: w.to } : {}),
+      })
+    ).items
   } catch {
     operations.value = []
   } finally {
