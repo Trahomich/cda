@@ -14,6 +14,8 @@ import type {
   CropCycleDetail,
   Field,
   FieldAdvice,
+  FieldEconomics,
+  FieldEconomicsOperation,
   FieldOperation,
   FieldStatus,
   GddPoint,
