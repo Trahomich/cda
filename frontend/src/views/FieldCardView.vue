@@ -452,10 +452,14 @@ async function loadSeasons() {
     seasons.value = [] // API-54 недоступен — карточка остаётся в режиме текущего сезона
   }
   // NDVI успел загрузиться до Seasons (гонка параллельных блоков) и без ?year
-  // — перезагружаем с годом текущего сезона (#495).
+  // — перезагружаем с годом текущего сезона (#495); индексные слои — тоже.
   if (ndviNeedsSeasonYear.value && currentSeasonYear.value != null) {
     ndviNeedsSeasonYear.value = false
     void loadNdvi()
+  }
+  if (indexNeedsSeasonYear.value && currentSeasonYear.value != null) {
+    indexNeedsSeasonYear.value = false
+    void loadIndexLayers()
   }
 }
 
