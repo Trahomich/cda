@@ -225,7 +225,7 @@ def run_indices_backfill(
         # вариантов (ensure-renders: сцены с полными индексами, но без PNG
         # новых вариантов — суточная джоба дописывает их сама, #152)
         need_render = bool(render_dir) and renders_incomplete(
-            render_dir, field_id, captured_at, assets
+            str(render_dir), field_id, captured_at, assets
         )
         if not _missing_indices(db, field_id, captured_at) and not need_render:
             continue  # идемпотентность: индексы и рендеры полны
