@@ -178,7 +178,12 @@ def main() -> int:
         target = clamp_to_window(day, *win, year)
         if target == day:
             return None
-        return {"action": "shift", "date": target}
+        action = "shift"
+        if kind == "plan" and group == "fallow":
+            # план по пару с вегетационной операцией: tillage запрещён CHECK
+            # таблицы — помечаем cancelled (нелегален целиком)
+            return {"action": "cancel"}
+        return {"action": action, "date": target}
 
     # ── журнал ──
     for r in ops:
