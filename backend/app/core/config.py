@@ -1,5 +1,6 @@
 """Конфигурация приложения (pydantic-settings, значения из .env / окружения)."""
 
+from datetime import date
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
