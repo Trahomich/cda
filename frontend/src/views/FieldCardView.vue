@@ -677,6 +677,38 @@ async function loadYield() {
   }
 }
 
+/* ── Экономика сезона (API-62, §7.9; #163): план/факт стоимости техработ,
+ *  руб/га, руб/т (null без фактической урожайности) + детализация ── */
+
+const econ = ref<FieldEconomics | null>(null)
+const econLoading = ref(true)
+/** Раскрытая детализация по операциям (по умолчанию свернута). */
+const econOpen = ref(false)
+
+async function loadEconomics() {
+  const token = seasonToken
+  econLoading.value = true
+  econ.value = null
+  try {
+    const data = await getFieldEconomics(fieldId, seasonQueryYear.value)
+    if (token !== seasonToken) return
+    econ.value = data
+  } catch {
+    if (token === seasonToken) econ.value = null
+  } finally {
+    if (token === seasonToken) econLoading.value = false
+  }
+}
+
+/** Отклонение факт−план: < 0 — экономия (зелёный), > 0 — перерасход. */
+const econDiff = computed(() =>
+  econ.value ? econ.value.fact_cost_rub - econ.value.plan_cost_rub : 0,
+)
+
+function fmtRub(v: number): string {
+  return `${Math.round(v).toLocaleString('ru-RU')} ₽`
+}
+
 /* ── «Выводы ассистента» (API-51, §7.4): детекторы + LLM-сводка ── */
 
 const insights = ref<InsightsResponse | null>(null)
