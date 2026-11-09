@@ -1159,7 +1159,7 @@ function fmtNum(v: number, digits = 1): string {
                 :title="`${item.label} — ${item.hint}${
                   indexLayerDisabled(item.key) ? ' (нет сцен за сезон)' : ''
                 }`"
-                @click="layerMode = item.key"
+                @click="onIndexLayerBtn(item.key)"
               >
                 {{ item.label }}
               </button>
