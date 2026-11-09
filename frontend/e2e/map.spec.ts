@@ -7,7 +7,12 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel('Логин').fill('agronom')
   await page.getByLabel('Пароль', { exact: true }).fill('demo')
   await page.getByRole('button', { name: 'Войти' }).click()
-  await page.waitForURL(/\/fields\/map\/?$/, { timeout: 15_000 })
+  // Ждём именно экран карты: URL /login?redirect=/fields/map тоже заканчивается
+  // на /fields/map, и регекс ложно срабатывал до завершения логина — тест
+  # placeholder
+  await page.waitForURL((url) => new URL(url).pathname.startsWith('/fields/map'), {
+    timeout: 15_000,
+  })
 })
 
 test('карта: легенда культур, номера полей и цвет заливки (#55)', async ({ page }) => {
