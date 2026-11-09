@@ -525,6 +525,21 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_advice.set_defaults(func=cmd_advice_refresh)
 
+    p_retro = sub.add_parser(
+        "advice-refresh-backfill",
+        help="ретро-рекомендации на N сезонов по ключевым датам культур "
+        "(#159, docs/09 §9: контекст «на дату T», без подглядывания)",
+    )
+    p_retro.add_argument(
+        "--years", type=int, default=4, help="глубина сезонов, включая текущий (4)"
+    )
+    p_retro.add_argument(
+        "--prune-today",
+        action="store_true",
+        help="перед прогоном убрать дубли сегодняшних advice (остаётся последняя)",
+    )
+    p_retro.set_defaults(func=cmd_advice_refresh_backfill)
+
     p_wx = sub.add_parser(
         "weather-backfill",
         help="полная история погоды по всем полям с указанной даты (#126, docs/06 §7.5)",
