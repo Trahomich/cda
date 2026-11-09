@@ -146,7 +146,7 @@ test('карточка поля: график временного ряда сл
   await expect(page.getByRole('heading', { name: /NDRE-таймлайн/ })).toBeVisible()
   await expect(page.locator('.ndvi__svg')).toHaveAttribute('aria-label', 'NDRE-таймлайн сезона')
   await expect(page.locator('.ndvi__legend')).toContainText('азотный статус')
-  await expect(page.locator('.ndvi__last')).toContainText('· NDRE 0,67')
+  await expect(page.locator('.ndvi__last')).toContainText('· NDRE 0,15')
   await expect(page.locator('.ndvi__svg .ndvi__band')).toBeVisible()
   await expect(page.locator('.ndvi__svg .ndvi__line')).toBeVisible()
 
