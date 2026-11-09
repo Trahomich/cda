@@ -1975,9 +1975,9 @@ polygon.card360__polygon {
   margin-top: 0.6rem;
 }
 
-/* #583 (#151/#572): слой умещается в ОДНУ строку и на телефоне (360px) —
- * «Контур» убран, «Снимок» → «RGB», кнопки компактные; wrap оставлен как
- * защита на экзотических ширинах, но на 360px ряд один */
+/* #605 (#583/#151): гарантированно одна строка на реальном телефоне
+ * (320–390px, системный шрифт крупнее headless) — компактный шрифт 0.7rem,
+ * letter-spacing 0, минимальные паддинги; wrap оставлен как защита */
 .card360__layer-switch {
   display: flex;
   flex-wrap: wrap;
@@ -1993,9 +1993,10 @@ polygon.card360__polygon {
   border-radius: 8px;
   background: #f1f8f1;
   color: #1b5e20;
-  font-size: 0.8rem;
-  padding: 0.22rem 0.4rem;
-  min-height: 32px;
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  padding: 0.16rem 0.34rem;
+  min-height: 30px;
   white-space: nowrap;
   flex: 0 0 auto;
   cursor: pointer;
