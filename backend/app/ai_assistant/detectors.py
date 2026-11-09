@@ -132,7 +132,9 @@ def load_scenes(
     ]
 
 
-def latest_agrochem(db: Session, field_id: uuid.UUID, *, as_of: date | None = None) -> Agrochem | None:
+def latest_agrochem(
+    db: Session, field_id: uuid.UUID, *, as_of: date | None = None
+) -> Agrochem | None:
     """Последняя агрохимическая проба поля.
 
     as_of (ретро-режим #159): только пробы, взятые не позже этой даты.
