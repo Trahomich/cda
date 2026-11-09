@@ -128,11 +128,17 @@ def load_scenes(
     ]
 
 
-def latest_agrochem(db: Session, field_id: uuid.UUID) -> Agrochem | None:
-    """Последняя агрохимическая проба поля."""
+def latest_agrochem(db: Session, field_id: uuid.UUID, *, as_of: date | None = None) -> Agrochem | None:
+    """Последняя агрохимическая проба поля.
+
+    as_of (ретро-режим #159): только пробы, взятые не позже этой даты.
+    """
+    filters = [Agrochem.field_id == field_id]
+    if as_of is not None:
+        filters.append(Agrochem.sample_date <= as_of)
     return db.scalars(
         select(Agrochem)
-        .where(Agrochem.field_id == field_id)
+        .where(*filters)
         .order_by(Agrochem.sample_date.desc(), Agrochem.created_at.desc())
         .limit(1)
     ).first()
