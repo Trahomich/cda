@@ -161,7 +161,7 @@ def build_advice_context(
     Региона в модели Field нет — секция опущена (решение Ивана, #381).
     """
     retro = as_of is not None
-    day = as_of if retro else today
+    day = as_of if as_of is not None else today
     f = db.get(Field, field_id)
     if f is None:
         return None
