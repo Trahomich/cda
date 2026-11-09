@@ -131,6 +131,46 @@ def _missing_indices(db: Session, field_id: uuid.UUID, captured_at: date) -> lis
     return [name for name in EXTRA_INDICES if name not in present]
 
 
+#: полосы рендера каждого варианта (§7.3/§7.7): вариант строится, только
+#: если все его полосы есть в ассетах каталога сцены
+_RENDER_VARIANT_BANDS: dict[str, tuple[str, ...]] = {
+    "ndvi": ("b04", "b08"),
+    "truecolor": ("b02", "b03", "b04"),
+    "ndwi": ("b03", "b08"),
+    "evi": ("b02", "b04", "b08"),
+    "savi": ("b04", "b08"),
+    "ndre": ("b05", "b08"),
+    "ndmi": ("b08", "b11"),
+    "ndsi": ("b03", "b11"),
+    "bsi": ("b02", "b04", "b08", "b11"),
+}
+
+
+def renders_incomplete(
+    render_dir: str, field_id: uuid.UUID, captured_at: date, assets: dict
+) -> bool:
+    """Не хватает PNG ожидаемых вариантов сцены (кандидат ensure-renders).
+
+    True только для сцен, которые уже рендерились конвейером (есть сайдкар
+    meta/{date}.json): у них дописываем новые варианты §7.7. Ожидаемые
+    варианты — те, чьи полосы есть в ассетах (без b05/b11 SWIR-слоев не
+    ждём). Сцены без meta не наши — их отрендерит конвейер инжеста.
+    """
+    from app.services.sentinel_ingest.renders import meta_path, render_path
+
+    if not meta_path(render_dir, field_id, captured_at).is_file():
+        return False
+    expected = (
+        variant
+        for variant, bands in _RENDER_VARIANT_BANDS.items()
+        if all(assets.get(band) for band in bands)
+    )
+    return any(
+        not render_path(render_dir, field_id, variant, captured_at).is_file()
+        for variant in expected
+    )
+
+
 def run_indices_backfill(
     db: Session,
     *,
