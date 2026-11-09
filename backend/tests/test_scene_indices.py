@@ -351,3 +351,31 @@ class TestIndexRenders:
         render = render_scene(assets, wgs_box(300100, 5760100, 301900, 5760900))
         assert render is not None
         assert set(render.png) == {"ndvi", "truecolor", "ndwi", "evi", "savi"}
+
+
+class TestIndicesAutoBackfill:
+    def test_worker_schedules_daily_indices_job(self) -> None:
+        """Догоняющий бэкфилл индексов — суточная джоба воркера (#152):
+        руками запускать не нужно; выключается INGEST_SATELLITE_INDICES_ENABLED.
+        """
+        from apscheduler.triggers.cron import CronTrigger
+        from app.core.config import Settings
+        from app.services.sentinel_ingest.worker import (
+            JOB_INDICES_BACKFILL,
+            create_worker,
+        )
+
+        scheduler = create_worker(Settings())
+        try:
+            (job,) = [j for j in scheduler.get_jobs() if j.id == JOB_INDICES_BACKFILL]
+            assert isinstance(job.trigger, CronTrigger)
+            fields = {f.name: str(f) for f in job.trigger.fields}
+            assert fields["hour"] == "2" and fields["minute"] == "10"
+        finally:
+            scheduler.shutdown(wait=False)
+
+        disabled = create_worker(Settings(ingest_satellite_indices_enabled=False))
+        try:
+            assert not [j for j in disabled.get_jobs() if j.id == JOB_INDICES_BACKFILL]
+        finally:
+            disabled.shutdown(wait=False)
