@@ -205,3 +205,32 @@ class TestRecordedAndSeason:
         assert any("история" in e for e in r.evidences)
         # 0.5·0.8 + 0.5·1.0 = 0.9
         assert r.confidence == 0.9
+
+
+class TestStubbleNotGrass:
+    def test_harvest_then_weeds_is_spring(self) -> None:
+        """Уборка яровой + отрастание сорняков на жнивье — НЕ укос трав:
+        второй «пик» низкий (< GRASS_PEAK_NDVI_MIN)."""
+        pts = [
+            (2025, 10, 0.22),
+            (2026, 5, 0.2),
+            (2026, 6, 0.55),
+            (2026, 7, 0.75),  # главный пик, уборка в конце июля
+            (2026, 8, 0.18),  # жнивье
+            (2026, 9, 0.33),  # сорняки — низкий «пик»
+        ]
+        r = cc.classify_curve(curve(pts), season_year=YEAR)
+        assert r.crop_class == cc.SPRING_GRAIN
+
+    def test_high_second_peak_is_grass(self) -> None:
+        """Отрастание травы после укоса — высокий второй пик."""
+        pts = [
+            (2025, 10, 0.15),
+            (2026, 5, 0.68),
+            (2026, 6, 0.35),  # укос
+            (2026, 7, 0.62),  # отрастание — высокий пик
+            (2026, 8, 0.30),  # второй укос
+            (2026, 9, 0.55),
+        ]
+        r = cc.classify_curve(curve(pts), season_year=YEAR)
+        assert r.crop_class == cc.PERENNIAL_GRASS
