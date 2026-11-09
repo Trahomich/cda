@@ -260,9 +260,9 @@ def run_indices_backfill(
         except (DataGapError, DataQualityError, SourceUnavailableError, ValueError) as exc:
             return task, None, exc, False
         rendered = False
-        if render_dir and stats:
+        if render_dir:
             try:
-                if renders_exist(render_dir, task.field_id, task.captured_at):
+                if renders_incomplete(render_dir, task.field_id, task.captured_at, task.assets):
                     from app.services.sentinel_ingest.renders import render_scene, write_renders
 
                     render = render_scene(task.assets, task.contour)
