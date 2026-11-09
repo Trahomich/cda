@@ -71,7 +71,7 @@ test('карточка поля: переключение слоёв NDRE→NDMI
   await expect(layer).toBeVisible()
 })
 
-test('карточка поля: перечень индексов на 360px умещается без прокрутки (#468 → #572)', async ({
+test('карточка поля: перечень индексов на 360px — одна строка без прокрутки (#468 → #572/#583)', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 800 })
@@ -79,17 +79,23 @@ test('карточка поля: перечень индексов на 360px у
   const switcher = page.locator('.card360__layer-switch')
   await expect(switcher).toBeVisible({ timeout: 15_000 })
 
-  // Лента не шире экрана; #572 п.2: горизонтальной прокрутки больше нет —
-  // кнопки переносятся во второй ряд, все видны сразу.
+  // #583: «Контур» убран, «Снимок» = «RGB» — все 7 кнопок в ОДНОЙ строке
+  // без горизонтальной прокрутки и без переноса на вторую.
   const box = await switcher.boundingBox()
   expect(box).not.toBeNull()
   expect(box!.width).toBeLessThanOrEqual(360)
   const scrollable = await switcher.evaluate((el) => el.scrollWidth > el.clientWidth)
   expect(scrollable).toBe(false)
+  await expect(page.locator('.card360__layer-btn')).toHaveCount(7)
+  await expect(page.locator('.card360__layer-btn--contour')).toHaveCount(0)
+  await expect(page.locator('.card360__layer-btn--truecolor')).toHaveText('RGB')
+  const ys = await page.locator('.card360__layer-btn').evaluateAll((btns) =>
+    btns.map((b) => Math.round(b.getBoundingClientRect().top)),
+  )
+  expect(new Set(ys).size).toBe(1) // один ряд
 
-  // BSI (последняя кнопка) видна без прокрутки и кликабельна.
+  // NDSI без сцен задизейблен; BSI (последняя индексная) кликабельна.
   await expect(page.locator('.card360__layer-btn--ndsi')).toBeDisabled({ timeout: 10_000 })
-  await expect(page.locator('.card360__layer-btn--bsi')).toBeVisible()
   await page.locator('.card360__layer-btn--bsi').click()
   await expect(page.locator('.card360__layer-btn--bsi')).toHaveClass(/card360__layer-btn--active/)
   await expect(
