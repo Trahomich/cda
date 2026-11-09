@@ -283,7 +283,9 @@ class TestPruneToday:
         db_session.commit()
         monkeypatch.setattr(cli, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
 
-        code = cli.cmd_advice_refresh_backfill(argparse.Namespace(years=1, prune_today=True, refresh_today=False))
+        code = cli.cmd_advice_refresh_backfill(
+            argparse.Namespace(years=1, prune_today=True, refresh_today=False)
+        )
         assert code == 0
         rows = db_session.scalars(select(AIFieldAdvice).where(AIFieldAdvice.field_id == fid)).all()
         assert len(rows) == 1
