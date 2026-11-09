@@ -1,0 +1,153 @@
+{
+  "version": "1.0",
+  "date": "2026-11-09",
+  "task": "#158",
+  "region": "чернозёмная зона (ЦЧР/степь), справочные сроки",
+  "groups": {
+    "winter_cereals": {
+      "cultures": ["Озимая пшеница", "Рожь", "Тритикале", "Ячмень озимый"],
+      "windows": {
+        "seeding":    {"from": "08-15", "to": "10-05", "note": "сев под урожай следующего года (год цикла = год уборки)"},
+        "fertilizing":{"from": "03-10", "to": "05-05", "note": "весенние подкормки (азот); осеннее стартовое внесение — в окне сева"},
+        "spraying":   {"from": "03-20", "to": "06-20", "note": "весенняя вегетация + protection колошения; осенью — в окне сева"},
+        "harvesting": {"from": "07-01", "to": "08-15"},
+        "tillage":    {"from": "07-10", "to": "10-20", "note": "после предшественника (июль–сентябрь) и после уборки"}
+      }
+    },
+    "spring_cereals": {
+      "cultures": ["Яровая пшеница", "Ячмень", "Овёс"],
+      "windows": {
+        "seeding":    {"from": "04-05", "to": "05-20"},
+        "fertilizing":{"from": "03-25", "to": "06-10"},
+        "spraying":   {"from": "05-01", "to": "07-15"},
+        "harvesting": {"from": "07-10", "to": "09-05"},
+        "tillage":    {"from": "03-20", "to": "10-20", "note": "предпосевная весной + послеуборочная (зябь)"}
+      }
+    },
+    "buckwheat_millet": {
+      "cultures": ["Гречиха", "Просо"],
+      "windows": {
+        "seeding":    {"from": "05-05", "to": "06-10", "note": "теплолюбивые поздние яровые"},
+        "fertilizing":{"from": "04-20", "to": "06-15"},
+        "spraying":   {"from": "06-01", "to": "07-31"},
+        "harvesting": {"from": "08-15", "to": "09-30"},
+        "tillage":    {"from": "03-20", "to": "10-20"}
+      }
+    },
+    "corn": {
+      "cultures": ["Кукуруза", "Кукуруза на силос"],
+      "windows": {
+        "seeding":    {"from": "04-25", "to": "05-25"},
+        "fertilizing":{"from": "04-15", "to": "06-25"},
+        "spraying":   {"from": "05-10", "to": "07-15"},
+        "harvesting": {"from": "08-20", "to": "10-30", "note": "на силос — с 20.08, на зерно — с 20.09"},
+        "tillage":    {"from": "03-25", "to": "11-05", "note": "зябь осенью (до 05.11) + предпосевная весной"}
+      }
+    },
+    "legumes": {
+      "cultures": ["Горох", "Чечевица"],
+      "windows": {
+        "seeding":    {"from": "04-05", "to": "05-10", "note": "ранний сев, холодостойкие"},
+        "fertilizing":{"from": "03-25", "to": "05-25"},
+        "spraying":   {"from": "05-05", "to": "07-15"},
+        "harvesting": {"from": "07-10", "to": "08-25"},
+        "tillage":    {"from": "03-20", "to": "10-20"}
+      }
+    },
+    "soy": {
+      "cultures": ["Соя"],
+      "windows": {
+        "seeding":    {"from": "04-25", "to": "05-25", "note": "тёплая почва ≥ 10…12 °C"},
+        "fertilizing":{"from": "04-20", "to": "06-20"},
+        "spraying":   {"from": "05-25", "to": "07-31"},
+        "harvesting": {"from": "09-05", "to": "10-20"},
+        "tillage":    {"from": "03-25", "to": "10-30"}
+      }
+    },
+    "winter_oilseeds": {
+      "cultures": ["Рапс озимый"],
+      "windows": {
+        "seeding":    {"from": "08-05", "to": "09-15"},
+        "fertilizing":{"from": "03-05", "to": "04-20"},
+        "spraying":   {"from": "03-20", "to": "06-10"},
+        "harvesting": {"from": "07-05", "to": "08-20"},
+        "tillage":    {"from": "07-10", "to": "09-15"}
+      }
+    },
+    "spring_oilseeds": {
+      "cultures": ["Рапс", "Подсолнечник"],
+      "windows": {
+        "seeding":    {"from": "04-15", "to": "05-25"},
+        "fertilizing":{"from": "04-10", "to": "06-15"},
+        "spraying":   {"from": "05-10", "to": "07-20"},
+        "harvesting": {"from": "08-01", "to": "11-05", "note": "рапс яровой — август, подсолнечник — с 20.09 до 05.11"},
+        "tillage":    {"from": "03-25", "to": "11-05", "note": "глубокая зябь под подсолнечник — осенью"}
+      }
+    },
+    "perennial_grasses": {
+      "cultures": ["Люцерна", "Клевер с тимофеевкой", "Многолетние травы"],
+      "windows": {
+        "seeding":    {"from": "04-10", "to": "08-10", "note": "подсев весной под покров или летом"},
+        "fertilizing":{"from": "03-15", "to": "09-10", "note": "после укосов"},
+        "spraying":   {"from": "04-10", "to": "07-10"},
+        "harvesting": {"from": "05-25", "to": "09-15", "note": "2–3 укоса: июнь / июль / август"},
+        "tillage":    {"from": "03-20", "to": "10-20"}
+      }
+    },
+    "annual_grasses": {
+      "cultures": ["Однолетние травы"],
+      "windows": {
+        "seeding":    {"from": "04-20", "to": "07-10"},
+        "fertilizing":{"from": "04-15", "to": "07-10"},
+        "spraying":   {"from": "05-20", "to": "07-20"},
+        "harvesting": {"from": "06-25", "to": "09-15", "note": "фаза колошения/цветения, 45–70 дней после сева"},
+        "tillage":    {"from": "03-20", "to": "10-20"}
+      }
+    },
+    "sugar_beet": {
+      "cultures": ["Свёкла сахарная"],
+      "windows": {
+        "seeding":    {"from": "04-05", "to": "05-10"},
+        "fertilizing":{"from": "03-25", "to": "06-25"},
+        "spraying":   {"from": "05-05", "to": "07-25"},
+        "harvesting": {"from": "09-15", "to": "11-05"},
+        "tillage":    {"from": "03-20", "to": "11-05", "note": "глубокая осенняя обработка"}
+      }
+    },
+    "potato": {
+      "cultures": ["Картофель"],
+      "windows": {
+        "seeding":    {"from": "04-20", "to": "05-25"},
+        "fertilizing":{"from": "04-10", "to": "07-10"},
+        "spraying":   {"from": "05-25", "to": "08-20"},
+        "harvesting": {"from": "08-20", "to": "10-10"},
+        "tillage":    {"from": "03-20", "to": "10-25"}
+      }
+    },
+    "vegetables": {
+      "cultures": ["Овощи открытого грунта"],
+      "windows": {
+        "seeding":    {"from": "05-05", "to": "06-15"},
+        "fertilizing":{"from": "04-20", "to": "07-31"},
+        "spraying":   {"from": "06-01", "to": "08-31"},
+        "harvesting": {"from": "07-10", "to": "10-15"},
+        "tillage":    {"from": "03-25", "to": "10-25"}
+      }
+    },
+    "fallow": {
+      "cultures": ["Пар", "Пар занятый"],
+      "windows": {
+        "tillage":    {"from": "04-01", "to": "10-30", "note": "только обработки почвы (чёрный пар)"},
+        "seeding":    {"from": null, "to": null, "note": "запрещено, кроме сидерата в занятом пару"},
+        "fertilizing":{"from": null, "to": null, "note": "вегетационной химии нет; основное внесение — осенью под следующую культуру (окно 08-20..10-30)"},
+        "spraying":   {"from": null, "to": null},
+        "harvesting": {"from": null, "to": null}
+      },
+      "green_manure": {
+        "cultures": ["Горчица (сидерат)"],
+        "seeding": {"from": "07-15", "to": "08-25"},
+        "tillage":  {"from": "09-20", "to": "10-25", "note": "запашка сидерата"}
+      }
+    }
+  }
+}
