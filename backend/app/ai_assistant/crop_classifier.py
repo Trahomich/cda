@@ -232,6 +232,8 @@ def classify_curve(
                 continue
             lo, hi = min(d, top[0]), max(d, top[0])
             between = [b for bd, b in may_july if lo < bd < hi]
+            if not between:
+                continue  # соседние максимумы без сцен между — шум
             dip = min(v, top[1]) - min(between)
             if dip >= GRASS_DIP:
                 has_mow_cycle = True
