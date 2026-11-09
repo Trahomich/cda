@@ -340,12 +340,14 @@ async function loadLayer() {
 
 watch([renderDate, layerMode], () => void loadLayer())
 
-/** Клик по точке графика (v2-fix-H): даты без рендера не выбираем;
- *  если слой выключен («Контур»), включаем NDVI. */
+/** Клик по точке графика (v2-fix-H; #151): даты без рендера не выбираем;
+ *  если слой выключен («Контур»/«Снимок»), включаем слой индекса графика. */
 function onDotSelect(date: string): void {
-  if (!renderDates.value.includes(date)) return
+  if (!chartSelectable.value.includes(date)) return
   renderDate.value = date
-  if (layerMode.value === 'none') layerMode.value = 'ndvi'
+  if (layerMode.value === 'none' || layerMode.value === 'truecolor') {
+    layerMode.value = chartIndex.value
+  }
 }
 
 onUnmounted(() => {
