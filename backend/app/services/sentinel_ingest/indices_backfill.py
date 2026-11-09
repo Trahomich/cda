@@ -33,6 +33,7 @@ from app.integrations import DataGapError, DataQualityError, SourceUnavailableEr
 from app.integrations.stac import StacSearchClient
 from app.models.integrations import SatelliteCatalogItem, SatelliteScene
 from app.services.sentinel_ingest.catalog import farm_bbox
+from app.services.sentinel_ingest.ndvi import MAX_SCENE_CLOUD_PCT
 from app.services.sentinel_ingest.indices import (
     EXTRA_INDICES,
     IndexStat,
@@ -273,13 +274,14 @@ def run_indices_backfill(
     report.scenes = len(tasks)  # фактические кандидаты обработки
     logger.info(
         "indices-backfill: кандидатов=%d сцен с индексами=%d строк-индексов=%d "
-        "дозапросов активов=%d гэпов=%d ошибок=%d недоступно=%d",
+        "дозапросов активов=%d гэпов=%d ошибок=%d облачно>60=%d недоступно=%d",
         report.scenes,
         report.scenes_written,
         report.index_scenes,
         report.assets_refreshed,
         report.gaps,
         report.failed,
+        report.cloud_skipped,
         len(report.unavailable),
     )
     return report
