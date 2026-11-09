@@ -1980,34 +1980,31 @@ polygon.card360__polygon {
   margin-top: 0.6rem;
 }
 
-/* #130/#468: перечень индексов не всегда влезает в ширину — лента с
- * горизонтальной прокруткой (touch-friendly), max-width — ширина блока */
+/* #572 п.2 (#151): перечень индексов умещается в окно БЕЗ прокрутки —
+ * вместо ленты со скроллом (#468, отменён фидбеком) двухрядная сетка
+ * (flex-wrap) и компактные кнопки; на любой ширине горизонтального
+ * скролла нет */
 .card360__layer-switch {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
   border: 1px solid #c8e6c9;
-  border-radius: 999px;
+  border-radius: 10px;
+  padding: 2px;
   max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  /* тонкий видимый индикатор прокрутки */
-  scrollbar-width: thin;
-  -webkit-overflow-scrolling: touch;
 }
 
 .card360__layer-btn {
   border: none;
+  border-radius: 8px;
   background: #f1f8f1;
   color: #1b5e20;
-  font-size: 0.85rem;
-  padding: 0.35rem 0.75rem;
-  min-height: 36px;
+  font-size: 0.8rem;
+  padding: 0.22rem 0.55rem;
+  min-height: 32px;
   white-space: nowrap;
   flex: 0 0 auto;
   cursor: pointer;
-}
-
-.card360__layer-btn:not(:last-child) {
-  border-right: 1px solid #c8e6c9;
 }
 
 .card360__layer-btn--active {
