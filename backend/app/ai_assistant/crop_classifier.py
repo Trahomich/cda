@@ -116,11 +116,7 @@ def classify_curve(
             UNCERTAIN, 0.3, [f"сцен мало ({len(ndvi)} < {MIN_SCENES}) — не гадаем"]
         )
 
-    autumn = [
-        (d, v)
-        for d, v in ndvi
-        if d.year == season_year - 1 and d.month in (10, 11, 12)
-    ]
+    autumn = [(d, v) for d, v in ndvi if d.year == season_year - 1 and d.month in (10, 11, 12)]
     autumn_hits = [v for _, v in autumn if v >= WINTER_AUTUMN_NDVI]
     season = [(d, v) for d, v in ndvi if d.year == season_year]
     april = [v for d, v in season if d.month == 4]
@@ -141,8 +137,7 @@ def classify_curve(
     if april and max(april) >= WINTER_SPRING_NDVI:
         winter_evidences.append(
             f"ранний весенний старт: NDVI апреля {max(april):.2f} ≥ "
-            f"{WINTER_SPRING_NDVI:.2f}"
-            + (" при снежной зиме (NDSI есть)" if ndsi else "")
+            f"{WINTER_SPRING_NDVI:.2f}" + (" при снежной зиме (NDSI есть)" if ndsi else "")
         )
     if winter_evidences:
         return CropClassification(
@@ -189,7 +184,9 @@ def classify_curve(
                 CONF_BASE_WEAK,
                 evidences + ["но несколько сопоставимых пиков — травы или укосы?"],
             )
-        return CropClassification(SPRING_GRAIN, CONF_BASE_STRONG, ["яровая: " + "; ".join(evidences)])
+        return CropClassification(
+            SPRING_GRAIN, CONF_BASE_STRONG, ["яровая: " + "; ".join(evidences)]
+        )
 
     # --- пар: NDVI у пола + BSI голой почвы ----------------------------
     if season_max < FALLOW_NDVI_MAX:
@@ -212,9 +209,7 @@ def classify_curve(
     )
 
 
-def classify_field_season(
-    db: Session, field_id: uuid.UUID, year: int
-) -> CropClassification:
+def classify_field_season(db: Session, field_id: uuid.UUID, year: int) -> CropClassification:
     """Класс сезона year поля по сценам из БД + уверенность по истории.
 
     Уверенность: 0.5·базы правила + 0.5·доли сезонов истории поля (все
@@ -232,9 +227,9 @@ def classify_field_season(
     years = [
         int(y)
         for y in db.scalars(
-            select(func.extract("year", SatelliteScene.captured_at)).where(
-                SatelliteScene.field_id == field_id, SatelliteScene.index == "ndvi"
-            ).distinct()
+            select(func.extract("year", SatelliteScene.captured_at))
+            .where(SatelliteScene.field_id == field_id, SatelliteScene.index == "ndvi")
+            .distinct()
         )
         if int(y) != year
     ]
@@ -268,9 +263,7 @@ WINTER_CULTURE_MARKERS = ("озим", "рожь", "тритикале")
 GRASS_CULTURE_MARKERS = ("трав", "люцерн", "клевер", "эспарцет", "донник")
 
 
-def recorded_culture(
-    db: Session, field_id: uuid.UUID, year: int
-) -> tuple[str | None, str | None]:
+def recorded_culture(db: Session, field_id: uuid.UUID, year: int) -> tuple[str | None, str | None]:
     """(culture_name, culture_kind) main-цикла года; (None, None) — цикла нет."""
     row = db.execute(
         select(Culture.name, Culture.kind)

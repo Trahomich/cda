@@ -7,11 +7,9 @@
 recorded_culture.
 """
 
-import uuid
 from datetime import date
 
 from app.ai_assistant import crop_classifier as cc
-from sqlalchemy.orm import Session
 from tests.test_satellite import make_field, make_satellite_source
 
 YEAR = 2026
@@ -90,10 +88,20 @@ class TestClassifyCurve:
 
     def test_winter_by_april_start(self) -> None:
         """Без выраженной осени (1 сцена) — апрельский старт тоже доказывает."""
-        pts = [(2025, 10, 0.30), *[(y, m, v) for y, m, v in [
-            (2026, 4, 0.38), (2026, 5, 0.6), (2026, 6, 0.78), (2026, 7, 0.5),
-            (2026, 3, 0.2), (2026, 2, 0.2),
-        ]]]
+        pts = [
+            (2025, 10, 0.30),
+            *[
+                (y, m, v)
+                for y, m, v in [
+                    (2026, 4, 0.38),
+                    (2026, 5, 0.6),
+                    (2026, 6, 0.78),
+                    (2026, 7, 0.5),
+                    (2026, 3, 0.2),
+                    (2026, 2, 0.2),
+                ]
+            ],
+        ]
         r = cc.classify_curve(curve(pts), season_year=YEAR)
         assert r.crop_class == cc.WINTER_GRAIN
         assert any("апреля" in e for e in r.evidences)
@@ -152,9 +160,7 @@ class TestRecordedAndSeason:
         culture = Culture(name="Клевер", kind="main", forage_flag=False, crop_group="grass")
         db_session.add(culture)
         db_session.flush()
-        db_session.add(
-            CropCycle(field_id=field_id, year=2026, culture_id=culture.id, kind="main")
-        )
+        db_session.add(CropCycle(field_id=field_id, year=2026, culture_id=culture.id, kind="main"))
         db_session.commit()
         assert cc.recorded_culture(db_session, field_id, 2026) == ("Клевер", "main")
         assert cc.recorded_culture(db_session, field_id, 2025) == (None, None)
