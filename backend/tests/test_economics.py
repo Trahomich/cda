@@ -11,8 +11,7 @@ from datetime import date
 
 import pytest
 from app.models.agronomy import CropCycle, FieldOperation, YieldRecord
-from app.models.references import Culture, OperationCost
-from fastapi.testclient import TestClient
+from app.models.references import OperationCost
 from sqlalchemy import text as db_text
 from sqlalchemy.orm import Session
 from tests.test_inputs import headers as inputs_headers

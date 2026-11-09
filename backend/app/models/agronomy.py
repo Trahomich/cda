@@ -328,7 +328,9 @@ class FieldOperation(Base):
             "cost_mode IN ('unit', 'total') OR cost_mode IS NULL",
             name="ck_dat_field_operation_cost_mode",
         ),
-        CheckConstraint("cost_value IS NULL OR cost_value >= 0", name="ck_dat_field_operation_cost"),
+        CheckConstraint(
+            "cost_value IS NULL OR cost_value >= 0", name="ck_dat_field_operation_cost"
+        ),
         Index("ix_dat_field_operation_field_date", "field_id", "date"),
         Index("ix_dat_field_operation_cycle", "cycle_id"),
         # Идемпотентность офлайн-очереди PWA (API-17): повторный POST с тем же
