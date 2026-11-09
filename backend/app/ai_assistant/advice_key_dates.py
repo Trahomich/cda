@@ -139,6 +139,28 @@ _OP_LABELS = {
 _OP_ORDER = ("seeding", "fertilizing", "spraying", "harvesting", "tillage")
 
 
+def _calendar_entries_tech_map(
+    tech_map: dict, culture_name: str | None
+) -> list[tuple[str, int, int, str]] | None:
+    """tech_map формата #158: {группа: {cultures, windows}} → entries."""
+    if not culture_name:
+        return None
+    lowered = culture_name.strip().lower()
+    for group in tech_map.values():
+        cultures = group.get("cultures") if isinstance(group, dict) else None
+        if not cultures or lowered not in {str(c).lower() for c in cultures}:
+            continue
+        entries = []
+        for op in _OP_ORDER:
+            window = (group.get("windows") or {}).get(op)
+            if not window or not window.get("from"):
+                continue
+            month, day_ = (int(x) for x in str(window["from"]).split("-"))
+            entries.append((_OP_LABELS[op], month, day_, op))
+        return entries
+    return None
+
+
 def _calendar_entries(culture_name: str | None) -> list[tuple[str, int, int, str]] | None:
     """(label, месяц, день, операция) из техкарт #158 по имени культуры.
 
