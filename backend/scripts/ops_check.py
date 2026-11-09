@@ -91,7 +91,9 @@ def main() -> int:
     ap.add_argument("--json", default=str(DEFAULT_JSON))
     ap.add_argument("--fix", action="store_true", help="применить правки (иначе только отчёт)")
     ap.add_argument("--backup", default=None, help="куда писать бэкап (с --fix)")
-    ap.add_argument("--control", default="45,46,50", help="контрольные номера полей для детализации")
+    ap.add_argument(
+        "--control", default="45,46,50", help="контрольные номера полей для детализации"
+    )
     args = ap.parse_args()
 
     cal = json.loads(Path(args.json).read_text(encoding="utf-8"))
@@ -107,23 +109,42 @@ def main() -> int:
     engine = create_engine(dsn)
 
     with engine.connect() as db:
-        cycles = db.execute(text(
-            "select cc.id, cc.field_id, cc.year, c.name as culture "
-            "from dat_crop_cycle cc join ref_culture c on c.id = cc.culture_id "
-            "where cc.kind = 'main' order by cc.field_id, cc.year"
-        )).mappings().all()
-        fields = {r["id"]: r["name"] for r in db.execute(text(
-            "select id, name from dat_field"
-        )).mappings().all()}
-        ops = db.execute(text(
-            "select id, field_id, date, operation_type, status "
-            "from dat_field_operation where status <> 'cancelled' order by field_id, date"
-        )).mappings().all()
-        plans = db.execute(text(
-            "select tp.id, tp.cycle_id, tp.planned_date, tp.operation_type, tp.status, cc.year "
-            "from dat_treatment_plan tp join dat_crop_cycle cc on cc.id = tp.cycle_id "
-            "where tp.status not in ('cancelled') order by cc.field_id, tp.planned_date"
-        )).mappings().all()
+        cycles = (
+            db.execute(
+                text(
+                    "select cc.id, cc.field_id, cc.year, c.name as culture "
+                    "from dat_crop_cycle cc join ref_culture c on c.id = cc.culture_id "
+                    "where cc.kind = 'main' order by cc.field_id, cc.year"
+                )
+            )
+            .mappings()
+            .all()
+        )
+        fields = {
+            r["id"]: r["name"]
+            for r in db.execute(text("select id, name from dat_field")).mappings().all()
+        }
+        ops = (
+            db.execute(
+                text(
+                    "select id, field_id, date, operation_type, status "
+                    "from dat_field_operation where status <> 'cancelled' order by field_id, date"
+                )
+            )
+            .mappings()
+            .all()
+        )
+        plans = (
+            db.execute(
+                text(
+                    "select tp.id, tp.cycle_id, tp.planned_date, tp.operation_type, tp.status, cc.year "
+                    "from dat_treatment_plan tp join dat_crop_cycle cc on cc.id = tp.cycle_id "
+                    "where tp.status not in ('cancelled') order by cc.field_id, tp.planned_date"
+                )
+            )
+            .mappings()
+            .all()
+        )
 
     # индексы циклов: поле → год → (cycle_id, культура); поле → список лет
     by_field: dict[uuid.UUID, dict[int, tuple]] = {}
@@ -169,12 +190,19 @@ def main() -> int:
                     target = clamp_to_window(day, (8, 20), (10, 30), day.year)
                     return {"action": "shift", "date": target}
                 return None
-            return {"action": "retype_tillage", "date": clamp_to_window(day, (4, 1), (10, 30), day.year)}
+            return {
+                "action": "retype_tillage",
+                "date": clamp_to_window(day, (4, 1), (10, 30), day.year),
+            }
         if win is None:
             return None  # операции нет в карте группы — не нормируем
         if in_window(day, *win):
             return None
-        year = ref - 1 if (group in ("winter_cereals", "winter_oilseeds") and op_type == "seeding") else ref
+        year = (
+            ref - 1
+            if (group in ("winter_cereals", "winter_oilseeds") and op_type == "seeding")
+            else ref
+        )
         target = clamp_to_window(day, *win, year)
         if target == day:
             return None
@@ -192,12 +220,18 @@ def main() -> int:
             continue  # цикла сезона нет — вне масштаба #158 (посев вне циклов)
         verdict = classify("op", r, culture, r["date"], r["operation_type"], year)
         if verdict:
-            violations.append({
-                "table": "dat_field_operation", "id": str(r["id"]),
-                "field": fields.get(r["field_id"], "?"), "cycle_year": year,
-                "culture": culture, "op": r["operation_type"], "date": str(r["date"]),
-                "verdict": verdict,
-            })
+            violations.append(
+                {
+                    "table": "dat_field_operation",
+                    "id": str(r["id"]),
+                    "field": fields.get(r["field_id"], "?"),
+                    "cycle_year": year,
+                    "culture": culture,
+                    "op": r["operation_type"],
+                    "date": str(r["date"]),
+                    "verdict": verdict,
+                }
+            )
 
     # ── планы ──
     for r in plans:
@@ -206,12 +240,18 @@ def main() -> int:
             continue
         verdict = classify("plan", r, culture, r["planned_date"], r["operation_type"], r["year"])
         if verdict:
-            violations.append({
-                "table": "dat_treatment_plan", "id": str(r["id"]),
-                "field": "?", "cycle_year": r["year"], "culture": culture,
-                "op": r["operation_type"], "date": str(r["planned_date"]),
-                "verdict": verdict,
-            })
+            violations.append(
+                {
+                    "table": "dat_treatment_plan",
+                    "id": str(r["id"]),
+                    "field": "?",
+                    "cycle_year": r["year"],
+                    "culture": culture,
+                    "op": r["operation_type"],
+                    "date": str(r["planned_date"]),
+                    "verdict": verdict,
+                }
+            )
 
     # ── отчёт ──
     print(f"операций журнала: {len(ops)}, планов: {len(plans)}")
@@ -225,43 +265,62 @@ def main() -> int:
     print("\n-- контрольные поля --")
     for v in violations:
         if str(v["field"]).split("/")[0] in ctrl:
-            print(f"  {v['field']} ({v['culture']}, цикл {v['cycle_year']}): "
-                  f"{v['op']} {v['date']} → {v['verdict']['action']} {v['verdict'].get('date', '')}")
+            print(
+                f"  {v['field']} ({v['culture']}, цикл {v['cycle_year']}): "
+                f"{v['op']} {v['date']} → {v['verdict']['action']} {v['verdict'].get('date', '')}"
+            )
 
     if args.fix:
         backup = []
         with engine.begin() as db:
             for v in violations:
                 if v["table"] == "dat_field_operation":
-                    row = db.execute(text(
-                        "select * from dat_field_operation where id = :i"), {"i": v["id"]}
-                    ).mappings().first()
+                    row = (
+                        db.execute(
+                            text("select * from dat_field_operation where id = :i"), {"i": v["id"]}
+                        )
+                        .mappings()
+                        .first()
+                    )
                     backup.append(dict(row))
                     if v["verdict"]["action"] == "shift":
-                        db.execute(text(
-                            "update dat_field_operation set date = :d where id = :i"),
-                            {"d": v["verdict"]["date"], "i": v["id"]})
+                        db.execute(
+                            text("update dat_field_operation set date = :d where id = :i"),
+                            {"d": v["verdict"]["date"], "i": v["id"]},
+                        )
                     else:  # retype_tillage
-                        db.execute(text(
-                            "update dat_field_operation set operation_type = 'tillage', "
-                            "date = :d where id = :i"),
-                            {"d": v["verdict"]["date"], "i": v["id"]})
+                        db.execute(
+                            text(
+                                "update dat_field_operation set operation_type = 'tillage', "
+                                "date = :d where id = :i"
+                            ),
+                            {"d": v["verdict"]["date"], "i": v["id"]},
+                        )
                 else:
-                    row = db.execute(text(
-                        "select * from dat_treatment_plan where id = :i"), {"i": v["id"]}
-                    ).mappings().first()
+                    row = (
+                        db.execute(
+                            text("select * from dat_treatment_plan where id = :i"), {"i": v["id"]}
+                        )
+                        .mappings()
+                        .first()
+                    )
                     backup.append(dict(row))
                     if v["verdict"]["action"] == "shift":
-                        db.execute(text(
-                            "update dat_treatment_plan set planned_date = :d where id = :i"),
-                            {"d": v["verdict"]["date"], "i": v["id"]})
+                        db.execute(
+                            text("update dat_treatment_plan set planned_date = :d where id = :i"),
+                            {"d": v["verdict"]["date"], "i": v["id"]},
+                        )
                     else:  # cancel — план нелегален для цикла-пара
-                        db.execute(text(
-                            "update dat_treatment_plan set status = 'cancelled' where id = :i"),
-                            {"i": v["id"]})
+                        db.execute(
+                            text(
+                                "update dat_treatment_plan set status = 'cancelled' where id = :i"
+                            ),
+                            {"i": v["id"]},
+                        )
         path = Path(args.backup or f"ops_backup_{date.today():%Y%m%d}.json")
-        path.write_text(json.dumps(backup, default=str, ensure_ascii=False, indent=1),
-                        encoding="utf-8")
+        path.write_text(
+            json.dumps(backup, default=str, ensure_ascii=False, indent=1), encoding="utf-8"
+        )
         print(f"\n--fix: правок применено {len(violations)}, бэкап: {path}")
     return 0
 
