@@ -13,7 +13,8 @@
 // событие select выбирает дату слоя мини-карты; выбранная точка выделена.
 // SVG без зависимостей; доступность — role="img" + <title> у точек.
 import { computed } from 'vue'
-import type { NdviPoint, SceneIndex } from '@/api/types'
+import type { NdviPoint } from '@/api/types'
+import type { SceneIndex } from '@/api'
 
 const props = defineProps<{
   points: NdviPoint[]
