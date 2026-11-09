@@ -221,12 +221,27 @@ def main() -> int:
 
     # ── журнал ──
     for r in ops:
-        year, culture = cycle_for(r["field_id"], r["date"])
-        if culture is None:
+        cands = cycle_years(r["field_id"], r["date"])
+        if not cands:
             continue  # цикла сезона нет — вне масштаба #158 (посев вне циклов)
-        verdict = classify("op", r, culture, r["date"], r["operation_type"], year)
-        if verdict:
-            violations.append(
+        # среди кандидатов ищем цикл, чьё окно операции легально покрывает
+        # дату (поздние яровые: уборка кукурузы/свёклы в октябре относится
+        # к циклу того же года, а не к озимым следующего)
+        year = cands[0]
+        culture = by_field[r["field_id"]][year][1]
+        verdict = None
+        for y in cands:
+            cult = by_field[r["field_id"]][y][1]
+            if classify("op", r, cult, r["date"], r["operation_type"], y) is None:
+                year, culture = y, cult
+                verdict = None
+                break
+            if verdict is None:
+                year, culture = y, cult
+                verdict = classify("op", r, cult, r["date"], r["operation_type"], y)
+        if verdict is None:
+            continue
+        violations.append(
                 {
                     "table": "dat_field_operation",
                     "id": str(r["id"]),
