@@ -62,6 +62,7 @@ import type {
   WindowsPlannedResponse,
   WindowsResponse,
   YieldForecastResponse,
+  FieldEconomics,
 } from './types'
 
 /** API-01: GET /fields — список полей (фильтры status, q по имени).
