@@ -103,6 +103,11 @@ def main() -> int:
     ap.add_argument(
         "--control", default="45,46,50", help="контрольные номера полей для детализации"
     )
+    ap.add_argument(
+        "--restore",
+        default=None,
+        help="восстановить строки из бэкапа --fix (JSON) и выйти",
+    )
     args = ap.parse_args()
 
     cal = json.loads(Path(args.json).read_text(encoding="utf-8"))
@@ -116,6 +121,32 @@ def main() -> int:
         print("нет DSN (используйте --dsn или DATABASE_URL)", file=sys.stderr)
         return 2
     engine = create_engine(dsn)
+
+    if args.restore:
+        rows = json.loads(Path(args.restore).read_text(encoding="utf-8"))
+        n = 0
+        with engine.begin() as db:
+            for row in rows:
+                table = "dat_treatment_plan" if "planned_date" in row else "dat_field_operation"
+                if table == "dat_field_operation":
+                    db.execute(
+                        text(
+                            "update dat_field_operation set date = :date, "
+                            "operation_type = :operation_type where id = :id"
+                        ),
+                        {k: row[k] for k in ("date", "operation_type", "id")},
+                    )
+                else:
+                    db.execute(
+                        text(
+                            "update dat_treatment_plan set planned_date = :planned_date, "
+                            "operation_type = :operation_type, status = :status where id = :id"
+                        ),
+                        {k: row[k] for k in ("planned_date", "operation_type", "status", "id")},
+                    )
+                n += 1
+        print(f"restore: восстановлено строк {n} из {args.restore}")
+        return 0
 
     with engine.connect() as db:
         cycles = (
