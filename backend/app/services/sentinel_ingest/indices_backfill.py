@@ -57,6 +57,7 @@ class IndicesBackfillReport:
     partial_bands: int = 0  # сцен без части индексов (нет полос b05/b11)
     gaps: int = 0  # данных нет / сетки каналов не совпали
     failed: int = 0  # прочие ошибки расчёта
+    cloud_skipped: int = 0  # пересчитанная облачность > 60 — не сохранено (05 §5 п.2)
     rendered: int = 0  # перерендерено сцен (новые варианты, §7.7)
     unavailable: list[str] = field(default_factory=list)  # COG недоступен — повтор
 
