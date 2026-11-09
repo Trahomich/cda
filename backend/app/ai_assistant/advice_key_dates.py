@@ -180,12 +180,7 @@ def season_cultures(db: Session, field_id: uuid.UUID, year_from: int, year_to: i
             CropCycle.year <= year_to,
         )
     ).all()
-    from app.models.references import Culture
-
-    culture_names = {
-        cid: name
-        for cid, name in db.execute(select(Culture.id, Culture.name)).all()
-    }
+    culture_names = dict(db.execute(select(Culture.id, Culture.name)).all())
     return {int(year): culture_names[cid] for year, cid in rows if cid in culture_names}
 
 
