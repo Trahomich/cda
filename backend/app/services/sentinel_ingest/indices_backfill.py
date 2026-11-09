@@ -33,13 +33,13 @@ from app.integrations import DataGapError, DataQualityError, SourceUnavailableEr
 from app.integrations.stac import StacSearchClient
 from app.models.integrations import SatelliteCatalogItem, SatelliteScene
 from app.services.sentinel_ingest.catalog import farm_bbox
-from app.services.sentinel_ingest.ndvi import MAX_SCENE_CLOUD_PCT
 from app.services.sentinel_ingest.indices import (
     EXTRA_INDICES,
     IndexStat,
     compute_scene_indices,
     upsert_scene_indices,
 )
+from app.services.sentinel_ingest.ndvi import MAX_SCENE_CLOUD_PCT
 
 logger = logging.getLogger(__name__)
 
@@ -247,7 +247,7 @@ def run_indices_backfill(
             assert stats is not None
             # честная облачность пересчитанной сцены может быть > 60 (в БД
             # лежит ndvi-сцена по ДРУГОЙ строке каталога той же даты, или
-            #/catalog-строка честнее старого расчёта) — такие сцены-индексы
+            # /catalog-строка честнее старого расчёта) — такие сцены-индексы
             # не пишем, констрейнт cloud ≤ 60 (05 §5 п.2); это не ошибка
             stats_ok = [st for st in stats if st.cloud_pct <= MAX_SCENE_CLOUD_PCT]
             if len(stats_ok) < len(stats):
