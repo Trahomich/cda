@@ -451,8 +451,11 @@ def _llm_context(
 def _vision_renders(
     field_id: uuid.UUID, latest_day: date, peak_day: date | None
 ) -> list[tuple[str, bytes]]:
-    """PNG-рендеры для vision-сводки (§8.5, #117): последняя чистая сцена
-    (ndvi/truecolor/ndwi) + NDVI пика вегетации, ≤ VISION_MAX_IMAGES.
+    """PNG-рендеры для vision-сводки (§8.5, #117/#153): ≤ VISION_MAX_IMAGES.
+
+    Приоритет слотов (#153): NDVI последней чистой сцены, NDVI пика
+    вегетации, NDRE последней сцены (азотные зоны видны даже на пике
+    вегетации), затем truecolor/NDWI последней.
 
     Нет render_dir или файлов (рендер не строился, сцена старая) — пустой
     список: сводка уйдёт текстовым PROMPT (деградация как при ollama).
@@ -461,24 +464,23 @@ def _vision_renders(
     if not render_dir:
         return []
     out: list[tuple[str, bytes]] = []
-    seen_days: set[date] = set()
-    for day, variants in (
-        (latest_day, ("ndvi", "truecolor", "ndwi")),
-        (peak_day, ("ndvi",)),
-    ):
-        if day is None or day in seen_days:
-            continue
-        seen_days.add(day)
-        for variant in variants:
-            if len(out) >= VISION_MAX_IMAGES:
-                break
-            path = render_path(render_dir, field_id, variant, day)
-            if not path.is_file():
-                continue
-            try:
-                out.append((f"{variant} за {day.isoformat()}", path.read_bytes()))
-            except OSError:
-                logger.warning("insights: рендер %s не читается", path)
+
+    def _try(day: date | None, variant: str) -> None:
+        if day is None or len(out) >= VISION_MAX_IMAGES:
+            return
+        path = render_path(render_dir, field_id, variant, day)
+        if not path.is_file():
+            return
+        try:
+            out.append((f"{variant} за {day.isoformat()}", path.read_bytes()))
+        except OSError:
+            logger.warning("insights: рендер %s не читается", path)
+
+    _try(latest_day, "ndvi")
+    _try(peak_day, "ndvi")
+    _try(latest_day, "ndre")
+    _try(latest_day, "truecolor")
+    _try(latest_day, "ndwi")
     return out
 
 
