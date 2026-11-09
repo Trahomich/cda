@@ -220,7 +220,11 @@ def compute_scene_indices(assets: dict, contour_geojson: dict) -> list[IndexStat
 def upsert_scene_indices(
     db: Session, field_id: uuid.UUID, captured_at: date, stats: list[IndexStat]
 ) -> int:
-    """Записать сцены индексов (on_conflict_do_nothing); вернуть число новых."""
+    """Записать сцены индексов (on_conflict_do_nothing); вернуть число новых.
+
+    Сбой одной вставки (констрейнт) не роняет пакет: откат, лог, остальные
+    индексы пишутся — бэкфилл длинный, одна сцена не должна его убивать.
+    """
     inserted = 0
     for st in stats:
         statement = (
@@ -241,8 +245,18 @@ def upsert_scene_indices(
             .on_conflict_do_nothing(constraint="uq_dat_satellite_scene")
             .returning(SatelliteScene.id)
         )
-        if db.execute(statement).first() is not None:
-            inserted += 1
+        try:
+            if db.execute(statement).first() is not None:
+                inserted += 1
+        except IntegrityError:  # noqa: PERF203 — констрейнт одного индекса
+            db.rollback()
+            logger.warning(
+                "indices: сцена %s/%s (%s) не записана — констрейнт",
+                field_id,
+                captured_at,
+                st.index,
+                exc_info=True,
+            )
     return inserted
 
 
