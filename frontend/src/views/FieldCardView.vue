@@ -266,6 +266,38 @@ const activeIndexHint = computed(
   () => INDEX_LAYERS.find((l) => l.key === layerMode.value)?.hint ?? '',
 )
 
+/* ── График временного ряда индекса (#151): единый выбор со слоем мини-карты.
+ *  Выбор индексного слоя переключает и график на ряд того же индекса;
+ *  «Снимок»/«Контур» график не меняют. Автосброс слоя при смене сезона
+ *  (нет сцен) график не трогает — у выбранного индекса покажется
+ *  нейтральное пустое состояние «нет данных за сезон». ── */
+const chartIndex = ref<IndexLayerKey>('ndvi')
+
+/** Клик по кнопке индексного слоя: слой и график — один индекс (#151). */
+function onIndexLayerBtn(key: LayerMode): void {
+  layerMode.value = key
+  if (key !== 'truecolor' && key !== 'none') chartIndex.value = key
+}
+
+const chartMeta = computed(
+  () => INDEX_LAYERS.find((l) => l.key === chartIndex.value) ?? INDEX_LAYERS[0]!,
+)
+const chartPoints = computed(() =>
+  chartIndex.value === 'ndvi' ? ndvi.value : indexSeries.value[chartIndex.value],
+)
+const chartLoading = computed(() =>
+  chartIndex.value === 'ndvi' ? ndviLoading.value : indexLoading.value,
+)
+/** Кликабельные даты графика: даты с рендером ряда выбранного индекса. */
+const chartSelectable = computed(() =>
+  chartIndex.value === 'ndvi'
+    ? ndvi.value.filter((p) => p.render_available).map((p) => p.date)
+    : indexDates.value[chartIndex.value],
+)
+
+/** «Сегодня» для подписей «нет данных на …, показано за …» (#544). */
+const todayIso = new Date().toISOString().slice(0, 10)
+
 watch(
   renderDates,
   (dates) => {
