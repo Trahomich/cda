@@ -354,6 +354,9 @@ def season_key_dates(
         sown_prev_year = (winter_calendar or group == "winter") and month >= 8
         year = season_year - 1 if sown_prev_year else season_year
         default = date(year, month, day_)
+        if from_calendar:
+            # техкарта даёт НАЧАЛО окна операции: рекомендация — за 3 сут до
+            default -= timedelta(days=PLAN_LEAD_DAYS)
         out.append(
             KeyDate(
                 label=label,
