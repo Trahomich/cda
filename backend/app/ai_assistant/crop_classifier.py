@@ -201,33 +201,51 @@ def classify_curve(
 
     # --- яровая: без осенней вегетации, один главный пик май–июль -----
     autumn_max = max((v for _, v in autumn), default=None)
+    april_no_winter = bool(april) and max(april) < WINTER_SPRING_NDVI
     if (
-        autumn_max is not None
-        and autumn_max < SPRING_AUTUMN_NDVI_MAX
-        and may_july
+        may_july
         and season_max >= SPRING_PEAK_NDVI_MIN
+        and (
+            (autumn_max is not None and autumn_max < SPRING_AUTUMN_NDVI_MAX)
+            # осенних сцен нет (ранняя история) — озимых отсекаем апрельским NDVI
+            or (autumn_max is None and april_no_winter)
+        )
     ):
         top = max(may_july, key=lambda dv: dv[1])
-        evidences.append(
-            f"осенней вегетации нет (max NDVI осени {autumn_max:.2f} < "
-            f"{SPRING_AUTUMN_NDVI_MAX:.2f})"
-        )
-        evidences.append(f"главный пик {top[0].isoformat()}: NDVI {top[1]:.2f} в мае–июле")
-        # противоречие: несколько сопоставимых ЛОКАЛЬНЫХ максимумов — укосы?
-        rival_peaks = [
-            (d, v)
-            for d, v in _local_maxima(may_july)
-            if d != top[0] and v >= top[1] - GRASS_DIP
-        ]
-        if rival_peaks:
-            return CropClassification(
-                UNCERTAIN,
-                CONF_BASE_WEAK,
-                evidences + ["но несколько сопоставимых пиков — травы или укосы?"],
+        if autumn_max is not None:
+            evidences.append(
+                f"осенней вегетации нет (max NDVI осени {autumn_max:.2f} < "
+                f"{SPRING_AUTUMN_NDVI_MAX:.2f})"
             )
-        return CropClassification(
-            SPRING_GRAIN, CONF_BASE_STRONG, ["яровая: " + "; ".join(evidences)]
-        )
+        else:
+            evidences.append(
+                "осенних сцен в истории нет; апрель без озимых всходов "
+                f"(NDVI {max(april):.2f} < {WINTER_SPRING_NDVI:.2f})"
+            )
+        evidences.append(f"главный пик {top[0].isoformat()}: NDVI {top[1]:.2f} в мае–июле")
+        # противоречие — укосный ЦИКЛ: соперничающий пик с настоящим провалом
+        # между ним и главным (шумное плато без провала — нормальная яровая)
+        mj_peaks = _local_maxima(may_july)
+        has_mow_cycle = False
+        for d, v in mj_peaks:
+            if d == top[0] or v < GRASS_PEAK_NDVI_MIN:
+                continue
+            lo, hi = min(d, top[0]), max(d, top[0])
+            between = [b for bd, b in may_july if lo < bd < hi]
+            dip = min(v, top[1]) - min(between)
+            if dip >= GRASS_DIP:
+                has_mow_cycle = True
+                evidences.append(
+                    f"сопоставимый пик {d.isoformat()} ({v:.2f}) с провалом "
+                    f"−{dip:.2f} — укос травы?"
+                )
+                break
+        if has_mow_cycle:
+            return CropClassification(
+                UNCERTAIN, CONF_BASE_WEAK, evidences
+            )
+        base = CONF_BASE_STRONG if autumn_max is not None else CONF_BASE_WEAK
+        return CropClassification(SPRING_GRAIN, base, ["яровая: " + "; ".join(evidences)])
 
     return CropClassification(
         UNCERTAIN, CONF_BASE_WEAK, ["правила противоречат или кривая нетипична — не гадаем"]
