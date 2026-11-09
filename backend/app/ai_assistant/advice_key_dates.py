@@ -252,22 +252,27 @@ def season_key_dates(
 ) -> list[KeyDate]:
     """Ключевые даты T сезона season_year культуры поля (#159).
 
-    Озимые: сезон = год уборки Y → «перед посевом» 15.09.(Y−1).
+    Источник приоритетов: техкарты #158 (TECH_CALENDAR / tech_map) —
+    начало агроокна − 3 сут; культуры нет в календаре — маркеры групп и
+    дефолты задачи #159. Озимые: посев в году Y−1 (сезон = год уборки).
     scenes — (дата, avg NDVI) сезона, нужны только для укосов трав.
-    tech_map — техкарты #158 (будущая интеграция; None — дефолты).
     """
     group = culture_group(culture_name)
-    out: list[KeyDate] = []
+    entries: list[tuple[str, int, int, str]] | None = None
+    winter_calendar = False
     if tech_map is not None:
-        rows = tech_map.get(culture_name or "", [])
-        entries = [
-            (str(r["label"]), int(r["month"]), int(r["day"]), str(r["operation_type"]))
-            for r in rows
-        ]
-    else:
+        entries = _calendar_entries_tech_map(tech_map, culture_name)
+    if entries is None:
+        entries = _calendar_entries(culture_name)
+        winter_calendar = _is_winter_calendar_group(culture_name)
+    if entries is None:
         entries = _DEFAULTS[group]
+    out: list[KeyDate] = []
     for label, month, day_, op_type in entries:
-        year = season_year - 1 if group == "winter" and month >= 9 else season_year
+        sown_prev_year = (
+            winter_calendar or group == "winter"
+        ) and month >= 8
+        year = season_year - 1 if sown_prev_year else season_year
         default = date(year, month, day_)
         out.append(
             KeyDate(
