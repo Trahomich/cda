@@ -750,6 +750,10 @@ function economicsOf(
   year: number,
 ): FieldEconomics {
   const area = field.area_ga
+  const n = FIELD_N.get(field.field_id)!
+  // Поле 7, текущий сезон: работы только запланированы (для #165 — плитка
+  // факта «0 ₽ · работы не начаты» рядом с планами).
+  const noFacts = n === 7 && year !== 2026
   const rub = (r: number) => Math.round((r * area) / 100) * 100
   // [type, title, ММ-ДД плана, руб/га, ММ-ДД факта | null, множитель факта]
   const rows: Array<[string, string, string, number, string | null, number]> =
