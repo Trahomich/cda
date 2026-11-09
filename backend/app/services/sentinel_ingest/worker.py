@@ -124,10 +124,44 @@ def _ndvi_cycle(settings: Settings) -> None:
         db.close()
 
 
+def indices_backfill_cycle(settings: Settings) -> None:
+    """Догоняющий бэкфилл индексов §7.7 (суточная джоба, #152).
+
+    Идемпотентен: кандидаты — только сцены без полного набора индексов
+    (пропущенные инжестом, частичные полосы после обновления каталога);
+    недостающие полосы дозапрашиваются из STAC с дедупликацией по item_id.
+    Пустой прогон — один дешёвый SELECT. Ошибки не роняют воркер.
+    """
+    from app.integrations.stac import EarthSearchStacClient
+    from app.services.sentinel_ingest.indices_backfill import run_indices_backfill
+
+    db = SessionLocal()
+    try:
+        report = run_indices_backfill(
+            db,
+            client=EarthSearchStacClient(
+                base_url=settings.stac_api_url,
+                request_timeout=settings.ingest_satellite_request_timeout,
+            ),
+            date_from=settings.ingest_satellite_indices_from_date,
+            max_workers=settings.ingest_satellite_ndvi_workers,
+            render_dir=settings.ndvi_render_dir or None,
+        )
+        if report.scenes:
+            logger.info("sentinel-ingest [indices]: %s", report.as_dict())
+    except Exception:  # noqa: BLE001 — фоновая джоба не роняет воркер
+        logger.exception("sentinel-ingest [indices]: сбой догоняющего бэкфилла")
+    finally:
+        db.close()
+
+
 def create_worker(settings: Settings) -> BlockingScheduler:
     """Планировщик: каталог каждые INGEST_SATELLITE_CATALOG_HOURS часов.
 
     Первый прогон — сразу при старте (backfill-окно закрывает пропуски).
+    Индексы §7.7 — догоняющий бэкфилл раз в сутки ночью (#152): сцены без
+    полного набора индексов добираются автоматически, руками запускать
+    ничего не нужно.
     """
     scheduler = BlockingScheduler(timezone=UTC)
     scheduler.add_job(
@@ -140,6 +174,17 @@ def create_worker(settings: Settings) -> BlockingScheduler:
         coalesce=True,
         next_run_time=datetime.now(tz=UTC),
     )
+    if settings.ingest_satellite_indices_enabled:
+        scheduler.add_job(
+            indices_backfill_cycle,
+            args=(settings,),
+            trigger="cron",
+            hour=settings.ingest_satellite_indices_daily_at_hour,
+            minute=settings.ingest_satellite_indices_daily_at_minute,
+            id=JOB_INDICES_BACKFILL,
+            max_instances=1,
+            coalesce=True,
+        )
     return scheduler
 
 
