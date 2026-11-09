@@ -169,7 +169,9 @@ def season_key_dates(
     return out
 
 
-def season_cultures(db: Session, field_id: uuid.UUID, year_from: int, year_to: int) -> dict[int, str]:
+def season_cultures(
+    db: Session, field_id: uuid.UUID, year_from: int, year_to: int
+) -> dict[int, str]:
     """main-культуры по сезонам поля: {год сезона: имя культуры}.
 
     Год цикла = год уборки; для озимых это и есть сезон (посев осенью Y−1).
