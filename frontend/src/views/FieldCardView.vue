@@ -1175,18 +1175,10 @@ function fmtNum(v: number, digits = 1): string {
                 class="card360__layer-btn card360__layer-btn--truecolor"
                 :class="{ 'card360__layer-btn--active': layerMode === 'truecolor' }"
                 :aria-pressed="layerMode === 'truecolor'"
+                title="RGB-снимок (truecolor)"
                 @click="layerMode = 'truecolor'"
               >
-                Снимок
-              </button>
-              <button
-                type="button"
-                class="card360__layer-btn card360__layer-btn--contour"
-                :class="{ 'card360__layer-btn--active': layerMode === 'none' }"
-                :aria-pressed="layerMode === 'none'"
-                @click="layerMode = 'none'"
-              >
-                Контур
+                RGB
               </button>
             </div>
             <span class="card360__layer-date-label">
