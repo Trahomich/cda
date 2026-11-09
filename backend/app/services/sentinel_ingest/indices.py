@@ -24,6 +24,7 @@ from rasterio.warp import reproject, transform_geom
 from rasterio.windows import Window, from_bounds
 from shapely.geometry import shape
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
