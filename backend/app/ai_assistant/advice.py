@@ -308,11 +308,15 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
     render_dir = settings.ndvi_render_dir
     if render_dir and scenes:
         seen_days: set[date] = set()
-        for day in (scenes[-1].captured_at, peak.captured_at if peak else None):
-            if day is None or day in seen_days or len(images) >= MAX_IMAGES:
+        for day, variant in (
+            (scenes[-1].captured_at, "ndvi"),
+            (peak.captured_at if peak else None, "ndvi"),
+            (scenes[-1].captured_at, "ndre"),  # азотные зоны, #153
+        ):
+            if day is None or (day, variant) in seen_days or len(images) >= MAX_IMAGES:
                 continue
-            seen_days.add(day)
-            path = render_path(render_dir, field_id, "ndvi", day)
+            seen_days.add((day, variant))
+            path = render_path(render_dir, field_id, variant, day)
             if path.is_file():
                 try:
                     images.append(path.read_bytes())
