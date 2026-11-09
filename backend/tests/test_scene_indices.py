@@ -358,12 +358,12 @@ class TestIndicesAutoBackfill:
         """Догоняющий бэкфилл индексов — суточная джоба воркера (#152):
         руками запускать не нужно; выключается INGEST_SATELLITE_INDICES_ENABLED.
         """
-        from apscheduler.triggers.cron import CronTrigger
         from app.core.config import Settings
         from app.services.sentinel_ingest.worker import (
             JOB_INDICES_BACKFILL,
             create_worker,
         )
+        from apscheduler.triggers.cron import CronTrigger
 
         scheduler = create_worker(Settings())
         (job,) = [j for j in scheduler.get_jobs() if j.id == JOB_INDICES_BACKFILL]
