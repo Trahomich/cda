@@ -336,6 +336,103 @@ def cmd_advice_refresh(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
+    """Ретро-рекомендации на 4 сезона по ключевым датам культур (#159, §9).
+
+    Идемпотентность: (поле, advice_date) уже сгенерировано — пропуск.
+    --prune-today — перед прогоном убрать дубли сегодняшних advice
+    (несколько записей advice_date=сегодня: остаётся последняя).
+    """
+    import json
+    from collections import Counter
+    from datetime import date as Date
+
+    from sqlalchemy import delete, select as sa_select
+
+    from app.ai_assistant import advice_key_dates
+    from app.ai_assistant.advice import generate_advice
+    from app.models.agronomy import Field
+    from app.models.ai import AIFieldAdvice
+
+    today = Date.today()
+    pruned = 0
+    if args.prune_today:
+        with SessionLocal() as db:
+            rows = db.execute(
+                sa_select(AIFieldAdvice.id, AIFieldAdvice.field_id, AIFieldAdvice.created_at).where(
+                    AIFieldAdvice.advice_date == today
+                )
+            ).all()
+            keep: dict = {}
+            for row_id, field_id, created_at in rows:
+                if field_id not in keep or created_at > keep[field_id][1]:
+                    keep[field_id] = (row_id, created_at)
+            drop_ids = [rid for rid, _ in rows if rid not in {k[0] for k in keep.values()}]
+            if drop_ids:
+                db.execute(delete(AIFieldAdvice).where(AIFieldAdvice.id.in_(drop_ids)))
+                db.commit()
+            pruned = len(drop_ids)
+
+    year_to = today.year
+    year_from = year_to - max(1, args.years) + 1
+    counters: Counter = Counter()
+    per_season: dict[int, int] = {}
+    errors: list[str] = []
+
+    with SessionLocal() as db:
+        field_ids = list(
+            db.scalars(sa_select(Field.id).where(Field.status == "active").order_by(Field.name))
+        )
+        for field_id in field_ids:
+            cultures = advice_key_dates.season_cultures(db, field_id, year_from, year_to)
+            for season, culture_name in sorted(cultures.items()):
+                scenes = [
+                    (s.captured_at, float(s.index_avg))
+                    for s in db.scalars(
+                        sa_select(AIFieldAdvice.__table__.none if False else __import__(
+                            "app.models.integrations", fromlist=["SatelliteScene"]
+                        ).SatelliteScene).where(
+                            __import__("app.models.integrations", fromlist=["SatelliteScene"])
+                            .SatelliteScene.field_id
+                            == field_id,
+                            __import__("app.models.integrations", fromlist=["SatelliteScene"])
+                            .SatelliteScene.index
+                            == "ndvi",
+                        )
+                    )
+                ]
+                key_dates = advice_key_dates.season_key_dates(
+                    db, field_id, culture_name, season, scenes=scenes
+                )
+                for kd in key_dates:
+                    if kd.date > today:
+                        counters["future_skipped"] += 1
+                        continue
+                    try:
+                        record = generate_advice(field_id, as_of=kd.date, skip_existing=True)
+                    except Exception:
+                        counters["errors"] += 1
+                        errors.append(f"{field_id}:{kd.date.isoformat()}")
+                        continue
+                    if record is None:
+                        counters["skipped"] += 1
+                    else:
+                        counters["generated"] += 1
+                        per_season[season] = per_season.get(season, 0) + 1
+                    counters["total"] += 1
+
+    report = {
+        "years": [year_from, year_to],
+        "fields": len(field_ids),
+        "pruned_today": pruned,
+        **dict(counters),
+        "per_season": per_season,
+        "errors": errors[:20],
+    }
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    return 1 if counters["errors"] else 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="app.cli", description="CLI ИС ЦДА")
     sub = parser.add_subparsers(dest="command", required=True)
