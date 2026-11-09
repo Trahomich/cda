@@ -1,15 +1,15 @@
 """Pydantic-схемы экономики сезона (API-62, §7.9, #161)."""
 
 import uuid
-from datetime import date
+from datetime import date as Date
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class OperationSide(BaseModel):
     """Сводка план/факт по типу операции: дата последней + Σ руб."""
 
-    date: date = Field(description="дата последней операции стороны")
+    date: Date = Field(description="дата последней операции стороны")
     cost_rub: float = Field(description="сумма, руб; null-стоимости не входят")
 
 
