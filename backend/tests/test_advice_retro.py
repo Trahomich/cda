@@ -194,7 +194,7 @@ class TestKeyDates:
             FieldOperation(
                 field_id=fid,
                 operation_type="seeding",
-                date=date(2026, 5, 20),
+                date=date(2026, 5, 10),
                 actual_area_ga=10.0,
                 status="done",
                 source="manual",
@@ -203,7 +203,7 @@ class TestKeyDates:
         db_session.commit()
         kds = advice_key_dates.season_key_dates(db_session, fid, "Кукуруза на силос", 2026)
         by_label = {kd.label: kd.date for kd in kds}
-        assert by_label["перед посевом"] == date(2026, 5, 17)  # 20.05 − 3
+        assert by_label["перед посевом"] == date(2026, 5, 7)  # 10.05 − 3
 
     def test_season_cultures(self, world, db_session):
         client, hdr = world
