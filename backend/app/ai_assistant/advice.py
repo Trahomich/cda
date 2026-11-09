@@ -313,11 +313,23 @@ def build_advice_context(
             "Активные рекомендации системы: "
             + "; ".join(f"[{r.rule_id}] {r.action}" for r in active_recs)
         )
-    parts.append(_vra_verdict_line(field_id, season_year))
+    if retro:
+        # VRA-вердикт из кэша строился бы по ВСЕМ сценам сезона (вкл. будущее
+        # после T) — в ретро честная строка по пикам до даты, без зон по COG
+        if peak is not None:
+            parts.append(
+                "Модель дифвнесения: ретро-режим — зоны не пересчитываются; "
+                f"пик NDVI до даты: {peak.captured_at.isoformat()} "
+                f"(avg {float(peak.index_avg):.3f})."
+            )
+    else:
+        parts.append(_vra_verdict_line(field_id, season_year))
 
     # 8. Другие индексы сезона (§9.1, #153): NDRE/NDMI/EVI/NDSI/BSI —
     # ассистент аргументирует азот/влажность/перезимовку данными индексов
-    extra = detectors.extra_indices_context(db, field_id, year=season_year)
+    extra = detectors.extra_indices_context(
+        db, field_id, year=season_year, as_of=day if retro else None
+    )
     if extra:
         parts.append(extra)
     yield_line = _yield_verdict(db, field_id, season_year, scenes)
