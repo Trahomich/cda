@@ -505,6 +505,11 @@ async function loadSeasons() {
     indexNeedsSeasonYear.value = false
     void loadIndexLayers()
   }
+  // Журнал успел загрузиться без года — перезагружаем с окном сезона (#165).
+  if (journalNeedsSeasonYear.value && currentSeasonYear.value != null) {
+    journalNeedsSeasonYear.value = false
+    void loadJournal()
+  }
 }
 
 /** Выбор сезона (§7.5): сезонозависимые блоки (NDVI, VRA, урожайность,
