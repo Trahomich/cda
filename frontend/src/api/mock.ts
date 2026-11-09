@@ -1568,10 +1568,14 @@ export class MockTransport implements Transport {
       const seasonUnknown = yearParam !== 0 && !SEASON_YEARS.includes(yearParam)
       const ndviPoints = ndviOf(FIELD_N.get(field.field_id)!, yearParam || 2027)
       const n = FIELD_N.get(field.field_id)!
-      const scenes =
-        seasonUnknown || indexParam === 'ndsi'
-          ? []
-          : ndviPoints.map((p, i) => {
+      // BSI в сезоне 2026 пуст (мок для #151: пустое состояние графика —
+      // «нет данных по индексу за сезон» при смене сезона; слой тоже
+      // задизейблится, как при любом отсутствии сцен).
+      const indexEmpty =
+        seasonUnknown || indexParam === 'ndsi' || (indexParam === 'bsi' && yearParam === 2026)
+      const scenes = indexEmpty
+        ? []
+        : ndviPoints.map((p, i) => {
               const avg = mockIndexValue(indexParam, p.ndvi)
               return {
                 scene_id: `scene-${p.date}-${field.field_id.slice(-4)}`,
