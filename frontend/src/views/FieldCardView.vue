@@ -933,12 +933,17 @@ const journalWindow = computed(() => {
     : { from: `${year}-01-01`, to: `${year}-12-31` }
 })
 
+/** Флаг: журнал загружен без окна сезона (год сезона ещё не был известен) —
+ *  перезапросить вместе с NDVI, когда loadSeasons определит сезон (#165). */
+const journalNeedsSeasonYear = ref(false)
+
 async function loadJournal() {
   journalLoading.value = true
   try {
     // #165: только операции выбранного сезона (окно с озимыми), не последние
     // работы всех лет — иначе журнал противоречил экономике сезона на экране.
     const w = journalWindow.value
+    journalNeedsSeasonYear.value = w == null
     operations.value = (
       await getOperations({
         field_id: fieldId,
