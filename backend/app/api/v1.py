@@ -11,6 +11,7 @@ from app.core.config import get_settings
 from app.modules.alerts import router as alerts_router
 from app.modules.alerts import sources_router
 from app.modules.auth import router as auth_router
+from app.modules.economics import router as economics_router
 from app.modules.export import router as export_router
 from app.modules.fields import router as fields_router
 from app.modules.inputs import router as inputs_router
@@ -28,6 +29,7 @@ api_router.include_router(auth_router)
 api_router.include_router(fields_router)
 api_router.include_router(inputs_router)
 api_router.include_router(export_router)
+api_router.include_router(economics_router)
 api_router.include_router(weather_router)
 api_router.include_router(machinery_router)
 api_router.include_router(rotation_router)
