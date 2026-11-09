@@ -1754,6 +1754,32 @@ export class MockTransport implements Transport {
       return ok(yieldOf(n, field.field_id, field.current_cycle?.culture_name ?? 'Пшеница озимая'))
     }
 
+    /* ── Экономика сезона (API-62, §7.9, #161): план/факт стоимости техработ;
+       ?year=YYYY — сезон (default 2027-текущий); года без цикла — пусто ── */
+    const econMatch = /^\/fields\/([\w-]+)\/economics$/.exec(pathname)
+    if (method === 'GET' && econMatch) {
+      const field = FIELDS.find((f) => f.field_id === econMatch[1])
+      if (!field) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${econMatch[1]} не найдено`)
+      }
+      const yearParam = Number(params.get('year') ?? 0)
+      const year = yearParam || 2027
+      if (!SEASON_YEARS.includes(year)) {
+        return ok({
+          field_id: field.field_id,
+          year,
+          area_ga: field.area_ga,
+          plan_cost_rub: 0,
+          fact_cost_rub: 0,
+          cost_per_ga_rub: 0,
+          fact_cost_per_ton_rub: null,
+          yield_c_ha: null,
+          operations: [],
+        })
+      }
+      return ok(economicsOf(field, year))
+    }
+
     /* ── «Выводы ассистента» (API-51, §7.4, #96): только числовые
        детекторы, source='rules' (мок-мир без Ollama), поле 7 — пусто;
        ?year=YYYY (§7.5) — детекторы по сезону YYYY ── */
