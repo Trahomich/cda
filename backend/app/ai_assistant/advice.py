@@ -265,17 +265,19 @@ def build_advice_context(
             f"{precip14:.1f} мм, сумма GDD {gdd14 or 0:.0f} °C·сут "
             f"({gdd_days} сут с температурами)."
         )
-    forecasts: list[Forecast] = []
+    forecasts: Sequence[Forecast] = []
     if not retro:
-        forecasts = db.scalars(
-            select(Forecast)
-            .where(
-                Forecast.field_id == field_id,
-                Forecast.forecast_for >= today,
-                Forecast.forecast_for <= today + timedelta(days=6),
+        forecasts = list(
+            db.scalars(
+                select(Forecast)
+                .where(
+                    Forecast.field_id == field_id,
+                    Forecast.forecast_for >= today,
+                    Forecast.forecast_for <= today + timedelta(days=6),
+                )
+                .order_by(Forecast.forecast_for, Forecast.issued_at.desc())
             )
-            .order_by(Forecast.forecast_for, Forecast.issued_at.desc())
-        ).all()
+        )
     latest_by_day: dict[date, Forecast] = {}
     for fc in forecasts:  # issued_at desc в пределах дня — первый и есть свежий
         latest_by_day.setdefault(fc.forecast_for, fc)
