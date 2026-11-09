@@ -244,8 +244,8 @@ def build_advice_context(
         )
         parts.append(f"Журнал работ (последние {len(journal_ops)}): {journal}.")
 
-    # 5. NDVI сезона: точки avg/min/max + пик вегетации
-    scenes = _season_scene_rows(db, field_id, season_year)
+    # 5. NDVI сезона: точки avg/min/max + пик вегетации (ретро — сцены ≤ T)
+    scenes = _season_scene_rows(db, field_id, season_year, as_of=day if retro else None)
     peak = max(scenes, key=lambda s: float(s.index_avg)) if scenes else None
     if scenes:
         points = ", ".join(
@@ -256,23 +256,25 @@ def build_advice_context(
         )
         parts.append(f"NDVI сезона {season_year} (дата: avg/min/max): {points}.")
 
-    # 6. погода: факт 14 сут + прогноз 7 сут
-    precip14, gdd14, gdd_days = detectors.weather_window_14d(db, field_id, today)
+    # 6. погода: факт 14 сут до даты; прогноз 7 сут — только в live-режиме
+    precip14, gdd14, gdd_days = detectors.weather_window_14d(db, field_id, day)
     if precip14 is not None:
         parts.append(
-            f"Погода, факт 14 сут до {today.isoformat()}: осадки "
+            f"Погода, факт 14 сут до {day.isoformat()}: осадки "
             f"{precip14:.1f} мм, сумма GDD {gdd14 or 0:.0f} °C·сут "
             f"({gdd_days} сут с температурами)."
         )
-    forecasts = db.scalars(
-        select(Forecast)
-        .where(
-            Forecast.field_id == field_id,
-            Forecast.forecast_for >= today,
-            Forecast.forecast_for <= today + timedelta(days=6),
-        )
-        .order_by(Forecast.forecast_for, Forecast.issued_at.desc())
-    ).all()
+    forecasts: list[Forecast] = []
+    if not retro:
+        forecasts = db.scalars(
+            select(Forecast)
+            .where(
+                Forecast.field_id == field_id,
+                Forecast.forecast_for >= today,
+                Forecast.forecast_for <= today + timedelta(days=6),
+            )
+            .order_by(Forecast.forecast_for, Forecast.issued_at.desc())
+        ).all()
     latest_by_day: dict[date, Forecast] = {}
     for fc in forecasts:  # issued_at desc в пределах дня — первый и есть свежий
         latest_by_day.setdefault(fc.forecast_for, fc)
