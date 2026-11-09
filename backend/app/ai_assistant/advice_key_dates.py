@@ -147,7 +147,10 @@ def season_key_dates(
     out: list[KeyDate] = []
     if tech_map is not None:
         rows = tech_map.get(culture_name or "", [])
-        entries = [(str(r["label"]), int(r["month"]), int(r["day"]), str(r["operation_type"])) for r in rows]
+        entries = [
+            (str(r["label"]), int(r["month"]), int(r["day"]), str(r["operation_type"]))
+            for r in rows
+        ]
     else:
         entries = _DEFAULTS[group]
     for label, month, day_, op_type in entries:
