@@ -387,15 +387,21 @@ def main() -> int:
         from datetime import timedelta
 
         with engine.begin() as db:
-            dupes = db.execute(text(
-                "select o.id, o.field_id, o.date, o.operation_type "
-                "from dat_field_operation o join ("
-                "  select field_id, date, operation_type from dat_field_operation "
-                "  group by 1,2,3 having count(*) > 1) d "
-                "on d.field_id = o.field_id and d.date = o.date "
-                "and d.operation_type = o.operation_type "
-                "order by o.field_id, o.date, o.created_at"
-            )).mappings().all()
+            dupes = (
+                db.execute(
+                    text(
+                        "select o.id, o.field_id, o.date, o.operation_type "
+                        "from dat_field_operation o join ("
+                        "  select field_id, date, operation_type from dat_field_operation "
+                        "  group by 1,2,3 having count(*) > 1) d "
+                        "on d.field_id = o.field_id and d.date = o.date "
+                        "and d.operation_type = o.operation_type "
+                        "order by o.field_id, o.date, o.created_at"
+                    )
+                )
+                .mappings()
+                .all()
+            )
             spread = 0
             seen_first: set = set()
             for r in dupes:
@@ -409,8 +415,9 @@ def main() -> int:
                     if not cands:
                         continue
                     legal = any(
-                        classify("op", r, by_field[r["field_id"]][y][1], new_date,
-                                 r["operation_type"], y)
+                        classify(
+                            "op", r, by_field[r["field_id"]][y][1], new_date, r["operation_type"], y
+                        )
                         is None
                         for y in cands
                     )
