@@ -255,11 +255,10 @@ def main() -> int:
                         db.execute(text(
                             "update dat_treatment_plan set planned_date = :d where id = :i"),
                             {"d": v["verdict"]["date"], "i": v["id"]})
-                    else:
+                    else:  # cancel — план нелегален для цикла-пара
                         db.execute(text(
-                            "update dat_treatment_plan set operation_type = 'tillage', "
-                            "planned_date = :d where id = :i"),
-                            {"d": v["verdict"]["date"], "i": v["id"]})
+                            "update dat_treatment_plan set status = 'cancelled' where id = :i"),
+                            {"i": v["id"]})
         path = Path(args.backup or f"ops_backup_{date.today():%Y%m%d}.json")
         path.write_text(json.dumps(backup, default=str, ensure_ascii=False, indent=1),
                         encoding="utf-8")
