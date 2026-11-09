@@ -191,6 +191,9 @@ const layerMode = ref<LayerMode>('ndvi')
 type ExtraIndexKey = Exclude<IndexLayerKey, 'ndvi'>
 const EXTRA_INDEX_KEYS: readonly ExtraIndexKey[] = ['ndre', 'ndmi', 'ndsi', 'evi', 'bsi']
 
+const emptyIndexSeries = () =>
+  Object.fromEntries(EXTRA_INDEX_KEYS.map((k) => [k, []])) as Record<ExtraIndexKey, NdviPoint[]>
+
 const indexDates = ref<Record<ExtraIndexKey, string[]>>({
   ndre: [],
   ndmi: [],
@@ -198,6 +201,9 @@ const indexDates = ref<Record<ExtraIndexKey, string[]>>({
   evi: [],
   bsi: [],
 })
+/** Полные ряды сцен индексов сезона (#151): точки для графика временного
+ *  ряда выбранного индекса (значения + полоса min–max). */
+const indexSeries = ref<Record<ExtraIndexKey, NdviPoint[]>>(emptyIndexSeries())
 const indexLoading = ref(true)
 
 /** Доступность индексного слоя: сцены с рендерами сезона (API-06 ?index=).
@@ -213,14 +219,17 @@ async function loadIndexLayers(): Promise<void> {
         const year =
           seasonQueryYear.value ?? selectedYear.value ?? currentSeasonYear.value ?? undefined
         const points = await getFieldNdvi(fieldId, year, key)
-        return [key, points.filter((p) => p.render_available).map((p) => p.date).sort()] as const
+        return [key, points] as const
       } catch {
         return [key, []] as const
       }
     }),
   )
   if (token !== seasonToken) return
-  indexDates.value = Object.fromEntries(loaded) as Record<ExtraIndexKey, string[]>
+  indexSeries.value = Object.fromEntries(loaded) as Record<ExtraIndexKey, NdviPoint[]>
+  indexDates.value = Object.fromEntries(
+    loaded.map(([key, points]) => [key, points.filter((p) => p.render_available).map((p) => p.date).sort()] as const),
+  ) as Record<ExtraIndexKey, string[]>
   // Выбранный индекс в новом сезоне недоступен — возвращаем NDVI.
   const mode = layerMode.value
   if (mode !== 'ndvi' && mode !== 'truecolor' && mode !== 'none' && !indexDates.value[mode].length) {
