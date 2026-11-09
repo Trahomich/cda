@@ -47,9 +47,18 @@ def parse_md(value: str) -> tuple[int, int]:
     return int(m), int(d)
 
 
+#: допуск на границах окна: ±10 дней — погода года, не нарушение (#158 §3)
+TOLERANCE_DAYS = 10
+
+
+def _doy(m: int, d: int) -> int:
+    return (date(2001, m, d) - date(2001, 1, 1)).days
+
+
 def in_window(day: date, w_from: tuple[int, int], w_to: tuple[int, int]) -> bool:
-    cur = (day.month, day.day)
-    return w_from <= cur <= w_to
+    """Дата в окне (с допуском TOLERANCE_DAYS за каждой границей)."""
+    cur, lo, hi = _doy(day.month, day.day), _doy(*w_from), _doy(*w_to)
+    return lo - TOLERANCE_DAYS <= cur <= hi + TOLERANCE_DAYS
 
 
 def clamp_to_window(day: date, w_from: tuple[int, int], w_to: tuple[int, int], year: int) -> date:
