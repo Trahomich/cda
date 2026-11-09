@@ -181,8 +181,9 @@ const INDEX_LAYERS = [
 ] as const
 
 type IndexLayerKey = (typeof INDEX_LAYERS)[number]['key']
-/** Режим слоя: индекс — PNG-оверлей на контуре, 'none' — контур. */
-type LayerMode = IndexLayerKey | 'truecolor' | 'none'
+/** Режим слоя: индекс — PNG-оверлей на контуре, truecolor — RGB-снимок
+ *  (#583: отдельный режим «Контур» убран; без слоя контур виден заливкой). */
+type LayerMode = IndexLayerKey | 'truecolor'
 
 const layerMode = ref<LayerMode>('ndvi')
 
