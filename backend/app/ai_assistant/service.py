@@ -169,14 +169,16 @@ def build_items(
     *,
     vra_peaks: Sequence[tuple[date, float, float]] = (),
     year: int | None = None,
+    as_of: date | None = None,
 ) -> list[InsightItem]:
     """Все детекторы по данным поля (чистые функции над собранными данными).
 
     vra_peaks — кортежи (дата, IQR, spatial_spread) пиковых сцен из кэша VRA
     (детектор vra_heterogeneity §8.2 v1.7). year (§7.5) — сцены сезона YYYY
     (исторические выводы); без него — вся история (текущее поведение).
+    as_of (ретро #159) — детекторы только по данным ≤ даты (без подглядывания).
     """
-    scenes = detectors.load_scenes(db, field_id, year=year)
+    scenes = detectors.load_scenes(db, field_id, year=year, as_of=as_of)
     latest = scenes[-1] if scenes else None
 
     # осадки 7 суток к дате каждой сцены: waterlogging смотрит все сцены (§8.2)
@@ -191,7 +193,8 @@ def build_items(
         )
         # NDMI-сигнал (§7.7 #129): последняя ndmi-сцена сезона, NDVI — последняя сцена
         ndmi_mean = detectors.latest_index_mean(
-            db, field_id, "ndmi", year=year if year is not None else latest.captured_at.year
+            db, field_id, "ndmi", year=year if year is not None else latest.captured_at.year,
+            as_of=as_of,
         )
         drought = detectors.detect_drought(
             precip_14d,
@@ -216,7 +219,7 @@ def build_items(
             else latest.captured_at.year + (1 if latest.captured_at.month == 12 else 0)
         )
         winterkill = detectors.detect_winterkill(
-            detectors.load_winter_pairs(db, field_id, season_year), culture_name
+            detectors.load_winter_pairs(db, field_id, season_year, as_of=as_of), culture_name
         )
 
     candidates: list[InsightItem | None] = [
@@ -226,7 +229,7 @@ def build_items(
         drought,
         winterkill,
         detectors.detect_ndvi_lag_last_year(scenes),
-        detectors.detect_agrochem_low(detectors.latest_agrochem(db, field_id)),
+        detectors.detect_agrochem_low(detectors.latest_agrochem(db, field_id, as_of=as_of)),
         detectors.detect_vra_heterogeneity(vra_peaks),
     ]
     return [item for item in candidates if item is not None]
