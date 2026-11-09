@@ -519,6 +519,7 @@ function selectSeason(year: number): void {
   void loadEconomics()
   void loadInsights()
   void loadIndexLayers()
+  void loadJournal()
 }
 
 async function loadVra() {
