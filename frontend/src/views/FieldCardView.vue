@@ -2434,6 +2434,11 @@ polygon.card360__polygon {
   white-space: nowrap;
 }
 
+/* #635/#165: нейтральная подпись к плитке факта без выполненных работ */
+.card360__econ-hint {
+  font-size: 0.75rem;
+}
+
 .card360__econ-toggle {
   border: none;
   background: none;
