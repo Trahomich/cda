@@ -240,17 +240,17 @@ def main() -> int:
         if verdict is None:
             continue
         violations.append(
-                {
-                    "table": "dat_field_operation",
-                    "id": str(r["id"]),
-                    "field": fields.get(r["field_id"], "?"),
-                    "cycle_year": year,
-                    "culture": culture,
-                    "op": r["operation_type"],
-                    "date": str(r["date"]),
-                    "verdict": verdict,
-                }
-            )
+            {
+                "table": "dat_field_operation",
+                "id": str(r["id"]),
+                "field": fields.get(r["field_id"], "?"),
+                "cycle_year": year,
+                "culture": culture,
+                "op": r["operation_type"],
+                "date": str(r["date"]),
+                "verdict": verdict,
+            }
+        )
 
     # ── планы ──
     for r in plans:
