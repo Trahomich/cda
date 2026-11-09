@@ -58,6 +58,119 @@ _DEFAULTS: dict[str, list[tuple[str, int, int, str]]] = {
 }
 
 
+#: типовые техокна из #158 (docs/reports/tech-calendar-2026.json, версия 1.0,
+#: чернозёмная зона): группа → культуры → операция → (from, to), месяц-день.
+#: Ключевые даты ретро = начало окна операции − 3 сут («перед работой»);
+#: озимые/рапс озимый сеют в году Y−1 (окно с августа, год цикла = уборка).
+#: Источник canonical — JSON; константа синхронизирована вручную (#159).
+TECH_CALENDAR: dict[str, dict] = {
+    "winter_cereals": {
+        "cultures": ["Озимая пшеница", "Рожь", "Тритикале", "Ячмень озимый"],
+        "windows": {
+            "seeding": "08-15",
+            "fertilizing": "03-10",
+            "spraying": "03-20",
+            "harvesting": "07-01",
+        },
+    },
+    "spring_cereals": {
+        "cultures": ["Яровая пшеница", "Ячмень", "Овёс"],
+        "windows": {"seeding": "04-05", "fertilizing": "03-25", "spraying": "05-01", "harvesting": "07-10"},
+    },
+    "buckwheat_millet": {
+        "cultures": ["Гречиха", "Просо"],
+        "windows": {"seeding": "05-05", "fertilizing": "04-20", "spraying": "06-01", "harvesting": "08-15"},
+    },
+    "corn": {
+        "cultures": ["Кукуруза", "Кукуруза на силос"],
+        "windows": {"seeding": "04-25", "fertilizing": "04-15", "spraying": "05-10", "harvesting": "08-20"},
+    },
+    "legumes": {
+        "cultures": ["Горох", "Чечевица"],
+        "windows": {"seeding": "04-05", "fertilizing": "03-25", "spraying": "05-05", "harvesting": "07-10"},
+    },
+    "soy": {
+        "cultures": ["Соя"],
+        "windows": {"seeding": "04-25", "fertilizing": "04-20", "spraying": "05-25", "harvesting": "09-05"},
+    },
+    "winter_oilseeds": {
+        "cultures": ["Рапс озимый"],
+        "windows": {"seeding": "08-05", "fertilizing": "03-05", "spraying": "03-20", "harvesting": "07-05"},
+    },
+    "spring_oilseeds": {
+        "cultures": ["Рапс", "Подсолнечник"],
+        "windows": {"seeding": "04-15", "fertilizing": "04-10", "spraying": "05-10", "harvesting": "08-01"},
+    },
+    "perennial_grasses": {
+        "cultures": ["Люцерна", "Клевер с тимофеевкой", "Многолетние травы"],
+        "windows": {"seeding": "04-10", "fertilizing": "03-15", "spraying": "04-10", "harvesting": "05-25"},
+    },
+    "annual_grasses": {
+        "cultures": ["Однолетние травы"],
+        "windows": {"seeding": "04-20", "fertilizing": "04-15", "spraying": "05-20", "harvesting": "06-25"},
+    },
+    "sugar_beet": {
+        "cultures": ["Свёкла сахарная"],
+        "windows": {"seeding": "04-05", "fertilizing": "03-25", "spraying": "05-05", "harvesting": "09-15"},
+    },
+    "potato": {
+        "cultures": ["Картофель"],
+        "windows": {"seeding": "04-20", "fertilizing": "04-10", "spraying": "05-25", "harvesting": "08-20"},
+    },
+    "vegetables": {
+        "cultures": ["Овощи открытого грунта"],
+        "windows": {"seeding": "05-05", "fertilizing": "04-20", "spraying": "06-01", "harvesting": "07-10"},
+    },
+    "fallow": {
+        "cultures": ["Пар", "Пар занятый"],
+        "windows": {"tillage": "04-01"},  # вегетационных операций нет — ретро-дат нет
+    },
+}
+
+#: подписи ключевых дат по типу операции (тексты для KeyDate.label)
+_OP_LABELS = {
+    "seeding": "перед посевом",
+    "fertilizing": "перед подкормкой",
+    "spraying": "перед обработкой СЗР",
+    "harvesting": "перед уборкой",
+    "tillage": "перед обработкой почвы",
+}
+
+_OP_ORDER = ("seeding", "fertilizing", "spraying", "harvesting", "tillage")
+
+
+def _calendar_entries(culture_name: str | None) -> list[tuple[str, int, int, str]] | None:
+    """(label, месяц, день, операция) из техкарт #158 по имени культуры.
+
+    None — культуры нет в календаре (fallback на маркеры групп/дефолты).
+    """
+    if not culture_name:
+        return None
+    lowered = culture_name.strip().lower()
+    for group in TECH_CALENDAR.values():
+        if lowered in {c.lower() for c in group["cultures"]}:
+            entries = []
+            for op in _OP_ORDER:
+                window = group["windows"].get(op)
+                if not window:
+                    continue
+                month, day_ = (int(x) for x in window.split("-"))
+                entries.append((_OP_LABELS[op], month, day_, op))
+            return entries
+    return None
+
+
+def _is_winter_calendar_group(culture_name: str | None) -> bool:
+    """Группа календаря сеется в году Y−1 (озимые зерновые/рапс озимый)."""
+    if not culture_name:
+        return False
+    lowered = culture_name.strip().lower()
+    for key in ("winter_cereals", "winter_oilseeds"):
+        if lowered in {c.lower() for c in TECH_CALENDAR[key]["cultures"]}:
+            return True
+    return False
+
+
 @dataclass(frozen=True, slots=True)
 class KeyDate:
     """Ключевая дата сезона: смысл и дата T ретро-рекомендации."""
