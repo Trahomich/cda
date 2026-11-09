@@ -181,7 +181,6 @@ def run_indices_backfill(
 ) -> IndicesBackfillReport:
     """Досчитать индексы §7.7 по историческим ndvi-сценам (идемпотентно)."""
     from app.modules.satellite.ingest import contour_lookup_factory
-    from app.services.sentinel_ingest.renders import renders_exist
 
     report = IndicesBackfillReport(per_index={name: 0 for name in EXTRA_INDICES})
 
