@@ -133,7 +133,7 @@ const cycleYields = computed(() => {
 })
 
 const lastSatelliteDate = computed(() => {
-  const clear = ndvi.value.filter((p) => p.cloud_pct <= 80)
+  const clear = chartPoints.value.filter((p) => p.cloud_pct <= 80)
   return clear.length ? clear[clear.length - 1].date : ''
 })
 
