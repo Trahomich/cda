@@ -331,7 +331,6 @@ def main() -> int:
     if args.fix:
         backup = []
         with engine.begin() as db:
-            for v in violations:
                 if v["table"] == "dat_field_operation":
                     row = (
                         db.execute(
