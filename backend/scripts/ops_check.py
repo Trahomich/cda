@@ -202,13 +202,21 @@ def main() -> int:
             }
         if win is None:
             return None  # операции нет в карте группы — не нормируем
-        if in_window(day, *win):
+        # ожидаемый календарный год операции цикла ref: озимый сев — осень
+        # ref−1; озимые tillage — и после предшественника (ref−1), и после
+        # уборки (ref); прочие операции — год цикла (все окна в одном году)
+        if group in ("winter_cereals", "winter_oilseeds"):
+            if op_type == "seeding":
+                expected = {ref - 1}
+            elif op_type == "tillage":
+                expected = {ref - 1, ref}
+            else:
+                expected = {ref}
+        else:
+            expected = {ref}
+        if in_window(day, *win) and day.year in expected:
             return None
-        year = (
-            ref - 1
-            if (group in ("winter_cereals", "winter_oilseeds") and op_type == "seeding")
-            else ref
-        )
+        year = min(expected)
         target = clamp_to_window(day, *win, year)
         if target == day:
             return None
