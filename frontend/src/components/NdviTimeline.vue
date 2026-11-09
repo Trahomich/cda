@@ -253,7 +253,7 @@ const asOfNote = computed(() => {
         />
         <text
           v-if="i % dateStep === 0 || i === layout.dots.length - 1"
-          :x="dot.cx"
+          :x="Math.min(Math.max(dot.cx, PAD_L + 10), W - PAD_R - 10)"
           :y="H - 8"
           class="ndvi__date"
           text-anchor="middle"
