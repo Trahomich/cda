@@ -516,6 +516,7 @@ function selectSeason(year: number): void {
   void loadNdvi()
   void loadVra()
   void loadYield()
+  void loadEconomics()
   void loadInsights()
   void loadIndexLayers()
 }
