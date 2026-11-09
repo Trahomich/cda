@@ -12,7 +12,6 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 revision = "0021_operation_costs"
 down_revision = "0020_scene_indices"
