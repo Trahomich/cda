@@ -137,8 +137,9 @@ def main() -> int:
         plans = (
             db.execute(
                 text(
-                    "select tp.id, tp.cycle_id, tp.planned_date, tp.operation_type, tp.status, cc.year "
-                    "from dat_treatment_plan tp join dat_crop_cycle cc on cc.id = tp.cycle_id "
+                    "select tp.id, tp.cycle_id, tp.planned_date, tp.operation_type, "
+                    "tp.status, cc.year from dat_treatment_plan tp "
+                    "join dat_crop_cycle cc on cc.id = tp.cycle_id "
                     "where tp.status not in ('cancelled') order by cc.field_id, tp.planned_date"
                 )
             )
