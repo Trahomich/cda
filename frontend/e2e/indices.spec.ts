@@ -71,7 +71,7 @@ test('карточка поля: переключение слоёв NDRE→NDMI
   await expect(layer).toBeVisible()
 })
 
-test('карточка поля: перечень индексов на 360px — лента с прокруткой, без выхода за экран (#468)', async ({
+test('карточка поля: перечень индексов на 360px умещается без прокрутки (#468 → #572)', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 360, height: 800 })
@@ -79,17 +79,16 @@ test('карточка поля: перечень индексов на 360px �
   const switcher = page.locator('.card360__layer-switch')
   await expect(switcher).toBeVisible({ timeout: 15_000 })
 
-  // Лента не шире экрана, содержимое прокручивается горизонтально.
+  // Лента не шире экрана; #572 п.2: горизонтальной прокрутки больше нет —
+  // кнопки переносятся во второй ряд, все видны сразу.
   const box = await switcher.boundingBox()
   expect(box).not.toBeNull()
   expect(box!.width).toBeLessThanOrEqual(360)
   const scrollable = await switcher.evaluate((el) => el.scrollWidth > el.clientWidth)
-  expect(scrollable).toBe(true)
-  await expect(page.locator('.card360__layer-btn--ndsi')).toBeDisabled({ timeout: 10_000 })
+  expect(scrollable).toBe(false)
 
-  // Прокрутка доводит BSI (последний индекс) до видимости — тач-свайп
-  // эмулируем программной прокруткой ленты.
-  await switcher.evaluate((el) => (el.scrollLeft = el.scrollWidth))
+  // BSI (последняя кнопка) видна без прокрутки и кликабельна.
+  await expect(page.locator('.card360__layer-btn--ndsi')).toBeDisabled({ timeout: 10_000 })
   await expect(page.locator('.card360__layer-btn--bsi')).toBeVisible()
   await page.locator('.card360__layer-btn--bsi').click()
   await expect(page.locator('.card360__layer-btn--bsi')).toHaveClass(/card360__layer-btn--active/)
