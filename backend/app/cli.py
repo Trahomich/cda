@@ -384,9 +384,7 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
         # журнал/данные изменились (#157/#158) — сегодняшние рекомендации
         # устарели: пересоздаём все активные поля (старые записи дня удаляем)
         with SessionLocal() as db:
-            field_ids_now = list(
-                db.scalars(sa_select(Field.id).where(Field.status == "active"))
-            )
+            field_ids_now = list(db.scalars(sa_select(Field.id).where(Field.status == "active")))
             db.execute(
                 delete(AIFieldAdvice).where(
                     AIFieldAdvice.advice_date == today,

@@ -185,9 +185,7 @@ class WeatherMapItem(BaseModel):
     field_id: uuid.UUID
     name: str
     contour: dict = Field(description="Упрощённый контур поля (GeoJSON Polygon)")
-    value: float | None = Field(
-        default=None, description="Значение метрики; null — нет наблюдений"
-    )
+    value: float | None = Field(default=None, description="Значение метрики; null — нет наблюдений")
     updated_at: date | None = Field(
         default=None, description="Дата последнего наблюдения поля (сутки)"
     )
