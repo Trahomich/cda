@@ -179,7 +179,7 @@ def classify_curve(
     # «пик» — это жнивье после уборки яровой, не отрастание травы) ------
     if season_max >= FALLOW_NDVI_MAX:
         peaks = [p for p in _local_maxima(apr_sep) if p[1] >= GRASS_PEAK_NDVI_MIN]
-        cycles: list[tuple[date, float, float]] = []  # пик, провал, следующий пик
+        cycles: list[tuple[date, float, date]] = []  # пик, провал, следующий пик
         for i in range(len(peaks) - 1):
             between = [v for d, v in apr_sep if peaks[i][0] < d < peaks[i + 1][0]]
             if between:
