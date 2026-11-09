@@ -1956,10 +1956,9 @@ function fmtNum(v: number, digits = 1): string {
 
 polygon.card360__polygon {
   fill: #a5d6a7;
-  stroke: #2e7d32;
-  stroke-width: 1.5;
-  /* при зуме линия не толстеет (v2-fix-I) */
-  vector-effect: non-scaling-stroke;
+  /* #572 п.2: обводку контура убрали — слой снимка читается чище,
+   *  сам контур остаётся виден заливкой (когда слоя нет) */
+  stroke: none;
 }
 
 /* §7.3: PNG-слой под контуром; при активном слое контур stroke-only,
