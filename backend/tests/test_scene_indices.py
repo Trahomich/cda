@@ -366,16 +366,10 @@ class TestIndicesAutoBackfill:
         )
 
         scheduler = create_worker(Settings())
-        try:
-            (job,) = [j for j in scheduler.get_jobs() if j.id == JOB_INDICES_BACKFILL]
-            assert isinstance(job.trigger, CronTrigger)
-            fields = {f.name: str(f) for f in job.trigger.fields}
-            assert fields["hour"] == "2" and fields["minute"] == "10"
-        finally:
-            scheduler.shutdown(wait=False)
+        (job,) = [j for j in scheduler.get_jobs() if j.id == JOB_INDICES_BACKFILL]
+        assert isinstance(job.trigger, CronTrigger)
+        fields = {f.name: str(f) for f in job.trigger.fields}
+        assert fields["hour"] == "2" and fields["minute"] == "10"
 
         disabled = create_worker(Settings(ingest_satellite_indices_enabled=False))
-        try:
-            assert not [j for j in disabled.get_jobs() if j.id == JOB_INDICES_BACKFILL]
-        finally:
-            disabled.shutdown(wait=False)
+        assert not [j for j in disabled.get_jobs() if j.id == JOB_INDICES_BACKFILL]
