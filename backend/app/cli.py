@@ -565,6 +565,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="перед прогоном убрать дубли сегодняшних advice (остаётся последняя)",
     )
+    p_retro.add_argument(
+        "--refresh-today",
+        action="store_true",
+        help="пересоздать сегодняшние рекомендации всех полей (данные изменились)",
+    )
     p_retro.set_defaults(func=cmd_advice_refresh_backfill)
 
     p_wx = sub.add_parser(
