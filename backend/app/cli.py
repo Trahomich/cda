@@ -369,7 +369,8 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
             for row_id, field_id, created_at in rows:
                 if field_id not in keep or created_at > keep[field_id][1]:
                     keep[field_id] = (row_id, created_at)
-            drop_ids = [rid for rid, _ in rows if rid not in {k[0] for k in keep.values()}]
+            keep_ids = {k[0] for k in keep.values()}
+            drop_ids = [rid for rid, _, _ in rows if rid not in keep_ids]
             if drop_ids:
                 db.execute(delete(AIFieldAdvice).where(AIFieldAdvice.id.in_(drop_ids)))
                 db.commit()
