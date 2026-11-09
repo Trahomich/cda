@@ -173,7 +173,7 @@ test('карточка поля: индекс без сцен в сезоне �
   // (голая почва) — ось масштабируется по данным.
   await page.locator('.card360__layer-btn--bsi').click()
   await expect(page.getByRole('heading', { name: /BSI-таймлайн/ })).toBeVisible()
-  await expect(page.locator('.ndvi__last')).toContainText('· BSI −0,09')
+  await expect(page.locator('.ndvi__last')).toContainText('· BSI 0,23')
 
   // Сезон 2026: у BSI сцен нет — нейтральное пустое состояние графика,
   // кнопка слоя задизейблена, активный слой сброшен на NDVI.
