@@ -1995,7 +1995,7 @@ polygon.card360__polygon {
   color: #1b5e20;
   font-size: 0.7rem;
   letter-spacing: 0;
-  padding: 0.16rem 0.34rem;
+  padding: 0.16rem 0.3rem;
   min-height: 30px;
   white-space: nowrap;
   flex: 0 0 auto;
