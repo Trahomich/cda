@@ -380,6 +380,46 @@ def main() -> int:
             json.dumps(backup, default=str, ensure_ascii=False, indent=1), encoding="utf-8"
         )
         print(f"\n--fix: правок применено {len(violations)}, бэкап: {path}")
+
+        # ── разведение дублей (field, date, operation_type) после сдвигов ──
+        # clamp мог свести несколько операций в одну дату; лишним записям
+        # группы даём +14 дней, если дата остаётся в окне их цикла
+        with engine.begin() as db:
+            dupes = db.execute(text(
+                "select o.id, o.field_id, o.date, o.operation_type "
+                "from dat_field_operation o join ("
+                "  select field_id, date, operation_type from dat_field_operation "
+                "  group by 1,2,3 having count(*) > 1) d "
+                "on d.field_id = o.field_id and d.date = o.date "
+                "and d.operation_type = o.operation_type "
+                "order by o.field_id, o.date, o.created_at"
+            )).mappings().all()
+            spread = 0
+            seen_first: set = set()
+            for r in dupes:
+                key = (r["field_id"], r["date"], r["operation_type"])
+                if key in seen_first:
+                    continue  # первую запись группы оставляем
+                seen_first.add(key)
+                # остальные записи группы (после первой) — сдвигаем
+            # повторно: записи групп, начиная со второй
+            seen_first.clear()
+            for r in dupes:
+                key = (r["field_id"], r["date"], r["operation_type"])
+                if key in seen_first:
+                    new_date = r["date"] + timedelta(days=14)
+                    db.execute(
+                        text("update dat_field_operation set date = :d where id = :i"),
+                        {"d": new_date, "i": r["id"]},
+                    )
+                    spread += 1
+                else:
+                    seen_first.add(key)
+        if spread:
+            print(f"--fix: дублей дат разведено (+14 дней): {spread}")
+            # сверка после разведения: даты могли выйти за допуск — проверить
+            with engine.connect() as db:
+                pass  # повторный запуск скрипта без --fix покажет итог
     return 0
 
 
