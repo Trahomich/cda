@@ -1017,3 +1017,94 @@ class TestLlmVerdictEveryField138:
             f"insights:v{service.INSIGHTS_CACHE_VERSION}:{fid}:2026-10-31"
         )
         assert service.INSIGHTS_CACHE_VERSION == 2
+
+
+class TestExtraIndicesContext153:
+    """#153: секция «Другие индексы сезона» в insights-контексте и NDRE в vision."""
+
+    @staticmethod
+    def _idx_scene(db, fid, index, day, avg):
+        db.add(
+            SatelliteScene(
+                field_id=fid,
+                index=index,
+                captured_at=day,
+                resolution_m=10,
+                index_min=avg - 0.1,
+                index_avg=avg,
+                index_max=avg + 0.1,
+                cloud_pct=0.0,
+                composite_days=1,
+                source_id=SATELLITE_SOURCE,
+                trust=1.0,
+            )
+        )
+
+    def test_context_section(self, world, db_session) -> None:
+        from app.ai_assistant import service
+        from app.models.agronomy import Field
+
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        make_scene(db_session, fid, date(2026, 6, 1), 0.55)
+        self._idx_scene(db_session, fid, "ndre", date(2026, 6, 1), 0.44)
+        self._idx_scene(db_session, fid, "ndmi", date(2026, 6, 1), -0.11)
+        db_session.commit()
+        field = db_session.get(Field, fid)
+        assert field is not None
+        ctx = service._llm_context(db_session, field, [])
+        assert "Другие индексы сезона" in ctx
+        assert "NDRE (азотный статус): 2026-06-01: 0.440" in ctx
+        assert "NDMI (влажность биомассы): 2026-06-01: -0.110" in ctx
+
+    def test_context_absent_without_indices(self, world, db_session) -> None:
+        from app.ai_assistant import service
+        from app.models.agronomy import Field
+
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        make_scene(db_session, fid, date(2026, 6, 1), 0.55)
+        db_session.commit()
+        field = db_session.get(Field, fid)
+        assert field is not None
+        assert "Другие индексы сезона" not in service._llm_context(db_session, field, [])
+
+    def test_vision_ndre_priority(self, world, db_session, monkeypatch, tmp_path):
+        """Слоты vision: NDVI-последняя, NDVI-пик, NDRE-последняя, truecolor
+        (NDWI вытесняется при нехватке слотов, #153)."""
+        from datetime import date as _date
+
+        from app.services.sentinel_ingest.renders import render_path
+
+        peak_day = _date(2026, 7, 1)
+        service = TestVisionRenders117._anthropic(monkeypatch, ndvi_render_dir=str(tmp_path))
+        fid = TestVisionRenders117._prepare(world, db_session, monkeypatch)
+
+        class _FakeZones:
+            captured_at = peak_day
+            iqr_ndvi = 0.1
+            spatial_spread = 0.1
+            zones = []
+
+        monkeypatch.setattr(service.vra, "vra_zones", lambda db, field, *, year=None: _FakeZones())
+        for day, variants in (
+            (TODAY, ("ndvi", "truecolor", "ndwi", "ndre")),
+            (peak_day, ("ndvi",)),
+        ):
+            for variant in variants:
+                path = render_path(tmp_path, fid, variant, day)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b"\x89PNG-fake")
+
+        calls: dict = {}
+
+        def fake_summarize(prompt, context, **kwargs):
+            calls.update(context=context, kwargs=kwargs)
+            return "Сводка по снимкам и индексам."
+
+        monkeypatch.setattr(service.llm, "summarize", fake_summarize)
+        service.refresh_insights(fid, TODAY)
+        images = calls["kwargs"]["images"]
+        assert images is not None and len(images) == service.VISION_MAX_IMAGES
+        assert f"ndre за {TODAY.isoformat()}" in calls["context"]
+        assert "ndwi" not in calls["context"]  # вытеснен NDRE при лимите 4
