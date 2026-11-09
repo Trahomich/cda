@@ -1186,6 +1186,13 @@ function fmtNum(v: number, digits = 1): string {
               {{ activeIndexHint }} · снимок за {{ renderDate ? fmtDate(renderDate) : '—' }}
             </span>
           </div>
+          <!-- #544: сцены на «сегодня» нет — явно подписываем, какой датой показано -->
+          <p
+            v-if="renderDate && renderDate !== todayIso"
+            class="card360__muted card360__layer-asof"
+          >
+            нет данных на {{ fmtDate(todayIso) }}, показано за {{ fmtDate(renderDate) }}
+          </p>
           <p
             v-if="lastSatelliteDate"
             class="card360__muted"
