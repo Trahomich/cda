@@ -267,10 +267,11 @@ const renderDates = computed(() => {
 const renderDate = ref('')
 /** Загруженный PNG (blob URL + геопривязка из X-Field-Bbox/X-Image-Size). */
 const layer = ref<NdviRender | null>(null)
-/** Русская подсказка активного индексного слоя (#130). */
-const activeIndexHint = computed(
-  () => INDEX_LAYERS.find((l) => l.key === layerMode.value)?.hint ?? '',
-)
+/** Русская подсказка активного слоя (#130; #583: truecolor — «RGB-снимок»). */
+const activeIndexHint = computed(() => {
+  const found = INDEX_LAYERS.find((l) => l.key === layerMode.value)
+  return found ? found.hint : 'RGB-снимок'
+})
 
 /* ── График временного ряда индекса (#151): единый выбор со слоем мини-карты.
  *  Выбор индексного слоя переключает и график на ряд того же индекса;
