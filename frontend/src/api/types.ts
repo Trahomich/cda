@@ -734,7 +734,42 @@ export interface YieldForecastResponse {
   disclaimer: string
   /** Год сезона расчёта (§7.5): дополняет ответ при ?year=YYYY;
    *  совпадает с cycle_year — год, по которому считали прогноз. */
-  year?: number
+  year?: string extends '' ? never : number
+}
+
+/* ─── Экономика сезона поля (API-62, docs/06 §7.9; #161/#163) ─── */
+
+/** Одна сторона операции (план или факт) в детализации экономики. */
+export interface FieldEconomicsOpSide {
+  /** Дата операции; null — данных нет. */
+  date: string | null
+  /** Стоимость, руб; null — стоимость/норматив не заданы (в суммы не входит). */
+  cost_rub: number | null
+}
+
+/** Строка детализации экономики: план/факт по типу операции цикла. */
+export interface FieldEconomicsOperation {
+  type: string
+  title: string
+  /** null — фактическая операция без плана («вне плана»). */
+  plan: FieldEconomicsOpSide | null
+  /** null — плановая операция не выполнена. */
+  fact: FieldEconomicsOpSide | null
+}
+
+/** API-62: GET /fields/{id}/economics?year=YYYY — план/факт стоимости
+ *  техработ сезона, руб/га, руб/т и детализация по операциям. */
+export interface FieldEconomics {
+  field_id: string
+  year: number
+  area_ga: number
+  plan_cost_rub: number
+  fact_cost_rub: number
+  cost_per_ga_rub: number
+  /** null — фактической урожайности цикла нет (себестоимость руб/т не считается). */
+  fact_cost_per_ton_rub: number | null
+  yield_c_ha: number | null
+  operations: FieldEconomicsOperation[]
 }
 
 /** Сезон NDVI поля — элемент items[] ответа API-54 (§7.5): distinct-год
