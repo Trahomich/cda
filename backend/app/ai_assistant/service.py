@@ -193,7 +193,10 @@ def build_items(
         )
         # NDMI-сигнал (§7.7 #129): последняя ndmi-сцена сезона, NDVI — последняя сцена
         ndmi_mean = detectors.latest_index_mean(
-            db, field_id, "ndmi", year=year if year is not None else latest.captured_at.year,
+            db,
+            field_id,
+            "ndmi",
+            year=year if year is not None else latest.captured_at.year,
             as_of=as_of,
         )
         drought = detectors.detect_drought(

@@ -177,8 +177,7 @@ def season_cultures(
     Год цикла = год уборки; для озимых это и есть сезон (посев осенью Y−1).
     """
     rows = db.execute(
-        select(CropCycle.year, CropCycle.culture_id)
-        .where(
+        select(CropCycle.year, CropCycle.culture_id).where(
             CropCycle.field_id == field_id,
             CropCycle.kind == "main",
             CropCycle.year >= year_from,

@@ -579,7 +579,9 @@ def generate_advice(
             return None
         if skip_existing:
             exists = db.scalar(
-                select(func.count()).select_from(AIFieldAdvice).where(
+                select(func.count())
+                .select_from(AIFieldAdvice)
+                .where(
                     AIFieldAdvice.field_id == field_id,
                     AIFieldAdvice.advice_date == effective_date,
                 )

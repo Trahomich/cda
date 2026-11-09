@@ -95,7 +95,11 @@ class SceneStat:
 
 
 def load_scenes(
-    db: Session, field_id: uuid.UUID, limit: int = 200, *, year: int | None = None,
+    db: Session,
+    field_id: uuid.UUID,
+    limit: int = 200,
+    *,
+    year: int | None = None,
     as_of: date | None = None,
 ) -> list[SceneStat]:
     """Чистые NDVI-сцены поля по возрастанию даты (для трендов и лага).
@@ -504,7 +508,11 @@ def detect_winterkill(
 
 
 def latest_index_mean(
-    db: Session, field_id: uuid.UUID, index: str, *, year: int | None = None,
+    db: Session,
+    field_id: uuid.UUID,
+    index: str,
+    *,
+    year: int | None = None,
     as_of: date | None = None,
 ) -> float | None:
     """Среднее последней чистой сцены индекса (для drought-сигнала NDMI #129).
