@@ -947,6 +947,7 @@ function load() {
   void loadWorks()
   void loadVra()
   void loadYield()
+  void loadEconomics()
   void loadInsights()
   void loadAdvice()
   void loadIndexLayers()
