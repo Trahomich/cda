@@ -727,7 +727,10 @@ function yieldOf(n: number, fieldId: string, cultureName: string, year = 2027): 
  *  (история циклов) + боронование вне плана. Факт слегка отличается от
  *  плана (детерминированные множители), чтобы сводка показывала
  *  экономию/перерасход. Года без цикла — пустые суммы и []. */
-function economicsOf(field: Field, year: number): FieldEconomics {
+function economicsOf(
+  field: { field_id: string; area_ga: number },
+  year: number,
+): FieldEconomics {
   const area = field.area_ga
   const rub = (r: number) => Math.round((r * area) / 100) * 100
   // [type, title, ММ-ДД плана, руб/га, ММ-ДД факта | null, множитель факта]
