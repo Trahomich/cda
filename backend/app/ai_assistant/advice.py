@@ -302,7 +302,8 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
     context = "\n".join(parts)
     context_hash = hashlib.sha256(context.encode("utf-8")).hexdigest()
 
-    # 8. PNG-рендеры NDVI (§7.3, файловые): последняя чистая + пик, ≤2
+    # 9. PNG-рендеры NDVI (§7.3, файловые): последняя чистая + пик, ≤2;
+    # NDRE последней сцены — третий слот при наличии (§9.1, #153)
     images: list[bytes] = []
     render_dir = settings.ndvi_render_dir
     if render_dir and scenes:
