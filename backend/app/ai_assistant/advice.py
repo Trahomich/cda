@@ -298,13 +298,18 @@ def build_advice_context(
         parts.append(f"Модель вымокания: эпизоды по сценам {', '.join(episode_dates)}.")
     else:
         parts.append(f"Модель вымокания: признаков вымокания нет по {len(scenes)} сценам.")
+    rec_filters = [
+        Recommendation.target_type == "field",
+        Recommendation.target_id == field_id,
+        Recommendation.status == "new",
+    ]
+    if retro:
+        rec_filters.append(
+            Recommendation.created_at <= datetime.combine(day, dtime.max, tzinfo=UTC)
+        )
     active_recs = db.scalars(
         select(Recommendation)
-        .where(
-            Recommendation.target_type == "field",
-            Recommendation.target_id == field_id,
-            Recommendation.status == "new",
-        )
+        .where(*rec_filters)
         .order_by(Recommendation.created_at.desc())
         .limit(5)
     ).all()
