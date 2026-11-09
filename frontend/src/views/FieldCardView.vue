@@ -1349,7 +1349,7 @@ function fmtNum(v: number, digits = 1): string {
                 v-for="op in operations"
                 :key="op.operation_id"
               >
-                ✓ {{ op.date }} · {{ op.operation_type }} ·
+                ✓ {{ fmtDate(op.date) }} · {{ OP_LABELS[op.operation_type] ?? op.operation_type }} ·
                 {{ fmtNum(op.actual_area_ga, 2) }} га
                 <span v-if="op.performer">· {{ op.performer }}</span>
               </li>
@@ -1357,7 +1357,7 @@ function fmtNum(v: number, digits = 1): string {
                 v-if="operations.length === 0"
                 class="card360__muted"
               >
-                Фактов работ пока нет
+                Операций в этом сезоне пока нет
               </li>
             </ul>
           </template>
