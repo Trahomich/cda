@@ -504,6 +504,83 @@ def latest_index_mean(
     return None if value is None else float(value)
 
 
+#: индексы секции «Другие индексы сезона» LLM-контекста (§8.2/§9.1, #153)
+#: и смысловые месяцы: вегетационные — апрель–октябрь, NDSI — зима (дек–мар)
+EXTRA_CONTEXT_INDICES: tuple[str, ...] = ("ndre", "ndmi", "evi", "ndsi", "bsi")
+EXTRA_INDEX_MONTHS: dict[str, frozenset[int]] = {
+    "ndre": frozenset(range(4, 11)),
+    "ndmi": frozenset(range(4, 11)),
+    "evi": frozenset(range(4, 11)),
+    "bsi": frozenset(range(1, 13)),
+    "ndsi": frozenset({12, 1, 2, 3}),
+}
+_EXTRA_INDEX_HINTS = {
+    "ndre": "азотный статус",
+    "ndmi": "влажность биомассы",
+    "evi": "вегетация",
+    "ndsi": "снег",
+    "bsi": "голая почва",
+}
+
+
+def extra_indices_series(
+    db: Session, field_id: uuid.UUID, *, year: int | None = None, limit: int = 3
+) -> list[tuple[str, list[tuple[date, float]]]]:
+    """Последние limit сцен каждого нового индекса сезона (#153).
+
+    Вегетационные индексы (ndre/ndmi/evi) — сцены апреля–октонаря, NDSI —
+    зимние (декабрь Y−1 … март Y для сезона Y), BSI — любые. Внутри дня
+    одна сцена (UQ); порядок — по убыванию даты, как у load_scenes.
+    """
+    out: list[tuple[str, list[tuple[date, float]]]] = []
+    for index in EXTRA_CONTEXT_INDICES:
+        filters = [SatelliteScene.field_id == field_id, SatelliteScene.index == index]
+        if index == "ndsi":
+            if year is None:
+                continue  # зима без сезона не определена — пропускаем
+            filters += [
+                SatelliteScene.captured_at >= date(year - 1, 12, 1),
+                SatelliteScene.captured_at <= date(year, 3, 31),
+            ]
+        else:
+            if year is not None:
+                filters.append(func.extract("year", SatelliteScene.captured_at) == year)
+        rows = db.execute(
+            select(SatelliteScene.captured_at, SatelliteScene.index_avg)
+            .where(*filters)
+            .order_by(SatelliteScene.captured_at.desc(), SatelliteScene.created_at.desc())
+            .limit(50)
+        ).all()
+        series: list[tuple[date, float]] = []
+        for captured_at, avg in rows:
+            if captured_at.month in EXTRA_INDEX_MONTHS[index]:
+                series.append((captured_at, float(avg)))
+            if len(series) >= limit:
+                break
+        if series:
+            out.append((index, series))
+    return out
+
+
+def extra_indices_context(
+    db: Session, field_id: uuid.UUID, *, year: int | None = None, limit: int = 3
+) -> str | None:
+    """Секция «Другие индексы сезона» для LLM-контекста (§8.2/§9.1, #153).
+
+    None — ни одного рассчитанного индекса сезона (секция не пишется).
+    Только реально рассчитанные значения; null не упоминается.
+    """
+    series = extra_indices_series(db, field_id, year=year, limit=limit)
+    if not series:
+        return None
+    parts = [
+        f"{index.upper()} ({_EXTRA_INDEX_HINTS[index]}): "
+        + ", ".join(f"{day.isoformat()}: {avg:.3f}" for day, avg in reversed(scenes))
+        for index, scenes in series
+    ]
+    return "Другие индексы сезона (дата: среднее по полю): " + "; ".join(parts) + "."
+
+
 def detect_ndvi_lag_last_year(scenes: Sequence[SceneStat]) -> InsightItem | None:
     """info: NDVI отстаёт ≥ 0.1 от сцены той же даты прошлого сезона."""
     if len(scenes) < 2:
