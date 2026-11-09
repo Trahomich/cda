@@ -191,8 +191,13 @@ const layerMode = ref<LayerMode>('ndvi')
 type ExtraIndexKey = Exclude<IndexLayerKey, 'ndvi'>
 const EXTRA_INDEX_KEYS: readonly ExtraIndexKey[] = ['ndre', 'ndmi', 'ndsi', 'evi', 'bsi']
 
-const emptyIndexSeries = () =>
-  Object.fromEntries(EXTRA_INDEX_KEYS.map((k) => [k, []])) as Record<ExtraIndexKey, NdviPoint[]>
+const emptyIndexSeries = (): Record<ExtraIndexKey, NdviPoint[]> => ({
+  ndre: [],
+  ndmi: [],
+  ndsi: [],
+  evi: [],
+  bsi: [],
+})
 
 const indexDates = ref<Record<ExtraIndexKey, string[]>>({
   ndre: [],
