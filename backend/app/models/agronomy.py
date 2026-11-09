@@ -369,6 +369,11 @@ class FieldOperation(Base):
     # «требует проверки» (422 не возвращаем: факт важнее плана, 03 §3.4).
     needs_review: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     status: Mapped[str] = mapped_column(String(15), nullable=False, server_default="draft")
+    # Стоимость техработы (§7.9, #161): 'unit' — руб/га (× площадь операции),
+    # 'total' — фикс за поле; NULL — стоимости нет (для факта — норматив
+    # ref_operation_cost по типу операции)
+    cost_mode: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    cost_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
