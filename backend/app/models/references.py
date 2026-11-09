@@ -180,9 +180,29 @@ class Price(Base):
     )
 
 
+class OperationCost(Base):
+    """Норматив стоимости техработы по типу операции, руб/га (§7.9, #161).
+
+    Fallback для ФАКТОВ без заданной стоимости; ориентировочные региональные
+    расценки — уточняются хозяйством (seed идемпотентен, правки в UI/БД).
+    """
+
+    __tablename__ = "ref_operation_cost"
+    __table_args__ = (
+        CheckConstraint("rub_per_ga >= 0", name="ck_ref_operation_cost_rub"),
+    )
+
+    operation_type: Mapped[str] = mapped_column(String(15), primary_key=True)
+    rub_per_ga: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
 __all__ = [
     "Agrochem",
     "Culture",
+    "OperationCost",
     "PredecessorRule",
     "Price",
     "Source",
