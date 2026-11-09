@@ -279,6 +279,12 @@ def build_advice_context(db: Session, field_id: uuid.UUID, today: date) -> Advic
             + "; ".join(f"[{r.rule_id}] {r.action}" for r in active_recs)
         )
     parts.append(_vra_verdict_line(field_id, season_year))
+
+    # 8. Другие индексы сезона (§9.1, #153): NDRE/NDMI/EVI/NDSI/BSI —
+    # ассистент аргументирует азот/влажность/перезимовку данными индексов
+    extra = detectors.extra_indices_context(db, field_id, year=season_year)
+    if extra:
+        parts.append(extra)
     yield_line = _yield_verdict(db, field_id, season_year, scenes)
     if yield_line:
         parts.append(yield_line)
