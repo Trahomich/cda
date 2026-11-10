@@ -297,3 +297,321 @@ def list_operations(
             count_stmt.where(FieldOperation.operation_type == operation_type),
         )
     return list(db.scalars(stmt.limit(limit).offset(offset))), db.scalar(count_stmt) or 0
+
+
+# -- Единая операция (§7.10, #173): план → факт → подтверждение, техника 1:N --
+
+from datetime import UTC as _UTC, datetime as _datetime  # noqa: E402
+
+from app.models.machinery import Machine, OperationMachine  # noqa: E402
+from app.modules.operations.schemas import (  # noqa: E402
+    MachineLinkIn,
+    UnifiedOperationCompleteIn,
+    UnifiedOperationPatchIn,
+    UnifiedOperationPlanIn,
+)
+
+#: сезон цикла по дате: год уборки (озимые с осени — следующий год), 03 §1.4
+def _season_cycle(db: Session, field_id: uuid.UUID, day: date) -> uuid.UUID | None:
+    years = (day.year + 1, day.year) if day.month >= 9 else (day.year, day.year - 1)
+    for year in years:
+        cycle = db.scalars(
+            select(CropCycle)
+            .where(
+                CropCycle.field_id == field_id,
+                CropCycle.year == year,
+                CropCycle.kind == "main",
+            )
+            .limit(1)
+        ).first()
+        if cycle is not None:
+            return cycle.id
+    return None
+
+
+def create_plan(db: Session, *, data: UnifiedOperationPlanIn) -> FieldOperation:
+    """§7.10 POST /operations (план-режим): плановая операция.
+
+    Площадь плана = площадь поля на плановую дату; status='planned';
+    cycle_id не задан — main-цикл сезона плановой даты (если есть).
+    """
+    if data.operation_type not in OPERATION_TYPES:
+        raise AppError(
+            f"Неизвестный тип операции «{data.operation_type}» "
+            f"(допустимо: {', '.join(OPERATION_TYPES)})",
+            code="unknown_operation_type",
+        )
+    field = db.get(Field, data.field_id)
+    if field is None:
+        raise AppError(
+            f"Поле {data.field_id} не найдено",
+            code="not_found",
+            title="Ресурс не найден",
+            status_code=404,
+        )
+    cycle_id = data.cycle_id or _season_cycle(db, data.field_id, data.planned_date)
+    if data.cycle_id is not None and db.get(CropCycle, data.cycle_id) is None:
+        raise AppError(
+            f"Цикл {data.cycle_id} не найден",
+            code="not_found",
+            title="Ресурс не найден",
+            status_code=404,
+        )
+    if data.input_id is not None and db.get(AgroInput, data.input_id) is None:
+        raise AppError(
+            f"Препарат {data.input_id} не найден",
+            code="not_found",
+            title="Ресурс не найден",
+            status_code=404,
+        )
+    from app.models.agronomy import Recommendation
+
+    if (
+        data.basis_recommendation_id is not None
+        and db.get(Recommendation, data.basis_recommendation_id) is None
+    ):
+        raise AppError(
+            f"Рекомендация {data.basis_recommendation_id} не найдена",
+            code="not_found",
+            title="Ресурс не найден",
+            status_code=404,
+        )
+    operation = FieldOperation(
+        field_id=data.field_id,
+        cycle_id=cycle_id,
+        operation_type=data.operation_type,
+        date=data.planned_date,
+        planned_date=data.planned_date,
+        input_id=data.input_id,
+        input_dose=data.input_dose,
+        input_amount_total=data.input_amount_total,
+        actual_area_ga=field_area_on(db, field, data.planned_date),
+        performer=data.performer,
+        source="manual",
+        status="planned",
+        cost_plan_mode=data.cost_plan_mode,
+        cost_plan_value=data.cost_plan_value,
+        basis_recommendation_id=data.basis_recommendation_id,
+    )
+    db.add(operation)
+    db.commit()
+    db.refresh(operation)
+    return operation
+
+
+def _assert_not_closed(operation: FieldOperation) -> None:
+    if operation.status == "cancelled":
+        raise AppError(
+            "Операция отменена — правка плана недоступна",
+            code="operation_cancelled",
+            title="Нарушено бизнес-правило",
+            status_code=422,
+        )
+    if operation.fact_date is not None:
+        raise AppError(
+            "Операция уже закрыта фактом — правка плана недоступна (§7.10)",
+            code="operation_already_done",
+            title="Нарушено бизнес-правило",
+            status_code=422,
+        )
+
+
+def patch_plan(
+    db: Session, operation_id: uuid.UUID, *, data: UnifiedOperationPatchIn
+) -> FieldOperation:
+    """§7.10 PATCH /operations/{id}: правка плана до закрытия фактом."""
+    operation = get_operation(db, operation_id)
+    _assert_not_closed(operation)
+    if data.planned_date is not None:
+        operation.planned_date = data.planned_date
+        operation.date = data.planned_date
+    if data.input_id is not None:
+        if db.get(AgroInput, data.input_id) is None:
+            raise AppError(
+                f"Препарат {data.input_id} не найден",
+                code="not_found",
+                title="Ресурс не найден",
+                status_code=404,
+            )
+        operation.input_id = data.input_id
+    for field_name, value in (
+        ("input_dose", data.input_dose),
+        ("input_amount_total", data.input_amount_total),
+        ("cost_plan_mode", data.cost_plan_mode),
+        ("cost_plan_value", data.cost_plan_value),
+        ("performer", data.performer),
+    ):
+        if value is not None:
+            setattr(operation, field_name, value)
+    if operation.status == "draft" and operation.planned_date is not None:
+        operation.status = "planned"
+    db.commit()
+    db.refresh(operation)
+    return operation
+
+
+def replace_machine_links(
+    db: Session, operation: FieldOperation, machines: list[MachineLinkIn]
+) -> None:
+    """Техника операции 1:N (§7.10): полная замена набора связей."""
+    for link in machines:
+        if db.get(Machine, link.machine_id) is None:
+            raise AppError(
+                f"Машина {link.machine_id} не найдена",
+                code="not_found",
+                title="Ресурс не найден",
+                status_code=404,
+            )
+        if link.trailer_id is not None and db.get(Machine, link.trailer_id) is None:
+            raise AppError(
+                f"Прицеп {link.trailer_id} не найден",
+                code="not_found",
+                title="Ресурс не найден",
+                status_code=404,
+            )
+    db.query(OperationMachine).filter(OperationMachine.operation_id == operation.id).delete()
+    for link in machines:
+        db.add(
+            OperationMachine(
+                operation_id=operation.id,
+                machine_id=link.machine_id,
+                trailer_id=link.trailer_id,
+                operator=link.operator,
+                hours=link.hours,
+            )
+        )
+
+
+def complete_operation(
+    db: Session,
+    operation_id: uuid.UUID,
+    *,
+    data: UnifiedOperationCompleteIn,
+) -> FieldOperation:
+    """§7.10 POST /operations/{id}/complete — закрытие фактом.
+
+    Расход всего: input_amount_total, иначе доза × площадь поля на дату факта.
+    Стоимость факта: cost_fact_*; не задана → NULL (норматив применит экономика).
+    """
+    operation = get_operation(db, operation_id)
+    if operation.status == "cancelled":
+        raise AppError(
+            "Операция отменена — закрытие фактом недоступно",
+            code="operation_cancelled",
+            title="Нарушено бизнес-правило",
+            status_code=422,
+        )
+    if operation.fact_date is not None:
+        raise AppError(
+            "Операция уже закрыта фактом",
+            code="operation_already_done",
+            title="Нарушено бизнес-правило",
+            status_code=422,
+        )
+    field = db.get(Field, operation.field_id)
+    assert field is not None
+    area = field_area_on(db, field, data.fact_date)
+
+    if data.yield_record is not None:
+        if operation.operation_type != "harvesting":
+            raise AppError(
+                "Урожайность принимается только для операции типа harvesting",
+                code="yield_requires_harvesting",
+                title="Нарушено бизнес-правило",
+                status_code=422,
+            )
+        if operation.cycle_id is None:
+            raise AppError(
+                "Для записи урожайности обязателен cycle_id (ENT-YIELD-RECORD)",
+                code="yield_requires_cycle",
+                title="Нарушено бизнес-правило",
+                status_code=422,
+            )
+
+    operation.fact_date = data.fact_date
+    operation.date = data.fact_date
+    operation.status = "done"
+    operation.actual_area_ga = area
+    if data.input_dose is not None:
+        operation.input_dose = data.input_dose
+    if data.input_amount_total is not None:
+        operation.input_amount_total = data.input_amount_total
+    elif operation.input_dose is not None:
+        operation.input_amount_total = round(float(operation.input_dose) * float(area), 2)
+    if data.cost_fact_mode is not None:
+        operation.cost_fact_mode = data.cost_fact_mode
+    if data.cost_fact_value is not None:
+        operation.cost_fact_value = data.cost_fact_value
+    if data.performer is not None:
+        operation.performer = data.performer
+    if data.deviation_flag:
+        operation.deviation_flag = True
+    if data.deviation_rationale is not None:
+        operation.deviation_rationale = data.deviation_rationale
+    replace_machine_links(db, operation, data.machines)
+    if data.yield_record is not None:
+        db.add(
+            YieldRecord(
+                cycle_id=operation.cycle_id,
+                yield_c_ha=data.yield_record.yield_c_ha,
+                gross_t=data.yield_record.gross_t,
+                source=data.yield_record.source,
+                date=data.fact_date,
+            )
+        )
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise AppError(
+            "Запись урожайности с этой датой и источником для цикла уже существует",
+            code="duplicate_yield_record",
+            title="Конфликт состояния",
+            status_code=409,
+        ) from exc
+    db.refresh(operation)
+    return operation
+
+
+def confirm_operation(
+    db: Session, operation_id: uuid.UUID, *, user_id: uuid.UUID
+) -> FieldOperation:
+    """§7.10 POST /operations/{id}/confirm — подтверждение факта.
+
+    Идемпотентно: повторный вызов не меняет подтверждение. Подтверждается
+    только закрытый факт (fact_date ≠ null).
+    """
+    operation = get_operation(db, operation_id)
+    if operation.fact_date is None:
+        raise AppError(
+            "Подтверждается только закрытый факт (fact_date пуст, §7.10)",
+            code="operation_not_done",
+            title="Нарушено бизнес-правило",
+            status_code=422,
+        )
+    if operation.confirmed_by is None:
+        operation.confirmed_by = user_id
+        operation.confirmed_at = _datetime.now(_UTC)
+        db.commit()
+        db.refresh(operation)
+    return operation
+
+
+def machines_of(
+    db: Session, operation_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, list[tuple[OperationMachine, Machine, Machine | None]]]:
+    """Техника операций одним запросом: {operation_id: [(link, машина, прицеп)]}."""
+    out: dict[uuid.UUID, list[tuple[OperationMachine, Machine, Machine | None]]] = {}
+    if not operation_ids:
+        return out
+    machine_alias = Machine.__table__.alias("m")
+    rows = db.execute(
+        select(OperationMachine, Machine, machine_alias)
+        .join(Machine, OperationMachine.machine_id == Machine.id)
+        .outerjoin(machine_alias, OperationMachine.trailer_id == machine_alias.c.id)
+        .where(OperationMachine.operation_id.in_(operation_ids))
+        .order_by(OperationMachine.id)
+    ).all()
+    for link, machine, trailer in rows:
+        out.setdefault(link.operation_id, []).append((link, machine, trailer))
+    return out
