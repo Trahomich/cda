@@ -12,7 +12,7 @@ docs/10-mobile-pwa.md §3: «факт важнее плана» — 422 при �
 """
 
 import uuid
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -29,11 +29,15 @@ from app.models.agronomy import (
     TreatmentPlan,
     YieldRecord,
 )
-from app.models.machinery import MachineJob
+from app.models.machinery import Machine, MachineJob, OperationMachine
 from app.modules.operations.schemas import (
     OPERATION_SOURCES,
     OPERATION_TYPES,
+    MachineLinkIn,
     OperationCreate,
+    UnifiedOperationCompleteIn,
+    UnifiedOperationPatchIn,
+    UnifiedOperationPlanIn,
 )
 
 # RULE-AGRO-11: расхождение факт/план больше 10 % — отклонение
@@ -306,9 +310,12 @@ def list_operations(
     elif mode == "fact":
         filters.append(FieldOperation.fact_date.isnot(None))
     if confirmed is not None:
-        filters.append(
-            FieldOperation.confirmed_at.isnot(None) if confirmed else FieldOperation.confirmed_at.is_(None)
+        is_confirmed = (
+            FieldOperation.confirmed_at.isnot(None)
+            if confirmed
+            else FieldOperation.confirmed_at.is_(None)
         )
+        filters.append(is_confirmed)
     if year is not None:
         stmt = stmt.join(CropCycle, FieldOperation.cycle_id == CropCycle.id)
         count_stmt = count_stmt.join(CropCycle, FieldOperation.cycle_id == CropCycle.id)
@@ -320,15 +327,6 @@ def list_operations(
 
 # -- Единая операция (§7.10, #173): план → факт → подтверждение, техника 1:N --
 
-from datetime import UTC as _UTC, datetime as _datetime  # noqa: E402
-
-from app.models.machinery import Machine, OperationMachine  # noqa: E402
-from app.modules.operations.schemas import (  # noqa: E402
-    MachineLinkIn,
-    UnifiedOperationCompleteIn,
-    UnifiedOperationPatchIn,
-    UnifiedOperationPlanIn,
-)
 
 #: сезон цикла по дате: год уборки (озимые с осени — следующий год), 03 §1.4
 def _season_cycle(db: Session, field_id: uuid.UUID, day: date) -> uuid.UUID | None:
@@ -610,7 +608,7 @@ def confirm_operation(
         )
     if operation.confirmed_by is None:
         operation.confirmed_by = user_id
-        operation.confirmed_at = _datetime.now(_UTC)
+        operation.confirmed_at = datetime.now(UTC)
         db.commit()
         db.refresh(operation)
     return operation
