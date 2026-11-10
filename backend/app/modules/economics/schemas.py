@@ -27,7 +27,9 @@ class EconomicsOperationItem(BaseModel):
 
 
 class EconomicsResponse(BaseModel):
-    """API-62: экономика сезона поля — стоимости техработ (§7.9)."""    field_id: uuid.UUID
+    """API-62: экономика сезона поля — стоимости техработ (§7.9)."""
+
+    field_id: uuid.UUID
     year: int
     area_ga: float
     plan_cost_rub: float = Field(description="Σ плановых операций цикла, руб")
