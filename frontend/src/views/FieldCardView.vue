@@ -1867,11 +1867,11 @@ function fmtNum(v: number, digits = 1): string {
             <dl class="card360__econ-tiles">
               <div>
                 <dt>План</dt>
-                <dd>{{ fmtRub(econ.plan_cost_rub) }}</dd>
+                <dd>{{ fmtThousand(econ.plan_cost_rub) }}</dd>
               </div>
               <div>
                 <dt>Факт</dt>
-                <dd>{{ fmtRub(econ.fact_cost_rub) }}</dd>
+                <dd>{{ fmtThousand(econ.fact_cost_rub) }}</dd>
                 <span
                   v-if="econNoFacts"
                   class="card360__muted card360__econ-hint"
@@ -1883,18 +1883,18 @@ function fmtNum(v: number, digits = 1): string {
                   class="card360__econ-diff"
                   :class="econDiff > 0 ? 'card360__econ-diff--bad' : 'card360__econ-diff--good'"
                 >
-                  {{ econDiff > 0 ? '+' : '' }}{{ fmtRub(Math.abs(econDiff)) }}
+                  {{ econDiff > 0 ? '+' : '' }}{{ fmtThousand(Math.abs(econDiff)) }}
                 </dd>
               </div>
               <div>
                 <dt>Руб/га</dt>
-                <dd>{{ fmtRub(econ.cost_per_ga_rub) }}</dd>
+                <dd>{{ fmtThousand(econ.cost_per_ga_rub) }}</dd>
               </div>
             </dl>
             <p class="card360__econ-ton">
               <template v-if="econ.fact_cost_per_ton_rub != null">
                 Себестоимость зерна:
-                <strong>{{ fmtRub(econ.fact_cost_per_ton_rub) }}/т</strong>
+                <strong>{{ fmtThousand(econ.fact_cost_per_ton_rub) }}/т</strong>
                 <span class="card360__muted card360__econ-unit">
                   (фактическая урожайность {{ fmtNum(econ.yield_c_ha ?? 0) }} ц/га)
                 </span>
