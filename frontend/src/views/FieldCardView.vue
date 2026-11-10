@@ -2128,11 +2128,11 @@ function fmtNum(v: number, digits = 1): string {
             class="card360__wtotals"
           >
             Сезон {{ econ.year }}:
-            план Σ <strong>{{ fmtRub(econ.plan_cost_rub) }}</strong> ·
-            факт Σ <strong>{{ fmtRub(econ.fact_cost_rub) }}</strong> ·
+            план Σ <strong>{{ fmtThousand(econ.plan_cost_rub) }}</strong> ·
+            факт Σ <strong>{{ fmtThousand(econ.fact_cost_rub) }}</strong> ·
             {{ econDiff > 0 ? 'перерасход' : 'экономия' }}
             <strong :class="econDiff > 0 ? 'card360__econ-diff--bad' : 'card360__econ-diff--good'">{{
-              fmtRub(Math.abs(econDiff))
+              fmtThousand(Math.abs(econDiff))
             }}</strong>
             <span
               v-if="econNoFacts"
