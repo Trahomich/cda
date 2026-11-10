@@ -2067,9 +2067,10 @@ function fmtNum(v: number, digits = 1): string {
 .card360__grid {
   display: grid;
   /* #644: колонки данных паспорта шире на +10% (300→330px минимум) —
-   *  auto-fit кладёт меньше колонок в ряд, каждая заметно шире */
+   *  auto-fit кладёт меньше колонок в ряд, каждая заметно шире; отступы
+   *  чуть ужаты в пользу ширины колонок */
   grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-  gap: 0.9rem;
+  gap: 0.7rem;
   align-items: start;
 }
 
