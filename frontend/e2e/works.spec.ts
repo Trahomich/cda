@@ -61,14 +61,15 @@ test('календарь работ: переключатель «только �
   await expect(page.locator('.cal__chip[data-kind="plan"]')).toHaveCount(0)
 })
 
-test('планы СЗР: после создания spraying-плана показано погодное окно с чипами дат', async ({
+test('планы внесения (§7.10): создание плана через POST /operations — строка в таблице', async ({
   page,
 }) => {
   await login(page)
   await page.goto('/treatment-plans')
   await expect(page.locator('.tp__table')).toBeVisible({ timeout: 15_000 })
 
-  // Мок: прогноз есть на завтра → weather_window не null (§7.2).
+  // Единая операция (#175): плановое внесение = плановая операция с
+  // расходником; approve-флоу API-16 устарел вместе с сущностью.
   const tomorrowIso = tomorrow()
   await page.locator('.tp__field select').nth(0).selectOption({ index: 1 })
   await page.locator('.tp__field select').nth(1).selectOption({ index: 1 })
@@ -76,40 +77,38 @@ test('планы СЗР: после создания spraying-плана пок�
   await page.locator('.tp__form input[type="date"]').fill(tomorrowIso)
   await page.locator('.tp__submit').click()
 
-  const win = page.getByTestId('tp-window')
-  await expect(win).toBeVisible({ timeout: 15_000 })
-  // Бейдж: окно подходит или не подходит (проверка не блокирующая).
-  await expect(win.locator('.tp__badge')).toHaveText(/окно (подходит|не подходит)/)
-  await expect(win.locator('.tp__window-detail')).toContainText(tomorrowIso)
+  // Подтверждение формы + строка нового плана с датой, дозой и стоимостью.
+  await expect(page.locator('.tp__ok')).toContainText('План создан', { timeout: 15_000 })
+  const row = page.locator('.tp__table tbody tr').filter({ hasText: tomorrowIso.split('-').reverse().join('.') })
+  await expect(row).toBeVisible({ timeout: 10_000 })
+  await expect(row).toContainText('0,5')
+  await expect(row).toContainText('₽')
+  await expect(row.locator('.tp__chip')).toContainText('ожидается')
 
-  // Чип предложенной даты подставляет её в форму плана.
-  const chip = win.locator('.tp__chip').first()
-  if (await chip.count()) {
-    const date = await chip.textContent()
-    await chip.click()
-    await expect(page.locator('.tp__form input[type="date"]')).toHaveValue(date!.trim())
-  }
+  // Новый план виден и в журнале операций (единый источник §7.10).
+  await page.goto('/operations')
+  const jrnRow = page.locator('.jrn__table tbody tr', { hasText: tomorrowIso.split('-').reverse().join('.') })
+  await expect(jrnRow).toBeVisible({ timeout: 15_000 })
+  await expect(jrnRow.locator('.jrn__chip--plan')).toContainText('план · ожидается')
 })
 
-test('согласование плана: диалог с результатом, окно не оценено без прогноза', async ({
+test('планы внесения (§7.10): список — плановые операции с дозами и статусом «выполнено»', async ({
   page,
 }) => {
-  await login(page, 'manager')
+  await login(page)
   await page.goto('/treatment-plans')
-  await expect(page.locator('.tp__table')).toBeVisible({ timeout: 15_000 })
+  const table = page.locator('.tp__table')
+  await expect(table).toBeVisible({ timeout: 15_000 })
 
-  // Первый черновик мока — spraying 2027-06-08: прогноза на дату нет
-  // (горизонт мока — 7 сут) → weather_window: null, подсказка «не оценено».
-  await page.locator('.tp__approve').first().click()
-  const dialog = page.getByTestId('tp-approve-dialog')
-  await expect(dialog).toBeVisible()
-  await expect(dialog).toContainText('черновик → согласован')
+  // Мок (единый слой): план внесения удобрений поля 3 — 20.04.2027, 140 кг/га.
+  const planRow = table.locator('tbody tr').filter({ hasText: '20.04.2027' })
+  await expect(planRow).toBeVisible()
+  await expect(planRow).toContainText('140')
+  await expect(planRow).toContainText('ожидается')
 
-  await dialog.locator('.tp__approve').click()
-  await expect(dialog).toContainText('согласован', { timeout: 15_000 })
-  await expect(dialog.getByTestId('tp-approve-window')).toContainText('не оценено')
-  await dialog.locator('.tp__dialog-close').click()
-  await expect(dialog).toHaveCount(0)
+  // Переход из строки — в карточку поля.
+  await planRow.locator('.tp__field-link').click()
+  await page.waitForURL(/\/fields\/[\w-]+$/, { timeout: 10_000 })
 })
 
 test('карточка поля: вкладка «Работы» — план и факт одной хронологией', async ({ page }) => {
