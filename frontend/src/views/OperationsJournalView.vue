@@ -400,6 +400,9 @@ onMounted(async () => {
                 Статус
               </th>
               <th scope="col">
+                Стоимость
+              </th>
+              <th scope="col">
                 Доза (факт)
               </th>
               <th scope="col">
