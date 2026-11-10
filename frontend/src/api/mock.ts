@@ -2594,6 +2594,15 @@ export class MockTransport implements Transport {
       // API-18 (§7.10, #175): единые операции план+факт; фильтры field_id,
       // year (сезон по дате), date_from/date_to (по date = fact ?? planned),
       // type, plan/fact, confirmed. cost_rub — легаси-поле = cost_fact_rub.
+      // #186: limit ≤ 100 — как router.py бэкенда (регрессия видна в e2e).
+      if (Number(params.get('limit') ?? 50) > 100) {
+        return problem(
+          422,
+          'https://cda.example/errors/validation',
+          'Некорректный запрос',
+          'query.limit: Input should be less than or equal to 100',
+        )
+      }
       const fieldId = params.get('field_id')
       const dateFrom = params.get('date_from')
       const dateTo = params.get('date_to')
