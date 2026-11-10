@@ -238,19 +238,38 @@ def list_inputs(
     return list(items), int(total or 0)
 
 
-def _season_plans(db: Session, field_id: uuid.UUID, year: int) -> list[TreatmentPlan]:
-    """Все не отменённые планы циклов поля за сезон (год) — база RULE-AGRO-07/10."""
+#: планы внесения в единой операции (§7.10): типы из API-15
+TREATMENT_OP_TYPES = ("spraying", "fertilizing", "seed_treatment")
+
+
+def _season_plans(db: Session, field_id: uuid.UUID, year: int) -> list[FieldOperation]:
+    """Не отменённые плановые внесения сезона из единой операции (§7.10
+    адаптер): операции с расходником; база RULE-AGRO-07/10."""
     return list(
         db.scalars(
-            select(TreatmentPlan)
-            .join(CropCycle, TreatmentPlan.cycle_id == CropCycle.id)
+            select(FieldOperation)
+            .join(CropCycle, FieldOperation.cycle_id == CropCycle.id)
             .where(
                 CropCycle.field_id == field_id,
                 CropCycle.year == year,
-                TreatmentPlan.status != "cancelled",
+                FieldOperation.status != "cancelled",
+                FieldOperation.input_id.isnot(None),
+                FieldOperation.operation_type.in_(TREATMENT_OP_TYPES),
+                FieldOperation.planned_date.isnot(None),
             )
         ).all()
     )
+
+
+def treatment_plan_status(op: FieldOperation) -> str:
+    """Статус плана-внесения в терминах API-15 (легаси) из операции §7.10."""
+    if op.status == "cancelled":
+        return "cancelled"
+    if op.fact_date is not None:
+        return "completed"
+    if op.planned_date is None:
+        return "draft"
+    return "approved"
 
 
 def validate_treatment_plan(
@@ -314,7 +333,7 @@ def validate_treatment_plan(
     # RULE-AGRO-07: суммарный N за сезон ≤ 180 кг д.в./га (default, v1)
     current_n = sum(
         rules.nitrogen_kg_dv_ha(
-            dose=float(p.dose),
+            dose=float(p.input_dose or 0.0),
             unit=inputs_by_id[p.input_id].unit,
             n_pct=inputs_by_id[p.input_id].n_pct,
         )
