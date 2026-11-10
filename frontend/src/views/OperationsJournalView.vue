@@ -402,33 +402,29 @@ onMounted(async () => {
     </p>
 
     <template v-else>
-      <!-- Итоги сезона (#168): N операций; при выбранном поле суммы те же,
-           что в экономике карточки (API-62) -->
+      <!-- Итоги сезона (#168/#650): N операций; план Σ / факт Σ / отклонение —
+           API-62 при выбранном поле, API-62b по всем полям -->
       <p class="jrn__totals">
         <template v-if="typeof season === 'number'">
           Сезон {{ season }} ·
         </template>
         операций: <strong>{{ total }}</strong>
-        <template v-if="econ">
-          · план Σ <strong>{{ fmtRub(econ.plan_cost_rub) }}</strong>
-          · факт Σ <strong>{{ fmtRub(econ.fact_cost_rub) }}</strong>
+        <template v-if="totalsPlan != null && totalsFact != null">
+          · план Σ <strong>{{ fmtRub(totalsPlan) }}</strong>
+          · факт Σ <strong>{{ fmtRub(totalsFact) }}</strong>
           · отклонение
-          <strong :class="econDiff != null && econDiff > 0 ? 'jrn__bad' : 'jrn__good'">{{
-            econDiff != null && econDiff > 0 ? '+' : ''
-          }}{{ fmtRub(Math.abs(econDiff ?? 0)) }}</strong>
+          <strong :class="(totalsDiff ?? 0) > 0 ? 'jrn__bad' : 'jrn__good'">{{
+            (totalsDiff ?? 0) > 0 ? '+' : ''
+          }}{{ fmtRub(Math.abs(totalsDiff ?? 0)) }}</strong>
           <span
-            v-if="econ.fact_cost_rub === 0 && econ.operations.some((o) => o.plan != null)"
+            v-if="totalsNoFacts"
             class="jrn__muted"
           >(работы не начаты)</span>
         </template>
         <span
-          v-else-if="fieldId && typeof season === 'number'"
+          v-else-if="typeof season === 'number'"
           class="jrn__muted"
         >· суммы сезона загружаются…</span>
-        <span
-          v-else
-          class="jrn__muted"
-        >· выберите поле — покажу суммы план/факт сезона</span>
       </p>
       <div class="jrn__table-wrap">
         <table class="jrn__table">
