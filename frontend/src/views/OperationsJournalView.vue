@@ -354,7 +354,7 @@ watch([season, fieldId, opType, planFact], () => void load(true))
             <td>{{ fieldName(op.field_id) }}</td>
             <td>{{ inputText(op) }}</td>
             <td class="jrn__num">
-              {{ fmtRub(op.cost_plan_rub) }} / {{ fmtRub(op.cost_fact_rub) }}
+              {{ fmtThousand(op.cost_plan_rub) }} / {{ fmtThousand(op.cost_fact_rub) }}
             </td>
             <td>{{ op.performer ?? '—' }}</td>
             <td>{{ op.confirmed_at ? '✓' : '—' }}</td>
