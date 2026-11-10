@@ -4,7 +4,6 @@
 """
 
 import uuid
-from datetime import date
 
 import pytest
 from app.models.agronomy import AgroInput, CropCycle, Field, RotationPlan
@@ -121,8 +120,9 @@ class TestPlanFactConfirmFlow:
 
         # после факта: правка и повторное закрытие — 422
         assert (
-            client.patch(f"{API}/{oid}", json={"planned_date": "2026-07-01"}, headers=ops_headers)
-            .status_code
+            client.patch(
+                f"{API}/{oid}", json={"planned_date": "2026-07-01"}, headers=ops_headers
+            ).status_code
             == 422
         )
         r = client.post(
@@ -150,9 +150,7 @@ class TestPlanFactConfirmFlow:
         )
         assert resp.status_code == 200
         done = resp.json()
-        assert done["input_amount_total"] == pytest.approx(
-            2.0 * done["actual_area_ga"], rel=0.01
-        )
+        assert done["input_amount_total"] == pytest.approx(2.0 * done["actual_area_ga"], rel=0.01)
 
 
 class TestPolymorphicPost:
