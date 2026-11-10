@@ -894,6 +894,14 @@ function fmtRub(v: number): string {
   return `${Math.round(v).toLocaleString('ru-RU')} ₽`
 }
 
+/** Сводные суммы — в ТЫСЯЧАХ рублей (#707/#180): «1 234 тыс ₽»;
+ *  значения до 10 тыс — с одним знаком («52,4 тыс ₽»). */
+function fmtThousand(v: number): string {
+  return `${(v / 1000).toLocaleString('ru-RU', {
+    maximumFractionDigits: v < 10_000 ? 1 : 0,
+  })} тыс ₽`
+}
+
 /* ── «Выводы ассистента» (API-51, §7.4): детекторы + LLM-сводка ── */
 
 const insights = ref<InsightsResponse | null>(null)
