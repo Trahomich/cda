@@ -398,3 +398,39 @@ __all__ = [
     "season_key_dates",
     "season_cultures",
 ]
+
+
+def operations_key_dates(
+    db: Session, field_id: uuid.UUID, season_year: int, *, max_dates: int = 8
+) -> list[KeyDate]:
+    """Ключевые даты = даты техопераций сезона (#182, приказ #716).
+
+    Плановые и фактические даты единой операции (уник, без сдвига −3).
+    Операций в сезоне больше max_dates — по одной на (тип, месяц), чтобы
+    не генерить десятки близких рекомендаций.
+    """
+    rows = db.execute(
+        select(FieldOperation.operation_type, FieldOperation.planned_date, FieldOperation.fact_date)
+        .where(
+            FieldOperation.field_id == field_id,
+            FieldOperation.cycle_id.isnot(None),
+            FieldOperation.status != "cancelled",
+        )
+        .order_by(FieldOperation.planned_date, FieldOperation.fact_date)
+    ).all()
+    dates: set[date] = set()
+    for _op_type, planned, fact in rows:
+        for day in (planned, fact):
+            if day is not None and day.year == season_year:
+                dates.add(day)
+    unique = sorted(dates)
+    if len(unique) <= max_dates:
+        return [KeyDate(label="техоперация", date=d) for d in unique]
+    # по одной на (тип не важен) месяц: первая дата месяца
+    seen_months: set[int] = set()
+    out: list[KeyDate] = []
+    for day in unique:
+        if day.month not in seen_months:
+            seen_months.add(day.month)
+            out.append(KeyDate(label="техоперация", date=day))
+    return out
