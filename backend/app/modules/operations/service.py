@@ -548,7 +548,7 @@ def complete_operation(
     operation.fact_date = data.fact_date
     operation.date = data.fact_date
     operation.status = "done"
-    operation.actual_area_ga = area
+    operation.actual_area_ga = float(area)
     if data.input_dose is not None:
         operation.input_dose = data.input_dose
     if data.input_amount_total is not None:
