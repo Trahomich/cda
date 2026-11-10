@@ -486,6 +486,9 @@ onMounted(async () => {
               <td>
                 <span class="jrn__chip jrn__chip--plan">план · ожидается</span>
               </td>
+              <td class="jrn__num">
+                {{ econSideCost(p.operation_type, 'plan') != null ? fmtRub(econSideCost(p.operation_type, 'plan')!) : '—' }}
+              </td>
               <td class="jrn__muted">
                 {{ p.input_name }} · {{ p.dose.toLocaleString('ru-RU') }} {{ p.unit === 'l_ha' ? 'л/га' : 'кг/га' }}
               </td>
@@ -496,7 +499,7 @@ onMounted(async () => {
             </tr>
             <tr v-if="filtered.length === 0 && unmatchedPlans.length === 0">
               <td
-                colspan="9"
+                colspan="10"
                 class="jrn__state"
               >
                 Операций не найдено
