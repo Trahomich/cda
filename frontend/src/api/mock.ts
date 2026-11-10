@@ -2522,7 +2522,9 @@ export class MockTransport implements Transport {
           machines: [],
           created_at: new Date().toISOString(),
         }
-        OPERATIONS.push(entry)
+        // Новые операции — первыми (#186): loadWorks берёт первую страницу
+        // (limit 100), push в конец терял бы их за горизонтом пагинации.
+        OPERATIONS.unshift(entry)
         return ok(unifiedOp(entry), 201)
       }
       // Валидация обязательных полей (03 §1.6) → 400.
