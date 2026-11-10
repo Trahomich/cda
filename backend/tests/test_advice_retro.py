@@ -13,7 +13,7 @@ import pytest
 from app.ai_assistant import advice, advice_key_dates
 from app.models.agronomy import CropCycle, FieldOperation
 from app.models.ai import AIFieldAdvice
-from sqlalchemy import select as sa_select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 from tests.test_advice import _anthropic_settings
 from tests.test_inputs import make_culture, make_field
@@ -391,4 +391,4 @@ class TestOperationsKeyDates182:
             )
         )
         assert code == 0
-        assert db_session.scalars(sa_select(AIFieldAdvice)).all() == []
+        assert db_session.scalars(select(AIFieldAdvice)).all() == []
