@@ -2620,7 +2620,23 @@ export class MockTransport implements Transport {
           entry.actual_area_ga,
         )
       }
-      if (req.machines) entry.machines = req.machines as OperationMachine[]
+      if (req.machines) {
+        // Имена агрегатов/прицепов — из справочника (§7.10: machines[] в
+        // ответе с machine_name/trailer_name; #180: несколько единиц).
+        const machineName = (id: string | null | undefined) => {
+          if (!id) return null
+          const m = MACHINES.find((x) => x.machine_id === id)
+          return m ? `${m.model}${m.gov_number ? ` (${m.gov_number})` : ''}` : null
+        }
+        entry.machines = (req.machines as Array<Record<string, unknown>>).map((m) => ({
+          machine_id: String(m.machine_id),
+          machine_name: machineName(String(m.machine_id)) ?? '—',
+          trailer_id: m.trailer_id ? String(m.trailer_id) : null,
+          trailer_name: machineName(m.trailer_id ? String(m.trailer_id) : null),
+          operator: m.operator ? String(m.operator) : null,
+          hours: m.hours != null ? Number(m.hours) : null,
+        }))
+      }
       return ok(unifiedOp(entry))
     }
 
