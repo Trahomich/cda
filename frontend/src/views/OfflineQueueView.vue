@@ -15,6 +15,7 @@ const editArea = ref('')
 const TYPE_LABELS: Record<OperationType, string> = {
   spraying: 'Обработка СЗР',
   fertilizing: 'Внесение удобрений',
+  seed_treatment: 'Протравливание семян',
   seeding: 'Посев',
   harvesting: 'Уборка',
   tillage: 'Обработка почвы',
