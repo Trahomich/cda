@@ -568,6 +568,17 @@ const OPERATIONS: OperationEntry[] = [
     confirmed_by: 'Руководитель',
     confirmed_at: '2027-04-14T20:00:00Z',
     created_at: '2027-04-14T18:02:00Z',
+    // §7.10: техника операции (1:N) — трактор + опрыскиватель.
+    machines: [
+      {
+        machine_id: MACHINES[0].machine_id,
+        machine_name: `${MACHINES[0].model} (${MACHINES[0].gov_number})`,
+        trailer_id: MACHINES[3].machine_id,
+        trailer_name: `${MACHINES[3].model}`,
+        operator: 'Сидоров В.',
+        hours: 11.5,
+      },
+    ],
   },
   {
     client_id: 'seed-0002-0000-4000-8000-000000000002',
