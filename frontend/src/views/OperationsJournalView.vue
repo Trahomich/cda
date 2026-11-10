@@ -3,9 +3,8 @@
 // статусы отклонений — строки с deviation_flag подсвечены, rationale
 // (REQ-F-013, RULE-AGRO-11) = сравнение факт. дозы с планом внесения.
 // Данные: GET /operations (API-18, пагинация limit/offset), планы — API-15.
-// Примечание #665: сезонные итоги/чипы план-факт/стоимости живут в карточке
-// поля (блок «Планы и журнал», FieldCardView) — журнал остаётся простым
-// списком фактов с фильтрами.
+// Примечание #665: сезонные итоги, чипы план/факт и стоимости живут в
+// карточке поля (блок «Планы и журнал») — журнал остаётся списком фактов.
 import { computed, onMounted, ref } from 'vue'
 import { getFields, getOperations, getTreatmentPlans } from '@/api'
 import type {
@@ -30,7 +29,7 @@ const dateFrom = ref('')
 const dateTo = ref('')
 const opType = ref<OperationType | 'all'>('all')
 
-const OP_LABELS: Record<string, string> = {
+const OP_LABELS: Record<OperationType, string> = {
   spraying: 'опрыскивание',
   fertilizing: 'внесение удобрений',
   seeding: 'посев',
