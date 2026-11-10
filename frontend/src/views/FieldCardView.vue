@@ -140,13 +140,6 @@ function worksCost(op: FieldOperation): string {
 /** Подтверждать факты может руководитель (и админ). */
 const canConfirm = computed(() => ['manager', 'admin'].includes(auth.user?.role ?? ''))
 
-/** Расхождение дат план/факт (дни; null — нет плана или совпадают). */
-function planShift(op: FieldOperation): number | null {
-  if (op.planned_date == null || op.fact_date == null) return null
-  const d = Math.round((Date.parse(op.fact_date) - Date.parse(op.planned_date)) / 86_400_000)
-  return d === 0 ? null : d
-}
-
 /* ── CRUD (§7.10): добавить план / закрыть фактом / подтвердить ── */
 
 const planFormOpen = ref(false)
