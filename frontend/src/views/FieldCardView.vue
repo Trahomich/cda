@@ -1380,34 +1380,14 @@ function fmtNum(v: number, digits = 1): string {
             :lines="4"
           />
           <template v-else>
-            <!-- #665/#168: итоги сезона над списком — те же числа, что в
-                 «Экономике сезона» (API-62) -->
-            <p
-              v-if="econ"
-              class="card360__jtotals"
-            >
-              план Σ <strong>{{ fmtRub(econ.plan_cost_rub) }}</strong> ·
-              факт Σ <strong>{{ fmtRub(econ.fact_cost_rub) }}</strong> ·
-              {{ econDiff > 0 ? 'перерасход' : 'экономия' }}
-              <strong :class="econDiff > 0 ? 'card360__econ-diff--bad' : 'card360__econ-diff--good'">{{
-                fmtRub(Math.abs(econDiff))
-              }}</strong>
-              <span
-                v-if="econNoFacts"
-                class="card360__muted"
-              >(работы не начаты)</span>
-            </p>
             <ul class="card360__plans">
               <li
                 v-for="plan in card.treatment_plans"
                 :key="plan.plan_id"
               >
-                <span class="card360__jchip card360__jchip--plan">{{ planHasFact(plan) ? 'план' : 'план · ожидается' }}</span>
-                {{ plan.input_name }} — {{ fmtNum(plan.dose, 2) }}
+                • {{ plan.input_name }} — {{ fmtNum(plan.dose, 2) }}
                 {{ plan.unit === 'l_ha' ? 'л/га' : plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }},
-                {{ plan.planned_date ? fmtDate(plan.planned_date) : '—' }} ·
-                {{ planCost(plan) != null ? fmtRub(planCost(plan)!) : 'стоимость не задана' }}
-                — {{ PLAN_STATUS_LABELS[plan.status] ?? plan.status }}
+                {{ plan.planned_date }} — {{ PLAN_STATUS_LABELS[plan.status] ?? plan.status }}
               </li>
               <li
                 v-if="card.treatment_plans.length === 0"
@@ -1424,10 +1404,8 @@ function fmtNum(v: number, digits = 1): string {
                 v-for="op in operations"
                 :key="op.operation_id"
               >
-                <span class="card360__jchip card360__jchip--fact">факт</span>
-                {{ fmtDate(op.date) }} · {{ OP_LABELS[op.operation_type] ?? op.operation_type }} ·
-                {{ fmtNum(op.actual_area_ga, 2) }} га ·
-                {{ opCost(op) != null ? fmtRub(opCost(op)!) : 'стоимость не задана' }}
+                ✓ {{ fmtDate(op.date) }} · {{ OP_LABELS[op.operation_type] ?? op.operation_type }} ·
+                {{ fmtNum(op.actual_area_ga, 2) }} га
                 <span v-if="op.performer">· {{ op.performer }}</span>
               </li>
               <li
