@@ -169,6 +169,12 @@ export interface FieldOperation extends Omit<OperationRequest, 'client_id'> {
   basis_recommendation_id?: string | null
   /** Техника операции (dat_operation_machine, 1:N). */
   machines?: OperationMachine[]
+  /* Режимы/значения стоимости запросов PATCH/complete (§7.10) — в ответах
+   * присутствуют только итоговые cost_plan_rub/cost_fact_rub. */
+  cost_plan_mode?: 'unit' | 'total'
+  cost_plan_value?: number | null
+  cost_fact_mode?: 'unit' | 'total'
+  cost_fact_value?: number | null
 }
 
 /** Техника операции (§7.10): элемент machines[] в API-18/complete. */
