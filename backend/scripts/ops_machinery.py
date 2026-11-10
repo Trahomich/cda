@@ -132,9 +132,9 @@ def main() -> int:
                     "from dat_field_operation o join dat_field f on f.id = o.field_id "
                     "where o.status in ('draft', 'planned', 'in_progress') "
                     "and coalesce(o.planned_date, o.date) >= :y1 "
-                    "and coalesce(o.planned_date, o.date) <= :y2",
-                    {"y1": date(YEAR_FROM, 1, 1), "y2": date(YEAR_TO, 12, 31)},
-                )
+                    "and coalesce(o.planned_date, o.date) <= :y2"
+                ),
+                {"y1": date(YEAR_FROM, 1, 1), "y2": date(YEAR_TO, 12, 31)},
             )
             .mappings()
             .all()
