@@ -487,6 +487,7 @@ def seed_demo(db: Session, *, reset: bool = False) -> DemoReport:
                 field_id=fields[name].id,
                 cycle_id=cy.id if (cy := cycle_by_field.get(name)) is not None else None,
                 operation_type=op_type,
+                fact_date=month_ago + timedelta(days=day_off),
                 date=month_ago + timedelta(days=day_off),
                 actual_area_ga=op_spec.area_ha
                 if not deviation
