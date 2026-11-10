@@ -519,6 +519,8 @@ const OPERATIONS: OperationEntry[] = [
     deviation_flag: false,
     needs_review: false,
     status: 'done',
+    confirmed_by: 'Руководитель',
+    confirmed_at: '2027-04-14T20:00:00Z',
     created_at: '2027-04-14T18:02:00Z',
   },
   {
@@ -535,6 +537,8 @@ const OPERATIONS: OperationEntry[] = [
     deviation_flag: false,
     needs_review: false,
     status: 'done',
+    confirmed_by: 'Руководитель',
+    confirmed_at: '2027-05-21T21:00:00Z',
     created_at: '2027-05-21T19:40:00Z',
   },
   {
@@ -552,6 +556,8 @@ const OPERATIONS: OperationEntry[] = [
     deviation_flag: true,
     needs_review: false,
     status: 'done',
+    confirmed_by: 'Руководитель',
+    confirmed_at: '2027-06-08T21:00:00Z',
     created_at: '2027-06-08T18:30:00Z',
   },
   {
@@ -569,6 +575,8 @@ const OPERATIONS: OperationEntry[] = [
     deviation_flag: true,
     needs_review: false,
     status: 'done',
+    confirmed_by: 'Руководитель',
+    confirmed_at: '2027-05-29T21:00:00Z',
     created_at: '2027-05-29T20:05:00Z',
   },
   {
@@ -605,6 +613,8 @@ const OPERATIONS: OperationEntry[] = [
     deviation_flag: false,
     needs_review: false,
     status: 'done',
+    confirmed_by: 'Руководитель',
+    confirmed_at: '2026-07-20T20:00:00Z',
     created_at: '2026-07-20T19:10:00Z',
   },
   {
