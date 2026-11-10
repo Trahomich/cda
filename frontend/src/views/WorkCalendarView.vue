@@ -49,16 +49,35 @@ const monthRange = computed(() => {
   return { from, to }
 })
 
+/** Загрузка операций месяца: пагинация по 100 (лимит API-18, #729/#186);
+ *  потолок 500 операций — дальше заглушка-предупреждение. */
+const CAL_PAGE = 100
+const CAL_MAX = 500
+const calTruncated = ref(false)
+
 async function load() {
   loading.value = true
   failed.value = false
+  calTruncated.value = false
   try {
-    const page = await getOperations({
-      date_from: monthRange.value.from,
-      date_to: monthRange.value.to,
-      limit: 200,
-    })
-    ops.value = page.items
+    const collected: FieldOperation[] = []
+    let offset = 0
+    for (;;) {
+      const page = await getOperations({
+        date_from: monthRange.value.from,
+        date_to: monthRange.value.to,
+        limit: CAL_PAGE,
+        offset,
+      })
+      collected.push(...page.items)
+      offset += page.items.length
+      if (collected.length >= page.total || page.items.length < CAL_PAGE) break
+      if (collected.length >= CAL_MAX) {
+        calTruncated.value = true
+        break
+      }
+    }
+    ops.value = collected
     selectedDay.value = null
   } catch {
     failed.value = true // тост уже показан
