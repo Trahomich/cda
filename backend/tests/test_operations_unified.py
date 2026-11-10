@@ -72,6 +72,7 @@ class TestPlanFactConfirmFlow:
         assert op["input_name"] == "Препарат Z"
         assert op["cycle_id"] == str(world["cycle"].id)  # сезон найден сам
         assert op["cost_plan_rub"] == pytest.approx(350.0 * op["actual_area_ga"])
+        assert op["cost_fact_rub"] is None  # план не закрыт — fact-стоимости нет (#551)
         assert op["machines"] == [] and op["confirmed_at"] is None
 
         # правка плана
