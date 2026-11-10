@@ -2435,6 +2435,115 @@ function fmtNum(v: number, digits = 1): string {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── CRUD и группировка вкладки «Работы» (§7.10, #174) ── */
+
+.card360__wgroup {
+  margin-top: 0.5rem;
+}
+
+.card360__wgroup-title {
+  font-size: 0.95rem;
+  margin: 0.4rem 0 0.2rem;
+  color: #33691e;
+}
+
+.card360__wmachines {
+  cursor: help;
+}
+
+.card360__wconfirmed {
+  color: #2e7d32;
+  font-weight: 700;
+  cursor: help;
+}
+
+.card360__wcrud {
+  margin: 0.3rem 0;
+}
+
+.card360__wadd {
+  background: #fff;
+  color: #2e7d32;
+  border: 1.5px solid #2e7d32;
+  border-radius: 8px;
+  padding: 0.35rem 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 38px;
+}
+
+.card360__wform {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.9rem;
+  align-items: flex-end;
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  margin-top: 0.5rem;
+  background: #f7faf7;
+}
+
+.card360__wform label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.card360__wform select,
+.card360__wform input {
+  min-height: 36px;
+  font-size: 0.95rem;
+}
+
+.card360__wform-cost {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.card360__wsubmit {
+  min-height: 38px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.35rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card360__wcancel {
+  min-height: 38px;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+}
+
+.card360__wclose {
+  border: 1px solid #2e7d32;
+  background: #fff;
+  color: #2e7d32;
+  border-radius: 8px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 32px;
+}
+
+.card360__wconfirm {
+  border: 1px solid #1565c0;
+  background: #fff;
+  color: #1565c0;
+  border-radius: 8px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 32px;
+}
+
 .card360 {
   display: flex;
   flex-direction: column;
