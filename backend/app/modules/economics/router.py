@@ -46,3 +46,23 @@ def field_economics_api(
             str(exc), code="field_not_found", title="Не найдено", status_code=404
         ) from exc
     return EconomicsResponse(**data)
+
+
+@router.get(
+    "/economics/summary",
+    response_model=EconomicsSummaryResponse,
+    summary="API-62b: сводка стоимости техработ сезона хозяйства (§7.9)",
+)
+def economics_summary_api(
+    db: DbSession,
+    *,
+    year: int | None = Query(
+        default=None, ge=2000, le=2100, description="Сезон; по умолчанию текущий год"
+    ),
+) -> EconomicsSummaryResponse:
+    from datetime import date
+
+    from app.modules.economics.service import farm_economics
+
+    season = year if year is not None else date.today().year
+    return EconomicsSummaryResponse(**farm_economics(db, season))
