@@ -590,6 +590,25 @@ const OPERATIONS: Array<FieldOperation & { created_at: string }> = [
     status: 'done',
     created_at: '2026-07-20T19:10:00Z',
   },
+  {
+    // Плановая операция (status='planned') у поля 1 (#674): вкладка «Работы»
+    // строится только из API-18 — план и факт одной сущности, экономика
+    // (API-62) считает эти же строки.
+    client_id: 'seed-0007-0000-4000-8000-000000000007',
+    field_id: FIELDS[0].field_id,
+    operation_type: 'spraying',
+    date: '2027-05-20',
+    input_id: null,
+    actual_dose: null,
+    actual_area_ga: 121.9,
+    performer: null,
+    source: 'plan_execution',
+    operation_id: uuid(907),
+    deviation_flag: false,
+    needs_review: false,
+    status: 'planned',
+    created_at: '2027-05-15T09:00:00Z',
+  },
 ]
 
 function uuid(n: number): string {
