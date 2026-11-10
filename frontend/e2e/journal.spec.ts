@@ -105,6 +105,28 @@ test('работы: добавить план → закрыть фактом �
   await expect(closedRow.locator('.card360__wconfirmed')).toBeVisible({ timeout: 15_000 })
 })
 
+test('работы: редактирование плана из карточки (#180)', async ({ page }) => {
+  await page.goto(`/fields/${FIELD1}`)
+  await page.locator('.card360__tab--works').click()
+  const works = page.locator('.card360__works')
+  await expect(works.locator('.card360__wtotals')).toContainText('план Σ', { timeout: 15_000 })
+
+  // План опрыскивания 20.05.2027 → переносим на 22.05.2027 (PATCH).
+  const planRow = works.locator('.card360__works-item', { hasText: '20.05.2027' })
+  await expect(planRow).toBeVisible()
+  await planRow.locator('.card360__wedit').click()
+  await works.locator('.card360__wform--edit input[type="date"]').fill('2027-05-22')
+  await works.locator('.card360__wform--edit .card360__wsubmit').click()
+  await expect(works.locator('.card360__works-item', { hasText: '22.05.2027' })).toBeVisible({
+    timeout: 15_000,
+  })
+  await expect(works.locator('.card360__works-item', { hasText: '20.05.2027' })).toHaveCount(0)
+
+  // У факта кнопки редактирования нет (правка только планов).
+  const factRow = works.locator('.card360__works-item', { hasText: '02.07.2027' })
+  await expect(factRow.locator('.card360__wedit')).toHaveCount(0)
+})
+
 test('работы: agro-роль не видит кнопку «Подтвердить» (#174)', async ({ page }) => {
   await page.goto(`/fields/${FIELD1}`)
   await page.locator('.card360__tab--works').click()
