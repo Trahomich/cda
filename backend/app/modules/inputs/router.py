@@ -62,8 +62,8 @@ def _input_item(item: AgroInput) -> InputItem:
     )
 
 
-def _plan_row(db: Session, plan: TreatmentPlan) -> tuple:
-    """(план, цикл, поле, культура, препарат) — как строки list_treatment_plans."""
+def _plan_row(db: Session, plan: FieldOperation) -> tuple:
+    """(операция, цикл, поле, культура, препарат) — как строки list_treatment_plans."""
     cycle = db.get_one(CropCycle, plan.cycle_id)
     return (
         plan,
@@ -75,6 +75,8 @@ def _plan_row(db: Session, plan: TreatmentPlan) -> tuple:
 
 
 def _plan_item(row: tuple) -> TreatmentPlanItem:
+    """Легаси-форма API-15 из плановой операции (адаптер §7.10):
+    dose = input_dose, статус — мэппинг service.treatment_plan_status."""
     plan, cycle, field, culture, item = row
     return TreatmentPlanItem(
         plan_id=plan.id,
@@ -87,15 +89,15 @@ def _plan_item(row: tuple) -> TreatmentPlanItem:
         input_name=item.name,
         input_kind=item.kind,
         unit=item.unit,
-        dose=float(plan.dose),
+        dose=float(plan.input_dose or 0.0),
         operation_type=plan.operation_type,
         planned_date=plan.planned_date,
-        planned_phase=plan.planned_phase,
-        status=plan.status,
+        planned_phase=None,  # фазы в единой операции нет (§7.10)
+        status=service.treatment_plan_status(plan),
     )
 
 
-def _plan_window(db: Session, cycle: CropCycle, plan: TreatmentPlan) -> WeatherWindow | None:
+def _plan_window(db: Session, cycle: CropCycle, plan: FieldOperation) -> WeatherWindow | None:
     """WEATHER-WINDOW (§7.2) для планов spraying; общая логика POST (API-15)
     и approve (API-16). null — не spraying (без даты) или нет прогноза в кэше."""
     if plan.operation_type != "spraying" or plan.planned_date is None:
