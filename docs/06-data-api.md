@@ -836,3 +836,12 @@ API-62 экономика — из тех же полей; календарь �
 - POST /operations полиморфен: c fact_date (+performer/machines/source) —
   внеплановый факт (planned_date null, идемпотентность по client_id
   API-17 обязательна); без fact_date — план.
+
+- Редактирование ФАКТА (правка пользователя 10.11 #720): PATCH
+  /operations/{id} для done-операций разрешает правку фактических полей:
+  fact_date, input_amount_total, input_dose, cost_fact_mode/value,
+  performer, machines[] (полная замена). 422 operation_cancelled для
+  отменённых; правка плановых полей (planned_date/cost_plan) после
+  факта по-прежнему запрещена (422 operation_already_done — старый код
+  применяется только к плановой части). Экономика пересчитывается по
+  изменённым данным (агрегат читает таблицу, кэшей сумм нет).
