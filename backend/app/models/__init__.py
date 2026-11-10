@@ -20,7 +20,7 @@ from app.models.integrations import (
     SourceJournalEntry,
     WeatherObservation,
 )
-from app.models.machinery import Machine, MachineJob
+from app.models.machinery import Machine, MachineJob, OperationMachine
 from app.models.references import (
     Agrochem,
     Culture,
@@ -44,6 +44,7 @@ __all__ = [
     "Forecast",
     "Machine",
     "MachineJob",
+    "OperationMachine",
     "PredecessorRule",
     "Price",
     "Recommendation",
