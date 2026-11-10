@@ -186,7 +186,7 @@ def upgrade() -> None:
                      THEN COALESCE(p.planned_date, CURRENT_DATE - 3) END,
                 p.input_id,
                 p.dose,
-                COALESCE(c2.area, 0),
+                COALESCE(f.area_ga, 0),
                 'plan_execution',
                 false,
                 false,
@@ -200,9 +200,6 @@ def upgrade() -> None:
             FROM dat_treatment_plan p
             JOIN dat_crop_cycle c ON c.id = p.cycle_id
             JOIN dat_field f ON f.id = c.field_id
-            LEFT JOIN LATERAL (
-                SELECT COALESCE(f.area_ga, 0) AS area
-            ) c2 ON true
             WHERE p.status <> 'cancelled'
               AND NOT EXISTS (
                   SELECT 1 FROM dat_field_operation o
@@ -268,14 +265,19 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # техника 1:N
     op.execute(sa.text("DELETE FROM dat_operation_machine"))
     op.drop_table("dat_operation_machine")
+    # инварианты и индексы §7.10
     op.drop_constraint("ck_dat_field_operation_plan_status", "dat_field_operation")
     op.drop_constraint("ck_dat_field_operation_fact_status", "dat_field_operation")
     op.drop_constraint("ck_dat_field_operation_cost_plan", "dat_field_operation")
     op.drop_constraint("ck_dat_field_operation_cost_plan_mode", "dat_field_operation")
     op.drop_constraint("ck_dat_field_operation_cost_fact", "dat_field_operation")
     op.drop_constraint("ck_dat_field_operation_cost_fact_mode", "dat_field_operation")
+    op.drop_index("ix_dat_field_operation_fact", "dat_field_operation")
+    op.drop_index("ix_dat_field_operation_planned", "dat_field_operation")
+    # тип операций обратно без seed_treatment (перенесённые планы удалены выше)
     op.drop_constraint("ck_dat_field_operation_type", "dat_field_operation")
     op.create_check_constraint(
         "ck_dat_field_operation_type",
@@ -283,23 +285,10 @@ def downgrade() -> None:
         "operation_type IN ('spraying', 'fertilizing', 'seeding', "
         "'harvesting', 'tillage', 'other')",
     )
-    op.drop_index("ix_dat_field_operation_fact", "dat_field_operation")
-    op.drop_index("ix_dat_field_operation_planned", "dat_field_operation")
-    # перенесённые из планов операции удаляем (источник plan_execution)
+    # операции, перенесённые из планов (источник plan_execution), удаляем
     op.execute(
-        sa.text(
-            "DELETE FROM dat_field_operation WHERE source = 'plan_execution' "
-            "AND id IN (SELECT operation_id FROM dat_operation_machine)"
-        )
+        sa.text("DELETE FROM dat_field_operation WHERE source = 'plan_execution'")
     )
-    op.execute(
-        sa.text(
-            "DELETE FROM dat_field_operation WHERE source = 'plan_execution' "
-            "AND NOT EXISTS (SELECT 1 FROM dat_treatment_plan p "
-            "JOIN dat_field_operation o ON o.cycle_id = p.cycle_id "
-            "WHERE o.id = dat_field_operation.id)"
-        )
-    ) if False else None
     op.drop_constraint("fk_dat_field_operation_basis", "dat_field_operation")
     op.drop_constraint("fk_dat_field_operation_confirmed", "dat_field_operation")
     op.drop_column("dat_field_operation", "basis_recommendation_id")
@@ -313,11 +302,7 @@ def downgrade() -> None:
     op.drop_column("dat_field_operation", "input_amount_total")
     op.drop_column("dat_field_operation", "fact_date")
     op.drop_column("dat_field_operation", "planned_date")
-    op.execute(
-        sa.text(
-            "CREATE TABLE ck_tmp_disabled AS SELECT 1"  # no-op placeholder
-        )
-    ) if False else None
+    # прежние констрейнты стоимости §7.9
     op.create_check_constraint(
         "ck_dat_field_operation_cost_mode",
         "dat_field_operation",
