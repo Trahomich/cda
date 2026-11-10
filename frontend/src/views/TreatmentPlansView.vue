@@ -114,7 +114,8 @@ async function submitPlan() {
 
 onMounted(async () => {
   try {
-    inputs.value = await getAgroInputs()
+    const page = await getAgroInputs()
+    inputs.value = page.items
   } catch {
     /* создание недоступно, список работает */
   }
