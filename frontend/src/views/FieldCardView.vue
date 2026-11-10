@@ -734,11 +734,24 @@ function opCost(op: FieldOperation): number | null {
   return op.cost_rub ?? econCost(op.operation_type, 'fact')
 }
 
+/** Полный план (API-15, вкладка «Работы») по plan_id из карточки. */
+function fullPlan(planId: string): TreatmentPlan | null {
+  return fieldPlans.value.find((p) => p.plan_id === planId) ?? null
+}
+
+/** Стоимость плановой стороны — из экономики поля по типу операции (API-62). */
+function planCost(plan: FieldCardPlan): number | null {
+  const full = fullPlan(plan.plan_id)
+  return full ? econCost(full.operation_type, 'plan') : null
+}
+
 /** Выполнен ли план внесения: факт того же препарата в ±5 дней. */
 function planHasFact(plan: FieldCardPlan): boolean {
+  const full = fullPlan(plan.plan_id)
+  if (!full) return false
   return operations.value.some((o) => {
-    if (o.input_id == null || plan.input_id !== o.input_id) return false
-    const d = Math.round((Date.parse(o.date) - Date.parse(plan.planned_date)) / 86_400_000)
+    if (o.input_id == null || full.input_id !== o.input_id) return false
+    const d = Math.round((Date.parse(o.date) - Date.parse(full.planned_date)) / 86_400_000)
     return Math.abs(d) <= 5
   })
 }
