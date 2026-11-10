@@ -63,6 +63,7 @@ import type {
   WindowsResponse,
   YieldForecastResponse,
   FieldEconomics,
+  EconomicsSummary,
 } from './types'
 
 /** API-01: GET /fields — список полей (фильтры status, q по имени).
