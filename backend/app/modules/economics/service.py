@@ -58,6 +58,51 @@ def _op_cost(op: FieldOperation, rates: dict[str, float], *, is_fact: bool) -> f
     return None
 
 
+def cost_rates(db: Session) -> dict[str, float]:
+    """Нормативы ref_operation_cost: тип операции → руб/га (§7.9)."""
+    return {
+        op_type: float(rate)
+        for op_type, rate in db.execute(
+            select(OperationCost.operation_type, OperationCost.rub_per_ga)
+        ).all()
+    }
+
+
+def farm_economics(db: Session, year: int) -> dict:
+    """Сводка сезона хозяйства: Σ план/факт по всем полям (API-62b, §7.9)."""
+    rates = cost_rates(db)
+    cycle_ids = [
+        cid
+        for (cid,) in db.execute(
+            select(CropCycle.id).where(CropCycle.year == year, CropCycle.kind == "main")
+        ).all()
+    ]
+    plan_total = 0.0
+    fact_total = 0.0
+    if cycle_ids:
+        ops = (
+            db.scalars(
+                select(FieldOperation).where(FieldOperation.cycle_id.in_(cycle_ids))
+            )
+            .all()
+        )
+        for op in ops:
+            if op.status in PLAN_STATUSES:
+                cost = operation_cost_rub(op, rates, is_fact=False)
+            elif op.status == FACT_STATUS:
+                cost = operation_cost_rub(op, rates, is_fact=True)
+            else:
+                continue
+            if cost is not None:
+                plan_total += cost if op.status in PLAN_STATUSES else 0.0
+                fact_total += cost if op.status == FACT_STATUS else 0.0
+    return {
+        "year": year,
+        "plan_cost_rub": round(plan_total, 2),
+        "fact_cost_rub": round(fact_total, 2),
+    }
+
+
 def _latest_yield(db: Session, cycle_id: uuid.UUID) -> float | None:
     value = db.scalar(
         select(YieldRecord.yield_c_ha)
@@ -81,12 +126,7 @@ def field_economics(db: Session, field_id: uuid.UUID, year: int) -> dict:
             CropCycle.kind == "main",
         )
     )
-    rates = {
-        op_type: float(rate)
-        for op_type, rate in db.execute(
-            select(OperationCost.operation_type, OperationCost.rub_per_ga)
-        ).all()
-    }
+    rates = cost_rates(db)
 
     plans: list[CostedOperation] = []
     facts: list[CostedOperation] = []
@@ -99,11 +139,11 @@ def field_economics(db: Session, field_id: uuid.UUID, year: int) -> dict:
         for op in ops:
             if op.status in PLAN_STATUSES:
                 plans.append(
-                    CostedOperation(op.operation_type, op.date, _op_cost(op, rates, is_fact=False))
+                    CostedOperation(op.operation_type, op.date, operation_cost_rub(op, rates, is_fact=False))
                 )
             elif op.status == FACT_STATUS:
                 facts.append(
-                    CostedOperation(op.operation_type, op.date, _op_cost(op, rates, is_fact=True))
+                    CostedOperation(op.operation_type, op.date, operation_cost_rub(op, rates, is_fact=True))
                 )
 
     plan_cost = round(sum(p.cost_rub for p in plans if p.cost_rub is not None), 2)
@@ -161,5 +201,8 @@ __all__ = [
     "FACT_STATUS",
     "OPERATION_TITLES",
     "PLAN_STATUSES",
+    "cost_rates",
+    "farm_economics",
     "field_economics",
+    "operation_cost_rub",
 ]
