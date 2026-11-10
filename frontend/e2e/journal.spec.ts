@@ -26,6 +26,8 @@ test('работы: список сезона с группировкой, ит�
   const totals = works.locator('.card360__wtotals')
   await expect(totals).toContainText('план Σ', { timeout: 15_000 })
   await expect(totals).toContainText('факт Σ')
+  // #180: сводки — в тысячах рублей.
+  await expect(totals).toContainText('тыс ₽')
 
   // Группировка по месяцам: май и июль 2027 отдельными подзаголовками.
   await expect(works.locator('.card360__wgroup-title', { hasText: 'июль 2027' })).toBeVisible()
