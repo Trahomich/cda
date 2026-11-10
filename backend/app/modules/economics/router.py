@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
-from app.modules.economics.schemas import EconomicsResponse
+from app.modules.economics.schemas import EconomicsResponse, EconomicsSummaryResponse
 from app.modules.economics.service import field_economics
 
 DbSession = Annotated[Session, Depends(get_db)]

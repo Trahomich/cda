@@ -45,7 +45,9 @@ class CostedOperation:
     cost_rub: float | None
 
 
-def _op_cost(op: FieldOperation, rates: dict[str, float], *, is_fact: bool) -> float | None:
+def operation_cost_rub(
+    op: FieldOperation, rates: dict[str, float], *, is_fact: bool
+) -> float | None:
     """Стоимость операции: unit/total по операции, fallback норматива факта."""
     if op.cost_mode == "total" and op.cost_value is not None:
         return float(op.cost_value)

@@ -125,6 +125,9 @@ def list_operations(
         limit=limit,
         offset=offset,
     )
+    from app.modules.economics.service import cost_rates
+
+    rates = cost_rates(db)
     return OperationListResponse(
         items=[_item(db, o, rates) for o in operations],
         total=total,
