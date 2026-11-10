@@ -268,13 +268,13 @@ function startComplete(op: FieldOperation): void {
     cost_fact_mode: 'unit',
     cost_fact_value: null,
     performer: op.performer ?? '',
-    machine_id: '',
   }
+  completeMachines.value = [{ machine_id: '', trailer_id: '', operator: '', hours: null }]
 }
 
 async function submitComplete(): Promise<void> {
   const op = completingOp.value
-  if (!op || !completeForm.value.fact_date) return
+  if (!op || !completeValid.value) return
   crudBusy.value = true
   try {
     await completeOperation(op.operation_id, {
@@ -283,9 +283,14 @@ async function submitComplete(): Promise<void> {
       cost_fact_mode: completeForm.value.cost_fact_mode,
       cost_fact_value: completeForm.value.cost_fact_value,
       performer: completeForm.value.performer || null,
-      machines: completeForm.value.machine_id
-        ? [{ machine_id: completeForm.value.machine_id }]
-        : undefined,
+      machines: completeMachines.value
+        .filter((m) => m.machine_id)
+        .map((m) => ({
+          machine_id: m.machine_id,
+          trailer_id: m.trailer_id || null,
+          operator: m.operator || null,
+          hours: m.hours,
+        })),
     })
     completingOp.value = null
     await reloadWorks()
