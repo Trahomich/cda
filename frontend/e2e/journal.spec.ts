@@ -78,15 +78,27 @@ test('работы: добавить план → закрыть фактом �
     timeout: 15_000,
   })
 
-  // 2) Закрыть фактом (дата факта 16.06.2027, факт дороже плана).
+  // 2) Закрыть фактом: ЯВНАЯ стоимость (обязательна, #180) + две единицы
+  //    техники (агрегат и агрегат с прицепом).
   await planRow.locator('.card360__wclose').click()
   await works.locator('.card360__wform--complete input[type="date"]').fill('2027-06-16')
-  await works.locator('.card360__wform--complete input[type="number"]').fill('540')
+  await works.locator('.card360__wform--complete input[type="number"][min="1"]').fill('540')
+  const machineRows = works.locator('.card360__wmachine-row')
+  await machineRows.nth(0).locator('select').nth(0).selectOption({ label: 'МТЗ-1221 (А321ВС40)' })
+  await machineRows.nth(0).locator('select').nth(1).selectOption({ label: 'Kverneland Exact CD' })
+  await machineRows.nth(0).locator('input[type="text"]').fill('Ильин П.')
+  await works.locator('.card360__wadd-machine').click()
+  await machineRows.nth(1).locator('select').nth(0).selectOption({ label: 'John Deere S660 (В777МК40)' })
   await works.locator('.card360__wform--complete .card360__wsubmit').click()
   const closedRow = works.locator('.card360__works-item', { hasText: '16.06.2027' })
   await expect(closedRow.locator('.card360__works-chip--fact')).toBeVisible({ timeout: 15_000 })
   await expect(closedRow).toContainText('план 15.06.2027 → факт 16.06.2027')
-  await expect(closedRow).toContainText('₽')
+  await expect(closedRow).toContainText('тыс ₽')
+  // Обе единицы техники — в подсказке 🚜.
+  await expect(closedRow.locator('.card360__wmachines')).toHaveAttribute(
+    'title',
+    /МТЗ-1221.*Kverneland.*John Deere/,
+  )
 
   // 3) Подтвердить (manager): галочка подтверждения появляется.
   await closedRow.locator('.card360__wconfirm').click()
