@@ -97,6 +97,7 @@ class TestRetroContext:
                 actual_area_ga=10.0,
                 status="done",
                 source="manual",
+            fact_date=date(2026,
             )
         )
         db_session.commit()
@@ -198,6 +199,7 @@ class TestKeyDates:
                 actual_area_ga=10.0,
                 status="done",
                 source="manual",
+            fact_date=date(2026,
             )
         )
         db_session.commit()

@@ -77,6 +77,7 @@ def demo_data(db_session):
         actual_area_ga=10.0,
         source="manual",
         status="done",
+    fact_date=date(2026,
     )
     db_session.add(operation)
     machine = Machine(machine_type="tractor", model="К-744")
