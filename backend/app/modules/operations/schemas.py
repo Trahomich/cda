@@ -9,6 +9,7 @@ yield_requires_harvesting / yield_requires_cycle.
 
 import uuid
 from datetime import date, datetime
+from datetime import date as DateCls
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -97,8 +98,8 @@ class OperationItem(BaseModel):
         "норматив для факта (§7.9); null — не задана",
     )
     # -- Единая операция (§7.10, #173): план/факт, расходник, подтверждение --
-    planned_date: date | None = Field(default=None, description="null — внеплановый факт")
-    fact_date: date | None = Field(default=None, description="null — не выполнено")
+    planned_date: DateCls | None = Field(default=None, description="null — внеплановый факт")
+    fact_date: DateCls | None = Field(default=None, description="null — не выполнено")
     input_name: str | None = Field(default=None, description="Название расходника")
     input_dose: float | None = Field(default=None, description="Доза, кг/га (л/га)")
     input_amount_total: float | None = Field(default=None, description="Расход всего, кг/л")
