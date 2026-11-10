@@ -736,6 +736,93 @@ watch([season, fieldId, opType, planFact], () => void load(true))
 }
 
 .jrn__more {
+  /* placeholder for edit form styles */
+}
+
+/* #184: правка операции из журнала */
+.jrn__edit {
+  border: 1px solid #9e9e9e;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 30px;
+  min-width: 34px;
+}
+
+.jrn__editform {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 0.9rem;
+  align-items: flex-end;
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  margin-top: 0.6rem;
+  background: #f7faf7;
+}
+
+.jrn__editform label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.jrn__editform select,
+.jrn__editform input {
+  min-height: 34px;
+  font-size: 0.95rem;
+}
+
+.jrn__editform-cost {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.jrn__editform-machines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.jrn__editform-mrow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.jrn__editform-add {
+  align-self: flex-start;
+  background: none;
+  border: 1px dashed #2e7d32;
+  color: #2e7d32;
+  border-radius: 8px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.jrn__editform-submit {
+  min-height: 38px;
+  background: #2e7d32;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.35rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jrn__editform-cancel {
+  min-height: 38px;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+}
   margin: 0.5rem 0 0;
 }
 
