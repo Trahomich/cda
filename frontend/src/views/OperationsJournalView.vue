@@ -268,7 +268,7 @@ async function load(reset = true) {
       }
       seasonsKnown = true
     }
-    void loadEcon()
+    void loadTotals()
   } catch {
     failed.value = true // тост уже показан
   } finally {
