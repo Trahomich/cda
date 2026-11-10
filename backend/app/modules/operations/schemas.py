@@ -81,7 +81,6 @@ class OperationItem(BaseModel):
     operation_type: str
     date: date
     input_id: uuid.UUID | None
-    input_dose: float | None
     actual_area_ga: float
     performer: str | None
     machine_job_id: uuid.UUID | None
