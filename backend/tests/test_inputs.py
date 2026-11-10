@@ -465,8 +465,8 @@ class TestApprove:
         assert resp.status_code == 403
 
     def test_approve_revalidates_rules(self, client, db_session):
-        """Черновик согласуют повторной проверкой: если за время жизни
-        черновика лимит обработок занят другими планами — 422 (RULE-AGRO-10)."""
+        """Согласование перепроверяет правила: если после создания плана
+        лимит обработок занят другими — 422 (RULE-AGRO-10, адаптер §7.10)."""
         hdr = headers(client, db_session)
         cycle = make_cycle(db_session, field=make_field(client, hdr))
         item = make_ppp(db_session, substance="флуазифоп", max_treatments=2)
@@ -475,15 +475,16 @@ class TestApprove:
         assert post_plan(client, hdr, cycle, item).status_code == 422  # лимит 2 из 2
 
         def set_status(plan_id: str, status: str) -> None:
-            row = db_session.get(TreatmentPlan, uuid.UUID(plan_id))
+            # адаптер §7.10: план-внесение = операция (легаси-таблицы нет)
+            row = db_session.get(FieldOperation, uuid.UUID(plan_id))
             assert row is not None
             row.status = status
             db_session.commit()
 
         set_status(p1, "cancelled")  # p1 отменён — появилась третья обработка
         p3 = post_plan(client, hdr, cycle, item).json()["plan_id"]
-        # p1 возвращают в draft: снова 2 не отменённых + p3 → лимит занят
-        set_status(p1, "draft")
+        # p1 возвращают в действие: снова 2 не отменённых + p3 → лимит занят
+        set_status(p1, "planned")
         make_user(db_session, login="mgr_r", role=UserRole.MANAGER)
         mgr = auth_header(client, "mgr_r", "secret123")
         resp = client.post(f"{API_PLANS}/{p3}/approve", headers=mgr)
