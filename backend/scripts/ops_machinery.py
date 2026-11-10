@@ -260,7 +260,9 @@ def main() -> int:
                 )
                 created["links"].append(str(oid))
         path = Path(args.backup or f"machinery_backup_{date.today():%Y%m%d}.json")
-        path.write_text(json.dumps(created, ensure_ascii=False, indent=1), encoding="utf-8")
+        path.write_text(
+            json.dumps(created, default=str, ensure_ascii=False, indent=1), encoding="utf-8"
+        )
         print(
             f"--fix: машин добавлено {len(created['machines'])}, стоимостей "
             f"{len(created['costs'])}, привязок {len(created['links'])}; бэкап: {path}"
