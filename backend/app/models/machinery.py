@@ -130,4 +130,29 @@ class Maintenance(Base):
     )
 
 
-__all__ = ["Machine", "MachineJob", "Maintenance"]
+class OperationMachine(Base):
+    """Техника единой операции, 1:N (§7.10): агрегат + прицеп + механизатор."""
+
+    __tablename__ = "dat_operation_machine"
+    __table_args__ = (
+        CheckConstraint("hours IS NULL OR hours >= 0", name="ck_dat_operation_machine_hours"),
+        Index("ix_dat_operation_machine_operation", "operation_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    operation_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        ForeignKey("dat_field_operation.id", name="fk_dat_operation_machine_operation"),
+        nullable=False,
+    )
+    machine_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("dat_machine.id", name="fk_dat_operation_machine_machine"), nullable=False
+    )
+    trailer_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("dat_machine.id", name="fk_dat_operation_machine_trailer"), nullable=True
+    )
+    operator: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    hours: Mapped[float | None] = mapped_column(Numeric(8, 1), nullable=True)
+
+
+__all__ = ["Machine", "MachineJob", "Maintenance", "OperationMachine"]
