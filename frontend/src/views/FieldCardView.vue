@@ -947,7 +947,10 @@ async function loadJournal() {
         limit: 5,
         ...(w ? { date_from: w.from, date_to: w.to } : {}),
       })
-    ).items
+    )
+      // #674: блок «Журнал (факты)» — только выполненные (план — во вкладке
+      // «Работы», единый источник API-18).
+      .items.filter((o) => o.status === 'done')
   } catch {
     operations.value = []
   } finally {
