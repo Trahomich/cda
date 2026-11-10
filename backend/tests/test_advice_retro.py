@@ -97,7 +97,7 @@ class TestRetroContext:
                 actual_area_ga=10.0,
                 status="done",
                 source="manual",
-            fact_date=date(2026, 8, 2),
+                fact_date=date(2026, 8, 2),
             )
         )
         db_session.commit()
@@ -199,7 +199,7 @@ class TestKeyDates:
                 actual_area_ga=10.0,
                 status="done",
                 source="manual",
-            fact_date=date(2026, 5, 10),
+                fact_date=date(2026, 5, 10),
             )
         )
         db_session.commit()
@@ -299,16 +299,16 @@ class TestOperationsKeyDates182:
 
     def _field_with_ops(self, db_session, client, hdr):
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
-        culture = make_culture(db, name="Овёс")
+        culture = make_culture(db_session, name="Овёс")
         cycle = CropCycle(field_id=fid, year=2026, culture_id=culture.id, kind="main")
-        db.add(cycle)
+        db_session.add(cycle)
         for op_type, day, status in [
             ("seeding", date(2026, 5, 3), "done"),
             ("spraying", date(2026, 6, 10), "done"),
             ("harvesting", date(2026, 8, 20), "done"),
             ("fertilizing", date(2026, 7, 1), "planned"),
         ]:
-            db.add(
+            db_session.add(
                 FieldOperation(
                     field_id=fid,
                     cycle_id=cycle.id,
@@ -321,7 +321,7 @@ class TestOperationsKeyDates182:
                     status=status,
                 )
             )
-        db.commit()
+        db_session.commit()
         return fid
 
     def test_dates_are_operation_dates(self, world, db_session):
@@ -340,12 +340,12 @@ class TestOperationsKeyDates182:
         """Больше 8 операций — по одной дате на месяц."""
         client, hdr = world
         fid = uuid.UUID(make_field(client, hdr)["field_id"])
-        culture = make_culture(db, name="Овёс2")
+        culture = make_culture(db_session, name="Овёс2")
         cycle = CropCycle(field_id=fid, year=2026, culture_id=culture.id, kind="main")
-        db.add(culture)
+        db_session.add(culture)
         for i in range(12):  # 12 операций апрель–сентябрь
             day = date(2026, 4 + i // 2, 1 + (i % 2) * 10)
-            db.add(
+            db_session.add(
                 FieldOperation(
                     field_id=fid,
                     cycle_id=cycle.id,
@@ -357,7 +357,7 @@ class TestOperationsKeyDates182:
                     status="planned",
                 )
             )
-        db.commit()
+        db_session.commit()
         kds = advice_key_dates.operations_key_dates(db_session, fid, 2026)
         months = [kd.date.month for kd in kds]
         assert len(months) == len(set(months))  # по одной на месяц
@@ -386,7 +386,10 @@ class TestOperationsKeyDates182:
 
         code = cli.cmd_advice_refresh_backfill(
             argparse.Namespace(
-                years=1, prune_today=False, refresh_today=False, wipe_all=True,
+                years=1,
+                prune_today=False,
+                refresh_today=False,
+                wipe_all=True,
                 key_dates="operations",
             )
         )
