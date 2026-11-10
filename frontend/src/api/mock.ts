@@ -504,6 +504,52 @@ type OperationEntry = FieldOperation & {
   machines?: OperationMachine[]
 }
 
+/** Единая операция (§7.10): план и факт — одна сущность.
+ *  unifiedOp достраивает API-18-item из записи журнала: planned/fact даты
+ *  (у закрытых фактов план = дата − 3 сут), cost_plan/fact (нормативы
+ *  OP_COST_RATES, у факта − opCostRub с округлением), input_name из
+ *  справочника, подтверждение и техника — как заданы в записи. */
+function unifiedOp(o: OperationEntry): FieldOperation {
+  const isPlan = o.status === 'planned' || o.status === 'plan'
+  const factDate = isPlan ? null : (o.fact_date ?? o.date)
+  const plannedDate = isPlan ? (o.planned_date ?? o.date) : (o.planned_date ?? shiftDate(o.date, -3))
+  const rate = OP_COST_RATES[o.operation_type] ?? OP_COST_RATES.other!
+  const input = o.input_id ? INPUTS.find((i) => i.input_id === o.input_id) : undefined
+  const costPlan = o.cost_plan_rub ?? Math.round(rate * o.actual_area_ga)
+  const costFact = factDate ? (o.cost_fact_rub ?? opCostRub(o)) : null
+  return {
+    ...o,
+    status: isPlan ? 'plan' : o.status,
+    planned_date: plannedDate,
+    fact_date: factDate,
+    input_name: input?.name ?? null,
+    input_dose: o.actual_dose ?? null,
+    input_amount_total:
+      factDate && o.actual_dose ? Math.round(o.actual_dose * o.actual_area_ga) : null,
+    cost_plan_rub: costPlan,
+    cost_fact_rub: costFact,
+    cost_rub: costFact,
+    machines: o.machines ?? [],
+  }
+}
+
+/** Сдвиг ISO-даты на N суток (для плановых дат мока). */
+function shiftDate(iso: string, days: number): string {
+  return new Date(new Date(`${iso}T00:00:00Z`).getTime() + days * DAY).toISOString().slice(0, 10)
+}
+
+/** Стоимость плана по режиму: 'unit' — руб/га × площадь, 'total' — за поле;
+ *  не задана — норматив по типу (§7.10). */
+function planCostRub(
+  mode: 'unit' | 'total' | undefined,
+  value: number | null | undefined,
+  operationType: string,
+  areaGa: number,
+): number {
+  if (value != null) return Math.round(mode === 'unit' ? value * areaGa : value)
+  return Math.round((OP_COST_RATES[operationType] ?? OP_COST_RATES.other!) * areaGa)
+}
+
 const OPERATIONS: OperationEntry[] = [
   {
     client_id: 'seed-0001-0000-4000-8000-000000000001',
