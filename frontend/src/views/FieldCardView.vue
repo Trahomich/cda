@@ -2589,6 +2589,142 @@ function fmtNum(v: number, digits = 1): string {
             </button>
           </form>
 
+          <!-- Редактирование ФАКТА (#184): дата/расход/стоимость/техника -->
+          <form
+            v-if="editingFactOp"
+            class="card360__wform card360__wform--editfact"
+            @submit.prevent="submitEditFact"
+          >
+            <strong>Редактировать факт: {{ OP_LABELS[editingFactOp.operation_type] }} от {{ fmtDate(editingFactOp.date) }}</strong>
+            <label>
+              Дата факта
+              <input
+                v-model="factForm.fact_date"
+                type="date"
+                required
+              >
+            </label>
+            <label v-if="editingFactOp.input_id">
+              Доза, кг/га (л/га)
+              <input
+                v-model.number="factForm.input_dose"
+                type="number"
+                min="0"
+                step="0.01"
+              >
+            </label>
+            <label v-if="editingFactOp.input_id">
+              Расход всего, кг (л)
+              <input
+                v-model.number="factForm.input_amount_total"
+                type="number"
+                min="0"
+                step="0.1"
+              >
+            </label>
+            <label>
+              Стоимость факта
+              <span class="card360__wform-cost">
+                <select v-model="factForm.cost_fact_mode">
+                  <option value="unit">
+                    руб/га
+                  </option>
+                  <option value="total">
+                    за поле
+                  </option>
+                </select>
+                <input
+                  v-model.number="factForm.cost_fact_value"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="как сейчас"
+                >
+              </span>
+            </label>
+            <label>
+              Исполнитель
+              <input
+                v-model="factForm.performer"
+                type="text"
+              >
+            </label>
+            <div class="card360__wmachines-form">
+              <span class="card360__wform-label">Техника</span>
+              <div
+                v-for="(m, i) in factMachines"
+                :key="i"
+                class="card360__wmachine-row"
+              >
+                <select
+                  v-model="m.machine_id"
+                  aria-label="Агрегат"
+                >
+                  <option value="">
+                    агрегат —
+                  </option>
+                  <option
+                    v-for="mach in machinesRef"
+                    :key="mach.machine_id"
+                    :value="mach.machine_id"
+                  >
+                    {{ mach.model }}{{ mach.gov_number ? ` (${mach.gov_number})` : '' }}
+                  </option>
+                </select>
+                <select
+                  v-model="m.trailer_id"
+                  aria-label="Прицепное"
+                >
+                  <option value="">
+                    прицеп —
+                  </option>
+                  <option
+                    v-for="mach in machinesRef"
+                    :key="mach.machine_id"
+                    :value="mach.machine_id"
+                  >
+                    {{ mach.model }}
+                  </option>
+                </select>
+                <input
+                  v-model="m.operator"
+                  type="text"
+                  aria-label="Механизатор"
+                  placeholder="механизатор"
+                >
+                <input
+                  v-model.number="m.hours"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  aria-label="Часы"
+                  placeholder="ч"
+                >
+              </div>
+              <button
+                type="button"
+                class="card360__wadd-machine"
+                @click="factMachines.push({ machine_id: '', trailer_id: '', operator: '', hours: null })"
+              >
+                + добавить технику
+              </button>
+            </div>
+            <button
+              type="submit"
+              class="card360__wsubmit"
+              :disabled="crudBusy"
+            >
+              Сохранить
+            </button>
+            <button
+              type="button"
+              class="card360__wcancel"
+              @click="editingFactOp = null"
+            >
+              Отмена
+            </button>
+          </form>
+
           <p
             v-if="worksSeasonOps.length === 0"
             class="card360__muted"
