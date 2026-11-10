@@ -66,6 +66,7 @@ import type {
   CompleteOperationRequest,
   CreateOperationPlanRequest,
   EconomicsSummary,
+  OperationType,
 } from './types'
 
 /** API-01: GET /fields — список полей (фильтры status, q по имени).
