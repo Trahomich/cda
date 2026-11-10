@@ -710,37 +710,8 @@ const econNoFacts = computed(
     econ.value.operations.some((o) => o.plan != null),
 )
 
-/* ── Вкладка «Работы»: цена каждой строки и итоги сезона (#665/#171);
- *  итоги = «Экономика сезона» (API-62 поля) ── */
-
-/** Стоимость стороны типа операции из экономики поля (API-62). */
-function econCost(type: string, side: 'plan' | 'fact'): number | null {
-  return econ.value?.operations.find((o) => o.type === type)?.[side]?.cost_rub ?? null
-}
-
-function daysBetween(a: string, b: string): number {
-  return Math.round((Date.parse(a) - Date.parse(b)) / 86_400_000)
-}
-
-/** Цена фактической работы: API-18 cost_rub, иначе норматив экономики. */
-function worksOpCost(op: FieldOperation): number | null {
-  return op.cost_rub ?? econCost(op.operation_type, 'fact')
-}
-
-/** Цена плана пары к факту (тот же препарат, ±5 дней) — показать обе,
- *  если различаются (#650). */
-function worksOpPlanCost(op: FieldOperation): number | null {
-  if (op.input_id == null) return null
-  const p = fieldPlans.value.find(
-    (pl) => pl.input_id === op.input_id && Math.abs(daysBetween(op.date, pl.planned_date)) <= 5,
-  )
-  return p ? econCost(p.operation_type, 'plan') : null
-}
-
-/** Цена плановой строки — из экономики по типу операции (API-62). */
-function worksPlanCost(p: TreatmentPlan): number | null {
-  return econCost(p.operation_type, 'plan')
-}
+/* ── Вкладка «Работы» (#665/#171/#674): цена каждой строки (API-18 cost_rub)
+ *  и итоги сезона = «Экономика сезона» (API-62 поля) ── */
 
 function fmtRub(v: number): string {
   return `${Math.round(v).toLocaleString('ru-RU')} ₽`
