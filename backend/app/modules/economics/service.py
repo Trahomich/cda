@@ -233,6 +233,8 @@ __all__ = [
     "OPERATION_TITLES",
     "PLAN_STATUSES",
     "cost_rates",
+    "is_fact_op",
+    "is_plan_op",
     "farm_economics",
     "field_economics",
     "operation_cost_rub",

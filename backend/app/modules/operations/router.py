@@ -72,7 +72,9 @@ def _item(
         needs_review=operation.needs_review,
         status=operation.status,
         yield_record=yield_item,
-        cost_rub=operation_cost_rub(operation, rates, is_fact=operation.status == "done"),
+        cost_rub=operation_cost_rub(
+            operation, rates, side="fact" if operation.status == "done" else "plan"
+        ),
     )
 
 
