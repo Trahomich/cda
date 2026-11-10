@@ -13,7 +13,7 @@ import pytest
 from app.ai_assistant import advice, advice_key_dates
 from app.models.agronomy import CropCycle, FieldOperation
 from app.models.ai import AIFieldAdvice
-from sqlalchemy import select, text as sa_select_unused
+from sqlalchemy import select as sa_select
 from sqlalchemy.orm import Session, sessionmaker
 from tests.test_advice import _anthropic_settings
 from tests.test_inputs import make_culture, make_field
