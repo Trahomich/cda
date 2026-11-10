@@ -376,6 +376,13 @@ export async function getFieldEconomics(
   return apiClient.request<FieldEconomics>(`/fields/${fieldId}/economics${yearQuery}`)
 }
 
+/** API-62b (§7.9, #169): GET /economics/summary?year=YYYY — сводка сезона
+ *  по всем полям хозяйства: план Σ / факт Σ (итоги журнала без поля). */
+export async function getEconomicsSummary(year?: number): Promise<EconomicsSummary> {
+  const yearQuery = year ? `?year=${year}` : ''
+  return apiClient.request<EconomicsSummary>(`/economics/summary${yearQuery}`)
+}
+
 /** API-51: GET /fields/{id}/insights — «Выводы ассистента» (§7.4):
  *  items — числовые детекторы (всегда), summary — LLM-сводка
  *  (null при source=rules); year (§7.5) — детекторы и сводка по сезону
