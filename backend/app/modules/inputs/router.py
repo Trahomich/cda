@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.rbac import group_checker, role_checker
-from app.models.agronomy import AgroInput, CropCycle, Field, TreatmentPlan
+from app.models.agronomy import AgroInput, CropCycle, Field, FieldOperation
 from app.models.auth import User, UserRole
 from app.models.references import Culture
 from app.modules.inputs import service
