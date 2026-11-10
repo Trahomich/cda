@@ -617,18 +617,29 @@ def confirm_operation(
 def machines_of(
     db: Session, operation_ids: list[uuid.UUID]
 ) -> dict[uuid.UUID, list[tuple[OperationMachine, str, str | None]]]:
-    """Техника операций одним запросом: {operation_id: [(link, машина, прицеп)]}."""
+    """Техника операций одним запросом: {operation_id: [(link, машина, прицеп)]}.
+
+    Имя машины = model (+ госномер); у Machine нет колонки name (04 §2).
+    """
     out: dict[uuid.UUID, list[tuple[OperationMachine, str, str | None]]] = {}
     if not operation_ids:
         return out
     trailer = Machine.__table__.alias("trailer")
     rows = db.execute(
-        select(OperationMachine, Machine.name, trailer.c.name)
+        select(
+            OperationMachine,
+            Machine.model,
+            Machine.gov_number,
+            trailer.c.model,
+            trailer.c.gov_number,
+        )
         .join(Machine, OperationMachine.machine_id == Machine.id)
         .outerjoin(trailer, OperationMachine.trailer_id == trailer.c.id)
         .where(OperationMachine.operation_id.in_(operation_ids))
         .order_by(OperationMachine.id)
     ).all()
-    for link, machine_name, trailer_name in rows:
+    for link, model, gov, t_model, t_gov in rows:
+        machine_name = model + (f" ({gov})" if gov else "")
+        trailer_name = (t_model + (f" ({t_gov})" if t_gov else "")) if t_model else None
         out.setdefault(link.operation_id, []).append((link, machine_name, trailer_name))
     return out
