@@ -520,7 +520,7 @@ onMounted(async () => {
               :key="`plan-${p.plan_id}`"
               class="jrn__row--plan"
             >
-              <td>{{ p.planned_date }}</td>
+              <td>{{ fmtD(p.planned_date) }}</td>
               <td>{{ fieldName(p.field_id) }}</td>
               <td>{{ OP_LABELS[p.operation_type] ?? p.operation_type }}</td>
               <td>
