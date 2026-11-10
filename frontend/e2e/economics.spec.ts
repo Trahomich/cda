@@ -25,7 +25,8 @@ test('карточка поля: экономика текущего сезон�
   await expect(econ).toBeVisible({ timeout: 15_000 })
   await expect(econ.locator('h2')).toContainText('Экономика сезона 2027')
 
-  // Сводка: четыре плитки, факт ниже плана (уборка не выполнена) — экономия.
+  // Сводка (§7.10: из операций поля): факт ниже плана (опрыскивание
+  // не выполнено) — экономия. Суммы — в тыс ₽ (#180).
   const tiles = econ.locator('.card360__econ-tiles > div')
   await expect(tiles).toHaveCount(4)
   await expect(tiles.nth(0)).toContainText('План')
@@ -34,7 +35,7 @@ test('карточка поля: экономика текущего сезон�
   await expect(tiles.nth(2).locator('dd')).toHaveClass(/card360__econ-diff--good/)
   await expect(tiles.nth(3)).toContainText('Руб/га')
   for (const i of [0, 1, 3]) {
-    await expect(tiles.nth(i).locator('dd')).toContainText('₽')
+    await expect(tiles.nth(i).locator('dd')).toContainText('тыс ₽')
   }
 
   // Руб/т: фактической урожайности нет — прочерк с подсказкой.
@@ -42,17 +43,16 @@ test('карточка поля: экономика текущего сезон�
   await expect(ton).toContainText('—')
   await expect(ton).toContainText('укажите фактическую урожайность')
 
-  // Детализация по операциям: раскрывается, план-без-факта приглушён
-  // («не выполнено»), операция без стоимости так и подписана.
+  // Детализация — из операций сезона (§7.10): факт обработки почвы
+  // выполнен, план опрыскивания — «не выполнено» (приглушён).
   await econ.locator('.card360__econ-toggle').click()
   const ops = econ.locator('.card360__econ-op')
-  expect(await ops.count()).toBe(5)
-  await expect(ops.filter({ hasText: 'Уборка' })).toHaveClass(/card360__econ-op--todo/)
-  await expect(ops.filter({ hasText: 'Уборка' })).toContainText('не выполнено')
-  await expect(ops.filter({ hasText: 'Опрыскивание' })).toContainText('стоимость не задана')
+  await expect(ops).toHaveCount(2, { timeout: 10_000 })
+  await expect(ops.filter({ hasText: 'Опрыскивание' })).toHaveClass(/card360__econ-op--todo/)
+  await expect(ops.filter({ hasText: 'Опрыскивание' })).toContainText('не выполнено')
 })
 
-test('карточка поля: экономика прошлого сезона — руб/т по урожайности, вне плана (#163)', async ({
+test('карточка поля: экономика прошлого сезона — руб/т по урожайности (#163)', async ({
   page,
 }) => {
   await page.goto(`/fields/${FIRST_FIELD}`)
@@ -66,17 +66,14 @@ test('карточка поля: экономика прошлого сезон�
   })
   const ton = econ.locator('.card360__econ-ton')
   await expect(ton).toContainText('Себестоимость зерна:')
-  await expect(ton).toContainText('₽/т')
+  await expect(ton).toContainText('тыс ₽/т')
   await expect(ton).toContainText('ц/га')
-  // Уборка дороже плана (×1.05) — суммарно перерасход, красным.
-  await expect(econ.locator('.card360__econ-tiles').getByText('Перерасход')).toBeVisible()
 
-  // Детализация: все работы выполнены, боронование — факт без плана.
+  // Детализация — операция уборки из журнала (единый источник §7.10).
   await econ.locator('.card360__econ-toggle').click()
   const ops = econ.locator('.card360__econ-op')
-  expect(await ops.count()).toBe(7)
-  await expect(ops.filter({ hasText: 'Боронование' })).toContainText('вне плана')
-  await expect(ops.filter({ hasText: 'Боронование' })).not.toHaveClass(/card360__econ-op--todo/)
+  await expect(ops).toHaveCount(1, { timeout: 10_000 })
+  await expect(ops.filter({ hasText: 'Уборка' })).toContainText('20.07.2026')
   await expect(ops.filter({ hasText: 'не выполнено' })).toHaveCount(0)
 })
 
