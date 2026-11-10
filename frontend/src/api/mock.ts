@@ -682,6 +682,41 @@ const OPERATIONS: OperationEntry[] = [
     status: 'planned',
     created_at: '2027-05-15T09:00:00Z',
   },
+  {
+    // §7.10 (#175): плановое внесение = плановая операция с расходником
+    // (экран «Планы удобрений и СЗР» — вид на такие строки API-18).
+    client_id: 'seed-0008-0000-4000-8000-000000000008',
+    field_id: FIELDS[2].field_id,
+    operation_type: 'fertilizing',
+    date: '2027-04-20',
+    input_id: INPUTS[3].input_id,
+    actual_dose: 140,
+    actual_area_ga: 208.4,
+    performer: null,
+    source: 'plan_execution',
+    operation_id: uuid(908),
+    deviation_flag: false,
+    needs_review: false,
+    status: 'planned',
+    created_at: '2027-03-28T10:00:00Z',
+  },
+  {
+    // §7.10 (#175): план протравливания семян (type=seed_treatment).
+    client_id: 'seed-0009-0000-4000-8000-000000000009',
+    field_id: FIELDS[6].field_id,
+    operation_type: 'seed_treatment',
+    date: '2027-05-05',
+    input_id: INPUTS[1].input_id,
+    actual_dose: 1.5,
+    actual_area_ga: 184.6,
+    performer: null,
+    source: 'plan_execution',
+    operation_id: uuid(909),
+    deviation_flag: false,
+    needs_review: false,
+    status: 'planned',
+    created_at: '2027-04-29T08:30:00Z',
+  },
 ]
 
 function uuid(n: number): string {
