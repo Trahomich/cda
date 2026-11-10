@@ -54,7 +54,7 @@ def field_economics_api(
     return EconomicsResponse(**data)
 
 
-@router.get(
+@summary_router.get(
     "/economics/summary",
     response_model=EconomicsSummaryResponse,
     summary="API-62b: сводка стоимости техработ сезона хозяйства (§7.9)",
