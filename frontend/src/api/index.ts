@@ -140,6 +140,24 @@ export function confirmOperation(operationId: string): Promise<FieldOperation> {
   })
 }
 
+/** §7.10 (#180): PATCH /operations/{id} — правка плана (дата, расходник,
+ *  доза, стоимость плана) до закрытия фактом; после — 422. */
+export function patchOperation(
+  operationId: string,
+  payload: {
+    planned_date?: string
+    input_id?: string | null
+    input_dose?: number | null
+    cost_plan_mode?: 'unit' | 'total'
+    cost_plan_value?: number | null
+  },
+): Promise<FieldOperation> {
+  return apiClient.request<FieldOperation>(`/operations/${operationId}`, {
+    method: 'PATCH',
+    body: payload,
+  })
+}
+
 /** API-18 (§7.10, #175): GET /operations — единые операции план+факт.
  *  Фильтры: field_id, year (сезон), date_from/date_to (по date =
  *  fact ?? planned), type, plan/fact (наличие дат), confirmed. */
