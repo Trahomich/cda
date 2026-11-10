@@ -9,7 +9,7 @@ import pytest
 from app.models.agronomy import AgroInput, CropCycle, Field, RotationPlan
 from app.models.auth import UserRole
 from app.models.machinery import Machine
-from app.models.references import Culture
+from app.models.references import Culture, OperationCost
 from geoalchemy2 import WKTElement
 from tests.test_auth import auth_header, make_user
 
@@ -40,6 +40,14 @@ def world(db_session):
     tractor = Machine(model="К-744", machine_type="tractor", gov_number="А123ВС")
     sprayer = Machine(model="ОП-2000", machine_type="sprayer", gov_number="В456ЕК")
     db_session.add_all([tractor, sprayer])
+    # нормативы стоимости факта (§7.9): spraying/fertilizing/harvesting
+    db_session.add_all(
+        [
+            OperationCost(operation_type="spraying", rub_per_ga=350.0),
+            OperationCost(operation_type="fertilizing", rub_per_ga=300.0),
+            OperationCost(operation_type="harvesting", rub_per_ga=1200.0),
+        ]
+    )
     db_session.commit()
     return {
         "field": field,
@@ -102,7 +110,7 @@ class TestPlanFactConfirmFlow:
         done = resp.json()
         assert done["status"] == "done" and done["fact_date"] == "2026-06-13"
         assert done["input_amount_total"] == 190.0
-        assert done["cost_fact_rub"] is not None  # норматив после закрытия факта
+        assert done["cost_fact_rub"] == pytest.approx(350.0 * done["actual_area_ga"])  # норматив
         assert done["performer"] == "Иванов А."
         assert len(done["machines"]) == 1
         machine = done["machines"][0]
