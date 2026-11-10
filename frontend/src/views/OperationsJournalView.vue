@@ -437,6 +437,20 @@ onMounted(async () => {
                 >план {{ fmtD(planOf(op)!.planned_date) }}</span>
               </td>
               <td class="jrn__num">
+                <!-- #650: стоимость строки; у пары — обе, если различаются -->
+                <template v-if="econSideCost(op.operation_type, 'fact') != null">
+                  <template v-if="econSideCost(op.operation_type, 'plan') != null && econSideCost(op.operation_type, 'plan') !== econSideCost(op.operation_type, 'fact')">
+                    план {{ fmtRub(econSideCost(op.operation_type, 'plan')!) }} /
+                    факт {{ fmtRub(econSideCost(op.operation_type, 'fact')!) }}
+                  </template>
+                  <template v-else>{{ fmtRub(econSideCost(op.operation_type, 'fact')!) }}</template>
+                </template>
+                <span
+                  v-else
+                  class="jrn__muted"
+                >—</span>
+              </td>
+              <td class="jrn__num">
                 {{ fmtDose(op) }}
               </td>
               <td class="jrn__num">
