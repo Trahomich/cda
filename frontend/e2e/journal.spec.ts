@@ -47,9 +47,15 @@ test('работы: список сезона с группировкой, ит�
 test('работы: добавить план → закрыть фактом → подтвердить (CRUD, #174)', async ({
   page,
 }) => {
-  // Подтверждать может руководитель: логинимся менеджером.
+  // Подтверждать может руководитель: перелогиниваемся менеджером
+  // (токен в localStorage — /login иначе редиректит в кабинет).
+  await page.evaluate(() => {
+    localStorage.removeItem('cda.token')
+    localStorage.removeItem('cda.user')
+  })
   await page.goto('/login')
   await page.getByLabel('Логин').fill('manager')
+  await page.getByLabel('Пароль', { exact: true }).fill('demo')
   await page.locator('.login__submit').click()
   await page.waitForURL((url) => new URL(url).pathname.startsWith('/fields/map'), {
     timeout: 15_000,
