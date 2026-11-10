@@ -33,6 +33,7 @@ const selectedDay = ref<string | null>(null)
 const OP_LABELS: Record<OperationType, string> = {
   spraying: 'опрыскивание',
   fertilizing: 'внесение удобрений',
+  seed_treatment: 'протравливание семян',
   seeding: 'посев',
   harvesting: 'уборка',
   tillage: 'обработка почвы',
