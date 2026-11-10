@@ -480,9 +480,6 @@ const chartSelectable = computed(() =>
     : indexDates.value[chartIndex.value],
 )
 
-/** «Сегодня» для подписей «нет данных на …, показано за …» (#544). */
-const todayIso = new Date().toISOString().slice(0, 10)
-
 watch(
   renderDates,
   (dates) => {
