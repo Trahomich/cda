@@ -933,35 +933,73 @@ function opCostRub(op: FieldOperation): number {
  *  (история циклов) + боронование вне плана. Факт слегка отличается от
  *  плана (детерминированные множители), чтобы сводка показывала
  *  экономию/перерасход. Года без цикла — пустые суммы и []. */
+/** Год сезона операции (§7.10, как фильтр year в API-18): по planned-дате,
+ *  осенний сев (август+) — следующий год. */
+function opSeasonYear(o: OperationEntry): number {
+  const d = o.planned_date ?? o.date
+  const m = Number(d.slice(5, 7))
+  return Number(d.slice(0, 4)) + (m >= 8 && o.operation_type === 'seeding' ? 1 : 0)
+}
+
+const OP_TITLES: Record<string, string> = {
+  tillage: 'Обработка почвы',
+  cultivation: 'Культивация',
+  seeding: 'Посев',
+  fertilizing: 'Внесение удобрений',
+  spraying: 'Опрыскивание',
+  seed_treatment: 'Протравливание семян',
+  harvesting: 'Уборка',
+  other: 'Прочее',
+}
+
 function economicsOf(
   field: { field_id: string; area_ga: number },
   year: number,
 ): FieldEconomics {
   const area = field.area_ga
   const n = FIELD_N.get(field.field_id)!
-  // Поле 7, текущий сезон: работы только запланированы (для #165 — плитка
-  // факта «0 ₽ · работы не начаты» рядом с планами).
-  const noFacts = n === 7 && year !== 2026
-  const rub = (r: number) => Math.round((r * area) / 100) * 100
-  // [type, title, ММ-ДД плана, руб/га, ММ-ДД факта | null, множитель факта]
-  const rows: Array<[string, string, string, number, string | null, number]> =
-    year === 2026
-      ? [
-          ['tillage', 'Вспашка', '09-01', 1150, '09-02', 1.02],
-          ['tillage', 'Культивация', '04-20', 520, '04-21', 1.03],
-          ['seeding', 'Посев', '04-28', 1730, '04-28', 0.99],
-          ['fertilizing', 'Внесение удобрений', '04-12', 810, '04-14', 1.01],
-          ['spraying', 'Опрыскивание', '05-20', 430, '05-21', 1.04],
-          ['harvesting', 'Уборка', '08-10', 2050, '08-12', 1.05],
-        ]
-      : [
-          ['tillage', 'Культивация', '04-18', 520, '04-19', 1.03],
-          ['seeding', 'Посев', '04-26', 1730, '04-27', 1.0],
-          ['fertilizing', 'Внесение удобрений', '04-25', 810, '04-25', 0.99],
-          ['harvesting', 'Уборка', '08-10', 2050, null, 1],
-        ]
-  const operations: FieldEconomicsOperation[] = rows.map(
-    ([type, title, planMd, rate, factMd, k]) => ({
+  // §7.10 (#184): экономика читает ТУ ЖЕ таблицу операций — правки факта
+  // (дата/расход/стоимость) сразу отражаются в суммах. Полям без операций
+  // за сезон — синтетическая детализация (демо-наполнение).
+  const real = OPERATIONS.filter(
+    (o) => o.field_id === field.field_id && opSeasonYear(o) === year,
+  )
+  let operations: FieldEconomicsOperation[]
+  if (real.length) {
+    operations = real.map((o) => {
+      const u = unifiedOp(o)
+      return {
+        type: o.operation_type,
+        title: OP_TITLES[o.operation_type] ?? o.operation_type,
+        plan: u.planned_date
+          ? { date: u.planned_date, cost_rub: u.cost_plan_rub ?? null }
+          : null,
+        fact: u.fact_date ? { date: u.fact_date, cost_rub: u.cost_fact_rub ?? null } : null,
+      }
+    })
+  } else {
+    // Поле 7, текущий сезон: работы только запланированы (для #165 — плитка
+    // факта «0 ₽ · работы не начаты» рядом с планами).
+    const noFacts = n === 7 && year !== 2026
+    const rub = (r: number) => Math.round((r * area) / 100) * 100
+    // [type, title, ММ-ДД плана, руб/га, ММ-ДД факта | null, множитель факта]
+    const rows: Array<[string, string, string, number, string | null, number]> =
+      year === 2026
+        ? [
+            ['tillage', 'Вспашка', '09-01', 1150, '09-02', 1.02],
+            ['tillage', 'Культивация', '04-20', 520, '04-21', 1.03],
+            ['seeding', 'Посев', '04-28', 1730, '04-28', 0.99],
+            ['fertilizing', 'Внесение удобрений', '04-12', 810, '04-14', 1.01],
+            ['spraying', 'Опрыскивание', '05-20', 430, '05-21', 1.04],
+            ['harvesting', 'Уборка', '08-10', 2050, '08-12', 1.05],
+          ]
+        : [
+            ['tillage', 'Культивация', '04-18', 520, '04-19', 1.03],
+            ['seeding', 'Посев', '04-26', 1730, '04-27', 1.0],
+            ['fertilizing', 'Внесение удобрений', '04-25', 810, '04-25', 0.99],
+            ['harvesting', 'Уборка', '08-10', 2050, null, 1],
+          ]
+    operations = rows.map(([type, title, planMd, rate, factMd, k]) => ({
       type,
       title,
       plan: { date: `${year}-${planMd}`, cost_rub: rub(rate) },
@@ -969,24 +1007,24 @@ function economicsOf(
         factMd != null && !noFacts
           ? { date: `${year}-${factMd}`, cost_rub: Math.round(rub(rate) * k) }
           : null,
-    }),
-  )
-  if (year === 2026) {
-    // Факт без плана: боронование сделали вне плана (§7.9: plan=null).
-    operations.push({
-      type: 'other',
-      title: 'Боронование',
-      plan: null,
-      fact: { date: `${year}-04-05`, cost_rub: rub(240) },
-    })
-  } else {
-    // План без стоимости (норматив не задан) и без факта: в суммы не входит.
-    operations.push({
-      type: 'spraying',
-      title: 'Опрыскивание',
-      plan: { date: `${year}-05-20`, cost_rub: null },
-      fact: null,
-    })
+    }))
+    if (year === 2026) {
+      // Факт без плана: боронование сделали вне плана (§7.9: plan=null).
+      operations.push({
+        type: 'other',
+        title: 'Боронование',
+        plan: null,
+        fact: { date: `${year}-04-05`, cost_rub: rub(240) },
+      })
+    } else {
+      // План без стоимости (норматив не задан) и без факта: в суммы не входит.
+      operations.push({
+        type: 'spraying',
+        title: 'Опрыскивание',
+        plan: { date: `${year}-05-20`, cost_rub: null },
+        fact: null,
+      })
+    }
   }
   // Сортировка §7.9: по дате факта, иначе плана.
   operations.sort((a, b) =>
