@@ -42,21 +42,26 @@ def make_op(
     *,
     status: str,
     area: float = 100.0,
-    cost_mode: str | None = None,
-    cost_value: float | None = None,
+    cost_plan_mode: str | None = None,
+    cost_plan_value: float | None = None,
+    cost_fact_mode: str | None = None,
+    cost_fact_value: float | None = None,
 ) -> FieldOperation:
+    is_done = status == "done"
     op = FieldOperation(
         field_id=field_id,
         cycle_id=cycle_id,
         operation_type=op_type,
         date=date.fromisoformat(day),
-        planned_date=None if status == "done" else date.fromisoformat(day),
-        fact_date=date.fromisoformat(day) if status == "done" else None,
+        planned_date=None if is_done else date.fromisoformat(day),
+        fact_date=date.fromisoformat(day) if is_done else None,
         actual_area_ga=area,
         source="manual",
         status=status,
-        cost_fact_mode=cost_mode,
-        cost_fact_value=cost_value,
+        cost_plan_mode=cost_plan_mode,
+        cost_plan_value=cost_plan_value,
+        cost_fact_mode=cost_fact_mode,
+        cost_fact_value=cost_fact_value,
     )
     db.add(op)
     db.flush()
