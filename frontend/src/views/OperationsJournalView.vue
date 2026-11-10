@@ -736,7 +736,7 @@ watch([season, fieldId, opType, planFact], () => void load(true))
 }
 
 .jrn__more {
-  /* placeholder for edit form styles */
+  margin: 0.5rem 0 0;
 }
 
 /* #184: правка операции из журнала */
