@@ -438,12 +438,12 @@ onMounted(async () => {
               </td>
               <td class="jrn__num">
                 <!-- #650: стоимость строки; у пары — обе, если различаются -->
-                <template v-if="econSideCost(op.operation_type, 'fact') != null">
-                  <template v-if="econSideCost(op.operation_type, 'plan') != null && econSideCost(op.operation_type, 'plan') !== econSideCost(op.operation_type, 'fact')">
-                    план {{ fmtRub(econSideCost(op.operation_type, 'plan')!) }} /
-                    факт {{ fmtRub(econSideCost(op.operation_type, 'fact')!) }}
+                <template v-if="opCost(op) != null">
+                  <template v-if="opPlanCost(op) != null && opPlanCost(op) !== opCost(op)">
+                    план {{ fmtRub(opPlanCost(op)!) }} /
+                    факт {{ fmtRub(opCost(op)!) }}
                   </template>
-                  <template v-else>{{ fmtRub(econSideCost(op.operation_type, 'fact')!) }}</template>
+                  <template v-else>{{ fmtRub(opCost(op)!) }}</template>
                 </template>
                 <span
                   v-else
