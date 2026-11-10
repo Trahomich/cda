@@ -191,6 +191,7 @@ erDiagram
 | API-60 | GET /fields/{id}/vra/export?format=isoxml\|shp\|geojson | выгрузка карты зон дифвнесения с дозами: ISOXML (терминалы), Shapefile (ГИС), GeoJSON; 422 vra_no_base_dose (§7.4) | REQ-F-010; #125 |
 | API-61 | GET /weather/map?metric=precip_7d\|precip_14d\|t_now\|gdd_ytd | карта погоды хозяйства: контуры всех активных полей со значением метрики (осадки за 7/14 сут, последняя суточная температура, GDD с 1 января base 5 °C), кэш 1 ч (§7.8) | REQ-F-024; #135 |
 | API-62 | GET /fields/{id}/economics?year=YYYY | экономика сезона поля: plan_cost_rub (Σ плановых операций), fact_cost_rub (Σ выполненных фактов), cost_per_ga_rub, fact_cost_per_ton_rub (null без фактической урожайности), детализация operations[] plan/fact с датами и стоимостями (§7.9) | REQ-F-010; #161 |
+| API-62b | GET /economics/summary?year=YYYY | сводка стоимости техработ сезона хозяйства по полям (§7.9) | REQ-F-010; #163 |
 
 Пост-MVP (описаны в своих документах, здесь — только индекс): API-36..39 —
 агроскаутинг (docs/11-agroscouting.md §5), API-40..45 — экономика
