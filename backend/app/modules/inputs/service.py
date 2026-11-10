@@ -338,10 +338,11 @@ def validate_treatment_plan(
     current_n = sum(
         rules.nitrogen_kg_dv_ha(
             dose=float(p.input_dose or 0.0),
-            unit=inputs_by_id[p.input_id].unit,
-            n_pct=inputs_by_id[p.input_id].n_pct,
+            unit=(inp := inputs_by_id.get(p.input_id)).unit if inp else item.unit,
+            n_pct=inp.n_pct if inp else item.n_pct,
         )
         for p in season
+        if (inp := inputs_by_id.get(p.input_id)) is not None
     )
     new_n = rules.nitrogen_kg_dv_ha(dose=dose, unit=item.unit, n_pct=item.n_pct)
     if v := rules.check_n_season(current_n=current_n, new_n=new_n, input_name=item.name):
