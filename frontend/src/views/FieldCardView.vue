@@ -1909,51 +1909,78 @@ function fmtNum(v: number, digits = 1): string {
           v-if="worksLoading"
           :lines="5"
         />
-        <ul
-          v-else
-          class="card360__works-list"
-        >
-          <li
-            v-for="entry in works"
-            :key="entry.key"
-            class="card360__works-item"
-            :class="entry.kind === 'plan' ? 'card360__works-item--plan' : 'card360__works-item--fact'"
+        <template v-else>
+          <!-- #665/#171: итоги сезона — те же числа, что в «Экономике
+               сезона» (API-62 поля) -->
+          <p
+            v-if="econ"
+            class="card360__wtotals"
           >
+            Сезон {{ econ.year }}:
+            план Σ <strong>{{ fmtRub(econ.plan_cost_rub) }}</strong> ·
+            факт Σ <strong>{{ fmtRub(econ.fact_cost_rub) }}</strong> ·
+            {{ econDiff > 0 ? 'перерасход' : 'экономия' }}
+            <strong :class="econDiff > 0 ? 'card360__econ-diff--bad' : 'card360__econ-diff--good'">{{
+              fmtRub(Math.abs(econDiff))
+            }}</strong>
             <span
-              class="card360__works-chip"
-              :class="entry.kind === 'plan' ? 'card360__works-chip--plan' : 'card360__works-chip--fact'"
-            >{{ entry.kind === 'plan' ? 'план' : 'факт' }}</span>
-            <span class="card360__works-date">{{ entry.date }}</span>
-            <template v-if="entry.kind === 'plan' && entry.plan">
-              <span>
-                {{ entry.plan.operation_type === 'spraying'
-                  ? 'опрыскивание' : entry.plan.operation_type === 'fertilizing'
-                    ? 'внесение удобрений' : 'протравливание семян' }} ·
-                {{ entry.plan.input_name }} ·
-                {{ fmtNum(entry.plan.dose, 2) }}
-                {{ entry.plan.unit === 'l_ha' ? 'л/га' : entry.plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }}
-              </span>
-              <span class="card360__works-status">{{ PLAN_STATUS_LABELS[entry.plan.status] ?? entry.plan.status }}</span>
-            </template>
-            <template v-else-if="entry.op">
-              <span>
-                {{ OP_LABELS[entry.op.operation_type] }} ·
-                {{ fmtNum(entry.op.actual_area_ga, 2) }} га<span v-if="entry.op.actual_dose != null"> ·
-                  доза {{ fmtNum(entry.op.actual_dose, 2) }}</span>
-              </span>
+              v-if="econNoFacts"
+              class="card360__muted"
+            >(работы не начаты)</span>
+          </p>
+          <ul class="card360__works-list">
+            <li
+              v-for="entry in works"
+              :key="entry.key"
+              class="card360__works-item"
+              :class="entry.kind === 'plan' ? 'card360__works-item--plan' : 'card360__works-item--fact'"
+            >
               <span
-                v-if="entry.op.performer"
-                class="card360__works-status"
-              >{{ entry.op.performer }}</span>
-            </template>
-          </li>
-          <li
-            v-if="works.length === 0"
-            class="card360__muted"
-          >
-            Работ по полю пока нет
-          </li>
-        </ul>
+                class="card360__works-chip"
+                :class="entry.kind === 'plan' ? 'card360__works-chip--plan' : 'card360__works-chip--fact'"
+              >{{ entry.kind === 'plan' ? 'план' : 'факт' }}</span>
+              <span class="card360__works-date">{{ entry.date }}</span>
+              <template v-if="entry.kind === 'plan' && entry.plan">
+                <span>
+                  {{ entry.plan.operation_type === 'spraying'
+                    ? 'опрыскивание' : entry.plan.operation_type === 'fertilizing'
+                      ? 'внесение удобрений' : 'протравливание семян' }} ·
+                  {{ entry.plan.input_name }} ·
+                  {{ fmtNum(entry.plan.dose, 2) }}
+                  {{ entry.plan.unit === 'l_ha' ? 'л/га' : entry.plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }}
+                </span>
+                <span class="card360__works-status">{{ PLAN_STATUS_LABELS[entry.plan.status] ?? entry.plan.status }}</span>
+                <span class="card360__works-cost">
+                  {{ worksPlanCost(entry.plan) != null ? fmtRub(worksPlanCost(entry.plan)!) : 'стоимость не задана' }}
+                </span>
+              </template>
+              <template v-else-if="entry.op">
+                <span>
+                  {{ OP_LABELS[entry.op.operation_type] }} ·
+                  {{ fmtNum(entry.op.actual_area_ga, 2) }} га<span v-if="entry.op.actual_dose != null"> ·
+                    доза {{ fmtNum(entry.op.actual_dose, 2) }}</span>
+                </span>
+                <span
+                  v-if="entry.op.performer"
+                  class="card360__works-status"
+                >{{ entry.op.performer }}</span>
+                <span class="card360__works-cost">
+                  <template v-if="worksOpCost(entry.op) != null">
+                    {{ fmtRub(worksOpCost(entry.op)!) }}<template v-if="worksOpPlanCost(entry.op) != null && worksOpPlanCost(entry.op) !== worksOpCost(entry.op)">
+                      (план {{ fmtRub(worksOpPlanCost(entry.op)!) }})</template>
+                  </template>
+                  <template v-else>стоимость не задана</template>
+                </span>
+              </template>
+            </li>
+            <li
+              v-if="works.length === 0"
+              class="card360__muted"
+            >
+              Работ по полю пока нет
+            </li>
+          </ul>
+        </template>
       </div>
     </template>
   </section>
