@@ -2558,16 +2558,37 @@ export class MockTransport implements Transport {
       if (!entry) {
         return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', 'Операция не найдена')
       }
-      // Правка плана (до закрытия фактом); после факта — 422 (#529).
-      if (entry.status === 'done') {
-        return problem(
-          422,
-          'https://cda.example/errors/operation-already-done',
-          'Операция закрыта фактом',
-          'Правка плана невозможна: операция уже выполнена',
-        )
-      }
       const req = (body ?? {}) as Partial<FieldOperation>
+      // §7.10-дополнение (#720/#184): правка ФАКТА — факт-поля разрешены
+      // для done; плановые поля после факта — по-прежнему 422.
+      if (entry.status === 'done') {
+        if (req.planned_date || req.cost_plan_mode || req.cost_plan_value !== undefined) {
+          return problem(
+            422,
+            'https://cda.example/errors/operation-already-done',
+            'Операция закрыта фактом',
+            'Правка плановых полей невозможна: операция уже выполнена',
+          )
+        }
+        if (req.fact_date) {
+          entry.fact_date = req.fact_date
+          entry.date = req.fact_date
+        }
+        if (req.input_dose != null) entry.actual_dose = req.input_dose
+        if (req.input_amount_total != null) entry.input_amount_total = req.input_amount_total
+        if (req.cost_fact_mode || req.cost_fact_value !== undefined) {
+          entry.cost_fact_rub = planCostRub(
+            req.cost_fact_mode,
+            req.cost_fact_value,
+            entry.operation_type,
+            entry.actual_area_ga,
+          )
+        }
+        if (req.performer) entry.performer = req.performer
+        if (req.machines) entry.machines = machinesWithNames(req.machines)
+        return ok(unifiedOp(entry))
+      }
+      // Правка плана (до закрытия фактом).
       if (req.planned_date) {
         entry.planned_date = req.planned_date
         entry.date = req.planned_date
@@ -2582,6 +2603,7 @@ export class MockTransport implements Transport {
           entry.actual_area_ga,
         )
       }
+      if (req.machines) entry.machines = machinesWithNames(req.machines)
       return ok(unifiedOp(entry))
     }
 
