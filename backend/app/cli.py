@@ -348,6 +348,7 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
     from datetime import date as Date
 
     from sqlalchemy import delete
+    from sqlalchemy import func as sa_func
     from sqlalchemy import select as sa_select
 
     from app.ai_assistant import advice_key_dates
@@ -357,6 +358,13 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
     from app.models.integrations import SatelliteScene
 
     today = Date.today()
+    wiped = 0
+    if getattr(args, "wipe_all", False):
+        # #182 (приказ #716): полная замена истории рекомендаций
+        with SessionLocal() as db:
+            wiped = db.scalar(sa_select(sa_func.count()).select_from(AIFieldAdvice)) or 0
+            db.execute(delete(AIFieldAdvice))
+            db.commit()
     pruned = 0
     if args.prune_today:
         with SessionLocal() as db:
