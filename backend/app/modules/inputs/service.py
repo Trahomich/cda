@@ -52,7 +52,7 @@ def get_cycle(db: Session, cycle_id: uuid.UUID) -> CropCycle:
     return cycle
 
 
-def get_treatment_plan(db: Session, plan_id: uuid.UUID) -> TreatmentPlan:
+def get_treatment_plan(db: Session, plan_id: uuid.UUID) -> FieldOperation:
     plan = db.get(TreatmentPlan, plan_id)
     if plan is None:
         raise AppError(
@@ -428,11 +428,15 @@ def list_treatment_plans(
     limit: int = 50,
     offset: int = 0,
 ) -> tuple[list[tuple], int]:
-    """API-15: GET /treatment-plans — список с развёрнутыми именами (E-05).
+    """API-15 (адаптер §7.10): плановые внесения из единой операции.
 
-    Возвращает строки (план, цикл, поле, культура, препарат).
+    Строки (операция, цикл, поле, культура, препарат); статус — легаси-мэппинг
+    treatment_plan_status (done→completed, план с датой→approved и т.д.).
     """
-    filters = []
+    filters = [
+        FieldOperation.input_id.isnot(None),
+        FieldOperation.operation_type.in_(TREATMENT_OP_TYPES),
+    ]
     if status is not None:
         if status not in TREATMENT_STATUSES:
             raise AppError(
@@ -443,41 +447,51 @@ def list_treatment_plans(
                 title="Некорректный запрос",
                 status_code=400,
             )
-        filters.append(TreatmentPlan.status == status)
+        if status == "cancelled":
+            filters.append(FieldOperation.status == "cancelled")
+        elif status == "completed":
+            filters.append(FieldOperation.fact_date.isnot(None))
+        elif status == "draft":
+            filters.append(FieldOperation.planned_date.is_(None))
+        else:  # approved / in_progress — плановая операция с датой, без факта
+            filters.append(FieldOperation.planned_date.isnot(None))
+            filters.append(FieldOperation.fact_date.is_(None))
     if cycle_id is not None:
-        filters.append(TreatmentPlan.cycle_id == cycle_id)
+        filters.append(FieldOperation.cycle_id == cycle_id)
     if field_id is not None:
         filters.append(CropCycle.field_id == field_id)
     total = db.scalar(
         select(func.count())
-        .select_from(TreatmentPlan)
-        .join(CropCycle, TreatmentPlan.cycle_id == CropCycle.id)
+        .select_from(FieldOperation)
+        .join(CropCycle, FieldOperation.cycle_id == CropCycle.id)
         .where(*filters)
     )
     rows = db.execute(
-        select(TreatmentPlan, CropCycle, Field, Culture, AgroInput)
-        .join(CropCycle, TreatmentPlan.cycle_id == CropCycle.id)
+        select(FieldOperation, CropCycle, Field, Culture, AgroInput)
+        .join(CropCycle, FieldOperation.cycle_id == CropCycle.id)
         .join(Field, CropCycle.field_id == Field.id)
         .join(Culture, CropCycle.culture_id == Culture.id)
-        .join(AgroInput, TreatmentPlan.input_id == AgroInput.id)
+        .join(AgroInput, FieldOperation.input_id == AgroInput.id)
         .where(*filters)
-        .order_by(TreatmentPlan.created_at.desc(), TreatmentPlan.id.desc())
+        .order_by(FieldOperation.created_at.desc(), FieldOperation.id.desc())
         .limit(limit)
         .offset(offset)
     ).all()
     return [tuple(r) for r in rows], int(total or 0)
 
 
-def approve_treatment_plan(db: Session, *, user: User, plan: TreatmentPlan) -> TreatmentPlan:
-    """API-16: согласование руководителем (draft → approved).
+def approve_treatment_plan(db: Session, *, user: User, plan: FieldOperation) -> FieldOperation:
+    """API-16 (адаптер §7.10): согласование плана-внесения.
 
-    Повторное согласование или согласование не-черновика — 409 invalid_state.
-    Правила RULE-AGRO-07/08/10 перепроверяются: за время жизни черновика другие
-    планы могли занять лимиты (аудит status_change).
+    В единой модели плановая операция с датой уже действует (легаси
+    «approved»), поэтому смена статуса не нужна: перепроверяем правила
+    RULE-AGRO-07/08/10 (за время жизни плана лимиты могли занять другие),
+    пишем аудит. Выполненное (fact_date) согласовывать нельзя — 409.
     """
-    if plan.status != "draft":
+    if plan.fact_date is not None or plan.status == "cancelled":
         raise AppError(
-            f"Согласовать можно только план в статусе draft (текущий: {plan.status})",
+            "Согласовать можно только действующий план "
+            f"(текущий статус: {treatment_plan_status(plan)})",
             code="invalid_state",
             title="Конфликт состояния",
             status_code=409,
@@ -488,20 +502,18 @@ def approve_treatment_plan(db: Session, *, user: User, plan: TreatmentPlan) -> T
         db,
         cycle=cycle,
         item=item,
-        dose=float(plan.dose),
+        dose=float(plan.input_dose or 0.0),
         operation_type=plan.operation_type,
         planned_date=plan.planned_date,
         exclude_plan_id=plan.id,
     )
-    previous = plan.status
-    plan.status = "approved"
     _audit(
         db,
         user=user,
         entity="treatment_plan",
         entity_id=plan.id,
         action="status_change",
-        changed={"status_from": previous, "status_to": "approved"},
+        changed={"status_from": "draft", "status_to": "approved"},
     )
     db.commit()
     db.refresh(plan)
