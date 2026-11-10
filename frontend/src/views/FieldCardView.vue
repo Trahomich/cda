@@ -62,26 +62,15 @@ const activeTab = ref<'overview' | 'works'>('overview')
 const fieldPlans = ref<TreatmentPlan[]>([])
 const fieldOperations = ref<FieldOperation[]>([])
 
-/** Лента «Работы»: план и факт одной хронологией, свежие сверху. */
-const works = computed(() => {
-  const entries: Array<{
-    key: string
-    kind: 'plan' | 'fact'
-    date: string
-    plan?: TreatmentPlan
-    op?: FieldOperation
-  }> = [
-    ...fieldPlans.value
-      .filter((p) => p.status !== 'cancelled')
-      .map((p) => ({ key: `plan-${p.plan_id}`, kind: 'plan' as const, date: p.planned_date, plan: p })),
-    ...fieldOperations.value.map((o) => ({
-      key: `fact-${o.operation_id}`,
-      kind: 'fact' as const,
-      date: o.date,
-      op: o,
-    })),
-  ]
-  return entries.sort((a, b) => b.date.localeCompare(a.date))
+/** Лента «Работы» (#674): единый источник — операции API-18 выбранного
+ *  сезона (план = статусы draft/planned/in_progress, факт = done);
+ *  планы внесений (API-15) — отдельная сущность, сюда не смешиваются. */
+const worksSeasonOps = computed(() => {
+  const w = journalWindow.value
+  const ops = w
+    ? fieldOperations.value.filter((o) => o.date >= w.from && o.date <= w.to)
+    : fieldOperations.value
+  return [...ops].sort((a, b) => b.date.localeCompare(a.date))
 })
 
 const PLAN_STATUS_LABELS: Record<string, string> = {
