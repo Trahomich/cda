@@ -2057,7 +2057,7 @@ function fmtNum(v: number, digits = 1): string {
           :lines="5"
         />
         <template v-else>
-          <!-- #665/#171/#674: итоги сезона — те же числа, что в «Экономике
+          <!-- #174 (§7.10): итоги сезона — те же числа, что в «Экономике
                сезона» (API-62 поля) -->
           <p
             v-if="econ"
@@ -2075,39 +2075,259 @@ function fmtNum(v: number, digits = 1): string {
               class="card360__muted"
             >(работы не начаты)</span>
           </p>
-          <!-- #674: строки только из API-18 выбранного сезона; план =
-               незавершённые статусы, факт = done; цена — cost_rub -->
-          <ul class="card360__works-list">
-            <li
-              v-for="op in worksSeasonOps"
-              :key="op.operation_id"
-              class="card360__works-item"
-              :class="op.status === 'done' ? 'card360__works-item--fact' : 'card360__works-item--plan'"
+
+          <!-- CRUD (§7.10): добавить плановую работу -->
+          <div class="card360__wcrud">
+            <button
+              type="button"
+              class="card360__wadd"
+              @click="planFormOpen = !planFormOpen; void loadRefs()"
             >
-              <span
-                class="card360__works-chip"
-                :class="op.status === 'done' ? 'card360__works-chip--fact' : 'card360__works-chip--plan'"
-              >{{ op.status === 'done' ? 'факт' : 'план' }}</span>
-              <span class="card360__works-date">{{ fmtDate(op.date) }}</span>
-              <span>
-                {{ OP_LABELS[op.operation_type] ?? op.operation_type }} ·
-                {{ fmtNum(op.actual_area_ga, 2) }} га
-              </span>
-              <span
-                v-if="op.performer"
-                class="card360__works-status"
-              >{{ op.performer }}</span>
-              <span class="card360__works-cost">
-                {{ op.cost_rub != null ? fmtRub(op.cost_rub) : 'стоимость не задана' }}
-              </span>
-            </li>
-            <li
-              v-if="worksSeasonOps.length === 0"
-              class="card360__muted"
+              {{ planFormOpen ? 'Свернуть' : '+ Добавить работу' }}
+            </button>
+            <form
+              v-if="planFormOpen"
+              class="card360__wform"
+              @submit.prevent="submitPlan"
             >
-              Работ по полю в этом сезоне пока нет
-            </li>
-          </ul>
+              <label>
+                Тип
+                <select
+                  v-model="planForm.operation_type"
+                  required
+                >
+                  <option
+                    v-for="(label, key) in OP_LABELS"
+                    :key="key"
+                    :value="key"
+                  >
+                    {{ label }}
+                  </option>
+                </select>
+              </label>
+              <label>
+                Дата плана
+                <input
+                  v-model="planForm.planned_date"
+                  type="date"
+                  required
+                >
+              </label>
+              <label v-if="planForm.operation_type === 'spraying' || planForm.operation_type === 'fertilizing'">
+                Препарат
+                <select v-model="planForm.input_id">
+                  <option value="">
+                    —
+                  </option>
+                  <option
+                    v-for="i in inputsRef"
+                    :key="i.input_id"
+                    :value="i.input_id"
+                  >
+                    {{ i.name }}
+                  </option>
+                </select>
+              </label>
+              <label v-if="planForm.input_id">
+                Доза, кг/га (л/га)
+                <input
+                  v-model.number="planForm.input_dose"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                >
+              </label>
+              <label>
+                Стоимость
+                <span class="card360__wform-cost">
+                  <select v-model="planForm.cost_plan_mode">
+                    <option value="unit">
+                      руб/га
+                    </option>
+                    <option value="total">
+                      за поле
+                    </option>
+                  </select>
+                  <input
+                    v-model.number="planForm.cost_plan_value"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="не задана"
+                  >
+                </span>
+              </label>
+              <button
+                type="submit"
+                class="card360__wsubmit"
+                :disabled="crudBusy"
+              >
+                Создать план
+              </button>
+            </form>
+          </div>
+
+          <!-- Список работ сезона (#174, §7.10): строки только из API-18,
+               группировка по месяцам -->
+          <div
+            v-for="group in worksGroups"
+            :key="group.key"
+            class="card360__wgroup"
+          >
+            <h3 class="card360__wgroup-title">
+              {{ group.label }}
+            </h3>
+            <ul class="card360__works-list">
+              <li
+                v-for="op in group.ops"
+                :key="op.operation_id"
+                class="card360__works-item"
+                :class="op.fact_date ? 'card360__works-item--fact' : 'card360__works-item--plan'"
+              >
+                <span
+                  class="card360__works-chip"
+                  :class="op.fact_date ? 'card360__works-chip--fact' : 'card360__works-chip--plan'"
+                >{{ op.fact_date ? 'факт' : 'план · ожидается' }}</span>
+                <span class="card360__works-date">
+                  <template v-if="op.planned_date && op.fact_date && op.planned_date !== op.fact_date">
+                    план {{ fmtDate(op.planned_date) }} → факт {{ fmtDate(op.fact_date) }}
+                  </template>
+                  <template v-else>{{ fmtDate(op.date) }}</template>
+                </span>
+                <span>
+                  {{ OP_LABELS[op.operation_type] ?? op.operation_type }} ·
+                  {{ fmtNum(op.actual_area_ga, 2) }} га<template v-if="op.input_name"> ·
+                    {{ op.input_name }}<template v-if="op.input_dose != null">
+                      {{ fmtNum(op.input_dose, 2) }} {{ op.input_id && inputsRef.find((i) => i.input_id === op.input_id)?.unit === 'l_ha' ? 'л/га' : 'кг/га' }}
+                    </template>
+                  </template>
+                </span>
+                <span
+                  v-if="machinesTitle(op)"
+                  class="card360__wmachines"
+                  :title="machinesTitle(op)"
+                >🚜</span>
+                <span class="card360__works-cost">{{ worksCost(op) }}</span>
+                <span
+                  v-if="op.performer"
+                  class="card360__works-status"
+                >{{ op.performer }}</span>
+                <span
+                  v-if="op.confirmed_at"
+                  class="card360__wconfirmed"
+                  :title="`Подтверждено${op.confirmed_by ? `: ${op.confirmed_by}` : ''} ${fmtDate(op.confirmed_at.slice(0, 10))}`"
+                >✓</span>
+                <button
+                  v-else-if="op.fact_date && canConfirm"
+                  type="button"
+                  class="card360__wconfirm"
+                  :disabled="crudBusy"
+                  @click="confirmOp(op)"
+                >
+                  Подтвердить
+                </button>
+                <button
+                  v-if="!op.fact_date"
+                  type="button"
+                  class="card360__wclose"
+                  :disabled="crudBusy"
+                  @click="startComplete(op)"
+                >
+                  Закрыть фактом
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Закрытие плана фактом (§7.10) -->
+          <form
+            v-if="completingOp"
+            class="card360__wform card360__wform--complete"
+            @submit.prevent="submitComplete"
+          >
+            <strong>Закрыть фактом: {{ OP_LABELS[completingOp.operation_type] }} от {{ fmtDate(completingOp.date) }}</strong>
+            <label>
+              Дата факта
+              <input
+                v-model="completeForm.fact_date"
+                type="date"
+                required
+              >
+            </label>
+            <label v-if="completingOp.input_id">
+              Расход всего, кг (л)
+              <input
+                v-model.number="completeForm.input_amount_total"
+                type="number"
+                min="0"
+                step="0.1"
+                placeholder="доза × площадь"
+              >
+            </label>
+            <label>
+              Стоимость факта
+              <span class="card360__wform-cost">
+                <select v-model="completeForm.cost_fact_mode">
+                  <option value="unit">
+                    руб/га
+                  </option>
+                  <option value="total">
+                    за поле
+                  </option>
+                </select>
+                <input
+                  v-model.number="completeForm.cost_fact_value"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="норматив"
+                >
+              </span>
+            </label>
+            <label>
+              Исполнитель
+              <input
+                v-model="completeForm.performer"
+                type="text"
+              >
+            </label>
+            <label>
+              Техника
+              <select v-model="completeForm.machine_id">
+                <option value="">
+                  —
+                </option>
+                <option
+                  v-for="m in machinesRef"
+                  :key="m.machine_id"
+                  :value="m.machine_id"
+                >
+                  {{ m.model }}{{ m.gov_number ? ` (${m.gov_number})` : '' }}
+                </option>
+              </select>
+            </label>
+            <button
+              type="submit"
+              class="card360__wsubmit"
+              :disabled="crudBusy"
+            >
+              Закрыть фактом
+            </button>
+            <button
+              type="button"
+              class="card360__wcancel"
+              @click="completingOp = null"
+            >
+              Отмена
+            </button>
+          </form>
+
+          <p
+            v-if="worksSeasonOps.length === 0"
+            class="card360__muted"
+          >
+            Работ по полю в этом сезоне пока нет
+          </p>
         </template>
       </div>
     </template>
