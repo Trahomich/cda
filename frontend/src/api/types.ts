@@ -137,6 +137,67 @@ export interface FieldOperation extends Omit<OperationRequest, 'client_id'> {
   /** Итоговая стоимость операции, руб (API-18, §7.9 #650/#169):
    *  unit×площадь | total | норматив-fallback для факта; null — не задана. */
   cost_rub?: number | null
+  /* ── Единая операция (§7.10, #172–174): план и факт — одна сущность ── */
+  /** Плановая дата; null — внеплановый факт. */
+  planned_date?: string | null
+  /** Фактическая дата; null — не выполнено (план). */
+  fact_date?: string | null
+  /** Препарат/удобрение по справочнику — имя для отображения. */
+  input_name?: string | null
+  /** Доза расходника, кг/га (л/га). */
+  input_dose?: number | null
+  /** Фактический расход всего, кг/л. */
+  input_amount_total?: number | null
+  /** Стоимость по плану, руб; null — не задана (в план-суммы не входит). */
+  cost_plan_rub?: number | null
+  /** Стоимость по факту, руб (норматив-fallback применён бэкендом). */
+  cost_fact_rub?: number | null
+  /** Кто подтвердил (§7.10); null — не подтверждено. */
+  confirmed_by?: string | null
+  /** Когда подтверждено; null — не подтверждено. */
+  confirmed_at?: string | null
+  /** Основание — ИИ-рекомендация (nullable). */
+  basis_recommendation_id?: string | null
+  /** Техника операции (dat_operation_machine, 1:N). */
+  machines?: OperationMachine[]
+}
+
+/** Техника операции (§7.10): элемент machines[] в API-18/complete. */
+export interface OperationMachine {
+  machine_id: string
+  machine_name: string
+  trailer_id?: string | null
+  trailer_name?: string | null
+  operator?: string | null
+  hours?: number | null
+}
+
+/** POST /operations — создание плановой операции (§7.10, #173/#174). */
+export interface CreateOperationPlanRequest {
+  field_id: string
+  operation_type: OperationType
+  planned_date: string
+  input_id?: string | null
+  input_dose?: number | null
+  /** Стоимость плана: 'unit' — руб/га, 'total' — за поле. */
+  cost_plan_mode?: 'unit' | 'total'
+  cost_plan_value?: number | null
+}
+
+/** POST /operations/{id}/complete — закрытие плана фактом (§7.10). */
+export interface CompleteOperationRequest {
+  fact_date: string
+  /** Расход всего, кг/л; не передан — доза × площадь (считает бэкенд). */
+  input_amount_total?: number | null
+  cost_fact_mode?: 'unit' | 'total'
+  cost_fact_value?: number | null
+  performer?: string | null
+  machines?: Array<{
+    machine_id: string
+    trailer_id?: string | null
+    operator?: string | null
+    hours?: number | null
+  }>
 }
 
 /** Ответ GET /auth/me (API-47). */
