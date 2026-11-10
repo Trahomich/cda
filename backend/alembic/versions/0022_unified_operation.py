@@ -191,7 +191,7 @@ def upgrade() -> None:
                 false,
                 false,
                 CASE WHEN p.status = 'completed' THEN 'done'
-                     WHEN p.status = 'cancelled' THEN 'cancelled'
+                     WHEN p.planned_date IS NULL THEN 'draft'  -- план без даты (§7.10)
                      ELSE 'planned' END,
                 'unit',
                 (SELECT o.rub_per_ga FROM ref_operation_cost o
