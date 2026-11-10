@@ -122,9 +122,51 @@ test('работы: редактирование плана из карточк�
   })
   await expect(works.locator('.card360__works-item', { hasText: '20.05.2027' })).toHaveCount(0)
 
-  // У факта кнопки редактирования нет (правка только планов).
+  // У факта кнопки редактирования плана нет, но есть правка ФАКТА (#184).
   const factRow = works.locator('.card360__works-item', { hasText: '02.07.2027' })
-  await expect(factRow.locator('.card360__wedit')).toHaveCount(0)
+  await expect(factRow.locator('.card360__wedit')).toHaveCount(1)
+})
+
+test('работы: правка факта — дата, исполнитель, техника, суммы обновляются (#184)', async ({
+  page,
+}) => {
+  await page.goto(`/fields/${FIELD1}`)
+  await page.locator('.card360__tab--works').click()
+  const works = page.locator('.card360__works')
+  await expect(works.locator('.card360__wtotals')).toContainText('план Σ', { timeout: 15_000 })
+  const totalsBefore = await works.locator('.card360__wtotals').textContent()
+
+  // Факт обработки почвы 02.07.2027 → переносим на 03.07.2027, меняем
+  // стоимость и добавляем технику (PATCH факт-полей).
+  const factRow = works.locator('.card360__works-item', { hasText: '02.07.2027' })
+  await factRow.locator('.card360__wedit').click()
+  await works.locator('.card360__wform--editfact input[type="date"]').fill('2027-07-03')
+  await works.locator('.card360__wform--editfact input[type="number"][min="0"][step="1"]').fill('800')
+  await works.locator('.card360__wform--editfact .card360__wsubmit').click()
+
+  // Строка обновилась (новая дата), итоги пересчитались.
+  await expect(works.locator('.card360__works-item', { hasText: '03.07.2027' })).toBeVisible({
+    timeout: 15_000,
+  })
+  const totalsAfter = await works.locator('.card360__wtotals').textContent()
+  expect(totalsAfter).not.toBe(totalsBefore)
+})
+
+test('журнал: правка факта из журнала обновляет строку и итоги (#184)', async ({ page }) => {
+  await page.goto('/operations')
+  await expect(page.locator('.jrn__table')).toBeVisible({ timeout: 15_000 })
+  const totalsBefore = await page.locator('.jrn__totals').textContent()
+
+  // Правка факта обработки почвы 02.07.2027 (первая строка сезона 2027).
+  const row = page.locator('.jrn__table tbody tr', { hasText: '02.07.2027' })
+  await row.locator('.jrn__edit').click()
+  await page.locator('.jrn__editform input[type="date"]').fill('2027-07-03')
+  await page.locator('.jrn__editform-submit').click()
+  await expect(page.locator('.jrn__table tbody tr', { hasText: '03.07.2027' })).toBeVisible({
+    timeout: 15_000,
+  })
+  const totalsAfter = await page.locator('.jrn__totals').textContent()
+  expect(totalsAfter).not.toBe(totalsBefore)
 })
 
 test('работы: agro-роль не видит кнопку «Подтвердить» (#174)', async ({ page }) => {
