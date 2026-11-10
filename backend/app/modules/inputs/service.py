@@ -328,11 +328,10 @@ def validate_treatment_plan(
         for p in _season_plans(db, cycle.field_id, cycle.year)
         if p.id != exclude_plan_id and p.input_id is not None
     ]
+    season_input_ids = [p.input_id for p in season if p.input_id is not None]
     inputs_by_id = {
         i.id: i
-        for i in db.scalars(
-            select(AgroInput).where(AgroInput.id.in_([p.input_id for p in season]))
-        ).all()
+        for i in db.scalars(select(AgroInput).where(AgroInput.id.in_(season_input_ids))).all()
     }
 
     # RULE-AGRO-07: суммарный N за сезон ≤ 180 кг д.в./га (default, v1)
@@ -351,7 +350,10 @@ def validate_treatment_plan(
     # RULE-AGRO-10: обработок одним действующим веществом ≤ max_treatments
     if item.active_substance is not None:
         count = sum(
-            1 for p in season if inputs_by_id[p.input_id].active_substance == item.active_substance
+            1
+            for p in season
+            if p.input_id in inputs_by_id
+            and inputs_by_id[p.input_id].active_substance == item.active_substance
         )
         if v := rules.check_max_treatments(
             count=count,
