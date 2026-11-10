@@ -922,6 +922,27 @@ function machinesWithNames(
   }))
 }
 
+// #186: месяц с >100 операций (март 2025, поле 1) — проверка пагинации
+// загрузки месяца календарём (API-18 limit ≤ 100, страницы по 100).
+for (let i = 0; i < 120; i++) {
+  OPERATIONS.push({
+    client_id: `seed-cal-2025-${String(i).padStart(3, '0')}`,
+    field_id: FIELDS[0].field_id,
+    operation_type: i % 2 ? 'tillage' : 'spraying',
+    date: `2025-03-${String((i % 28) + 1).padStart(2, '0')}`,
+    input_id: null,
+    actual_dose: null,
+    actual_area_ga: 84.5,
+    performer: null,
+    source: 'manual',
+    operation_id: uuid(9100 + i),
+    deviation_flag: false,
+    needs_review: false,
+    status: i % 3 ? 'done' : 'planned',
+    created_at: '2025-03-01T00:00:00Z',
+  })
+}
+
 /** Итоговая стоимость фактической операции: норматив типа × площадь. */
 function opCostRub(op: FieldOperation): number {
   const rate = OP_COST_RATES[op.operation_type] ?? OP_COST_RATES.other!
