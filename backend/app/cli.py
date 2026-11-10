@@ -423,9 +423,12 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
                         )
                     ).all()
                 ]
-                key_dates = advice_key_dates.season_key_dates(
-                    db, field_id, culture_name, season, scenes=scenes
-                )
+                if args.key_dates == "operations":
+                    key_dates = advice_key_dates.operations_key_dates(db, field_id, season)
+                else:
+                    key_dates = advice_key_dates.season_key_dates(
+                        db, field_id, culture_name, season, scenes=scenes
+                    )
                 for kd in key_dates:
                     if kd.date > today:
                         counters["future_skipped"] += 1
@@ -446,6 +449,8 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
     report = {
         "years": [year_from, year_to],
         "fields": len(field_ids),
+        "wiped_all": wiped,
+        "key_dates": args.key_dates,
         "pruned_today": pruned,
         "today_refreshed": today_refreshed,
         **dict(counters),
@@ -570,6 +575,17 @@ def main(argv: list[str] | None = None) -> int:
         "--refresh-today",
         action="store_true",
         help="пересоздать сегодняшние рекомендации всех полей (данные изменились)",
+    )
+    p_retro.add_argument(
+        "--wipe-all",
+        action="store_true",
+        help="перед прогоном удалить ВСЮ историю ai_field_advice (#182, полная замена)",
+    )
+    p_retro.add_argument(
+        "--key-dates",
+        choices=["techmap", "operations"],
+        default="techmap",
+        help="источник ключевых дат: техкарты/дефолты или даты техопераций (#182)",
     )
     p_retro.set_defaults(func=cmd_advice_refresh_backfill)
 
