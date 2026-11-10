@@ -463,7 +463,7 @@ onMounted(async () => {
               :key="op.operation_id"
               :class="{ 'jrn__row--deviation': isDeviation(op) }"
             >
-              <td>{{ op.date }}</td>
+              <td>{{ fmtD(op.date) }}</td>
               <td>{{ fieldName(op.field_id) }}</td>
               <td>{{ OP_LABELS[op.operation_type] }}</td>
               <td>
