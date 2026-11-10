@@ -436,32 +436,82 @@ def _assert_not_closed(operation: FieldOperation) -> None:
 def patch_plan(
     db: Session, operation_id: uuid.UUID, *, data: UnifiedOperationPatchIn
 ) -> FieldOperation:
-    """§7.10 PATCH /operations/{id}: правка плана до закрытия фактом."""
+    """§7.10 PATCH /operations/{id}: правка плана до закрытия фактом.
+
+    Done-операции (правка пользователя 10.11 #720): разрешены фактические
+    поля — fact_date, input_amount_total, input_dose, cost_fact_*,
+    performer, machines (полная замена); плановые поля — 422
+    operation_already_done. cancelled — 422 operation_cancelled.
+    """
     operation = get_operation(db, operation_id)
-    _assert_not_closed(operation)
-    if data.planned_date is not None:
-        operation.planned_date = data.planned_date
-        operation.date = data.planned_date
-    if data.input_id is not None:
-        if db.get(AgroInput, data.input_id) is None:
-            raise AppError(
-                f"Препарат {data.input_id} не найден",
-                code="not_found",
-                title="Ресурс не найден",
-                status_code=404,
-            )
-        operation.input_id = data.input_id
-    for field_name, value in (
-        ("input_dose", data.input_dose),
-        ("input_amount_total", data.input_amount_total),
-        ("cost_plan_mode", data.cost_plan_mode),
-        ("cost_plan_value", data.cost_plan_value),
-        ("performer", data.performer),
-    ):
-        if value is not None:
-            setattr(operation, field_name, value)
-    if operation.status == "draft" and operation.planned_date is not None:
-        operation.status = "planned"
+    if operation.status == "cancelled":
+        raise AppError(
+            "Операция отменена — правка недоступна",
+            code="operation_cancelled",
+            title="Нарушено бизнес-правило",
+            status_code=422,
+        )
+    is_done = operation.fact_date is not None
+    plan_fields_requested = any(
+        (
+            data.planned_date is not None,
+            data.input_id is not None,
+            data.cost_plan_mode is not None,
+            data.cost_plan_value is not None,
+        )
+    )
+    if is_done and plan_fields_requested:
+        raise AppError(
+            "Операция уже закрыта фактом — плановые поля не редактируются; "
+            "доступны fact_date/расход/cost_fact/performer/machines (§7.10, #720)",
+            code="operation_already_done",
+            title="Нарушено бизнес-правило",
+            status_code=422,
+        )
+
+    if not is_done:
+        # плановая часть — как раньше
+        if data.planned_date is not None:
+            operation.planned_date = data.planned_date
+            operation.date = data.planned_date
+        if data.input_id is not None:
+            if db.get(AgroInput, data.input_id) is None:
+                raise AppError(
+                    f"Препарат {data.input_id} не найден",
+                    code="not_found",
+                    title="Ресурс не найден",
+                    status_code=404,
+                )
+            operation.input_id = data.input_id
+        for field_name, value in (
+            ("input_amount_total", data.input_amount_total),
+            ("cost_plan_mode", data.cost_plan_mode),
+            ("cost_plan_value", data.cost_plan_value),
+        ):
+            if value is not None:
+                setattr(operation, field_name, value)
+        if operation.status == "draft" and operation.planned_date is not None:
+            operation.status = "planned"
+    else:
+        # фактическая часть (#720): расход, факт-стоимость, дата факта
+        for field_name, value in (
+            ("input_amount_total", data.input_amount_total),
+            ("cost_fact_mode", data.cost_fact_mode),
+            ("cost_fact_value", data.cost_fact_value),
+        ):
+            if value is not None:
+                setattr(operation, field_name, value)
+        if data.fact_date is not None:
+            operation.fact_date = data.fact_date
+            operation.date = data.fact_date  # date = fact ?? planned (§7.10)
+
+    # расход (доза) и исполнитель — общие поля обеих сторон
+    if data.input_dose is not None:
+        operation.input_dose = data.input_dose
+    if data.performer is not None:
+        operation.performer = data.performer
+    if data.machines:
+        replace_machine_links(db, operation, data.machines)
     db.commit()
     db.refresh(operation)
     return operation
