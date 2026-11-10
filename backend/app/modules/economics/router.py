@@ -22,6 +22,12 @@ router = APIRouter(
     prefix="/fields", tags=["economics"], dependencies=[Depends(group_checker("operations"))]
 )
 
+#: API-62b живёт на /economics/summary (без /fields — контракт §7.9):
+#: отдельный роутер без prefix, та же группа прав
+summary_router = APIRouter(
+    tags=["economics"], dependencies=[Depends(group_checker("operations"))]
+)
+
 
 @router.get(
     "/{field_id}/economics",
