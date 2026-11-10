@@ -163,9 +163,6 @@ def main() -> int:
     def pick(key: str, candidates: list[str]) -> str:
         return candidates[_hash(key) % len(candidates)]
 
-    def pick(key: str, candidates: list[str]) -> str:
-        return candidates[_hash(key) % len(candidates)]
-
     cost_updates: list[dict] = []
     links: list[dict] = []
     for p in plans:
