@@ -1,47 +1,41 @@
 <script setup lang="ts">
-// E-13 «Журнал операций» (сценарий SC-03, шаг 6): фильтры поле/даты/тип,
-// статусы отклонений — строки с deviation_flag подсвечены, rationale
-// (REQ-F-013, RULE-AGRO-11) = сравнение факт. дозы с планом внесения.
-// Данные: GET /operations (API-18, пагинация limit/offset), планы — API-15.
-// Примечание #665: сезонные итоги, чипы план/факт и стоимости живут в
-// карточке поля (блок «Планы и журнал») — журнал остаётся списком фактов.
-import { computed, onMounted, ref } from 'vue'
-import { getFields, getOperations, getTreatmentPlans } from '@/api'
-import type {
-  Field,
-  FieldOperation,
-  OperationType,
-  TreatmentPlan,
-} from '@/api/types'
+// E-13 «Журнал операций» — на ЕДИНОМ источнике §7.10 (#175): одна таблица
+// операций с планом и фактом в строке (API-18 ?plan/?fact), фильтры
+// сезон/поле/тип/план-факт; итоги сезона сверху — API-62 по полю либо
+// API-62b по хозяйству (те же числа, что в экономике карточки поля).
+import { computed, onMounted, ref, watch } from 'vue'
+import { getFieldEconomics, getEconomicsSummary, getFields, getOperations } from '@/api'
+import type { Field, FieldOperation, OperationType } from '@/api/types'
+import Skeleton from '@/components/Skeleton.vue'
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 50
 
 const fields = ref<Field[]>([])
 const items = ref<FieldOperation[]>([])
 const total = ref(0)
-const plans = ref<TreatmentPlan[]>([])
 const loading = ref(true)
 const failed = ref(false)
 const busy = ref(false)
 
+/** Сезон: null — все сезоны; default — сезон самой свежей операции. */
+const season = ref<number | null>(null)
+const seasons = ref<number[]>([])
 const fieldId = ref('')
-const dateFrom = ref('')
-const dateTo = ref('')
 const opType = ref<OperationType | 'all'>('all')
+const planFact = ref<'all' | 'plan' | 'fact'>('all')
+
+/** Итоги сезона (план Σ / факт Σ / отклонение). */
+const planTotal = ref<number | null>(null)
+const factTotal = ref<number | null>(null)
 
 const OP_LABELS: Record<OperationType, string> = {
   spraying: 'опрыскивание',
   fertilizing: 'внесение удобрений',
+  seed_treatment: 'протравливание семян',
   seeding: 'посев',
   harvesting: 'уборка',
   tillage: 'обработка почвы',
   other: 'прочее',
-}
-
-const SOURCE_LABELS: Record<FieldOperation['source'], string> = {
-  manual: 'вручную',
-  telemetry_import: 'телематика',
-  plan_execution: 'по плану',
 }
 
 const OP_OPTIONS: Array<{ value: OperationType | 'all'; label: string }> = [
@@ -49,67 +43,105 @@ const OP_OPTIONS: Array<{ value: OperationType | 'all'; label: string }> = [
   ...Object.entries(OP_LABELS).map(([value, label]) => ({ value: value as OperationType, label })),
 ]
 
-/** Обоснование отклонения (RULE-AGRO-11): факт против ближайшего плана
- *  того же препарата на этом поле. Вне плана — отдельная пометка. */
-function deviationOf(op: FieldOperation): { text: string; level: 'warn' | 'info' | 'none' } {
-  const dose = op.actual_dose ?? null
-  if (op.input_id == null || dose === null) return { text: '—', level: 'none' }
-  const candidates = plans.value.filter(
-    (p) => p.field_id === op.field_id && p.input_id === op.input_id,
-  )
-  if (candidates.length === 0) {
-    return { text: 'вне плана внесения', level: 'info' }
+const fieldName = (id: string) => fields.value.find((f) => f.field_id === id)?.name ?? id.slice(0, 8)
+
+function fmtDate(iso: string | null | undefined): string {
+  return iso ? iso.split('-').reverse().join('.') : '—'
+}
+
+function fmtRub(v: number | null | undefined): string {
+  if (v == null) return '—'
+  return `${Math.round(v).toLocaleString('ru-RU')} ₽`
+}
+
+/** Статус строки: план (ожидается) / факт (выполнено). */
+function rowStatus(op: FieldOperation): { label: string; cls: string } {
+  if (op.fact_date) return { label: 'факт', cls: 'jrn__chip--fact' }
+  return { label: 'план · ожидается', cls: 'jrn__chip--plan' }
+}
+
+/** Расходник: имя + доза (кг/га или л/га) либо расход всего у факта. */
+function inputText(op: FieldOperation): string {
+  if (!op.input_name) return '—'
+  const dose = op.input_dose != null ? ` · ${op.input_dose.toLocaleString('ru-RU')} кг(л)/га` : ''
+  const amount =
+    op.fact_date && op.input_amount_total != null
+      ? ` · всего ${op.input_amount_total.toLocaleString('ru-RU')}`
+      : ''
+  return op.input_name + dose + amount
+}
+
+/** Техника кратко: «МТЗ-1221 +2» с полным списком в title. */
+function machinesText(op: FieldOperation): { text: string; title: string } {
+  const list = op.machines ?? []
+  if (!list.length) return { text: '—', title: '' }
+  const first = list[0]!
+  const rest = list.length > 1 ? ` +${list.length - 1}` : ''
+  const title = list
+    .map(
+      (m) =>
+        `${m.machine_name}${m.trailer_name ? ` + ${m.trailer_name}` : ''}${
+          m.operator ? ` · ${m.operator}` : ''
+        }${m.hours != null ? ` · ${m.hours} ч` : ''}`,
+    )
+    .join('; ')
+  return { text: `${first.machine_name}${rest}`, title }
+}
+
+/** Отклонение факт/план по стоимости (грубая метрика итогов). */
+const deviation = computed(() => {
+  if (planTotal.value == null || factTotal.value == null || !planTotal.value) return null
+  return Math.round(((factTotal.value - planTotal.value) / planTotal.value) * 100)
+})
+
+const seasonLabel = computed(() => (season.value ? `Сезон ${season.value}` : 'Все сезоны'))
+
+async function loadTotals(): Promise<void> {
+  planTotal.value = null
+  factTotal.value = null
+  if (!season.value) return
+  try {
+    if (fieldId.value) {
+      const econ = await getFieldEconomics(fieldId.value, season.value)
+      planTotal.value = econ.plan_cost_rub
+      factTotal.value = econ.fact_cost_rub
+    } else {
+      const summary = await getEconomicsSummary(season.value)
+      planTotal.value = summary.plan_cost_rub
+      factTotal.value = summary.fact_cost_rub
+    }
+  } catch {
+    /* итоги вторичны — список работает */
   }
-  // Ближайший план по дате (план ≤ факта), иначе первый будущий.
-  const past = candidates
-    .filter((p) => p.planned_date <= op.date)
-    .sort((a, b) => b.planned_date.localeCompare(a.planned_date))
-  const plan = past[0] ?? candidates.sort((a, b) => a.planned_date.localeCompare(b.planned_date))[0]
-  const delta = ((dose - plan.dose) / plan.dose) * 100
-  const sign = delta > 0 ? '+' : ''
-  const pct = `${sign}${delta.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} %`
-  const text = `факт ${dose.toLocaleString('ru-RU')} против плана ${plan.dose.toLocaleString('ru-RU')} (${pct})`
-  return { text, level: Math.abs(delta) > 10 ? 'warn' : 'none' }
 }
-
-/** Доза факта для таблицы («—» если не указана). */
-function fmtDose(op: FieldOperation): string {
-  return op.actual_dose != null ? op.actual_dose.toLocaleString('ru-RU') : '—'
-}
-
-/** Показывать строку как отклонение: флаг от backend или пересчёт >10 %. */
-function isDeviation(op: FieldOperation): boolean {
-  return op.deviation_flag || deviationOf(op).level === 'warn'
-}
-
-const filtered = computed(() =>
-  opType.value === 'all' ? items.value : items.value.filter((o) => o.operation_type === opType.value),
-)
-
-const fieldName = (id: string) => fields.value.find((f) => f.field_id === id)?.name ?? id.slice(0, 8);
-
-const shownText = computed(
-  () => `Показано ${filtered.value.length} из ${total.value}${filtered.value.length !== items.value.length ? ' (после фильтра по типу)' : ''}`,
-)
 
 async function load(reset = true) {
   loading.value = true
   failed.value = false
   try {
     if (reset) items.value = []
-    const [page, tp] = await Promise.all([
-      getOperations({
-        field_id: fieldId.value || undefined,
-        date_from: dateFrom.value || undefined,
-        date_to: dateTo.value || undefined,
-        limit: PAGE_SIZE,
-        offset: reset ? 0 : items.value.length,
-      }),
-      plans.value.length ? Promise.resolve({ items: plans.value }) : getTreatmentPlans(),
-    ])
+    const page = await getOperations({
+      field_id: fieldId.value || undefined,
+      year: season.value ?? undefined,
+      type: opType.value === 'all' ? undefined : opType.value,
+      plan: planFact.value === 'plan' ? true : undefined,
+      fact: planFact.value === 'fact' ? true : undefined,
+      limit: PAGE_SIZE,
+      offset: reset ? 0 : items.value.length,
+    })
     items.value = reset ? page.items : [...items.value, ...page.items]
     total.value = page.total
-    plans.value = tp.items
+    // Список сезонов — по первому ответу (без фильтра года), desc.
+    if (reset && !seasons.value.length) {
+      const years = new Set<number>()
+      for (const op of page.items) {
+        const d = op.planned_date ?? op.date
+        years.add(Number(d.slice(0, 4)))
+      }
+      seasons.value = [...years].sort((a, b) => b - a)
+      if (season.value === null && seasons.value.length) season.value = seasons.value[0]!
+    }
+    void loadTotals()
   } catch {
     failed.value = true // тост уже показан
   } finally {
@@ -130,15 +162,15 @@ const hasMore = computed(() => items.value.length < total.value)
 
 onMounted(async () => {
   try {
-    const [f, tp] = await Promise.all([getFields({ status: 'all' }), getTreatmentPlans()])
+    const f = await getFields({ status: 'all', limit: 100 })
     fields.value = f.items
-    plans.value = tp.items
-    await load(true)
   } catch {
-    failed.value = true
-    loading.value = false
+    /* фильтр по полю необязателен */
   }
+  await load(true)
 })
+
+watch([season, fieldId, opType, planFact], () => void load(true))
 </script>
 
 <template>
@@ -153,6 +185,24 @@ onMounted(async () => {
       class="jrn__filters"
       @submit.prevent="load(true)"
     >
+      <label class="jrn__field">
+        <span>Сезон</span>
+        <select
+          v-model.number="season"
+          class="jrn__input"
+        >
+          <option :value="null">
+            Все сезоны
+          </option>
+          <option
+            v-for="s in seasons"
+            :key="s"
+            :value="s"
+          >
+            {{ s }}
+          </option>
+        </select>
+      </label>
       <label class="jrn__field">
         <span>Поле</span>
         <select
@@ -172,22 +222,6 @@ onMounted(async () => {
         </select>
       </label>
       <label class="jrn__field">
-        <span>Дата с</span>
-        <input
-          v-model="dateFrom"
-          class="jrn__input"
-          type="date"
-        >
-      </label>
-      <label class="jrn__field">
-        <span>по</span>
-        <input
-          v-model="dateTo"
-          class="jrn__input"
-          type="date"
-        >
-      </label>
-      <label class="jrn__field">
         <span>Тип</span>
         <select
           v-model="opType"
@@ -202,115 +236,139 @@ onMounted(async () => {
           </option>
         </select>
       </label>
-      <button
-        type="submit"
-        class="jrn__apply"
-      >
-        Применить
-      </button>
+      <label class="jrn__field">
+        <span>Показ</span>
+        <select
+          v-model="planFact"
+          class="jrn__input"
+        >
+          <option value="all">
+            план + факт
+          </option>
+          <option value="plan">
+            только планы
+          </option>
+          <option value="fact">
+            только факты
+          </option>
+        </select>
+      </label>
     </form>
 
-    <p
-      v-if="loading && items.length === 0"
-      class="jrn__state"
+    <div
+      v-if="season && planTotal != null"
+      class="jrn__totals"
     >
-      Загрузка журнала…
-    </p>
+      <span>{{ seasonLabel }} · операций: {{ total }}</span>
+      <span class="jrn__total">
+        План: <strong>{{ fmtRub(planTotal) }}</strong>
+      </span>
+      <span class="jrn__total">
+        Факт: <strong>{{ fmtRub(factTotal) }}</strong>
+      </span>
+      <span
+        v-if="deviation != null"
+        class="jrn__deviation"
+        :class="deviation > 0 ? 'jrn__deviation--over' : deviation < 0 ? 'jrn__deviation--under' : ''"
+      >
+        {{ deviation > 0 ? '+' : '' }}{{ deviation }} %
+      </span>
+    </div>
+
+    <Skeleton
+      v-if="loading && !items.length"
+      :lines="5"
+    />
     <p
       v-else-if="failed"
       class="jrn__state jrn__state--error"
     >
-      Не удалось загрузить журнал операций
+      Не удалось загрузить журнал
+    </p>
+    <p
+      v-else-if="!items.length"
+      class="jrn__state"
+    >
+      Операций по выбранным фильтрам нет
     </p>
 
-    <template v-else>
-      <div class="jrn__table-wrap">
-        <table class="jrn__table">
-          <thead>
-            <tr>
-              <th scope="col">
-                Дата
-              </th>
-              <th scope="col">
-                Поле
-              </th>
-              <th scope="col">
-                Операция
-              </th>
-              <th scope="col">
-                Доза (факт)
-              </th>
-              <th scope="col">
-                Площадь, га
-              </th>
-              <th scope="col">
-                Исполнитель
-              </th>
-              <th scope="col">
-                Источник
-              </th>
-              <th scope="col">
-                Отклонение
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr
-              v-for="op in filtered"
-              :key="op.operation_id"
-              :class="{ 'jrn__row--deviation': isDeviation(op) }"
-            >
-              <td>{{ op.date }}</td>
-              <td>{{ fieldName(op.field_id) }}</td>
-              <td>{{ OP_LABELS[op.operation_type] }}</td>
-              <td class="jrn__num">
-                {{ fmtDose(op) }}
-              </td>
-              <td class="jrn__num">
-                {{ op.actual_area_ga.toLocaleString('ru-RU') }}
-              </td>
-              <td>{{ op.performer ?? '—' }}</td>
-              <td>{{ SOURCE_LABELS[op.source] }}</td>
-              <td>
-                <span
-                  v-if="isDeviation(op)"
-                  class="jrn__deviation"
-                  :title="deviationOf(op).text"
-                >⚠ {{ deviationOf(op).text }}</span>
-                <span
-                  v-else-if="deviationOf(op).level === 'info'"
-                  class="jrn__muted"
-                >вне плана</span>
-                <span
-                  v-else
-                  class="jrn__muted"
-                >—</span>
-              </td>
-            </tr>
-            <tr v-if="filtered.length === 0">
-              <td
-                colspan="8"
-                class="jrn__state"
-              >
-                Операций не найдено
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <footer class="jrn__footer">
-        <span class="jrn__muted">{{ shownText }}</span>
+    <div
+      v-else
+      class="jrn__table-wrap"
+    >
+      <table class="jrn__table">
+        <thead>
+          <tr>
+            <th scope="col">
+              Статус
+            </th>
+            <th scope="col">
+              Даты план / факт
+            </th>
+            <th scope="col">
+              Тип
+            </th>
+            <th scope="col">
+              Поле
+            </th>
+            <th scope="col">
+              Расходник · расход
+            </th>
+            <th scope="col">
+              Стоимость план / факт
+            </th>
+            <th scope="col">
+              Исполнитель
+            </th>
+            <th scope="col">
+              Подтв.
+            </th>
+            <th scope="col">
+              Техника
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="op in items"
+            :key="op.operation_id"
+          >
+            <td>
+              <span
+                class="jrn__chip"
+                :class="rowStatus(op).cls"
+              >{{ rowStatus(op).label }}</span>
+            </td>
+            <td class="jrn__num">
+              {{ fmtDate(op.planned_date) }} / {{ fmtDate(op.fact_date) }}
+            </td>
+            <td>{{ OP_LABELS[op.operation_type] ?? op.operation_type }}</td>
+            <td>{{ fieldName(op.field_id) }}</td>
+            <td>{{ inputText(op) }}</td>
+            <td class="jrn__num">
+              {{ fmtRub(op.cost_plan_rub) }} / {{ fmtRub(op.cost_fact_rub) }}
+            </td>
+            <td>{{ op.performer ?? '—' }}</td>
+            <td>{{ op.confirmed_at ? '✓' : '—' }}</td>
+            <td :title="machinesText(op).title">
+              {{ machinesText(op).text }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p
+        v-if="hasMore"
+        class="jrn__more"
+      >
         <button
-          v-if="hasMore"
           type="button"
-          class="jrn__more"
-          :disabled="busy || loading"
+          :disabled="busy"
           @click="loadMore"
         >
-          Показать ещё
+          {{ busy ? 'Загрузка…' : `Показать ещё (${items.length} из ${total})` }}
         </button>
-      </footer>
-    </template>
+      </p>
+    </div>
   </section>
 </template>
 
@@ -319,8 +377,14 @@ onMounted(async () => {
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 80rem;
+  gap: 0.9rem;
+  max-width: 82rem;
+}
+
+.jrn__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .jrn__title {
@@ -332,31 +396,45 @@ onMounted(async () => {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
-  align-items: flex-end;
 }
 
 .jrn__field {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  font-size: 0.9rem;
-  color: #444;
+  font-size: 0.85rem;
+  color: #55685a;
 }
 
 .jrn__input {
-  font-size: 1rem;
-  min-height: 44px;
+  min-height: 40px;
+  border: 1px solid #9db59e;
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.95rem;
+  min-width: 9rem;
 }
 
-.jrn__apply {
-  min-height: 44px;
-  background: #2e7d32;
-  color: #fff;
+.jrn__totals {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: #f1f6f1;
+  border: 1px solid #c8d6c9;
+  border-radius: 10px;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+}
+
+.jrn__deviation--over {
+  color: #b3261e;
   font-weight: 600;
-  border: none;
-  border-radius: 6px;
-  padding: 0 1rem;
-  cursor: pointer;
+}
+
+.jrn__deviation--under {
+  color: #1b5e20;
+  font-weight: 600;
 }
 
 .jrn__state {
@@ -375,51 +453,53 @@ onMounted(async () => {
   border-collapse: collapse;
   width: 100%;
   background: #fff;
+  font-size: 0.92rem;
 }
 
 .jrn__table th,
 .jrn__table td {
   border: 1px solid #d7e0d8;
-  padding: 0.45rem 0.6rem;
+  padding: 0.4rem 0.55rem;
   text-align: left;
+  white-space: nowrap;
 }
 
 .jrn__table th {
   background: #eef4ef;
 }
 
-.jrn__row--deviation {
-  background: #fff8e1;
-}
-
 .jrn__num {
   font-variant-numeric: tabular-nums;
 }
 
-.jrn__deviation {
-  color: #a15c00;
+.jrn__chip {
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  cursor: help;
+  white-space: nowrap;
 }
 
-.jrn__muted {
-  color: #777;
+.jrn__chip--fact {
+  background: #e2f2e4;
+  color: #1b5e20;
 }
 
-.jrn__footer {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+.jrn__chip--plan {
+  background: #eceff1;
+  color: #546e7a;
 }
 
 .jrn__more {
-  min-height: 44px;
+  margin: 0.5rem 0 0;
+}
+
+.jrn__more button {
+  min-height: 40px;
+  padding: 0.2rem 1rem;
+  border: 1px solid #9db59e;
+  border-radius: 8px;
   background: #fff;
-  border: 1px solid #2e7d32;
-  color: #2e7d32;
-  font-weight: 600;
-  border-radius: 6px;
-  padding: 0 1rem;
   cursor: pointer;
 }
 </style>
