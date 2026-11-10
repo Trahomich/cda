@@ -2628,7 +2628,7 @@ export class MockTransport implements Transport {
           const m = MACHINES.find((x) => x.machine_id === id)
           return m ? `${m.model}${m.gov_number ? ` (${m.gov_number})` : ''}` : null
         }
-        entry.machines = (req.machines as Array<Record<string, unknown>>).map((m) => ({
+        entry.machines = (req.machines as unknown as Array<Record<string, unknown>>).map((m) => ({
           machine_id: String(m.machine_id),
           machine_name: machineName(String(m.machine_id)) ?? '—',
           trailer_id: m.trailer_id ? String(m.trailer_id) : null,
