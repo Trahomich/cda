@@ -162,7 +162,8 @@ def main() -> int:
             ).all()
         )
         has_yield = set(
-            r[0] for r in db.execute(text("select distinct cycle_id from dat_yield_record")).all()
+            str(r[0])
+            for r in db.execute(text("select distinct cycle_id from dat_yield_record")).all()
         )
 
     ops_by_cycle: dict = {}
