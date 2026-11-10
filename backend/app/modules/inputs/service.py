@@ -53,8 +53,9 @@ def get_cycle(db: Session, cycle_id: uuid.UUID) -> CropCycle:
 
 
 def get_treatment_plan(db: Session, plan_id: uuid.UUID) -> FieldOperation:
-    plan = db.get(TreatmentPlan, plan_id)
-    if plan is None:
+    """Адаптер §7.10: план-внесение = плановая операция с расходником."""
+    plan = db.get(FieldOperation, plan_id)
+    if plan is None or plan.input_id is None:
         raise AppError(
             f"План внесения {plan_id} не найден",
             code="not_found",
