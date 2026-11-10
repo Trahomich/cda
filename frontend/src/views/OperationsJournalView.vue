@@ -41,6 +41,8 @@ let seasonsKnown = false
 
 /** Экономика сезона выбранного поля (API-62) — те же суммы, что в карточке. */
 const econ = ref<FieldEconomics | null>(null)
+/** Сводка сезона по всем полям (API-62b) — итоги, когда поле не выбрано. */
+const econSummary = ref<EconomicsSummary | null>(null)
 
 const OP_LABELS: Record<string, string> = {
   spraying: 'опрыскивание',
