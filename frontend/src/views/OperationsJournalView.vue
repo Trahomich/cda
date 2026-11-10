@@ -419,6 +419,9 @@ watch([season, fieldId, opType, planFact], () => void load(true))
             <th scope="col">
               Техника
             </th>
+            <th scope="col">
+              <span aria-label="Правка">✎</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -446,9 +449,158 @@ watch([season, fieldId, opType, planFact], () => void load(true))
             <td :title="machinesText(op).title">
               {{ machinesText(op).text }}
             </td>
+            <td>
+              <button
+                type="button"
+                class="jrn__edit"
+                :title="op.fact_date ? 'Редактировать факт' : 'Редактировать план'"
+                @click="startEdit(op)"
+              >
+                ✎
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
+
+      <!-- Правка операции (#184): план — план-поля, факт — факт-поля -->
+      <form
+        v-if="editing"
+        class="jrn__editform"
+        @submit.prevent="submitEdit"
+      >
+        <strong>
+          {{ editing.fact_date ? 'Правка факта' : 'Правка плана' }}:
+          {{ OP_LABELS[editing.operation_type] ?? editing.operation_type }} ·
+          {{ fieldName(editing.field_id) }}
+        </strong>
+        <label>
+          Дата {{ editing.fact_date ? 'факта' : 'плана' }}
+          <input
+            v-model="editForm.date"
+            type="date"
+            required
+          >
+        </label>
+        <label v-if="editing.input_id">
+          Доза, кг/га (л/га)
+          <input
+            v-model.number="editForm.input_dose"
+            type="number"
+            min="0"
+            step="0.01"
+          >
+        </label>
+        <label v-if="editing.fact_date && editing.input_id">
+          Расход всего, кг (л)
+          <input
+            v-model.number="editForm.input_amount_total"
+            type="number"
+            min="0"
+            step="0.1"
+          >
+        </label>
+        <label>
+          Стоимость {{ editing.fact_date ? 'факта' : 'плана' }}
+          <span class="jrn__editform-cost">
+            <select v-model="editForm.cost_mode">
+              <option value="unit">
+                руб/га
+              </option>
+              <option value="total">
+                за поле
+              </option>
+            </select>
+            <input
+              v-model.number="editForm.cost_value"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="как сейчас"
+            >
+          </span>
+        </label>
+        <label v-if="editing.fact_date">
+          Исполнитель
+          <input
+            v-model="editForm.performer"
+            type="text"
+          >
+        </label>
+        <div class="jrn__editform-machines">
+          <span>Техника</span>
+          <div
+            v-for="(m, i) in editMachines"
+            :key="i"
+            class="jrn__editform-mrow"
+          >
+            <select
+              v-model="m.machine_id"
+              aria-label="Агрегат"
+            >
+              <option value="">
+                агрегат —
+              </option>
+              <option
+                v-for="mach in machinesRef"
+                :key="mach.machine_id"
+                :value="mach.machine_id"
+              >
+                {{ mach.model }}{{ mach.gov_number ? ` (${mach.gov_number})` : '' }}
+              </option>
+            </select>
+            <select
+              v-model="m.trailer_id"
+              aria-label="Прицепное"
+            >
+              <option value="">
+                прицеп —
+              </option>
+              <option
+                v-for="mach in machinesRef"
+                :key="mach.machine_id"
+                :value="mach.machine_id"
+              >
+                {{ mach.model }}
+              </option>
+            </select>
+            <input
+              v-model="m.operator"
+              type="text"
+              aria-label="Механизатор"
+              placeholder="механизатор"
+            >
+            <input
+              v-model.number="m.hours"
+              type="number"
+              min="0"
+              step="0.1"
+              aria-label="Часы"
+              placeholder="ч"
+            >
+          </div>
+          <button
+            type="button"
+            class="jrn__editform-add"
+            @click="editMachines.push({ machine_id: '', trailer_id: '', operator: '', hours: null })"
+          >
+            + добавить технику
+          </button>
+        </div>
+        <button
+          type="submit"
+          class="jrn__editform-submit"
+        >
+          Сохранить
+        </button>
+        <button
+          type="button"
+          class="jrn__editform-cancel"
+          @click="editing = null"
+        >
+          Отмена
+        </button>
+      </form>
       <p
         v-if="hasMore"
         class="jrn__more"
