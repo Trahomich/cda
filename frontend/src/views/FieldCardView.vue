@@ -20,6 +20,7 @@ import {
   getFieldVraMap,
   exportFieldVra,
   getFieldWeather,
+  getAgroInputs,
   getInsights,
   getMachines,
   getNdviRender,
