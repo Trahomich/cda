@@ -769,3 +769,45 @@ cost_value × площадь; 'total' → фикс за поле; не зада�
   `{"year": 2026, "plan_cost_rub": …, "fact_cost_rub": …}` — сводка
   сезона по всем полям хозяйства (для итогов журнала работ без
   выбранного поля). default — текущий сезон.
+
+### 7.10. Единая операция работ предприятия (2026-11-10, ТЗ пользователя #680)
+
+Две сущности (dat_field_operation + dat_treatment_plan) ОБЪЕДИНЯЮТСЯ в одну
+таблицу операций. Единый источник для: сумм план/факт в карточке поля,
+списка работ поля (группировка по сезонам), журнала операций, календаря,
+экономики.
+
+**dat_field_operation (расширение, миграция 00XX):**
+
+| поле | тип | комментарий |
+|---|---|---|
+| id, created_at | uuid, timestamptz | дата создания |
+| field_id | FK dat_field | поле |
+| cycle_id | FK dat_crop_cycle | СЕЗОН (год уборки) |
+| operation_type | enum | tillage/seeding/spraying/fertilizing/seed_treatment/harvesting/other |
+| planned_date | date, nullable | планируемая дата (null = внеплановый факт) |
+| fact_date | date, nullable | фактическая дата (null = не выполнено) |
+| input_id | FK dat_agro_input, null | «расходник»: удобрение/СЗР (справочник) |
+| input_dose | numeric(8,2), null | расход МЦ: доза, кг/га (л/га); расход всего = доза × площадь (или вводится напрямую при закрытии) |
+| input_amount_total | numeric(12,2), null | фактический расход всего (кг/л), предпочтительно при закрытии |
+| cost_plan_mode / cost_plan_value | 'unit'|'total', numeric | стоимость ПО ПЛАНУ (unit — руб/га) |
+| cost_fact_mode / cost_fact_value | 'unit'|'total', numeric | стоимость ПО ФАКТУ |
+| performer | varchar | кто выполнил |
+| confirmed_by | FK users, null; confirmed_at | кто подтвердил |
+| source | enum | manual/telemetry_import/plan_execution |
+| deviation_flag, deviation_rationale | bool, varchar | отклонение от плана |
+| basis_recommendation_id | FK dat_recommendation, null | основание (ИИ-рекомендация) |
+| status | вычисляемый | plan(planned_date≠null, fact_date=null) → in_progress → done(fact_date≠null); cancelled отдельно |
+
+**dat_operation_machine (новая, техника 1:N):** operation_id FK, machine_id
+FK (агрегат/трактор), trailer_id FK machines null (прицепное), operator
+varchar null, hours numeric null. Одна операция — несколько машин и прицепов.
+
+**Правила:** план = planned_date ≠ null ∧ fact_date = null; факт =
+fact_date ≠ null (внеплановый — planned_date null); стоимость: план/факт
+считаются каждая из своих полей (unit×площадь | total; пусто → норматив
+ref_operation_cost только для факта). API-15/16 (treatment-plans)
+прекращают существование как отдельная сущность: плановое внесение =
+операция с input+дозой (совместимость: адаптер на переходный период).
+API-18 /operations отдаёт единые операции (план+факт, cost_plan/cost_fact);
+API-62 экономика — из тех же полей; календарь — срез по planned/fact датам.
