@@ -30,6 +30,7 @@ import {
   refreshFieldAdvice,
 } from '@/api'
 import type {
+  AgroInput,
   CropCycleHistoryItem,
   FieldAdvice,
   FieldCard,
@@ -39,7 +40,9 @@ import type {
   FieldWeather,
   InsightSeverity,
   InsightsResponse,
+  Machine,
   NdviPoint,
+  OperationType,
   SeasonItem,
   TreatmentPlan,
   VraZoneItem,
@@ -47,6 +50,7 @@ import type {
   YieldForecastResponse,
 } from '@/api/types'
 import type { NdviRender } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 import CropHistoryStrip from '@/components/CropHistoryStrip.vue'
 import NdviTimeline from '@/components/NdviTimeline.vue'
 import Skeleton from '@/components/Skeleton.vue'
@@ -54,6 +58,7 @@ import VraLightbox from '@/components/VraLightbox.vue'
 
 const route = useRoute()
 const fieldId = route.params.fieldId as string
+const auth = useAuthStore()
 
 const card = ref<FieldCard | null>(null)
 const cropHistory = ref<CropCycleHistoryItem[]>([])
