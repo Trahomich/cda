@@ -63,6 +63,8 @@ import type {
   WindowsResponse,
   YieldForecastResponse,
   FieldEconomics,
+  CompleteOperationRequest,
+  CreateOperationPlanRequest,
   EconomicsSummary,
 } from './types'
 
