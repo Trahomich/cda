@@ -841,6 +841,7 @@ const OP_COST_RATES: Record<string, number> = {
   fertilizing: 810,
   spraying: 430,
   harvesting: 2050,
+  seed_treatment: 300,
   other: 240,
 }
 
