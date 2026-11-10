@@ -29,11 +29,11 @@ test('календарь работ: месяц с >100 операций — п�
   await expect(page.locator('.cal__grid')).toBeVisible({ timeout: 15_000 })
 
   // Ошибка limit ≤ 100 не возникла: месяц загружен постранично, счётчики
-  // показывают все 120 (планы + факты), дни с работами видимы.
+  // показывают все операции месяца (40 планов + 80 фактов = 120 > 100).
   await expect(page.locator('.cal__state--error')).toHaveCount(0)
-  await expect(page.locator('.cal__legend .cal__muted')).toContainText('120', {
-    timeout: 15_000,
-  })
+  const legend = page.locator('.cal__legend .cal__muted')
+  await expect(legend).toContainText('планов 40', { timeout: 15_000 })
+  await expect(legend).toContainText('фактов 80')
   await expect(page.locator('.cal__day[data-date="2025-03-15"] .cal__chip').first()).toBeVisible()
 })
 
