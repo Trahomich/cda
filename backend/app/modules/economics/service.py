@@ -21,7 +21,8 @@ from app.models.references import OperationCost
 
 logger = logging.getLogger(__name__)
 
-PLAN_STATUSES = ("draft", "planned", "in_progress")
+#: §7.10: план — planned_date есть/факт не закрыт (кроме cancelled);
+#: факт — fact_date закрыт (status='done' по инварианту)
 FACT_STATUS = "done"
 
 #: русские подписи типов операций (§7.9; "cultivation" из мока фронта —
