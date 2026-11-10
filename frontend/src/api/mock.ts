@@ -2387,6 +2387,54 @@ export class MockTransport implements Transport {
     /* ── Операции (API-17/18) ── */
     if (method === 'POST' && pathname === '/operations') {
       const op = (body ?? {}) as Partial<FieldOperation>
+      // §7.10 (#531): полиморфный POST — planned_date без fact_date и
+      // client_id → создание ПЛАНА; прежний вид → внеплановый факт (API-17).
+      if (op.planned_date && !op.fact_date && !op.client_id) {
+        for (const key of ['field_id', 'operation_type', 'planned_date']) {
+          if (!op[key as keyof FieldOperation]) {
+            return problem(
+              400,
+              'https://cda.example/errors/validation',
+              'Некорректный запрос',
+              `Не заполнено обязательное поле: ${key}`,
+            )
+          }
+        }
+        const field = FIELDS.find((f) => f.field_id === op.field_id)
+        if (!field) {
+          return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', `Поле ${op.field_id} не найдено`)
+        }
+        const entry: OperationEntry = {
+          client_id: null as unknown as string,
+          field_id: op.field_id!,
+          operation_type: op.operation_type!,
+          date: op.planned_date!,
+          planned_date: op.planned_date!,
+          fact_date: null,
+          input_id: op.input_id ?? null,
+          actual_dose: op.input_dose ?? null,
+          actual_area_ga: field.area_ga,
+          performer: null,
+          source: 'plan_execution',
+          operation_id: uuid(OPERATIONS.length + 910),
+          deviation_flag: false,
+          needs_review: false,
+          status: 'planned',
+          cost_plan_rub: planCostRub(
+            op.cost_plan_mode,
+            op.cost_plan_value,
+            op.operation_type!,
+            field.area_ga,
+          ),
+          cost_fact_rub: null,
+          confirmed_by: null,
+          confirmed_at: null,
+          machines: [],
+          created_at: new Date().toISOString(),
+        }
+        OPERATIONS.push(entry)
+        return ok(unifiedOp(entry), 201)
+      }
       // Валидация обязательных полей (03 §1.6) → 400.
       for (const key of ['client_id', 'field_id', 'operation_type', 'date', 'actual_area_ga']) {
         if (!op[key as keyof FieldOperation]) {
