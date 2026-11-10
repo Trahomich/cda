@@ -1869,7 +1869,7 @@ function fmtNum(v: number, digits = 1): string {
           :lines="5"
         />
         <template v-else>
-          <!-- #665/#171: итоги сезона — те же числа, что в «Экономике
+          <!-- #665/#171/#674: итоги сезона — те же числа, что в «Экономике
                сезона» (API-62 поля) -->
           <p
             v-if="econ"
@@ -1887,56 +1887,37 @@ function fmtNum(v: number, digits = 1): string {
               class="card360__muted"
             >(работы не начаты)</span>
           </p>
+          <!-- #674: строки только из API-18 выбранного сезона; план =
+               незавершённые статусы, факт = done; цена — cost_rub -->
           <ul class="card360__works-list">
             <li
-              v-for="entry in works"
-              :key="entry.key"
+              v-for="op in worksSeasonOps"
+              :key="op.operation_id"
               class="card360__works-item"
-              :class="entry.kind === 'plan' ? 'card360__works-item--plan' : 'card360__works-item--fact'"
+              :class="op.status === 'done' ? 'card360__works-item--fact' : 'card360__works-item--plan'"
             >
               <span
                 class="card360__works-chip"
-                :class="entry.kind === 'plan' ? 'card360__works-chip--plan' : 'card360__works-chip--fact'"
-              >{{ entry.kind === 'plan' ? 'план' : 'факт' }}</span>
-              <span class="card360__works-date">{{ entry.date }}</span>
-              <template v-if="entry.kind === 'plan' && entry.plan">
-                <span>
-                  {{ entry.plan.operation_type === 'spraying'
-                    ? 'опрыскивание' : entry.plan.operation_type === 'fertilizing'
-                      ? 'внесение удобрений' : 'протравливание семян' }} ·
-                  {{ entry.plan.input_name }} ·
-                  {{ fmtNum(entry.plan.dose, 2) }}
-                  {{ entry.plan.unit === 'l_ha' ? 'л/га' : entry.plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }}
-                </span>
-                <span class="card360__works-status">{{ PLAN_STATUS_LABELS[entry.plan.status] ?? entry.plan.status }}</span>
-                <span class="card360__works-cost">
-                  {{ worksPlanCost(entry.plan) != null ? fmtRub(worksPlanCost(entry.plan)!) : 'стоимость не задана' }}
-                </span>
-              </template>
-              <template v-else-if="entry.op">
-                <span>
-                  {{ OP_LABELS[entry.op.operation_type] }} ·
-                  {{ fmtNum(entry.op.actual_area_ga, 2) }} га<span v-if="entry.op.actual_dose != null"> ·
-                    доза {{ fmtNum(entry.op.actual_dose, 2) }}</span>
-                </span>
-                <span
-                  v-if="entry.op.performer"
-                  class="card360__works-status"
-                >{{ entry.op.performer }}</span>
-                <span class="card360__works-cost">
-                  <template v-if="worksOpCost(entry.op) != null">
-                    {{ fmtRub(worksOpCost(entry.op)!) }}<template v-if="worksOpPlanCost(entry.op) != null && worksOpPlanCost(entry.op) !== worksOpCost(entry.op)">
-                      (план {{ fmtRub(worksOpPlanCost(entry.op)!) }})</template>
-                  </template>
-                  <template v-else>стоимость не задана</template>
-                </span>
-              </template>
+                :class="op.status === 'done' ? 'card360__works-chip--fact' : 'card360__works-chip--plan'"
+              >{{ op.status === 'done' ? 'факт' : 'план' }}</span>
+              <span class="card360__works-date">{{ fmtDate(op.date) }}</span>
+              <span>
+                {{ OP_LABELS[op.operation_type] ?? op.operation_type }} ·
+                {{ fmtNum(op.actual_area_ga, 2) }} га
+              </span>
+              <span
+                v-if="op.performer"
+                class="card360__works-status"
+              >{{ op.performer }}</span>
+              <span class="card360__works-cost">
+                {{ op.cost_rub != null ? fmtRub(op.cost_rub) : 'стоимость не задана' }}
+              </span>
             </li>
             <li
-              v-if="works.length === 0"
+              v-if="worksSeasonOps.length === 0"
               class="card360__muted"
             >
-              Работ по полю пока нет
+              Работ по полю в этом сезоне пока нет
             </li>
           </ul>
         </template>
