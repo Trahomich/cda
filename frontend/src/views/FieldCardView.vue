@@ -722,39 +722,36 @@ const econNoFacts = computed(
     econ.value.operations.some((o) => o.plan != null),
 )
 
-/* ── Блок «Планы и журнал»: чипы план/факт, цена каждой работы и итоги
- *  сезона (= «Экономика сезона», API-62; #665/#168) ── */
+/* ── Вкладка «Работы»: цена каждой строки и итоги сезона (#665/#171);
+ *  итоги = «Экономика сезона» (API-62 поля) ── */
 
 /** Стоимость стороны типа операции из экономики поля (API-62). */
 function econCost(type: string, side: 'plan' | 'fact'): number | null {
   return econ.value?.operations.find((o) => o.type === type)?.[side]?.cost_rub ?? null
 }
 
+function daysBetween(a: string, b: string): number {
+  return Math.round((Date.parse(a) - Date.parse(b)) / 86_400_000)
+}
+
 /** Цена фактической работы: API-18 cost_rub, иначе норматив экономики. */
-function opCost(op: FieldOperation): number | null {
+function worksOpCost(op: FieldOperation): number | null {
   return op.cost_rub ?? econCost(op.operation_type, 'fact')
 }
 
-/** Полный план (API-15, вкладка «Работы») по plan_id из карточки. */
-function fullPlan(planId: string): TreatmentPlan | null {
-  return fieldPlans.value.find((p) => p.plan_id === planId) ?? null
+/** Цена плана пары к факту (тот же препарат, ±5 дней) — показать обе,
+ *  если различаются (#650). */
+function worksOpPlanCost(op: FieldOperation): number | null {
+  if (op.input_id == null) return null
+  const p = fieldPlans.value.find(
+    (pl) => pl.input_id === op.input_id && Math.abs(daysBetween(op.date, pl.planned_date)) <= 5,
+  )
+  return p ? econCost(p.operation_type, 'plan') : null
 }
 
-/** Стоимость плановой стороны — из экономики поля по типу операции (API-62). */
-function planCost(plan: FieldCardPlan): number | null {
-  const full = fullPlan(plan.plan_id)
-  return full ? econCost(full.operation_type, 'plan') : null
-}
-
-/** Выполнен ли план внесения: факт того же препарата в ±5 дней. */
-function planHasFact(plan: FieldCardPlan): boolean {
-  const full = fullPlan(plan.plan_id)
-  if (!full) return false
-  return operations.value.some((o) => {
-    if (o.input_id == null || full.input_id !== o.input_id) return false
-    const d = Math.round((Date.parse(o.date) - Date.parse(full.planned_date)) / 86_400_000)
-    return Math.abs(d) <= 5
-  })
+/** Цена плановой строки — из экономики по типу операции (API-62). */
+function worksPlanCost(p: TreatmentPlan): number | null {
+  return econCost(p.operation_type, 'plan')
 }
 
 function fmtRub(v: number): string {
