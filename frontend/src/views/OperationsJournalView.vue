@@ -142,6 +142,18 @@ function fmtRub(v: number): string {
   return `${Math.round(v).toLocaleString('ru-RU')} ₽`
 }
 
+/** Стоимость стороны (план/факт) типа операции из экономики поля (API-62);
+ *  null — стоимости нет (не задана) или экономика не загружена. */
+function econSideCost(type: string, side: 'plan' | 'fact'): number | null {
+  const row = econ.value?.operations.find((o) => o.type === type)
+  return row?.[side]?.cost_rub ?? null
+}
+
+/** Отклонение факт−план из экономики поля: для итогов журнала (#650). */
+const econDiff = computed(() =>
+  econ.value ? econ.value.fact_cost_rub - econ.value.plan_cost_rub : null,
+)
+
 const shownText = computed(
   () => `Показано ${filtered.value.length} из ${total.value}${filtered.value.length !== items.value.length ? ' (после фильтра по типу)' : ''}`,
 )
