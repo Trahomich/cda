@@ -274,3 +274,32 @@ class TestCompleteErrors:
             headers=ops_headers,
         )
         assert resp.status_code == 404
+
+
+class TestEconomicsAfterComplete:
+    def test_fact_cost_in_economics_of_cycle_season(self, client, db_session, ops_headers, world):
+        """#178: после complete стоимость факта (норматив) попадает в
+        fact_cost_rub экономики СЕЗОНА ЦИКЛА (озимые осени → сезон Y+1)."""
+        resp = client.post(
+            API,
+            json={
+                "field_id": str(world["field"].id),
+                "operation_type": "spraying",
+                "planned_date": "2026-06-10",  # цикл world — сезон 2026
+            },
+            headers=ops_headers,
+        )
+        assert resp.status_code == 201, resp.text
+        oid = resp.json()["operation_id"]
+        assert (
+            client.post(
+                f"{API}/{oid}/complete", json={"fact_date": "2026-06-12"}, headers=ops_headers
+            ).status_code
+            == 200
+        )
+
+        from app.modules.economics.service import field_economics
+
+        data = field_economics(db_session, world["field"].id, 2026)
+        assert data["fact_cost_rub"] > 0  # норматив spraying × площадь
+        assert data["plan_cost_rub"] == 0  # план закрыт фактом — не дубль
