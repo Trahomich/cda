@@ -159,8 +159,58 @@ const completeForm = ref({
   cost_fact_mode: 'unit' as 'unit' | 'total',
   cost_fact_value: null as number | null,
   performer: '',
-  machine_id: '',
 })
+/** Несколько единиц техники (#180): агрегат + прицеп + механизатор + часы. */
+type MachineRow = { machine_id: string; trailer_id: string; operator: string; hours: number | null }
+const completeMachines = ref<MachineRow[]>([])
+function addMachineRow(): void {
+  completeMachines.value.push({ machine_id: '', trailer_id: '', operator: '', hours: null })
+}
+/** Форма закрытия валидна: дата и ЯВНАЯ стоимость (#707 — обязательна). */
+const completeValid = computed(
+  () =>
+    !!completeForm.value.fact_date &&
+    completeForm.value.cost_fact_value != null &&
+    completeForm.value.cost_fact_value > 0,
+)
+
+/** Редактирование плана (#180): PATCH до закрытия фактом. */
+const editingOp = ref<FieldOperation | null>(null)
+const editForm = ref({
+  planned_date: '',
+  input_id: '',
+  input_dose: null as number | null,
+  cost_plan_mode: 'unit' as 'unit' | 'total',
+  cost_plan_value: null as number | null,
+})
+function startEdit(op: FieldOperation): void {
+  editingOp.value = op
+  editForm.value = {
+    planned_date: op.planned_date ?? op.date,
+    input_id: op.input_id ?? '',
+    input_dose: op.input_dose ?? null,
+    cost_plan_mode: 'unit',
+    cost_plan_value: op.cost_plan_rub != null ? Math.round(op.cost_plan_rub / (op.actual_area_ga || 1)) : null,
+  }
+}
+async function submitEdit(): Promise<void> {
+  const op = editingOp.value
+  if (!op || !editForm.value.planned_date) return
+  crudBusy.value = true
+  try {
+    await patchOperation(op.operation_id, {
+      planned_date: editForm.value.planned_date,
+      input_id: editForm.value.input_id || null,
+      input_dose: editForm.value.input_dose,
+      cost_plan_mode: editForm.value.cost_plan_mode,
+      cost_plan_value: editForm.value.cost_plan_value,
+    })
+    editingOp.value = null
+    await reloadWorks()
+  } finally {
+    crudBusy.value = false
+  }
+}
 /** Справочники для форм: расходники и техника. */
 const inputsRef = ref<AgroInput[]>([])
 const machinesRef = ref<Machine[]>([])
