@@ -59,6 +59,8 @@ import VraLightbox from '@/components/VraLightbox.vue'
 const route = useRoute()
 const fieldId = route.params.fieldId as string
 const auth = useAuthStore()
+/** «Сегодня» (ISO) — для подписей «нет данных на …» и форм CRUD. */
+const todayIso = new Date().toISOString().slice(0, 10)
 
 const card = ref<FieldCard | null>(null)
 const cropHistory = ref<CropCycleHistoryItem[]>([])
