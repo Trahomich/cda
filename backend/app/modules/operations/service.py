@@ -599,19 +599,19 @@ def confirm_operation(
 
 def machines_of(
     db: Session, operation_ids: list[uuid.UUID]
-) -> dict[uuid.UUID, list[tuple[OperationMachine, Machine, Machine | None]]]:
+) -> dict[uuid.UUID, list[tuple[OperationMachine, str, str | None]]]:
     """Техника операций одним запросом: {operation_id: [(link, машина, прицеп)]}."""
-    out: dict[uuid.UUID, list[tuple[OperationMachine, Machine, Machine | None]]] = {}
+    out: dict[uuid.UUID, list[tuple[OperationMachine, str, str | None]]] = {}
     if not operation_ids:
         return out
-    machine_alias = Machine.__table__.alias("m")
+    trailer = Machine.__table__.alias("trailer")
     rows = db.execute(
-        select(OperationMachine, Machine, machine_alias)
+        select(OperationMachine, Machine.name, trailer.c.name)
         .join(Machine, OperationMachine.machine_id == Machine.id)
-        .outerjoin(machine_alias, OperationMachine.trailer_id == machine_alias.c.id)
+        .outerjoin(trailer, OperationMachine.trailer_id == trailer.c.id)
         .where(OperationMachine.operation_id.in_(operation_ids))
         .order_by(OperationMachine.id)
     ).all()
-    for link, machine, trailer in rows:
-        out.setdefault(link.operation_id, []).append((link, machine, trailer))
+    for link, machine_name, trailer_name in rows:
+        out.setdefault(link.operation_id, []).append((link, machine_name, trailer_name))
     return out
