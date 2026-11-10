@@ -420,6 +420,8 @@ def operations_key_dates(
         .order_by(FieldOperation.planned_date, FieldOperation.fact_date)
     ).all()
     dates: set[date] = set()
+    import sys
+    print("DBG rows:", rows, "field:", field_id, "year:", season_year, file=sys.stderr)
     for planned, fact in rows:
         for day in (planned, fact):
             if day is not None:
