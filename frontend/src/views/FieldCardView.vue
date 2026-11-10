@@ -6,6 +6,9 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import {
+  completeOperation,
+  confirmOperation,
+  createOperationPlan,
   getFieldCard,
   getFieldCropCycles,
   getFieldAdvice,
@@ -18,6 +21,7 @@ import {
   exportFieldVra,
   getFieldWeather,
   getInsights,
+  getMachines,
   getNdviRender,
   getOperations,
   getTreatmentPlans,
