@@ -404,25 +404,22 @@ onMounted(async () => {
 
 .jrn__muted {
   color: #777;
-  font-size: 0.88rem;
 }
 
 .jrn__footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .jrn__more {
   min-height: 44px;
   background: #fff;
+  border: 1px solid #2e7d32;
   color: #2e7d32;
-  border: 2px solid #2e7d32;
+  font-weight: 600;
   border-radius: 6px;
   padding: 0 1rem;
-  font-weight: 600;
   cursor: pointer;
 }
 </style>
