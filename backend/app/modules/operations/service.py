@@ -221,6 +221,7 @@ def create_operation(db: Session, *, data: OperationCreate) -> tuple[FieldOperat
         deviation_rationale=rationale,
         needs_review=_needs_review(db, field, data),
         status="done",
+        fact_date=data.date,  # §7.10: факт закрыт датой операции
     )
     db.add(operation)
     if data.yield_record is not None:

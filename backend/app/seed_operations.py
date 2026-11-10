@@ -329,6 +329,7 @@ def seed_operations(db: Session) -> SeedOperationsReport:
                     source="manual",
                     deviation_flag=False,
                     status="done",
+                    fact_date=row["date"],  # §7.10
                 )
                 db.add(op)
                 op_keys.add(key)
