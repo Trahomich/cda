@@ -100,9 +100,76 @@ const filtered = computed(() =>
 
 const fieldName = (id: string) => fields.value.find((f) => f.field_id === id)?.name ?? id.slice(0, 8);
 
+/* ── План/факт (#168): план и факт одной строки, даты обе, если разошлись ── */
+
+const fmtD = (iso: string) => iso.split('-').reverse().join('.')
+
+function daysBetween(a: string, b: string): number {
+  return Math.round((Date.parse(a) - Date.parse(b)) / 86_400_000)
+}
+
+/** План, сопоставленный факту: то же поле и препарат, даты в ±5 дней. */
+function planOf(op: FieldOperation): TreatmentPlan | null {
+  if (op.input_id == null) return null
+  return (
+    plans.value.find(
+      (p) =>
+        p.field_id === op.field_id &&
+        p.input_id === op.input_id &&
+        Math.abs(daysBetween(op.date, p.planned_date)) <= 5,
+    ) ?? null
+  )
+}
+
+/** Планы сезона/поля без выполненного факта — отдельные строки «ожидается». */
+const unmatchedPlans = computed(() => {
+  if (typeof season.value !== 'number') return []
+  return plans.value.filter((p) => {
+    if (fieldId.value && p.field_id !== fieldId.value) return false
+    if (p.planned_date < `${season.value}-01-01` || p.planned_date > `${season.value}-12-31`) {
+      return false
+    }
+    return !items.value.some(
+      (o) =>
+        o.field_id === p.field_id &&
+        o.input_id === p.input_id &&
+        Math.abs(daysBetween(o.date, p.planned_date)) <= 5,
+    )
+  })
+})
+
+function fmtRub(v: number): string {
+  return `${Math.round(v).toLocaleString('ru-RU')} ₽`
+}
+
 const shownText = computed(
   () => `Показано ${filtered.value.length} из ${total.value}${filtered.value.length !== items.value.length ? ' (после фильтра по типу)' : ''}`,
 )
+
+/** Выбор сезона: проставить окно дат (календарный год) и перезагрузить. */
+function onSeasonChange(): void {
+  if (typeof season.value === 'number') {
+    dateFrom.value = `${season.value}-01-01`
+    dateTo.value = `${season.value}-12-31`
+  } else {
+    dateFrom.value = ''
+    dateTo.value = ''
+  }
+  void load(true)
+}
+
+/** Итоги сезона: N операций; при выбранном поле — план Σ/факт Σ (API-62). */
+async function loadEcon(): Promise<void> {
+  if (!fieldId.value || typeof season.value !== 'number') {
+    econ.value = null
+    return
+  }
+  try {
+    econ.value = await getFieldEconomics(fieldId.value, season.value)
+  } catch {
+    econ.value = null
+  }
+}
 
 async function load(reset = true) {
   loading.value = true
