@@ -216,7 +216,7 @@ def main() -> int:
     print(f"планов 2023–2026: {len(plans)}; cost_plan к проставлению: {len(cost_updates)}")
     print(
         f"привязок техники к созданию: {len(links)} "
-        f"({Counter(l['machine'].split()[0] for l in links).most_common(6)})"
+        f"({Counter(x['machine'].split()[0] for x in links).most_common(6)})"
     )
 
     if args.fix:
