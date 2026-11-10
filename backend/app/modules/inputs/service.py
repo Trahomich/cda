@@ -15,7 +15,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.errors import AppError
-from app.models.agronomy import AgroInput, CropCycle, Field, TreatmentPlan
+from app.models.agronomy import AgroInput, CropCycle, Field, FieldOperation
 from app.models.auth import AuditRecord, User
 from app.models.references import Culture
 from app.modules.inputs import rules
@@ -368,8 +368,12 @@ def create_treatment_plan(
     planned_date,
     planned_phase: str | None = None,
     basis_recommendation_id: uuid.UUID | None = None,
-) -> TreatmentPlan:
-    """API-15: POST /treatment-plans — черновик плана внесения (RULE-AGRO-07/08/10)."""
+) -> FieldOperation:
+    """API-15 (адаптер §7.10): плановая операция внесения с расходником.
+
+    Создаётся через единый сервис операций (source='plan_execution' —
+    признак происхождения из API-15); RULE-AGRO-07/08/10 без изменений.
+    """
     cycle = get_cycle(db, cycle_id)
     item = get_input(db, input_id)
     validate_treatment_plan(
@@ -380,22 +384,28 @@ def create_treatment_plan(
         operation_type=operation_type,
         planned_date=planned_date,
     )
-    plan = TreatmentPlan(
-        cycle_id=cycle_id,
-        input_id=input_id,
-        dose=dose,
-        operation_type=operation_type,
-        planned_date=planned_date,
-        planned_phase=planned_phase,
-        basis_recommendation_id=basis_recommendation_id,
+    from app.modules.operations.schemas import UnifiedOperationPlanIn
+    from app.modules.operations.service import create_plan
+
+    operation = create_plan(
+        db,
+        data=UnifiedOperationPlanIn(
+            field_id=cycle.field_id,
+            cycle_id=cycle_id,
+            operation_type=operation_type,
+            planned_date=planned_date,
+            input_id=input_id,
+            input_dose=dose,
+            basis_recommendation_id=basis_recommendation_id,
+        ),
     )
-    db.add(plan)
-    db.flush()  # id для аудита
+    # пометить происхождение адаптером (план из API-15)
+    operation.source = "plan_execution"
     _audit(
         db,
         user=user,
         entity="treatment_plan",
-        entity_id=plan.id,
+        entity_id=operation.id,
         action="create",
         changed={
             "cycle_id": str(cycle_id),
@@ -405,8 +415,8 @@ def create_treatment_plan(
         },
     )
     db.commit()
-    db.refresh(plan)
-    return plan
+    db.refresh(operation)
+    return operation
 
 
 def list_treatment_plans(
