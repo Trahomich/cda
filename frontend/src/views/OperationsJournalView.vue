@@ -152,9 +152,40 @@ function econSideCost(type: string, side: 'plan' | 'fact'): number | null {
   return row?.[side]?.cost_rub ?? null
 }
 
+/** Стоимость факта строки: cost_rub API-18 (норматив), иначе — экономика
+ *  выбранного поля по типу операции (API-62). */
+function opCost(op: FieldOperation): number | null {
+  return op.cost_rub ?? econSideCost(op.operation_type, 'fact')
+}
+
+/** Стоимость плановой стороны пары — из экономики поля (API-62), если поле
+ *  выбрано; без поля плановых стоимостей в API-18 нет. */
+function opPlanCost(op: FieldOperation): number | null {
+  return econSideCost(op.operation_type, 'plan')
+}
+
 /** Отклонение факт−план из экономики поля: для итогов журнала (#650). */
 const econDiff = computed(() =>
   econ.value ? econ.value.fact_cost_rub - econ.value.plan_cost_rub : null,
+)
+
+/* Итоги сезона (#168/#650): выбранное поле — API-62, все поля — API-62b. */
+const totalsPlan = computed(
+  () => econ.value?.plan_cost_rub ?? econSummary.value?.plan_cost_rub ?? null,
+)
+const totalsFact = computed(
+  () => econ.value?.fact_cost_rub ?? econSummary.value?.fact_cost_rub ?? null,
+)
+const totalsDiff = computed(() =>
+  totalsPlan.value != null && totalsFact.value != null
+    ? totalsFact.value - totalsPlan.value
+    : null,
+)
+const totalsNoFacts = computed(
+  () =>
+    econ.value != null &&
+    econ.value.fact_cost_rub === 0 &&
+    econ.value.operations.some((o) => o.plan != null),
 )
 
 const shownText = computed(
