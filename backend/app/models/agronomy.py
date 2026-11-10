@@ -376,13 +376,17 @@ class FieldOperation(Base):
         nullable=True,
     )
     operation_type: Mapped[str] = mapped_column(String(15), nullable=False)
+    # §7.10: legacy-колонка date остаётся (NOT NULL) = coalesce(fact, planned)
     date: Mapped[date] = mapped_column(Date, nullable=False)
+    planned_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    fact_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     input_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid,
         ForeignKey("dat_agro_input.id", name="fk_dat_field_operation_input"),
         nullable=True,
     )
-    actual_dose: Mapped[float | None] = mapped_column(Numeric(8, 2), nullable=True)
+    input_dose: Mapped[float | None] = mapped_column(Numeric(8, 2), nullable=True)
+    input_amount_total: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
     actual_area_ga: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     performer: Mapped[str | None] = mapped_column(String(200), nullable=True)
     # Идемпотентность офлайн-очереди PWA (API-17): uuid от клиента.
