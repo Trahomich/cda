@@ -27,7 +27,7 @@ test('журнал: по умолчанию текущий сезон с ито�
   await page.goto('/operations')
 
   // Сезон по умолчанию — текущий (2027), не весь архив.
-  const seasonSelect = page.locator('getByLabel('Сезон')')
+  const seasonSelect = page.getByLabel('Сезон')
   await expect(seasonSelect).toBeVisible({ timeout: 15_000 })
   await expect(seasonSelect).toHaveValue('2027')
 
