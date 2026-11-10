@@ -811,3 +811,13 @@ ref_operation_cost только для факта). API-15/16 (treatment-plans)
 операция с input+дозой (совместимость: адаптер на переходный период).
 API-18 /operations отдаёт единые операции (план+факт, cost_plan/cost_fact);
 API-62 экономика — из тех же полей; календарь — срез по planned/fact датам.
+
+Дополнение §7.10 (согласовано Анна↔Николай, посты #528–529, 10.11):
+- `date` в API-18 = fact_date ?? planned_date (совместимость сортировки).
+- Роуты: `POST /operations` (план, 201), `PATCH /operations/{id}`
+  (правка плана; после fact_date — 422 operation_already_done),
+  `POST /operations/{id}/complete` (fact_date, расход: amount_total или
+  доза×площадь, cost_fact или норматив, performer, machines[]),
+  `POST /operations/{id}/confirm` (confirmed_by из токена, идемпотентен).
+- Фильтры API-18: field_id, year (сезон), date_from/date_to (по date),
+  type, plan|fact, confirmed.
