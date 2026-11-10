@@ -312,6 +312,7 @@ class TestFactEdit720:
     def _done_op(client, headers, world, **extra):
         body = {
             "field_id": str(world["field"].id),
+            "cycle_id": str(world["cycle"].id),  # экономика читает операции цикла
             "operation_type": "spraying",
             "date": "2026-06-13",  # внеплановый факт (полиморфный POST)
             "actual_area_ga": 100.0,
