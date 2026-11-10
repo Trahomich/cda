@@ -2496,6 +2496,36 @@ polygon.card360__polygon {
   font-size: 0.75rem;
 }
 
+/* ── Блок «Планы и журнал»: чипы план/факт и итоги сезона (#665/#168) ── */
+
+.card360__jtotals {
+  margin: 0.3rem 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.card360__jchip {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.card360__jchip--fact {
+  background: #e2f2e4;
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
+}
+
+.card360__jchip--plan {
+  background: #f1f3f1;
+  color: #55685a;
+  border: 1px solid #c8d6c9;
+}
+
 .card360__econ-toggle {
   border: none;
   background: none;
