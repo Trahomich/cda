@@ -325,10 +325,33 @@ class FieldOperation(Base):
             name="ck_dat_field_operation_status",
         ),
         CheckConstraint(
-            "operation_type IN ('seed_treatment') OR TRUE", name="ck_dat_field_operation_type_ext"
-        )
-        if False
-        else None,
+            "cost_fact_mode IN ('unit', 'total') OR cost_fact_mode IS NULL",
+            name="ck_dat_field_operation_cost_fact_mode",
+        ),
+        CheckConstraint(
+            "cost_fact_value IS NULL OR cost_fact_value >= 0",
+            name="ck_dat_field_operation_cost_fact",
+        ),
+        CheckConstraint(
+            "cost_plan_mode IN ('unit', 'total') OR cost_plan_mode IS NULL",
+            name="ck_dat_field_operation_cost_plan_mode",
+        ),
+        CheckConstraint(
+            "cost_plan_value IS NULL OR cost_plan_value >= 0",
+            name="ck_dat_field_operation_cost_plan",
+        ),
+        # §7.10: факт закрыт ⇒ done; план (planned_date есть, факта нет) ⇒
+        # planned/in_progress (выполняемая); cancelled вне инварианта
+        CheckConstraint(
+            "status = 'cancelled' OR (fact_date IS NOT NULL AND status = 'done') "
+            "OR (fact_date IS NULL AND status <> 'done')",
+            name="ck_dat_field_operation_fact_status",
+        ),
+        CheckConstraint(
+            "status = 'cancelled' OR fact_date IS NOT NULL "
+            "OR planned_date IS NOT NULL OR status = 'draft'",
+            name="ck_dat_field_operation_plan_status",
+        ),
         Index("ix_dat_field_operation_field_date", "field_id", "date"),
         Index("ix_dat_field_operation_planned", "cycle_id", "planned_date"),
         Index("ix_dat_field_operation_fact", "cycle_id", "fact_date"),
