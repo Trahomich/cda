@@ -269,10 +269,10 @@ watch([season, fieldId, opType, planFact], () => void load(true))
     >
       <span>{{ seasonLabel }} · операций: {{ total }}</span>
       <span class="jrn__total">
-        План: <strong>{{ fmtRub(planTotal) }}</strong>
+        План: <strong>{{ fmtThousand(planTotal) }}</strong>
       </span>
       <span class="jrn__total">
-        Факт: <strong>{{ fmtRub(factTotal) }}</strong>
+        Факт: <strong>{{ fmtThousand(factTotal) }}</strong>
       </span>
       <span
         v-if="deviation != null"
