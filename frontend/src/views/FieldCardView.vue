@@ -2299,6 +2299,15 @@ function fmtNum(v: number, digits = 1): string {
                 >
                   Закрыть фактом
                 </button>
+                <button
+                  v-if="!op.fact_date"
+                  type="button"
+                  class="card360__wedit"
+                  :disabled="crudBusy"
+                  @click="startEdit(op)"
+                >
+                  Редактировать
+                </button>
               </li>
             </ul>
           </div>
