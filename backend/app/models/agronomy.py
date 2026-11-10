@@ -313,7 +313,7 @@ class FieldOperation(Base):
     __table_args__ = (
         CheckConstraint(
             "operation_type IN ('spraying', 'fertilizing', 'seeding', "
-            "'harvesting', 'tillage', 'other')",
+            "'seed_treatment', 'harvesting', 'tillage', 'other')",
             name="ck_dat_field_operation_type",
         ),
         CheckConstraint(
