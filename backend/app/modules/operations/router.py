@@ -1,11 +1,16 @@
-"""API журнала операций: API-17/18 (задача MVP-9, docs/06-data-api.md §5).
+"""API журнала операций: API-17/18 + единая операция §7.10 (#173).
 
 Эндпоинты:
-- API-17 POST /operations — запись факта операции (мобильный, офлайн-очередь
-  PWA). client_id — идемпотентность: повтор возвращает существующую операцию
-  (200), новый факт — 201 + Location. Урожайность внутри операции уборки.
-- API-18 GET /operations?field_id&date_from&date_to — журнал с фильтрами
-  и пагинацией (items/total/limit/offset).
+- API-17 POST /operations — полиморфен (§7.10, пост-решение архитектора):
+  с датой факта (date|fact_date, клиент может дать client_id для
+  идемпотентности офлайн-очереди) — внеплановый факт, как раньше;
+  без даты факта, но с planned_date — создание ПЛАНА.
+- API-18 GET /operations — единый журнал план+факт: фильтры field_id,
+  date_from/date_to, type, year (сезон цикла), mode=plan|fact, confirmed.
+- §7.10 PATCH /operations/{id} — правка плана (до закрытия фактом);
+- §7.10 POST /operations/{id}/complete — закрытие фактом (расход,
+  стоимость, техника 1:N, отклонение, урожайность);
+- §7.10 POST /operations/{id}/confirm — подтверждение факта (кто закрыл).
 
 Права (07-ux §5: E-13 журнал работ) — группа «operations»:
 агроном, руководитель, механизатор, админ.
@@ -18,15 +23,20 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
+from app.api.deps import CurrentUser
 from app.core.config import get_settings
 from app.core.db import get_db
 from app.core.rbac import group_checker
 from app.models.agronomy import FieldOperation
 from app.modules.operations import service
 from app.modules.operations.schemas import (
+    MachineLinkItem,
     OperationCreate,
     OperationItem,
     OperationListResponse,
+    UnifiedOperationCompleteIn,
+    UnifiedOperationPatchIn,
+    UnifiedOperationPlanIn,
     YieldRecordItem,
 )
 
@@ -38,7 +48,10 @@ router = APIRouter(
 
 
 def _item(
-    db: Session, operation: FieldOperation, rates: dict[str, float] | None = None
+    db: Session,
+    operation: FieldOperation,
+    rates: dict[str, float] | None = None,
+    machines: dict[uuid.UUID, list] | None = None,
 ) -> OperationItem:
     from app.modules.economics.service import cost_rates, operation_cost_rub
 
@@ -54,6 +67,26 @@ def _item(
                 source=record.source,
                 date=record.date,
             )
+    input_name: str | None = None
+    if operation.input_id is not None:
+        from app.models.agronomy import AgroInput
+
+        row = db.get(AgroInput, operation.input_id)
+        input_name = row.name if row is not None else None
+    machine_items: list[MachineLinkItem] = []
+    if machines is None:
+        machines = service.machines_of(db, [operation.id])
+    for link, machine_name, trailer_name in machines.get(operation.id, []):
+        machine_items.append(
+            MachineLinkItem(
+                machine_id=link.machine_id,
+                trailer_id=link.trailer_id,
+                operator=link.operator,
+                hours=float(link.hours) if link.hours is not None else None,
+                machine_name=machine_name,
+                trailer_name=trailer_name,
+            )
+        )
     return OperationItem(
         operation_id=operation.id,
         field_id=operation.field_id,
@@ -75,26 +108,51 @@ def _item(
         cost_rub=operation_cost_rub(
             operation, rates, side="fact" if operation.status == "done" else "plan"
         ),
+        planned_date=operation.planned_date,
+        fact_date=operation.fact_date,
+        input_name=input_name,
+        input_amount_total=(
+            float(operation.input_amount_total)
+            if operation.input_amount_total is not None
+            else None
+        ),
+        cost_plan_rub=operation_cost_rub(operation, rates, side="plan"),
+        cost_fact_rub=operation_cost_rub(operation, rates, side="fact"),
+        confirmed_by=operation.confirmed_by,
+        confirmed_at=operation.confirmed_at,
+        basis_recommendation_id=operation.basis_recommendation_id,
+        machines=machine_items,
     )
 
 
 @router.post(
     "",
     response_model=OperationItem,
-    summary="API-17: запись факта операции (офлайн-очередь PWA)",
+    summary="API-17/§7.10: факт (date/fact_date, офлайн-очередь) или план (planned_date)",
 )
 def create_operation(
-    body: OperationCreate,
+    body: OperationCreate | UnifiedOperationPlanIn,
     response: Response,
     db: DbSession,
 ) -> OperationItem:
-    operation, created = service.create_operation(db, data=body)
-    if created:
-        response.status_code = 201
-        response.headers["Location"] = f"{get_settings().api_v1_prefix}/operations/{operation.id}"
-    else:
-        # Идемпотентный повтор (тот же client_id): 200, без дубля
-        response.status_code = 200
+    """Полиморфный POST (§7.10): тело факта (OperationCreate, есть date) —
+    внеплановый факт с идемпотентностью client_id; тело плана
+    (UnifiedOperationPlanIn, есть planned_date, нет date) — плановая операция.
+    """
+    if isinstance(body, OperationCreate):
+        operation, created = service.create_operation(db, data=body)
+        if created:
+            response.status_code = 201
+            response.headers["Location"] = (
+                f"{get_settings().api_v1_prefix}/operations/{operation.id}"
+            )
+        else:
+            # Идемпотентный повтор (тот же client_id): 200, без дубля
+            response.status_code = 200
+        return _item(db, operation)
+    operation = service.create_plan(db, data=body)
+    response.status_code = 201
+    response.headers["Location"] = f"{get_settings().api_v1_prefix}/operations/{operation.id}"
     return _item(db, operation)
 
 
@@ -103,10 +161,41 @@ def get_operation(operation_id: uuid.UUID, db: DbSession) -> OperationItem:
     return _item(db, service.get_operation(db, operation_id))
 
 
+@router.patch(
+    "/{operation_id}",
+    response_model=OperationItem,
+    summary="§7.10: правка плана операции (до закрытия фактом)",
+)
+def patch_operation(
+    operation_id: uuid.UUID, body: UnifiedOperationPatchIn, db: DbSession
+) -> OperationItem:
+    return _item(db, service.patch_plan(db, operation_id, data=body))
+
+
+@router.post(
+    "/{operation_id}/complete",
+    response_model=OperationItem,
+    summary="§7.10: закрытие операции фактом (расход, стоимость, техника)",
+)
+def complete_operation(
+    operation_id: uuid.UUID, body: UnifiedOperationCompleteIn, db: DbSession
+) -> OperationItem:
+    return _item(db, service.complete_operation(db, operation_id, data=body))
+
+
+@router.post(
+    "/{operation_id}/confirm",
+    response_model=OperationItem,
+    summary="§7.10: подтверждение закрытого факта (идемпотентно)",
+)
+def confirm_operation(operation_id: uuid.UUID, user: CurrentUser, db: DbSession) -> OperationItem:
+    return _item(db, service.confirm_operation(db, operation_id, user_id=user.id))
+
+
 @router.get(
     "",
     response_model=OperationListResponse,
-    summary="API-18: журнал операций (фильтры field_id, date_from, date_to)",
+    summary="API-18: журнал операций (план+факт, фильтры §7.10)",
 )
 def list_operations(
     db: DbSession,
@@ -114,7 +203,10 @@ def list_operations(
     field_id: uuid.UUID | None = Query(default=None),
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
-    operation_type: str | None = Query(default=None),
+    operation_type: str | None = Query(default=None, alias="type"),
+    year: int | None = Query(default=None, ge=2000, le=2100, description="Сезон цикла"),
+    mode: str | None = Query(default=None, pattern="^(plan|fact)$"),
+    confirmed: bool | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> OperationListResponse:
@@ -124,14 +216,18 @@ def list_operations(
         date_from=date_from,
         date_to=date_to,
         operation_type=operation_type,
+        year=year,
+        mode=mode,
+        confirmed=confirmed,
         limit=limit,
         offset=offset,
     )
     from app.modules.economics.service import cost_rates
 
     rates = cost_rates(db)
+    machines = service.machines_of(db, [o.id for o in operations])
     return OperationListResponse(
-        items=[_item(db, o, rates) for o in operations],
+        items=[_item(db, o, rates, machines) for o in operations],
         total=total,
         limit=limit,
         offset=offset,
