@@ -102,6 +102,7 @@ class TestPlanFactConfirmFlow:
         done = resp.json()
         assert done["status"] == "done" and done["fact_date"] == "2026-06-13"
         assert done["input_amount_total"] == 190.0
+        assert done["cost_fact_rub"] is not None  # норматив после закрытия факта
         assert done["performer"] == "Иванов А."
         assert len(done["machines"]) == 1
         machine = done["machines"][0]
