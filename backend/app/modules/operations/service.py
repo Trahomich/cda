@@ -262,40 +262,59 @@ def list_operations(
     date_from: date | None = None,
     date_to: date | None = None,
     operation_type: str | None = None,
+    year: int | None = None,
+    mode: str | None = None,
+    confirmed: bool | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[list[FieldOperation], int]:
-    """API-18: GET /operations — журнал с фильтрами, новые сверху."""
+    """API-18: GET /operations — журнал с фильтрами, новые сверху.
+
+    §7.10 (#173): year — сезон цикла; mode=plan|fact — по наличию дат
+    (plan: planned_date ≠ null ∧ fact_date = null; fact: fact_date ≠ null);
+    confirmed — по confirmed_at. date_from/date_to — по date (fact ?? planned).
+    """
     if operation_type is not None and operation_type not in OPERATION_TYPES:
         raise AppError(
             f"Неизвестный тип операции «{operation_type}» "
             f"(допустимо: {', '.join(OPERATION_TYPES)})",
             code="unknown_operation_type",
         )
+    if mode is not None and mode not in ("plan", "fact"):
+        raise AppError(
+            "Параметр mode допускает значения plan | fact",
+            code="invalid_mode",
+            title="Некорректный запрос",
+            status_code=422,
+        )
     stmt = select(FieldOperation).order_by(
         FieldOperation.date.desc(), FieldOperation.created_at.desc(), FieldOperation.id
     )
     count_stmt = select(func.count()).select_from(FieldOperation)
+    filters = []
     if field_id is not None:
-        stmt, count_stmt = (
-            stmt.where(FieldOperation.field_id == field_id),
-            count_stmt.where(FieldOperation.field_id == field_id),
-        )
+        filters.append(FieldOperation.field_id == field_id)
     if date_from is not None:
-        stmt, count_stmt = (
-            stmt.where(FieldOperation.date >= date_from),
-            count_stmt.where(FieldOperation.date >= date_from),
-        )
+        filters.append(FieldOperation.date >= date_from)
     if date_to is not None:
-        stmt, count_stmt = (
-            stmt.where(FieldOperation.date <= date_to),
-            count_stmt.where(FieldOperation.date <= date_to),
-        )
+        filters.append(FieldOperation.date <= date_to)
     if operation_type is not None:
-        stmt, count_stmt = (
-            stmt.where(FieldOperation.operation_type == operation_type),
-            count_stmt.where(FieldOperation.operation_type == operation_type),
+        filters.append(FieldOperation.operation_type == operation_type)
+    if mode == "plan":
+        filters.append(FieldOperation.planned_date.isnot(None))
+        filters.append(FieldOperation.fact_date.is_(None))
+    elif mode == "fact":
+        filters.append(FieldOperation.fact_date.isnot(None))
+    if confirmed is not None:
+        filters.append(
+            FieldOperation.confirmed_at.isnot(None) if confirmed else FieldOperation.confirmed_at.is_(None)
         )
+    if year is not None:
+        stmt = stmt.join(CropCycle, FieldOperation.cycle_id == CropCycle.id)
+        count_stmt = count_stmt.join(CropCycle, FieldOperation.cycle_id == CropCycle.id)
+        filters.append(CropCycle.year == year)
+    for flt in filters:
+        stmt, count_stmt = stmt.where(flt), count_stmt.where(flt)
     return list(db.scalars(stmt.limit(limit).offset(offset))), db.scalar(count_stmt) or 0
 
 
