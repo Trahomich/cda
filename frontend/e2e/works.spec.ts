@@ -88,7 +88,9 @@ test('планы внесения (§7.10): создание плана чере
   await expect(row.locator('.tp__chip')).toContainText('ожидается')
 
   // Новый план виден и в журнале операций (единый источник §7.10).
-  await page.goto('/operations')
+  // Переход ссылкой (SPA): полная перезагрузка страницы сбросила бы мок.
+  await page.locator('a[href="/operations"]').first().click()
+  await expect(page.locator('.jrn__title')).toBeVisible({ timeout: 10_000 })
   // План датирован реальным «завтра» (2026) — журнал по умолчанию открывает
   // сезон самой свежей операции (2027): переключаем сезон.
   await page.locator('select').first().selectOption('2026')
