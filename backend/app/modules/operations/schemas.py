@@ -87,3 +87,76 @@ class OperationListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+# -- Единая операция (§7.10, #173): план → факт → подтверждение, техника 1:N --
+
+
+class MachineLinkIn(BaseModel):
+    """Машина операции (§7.10 dat_operation_machine): агрегат + прицеп опционально."""
+
+    machine_id: uuid.UUID
+    trailer_id: uuid.UUID | None = None
+    operator: str | None = Field(default=None, max_length=200)
+    hours: float | None = Field(default=None, ge=0, le=10000.0)
+
+
+class MachineLinkItem(MachineLinkIn):
+    """Машина операции в ответе: + имена для отображения."""
+
+    machine_name: str
+    trailer_name: str | None = None
+
+
+class UnifiedOperationPlanIn(BaseModel):
+    """POST /operations — создание ПЛАНА (§7.10): planned_date ≠ null, факт пуст.
+
+    input+доза опциональны (плановое внесение = операция с расходником);
+    стоимость плана — unit (руб/га) | total (руб за поле), обе nullable.
+    """
+
+    field_id: uuid.UUID
+    operation_type: str
+    planned_date: date
+    cycle_id: uuid.UUID | None = None
+    input_id: uuid.UUID | None = None
+    input_dose: float | None = Field(default=None, ge=0, le=999999.99)
+    input_amount_total: float | None = Field(default=None, ge=0, le=99999999.99)
+    cost_plan_mode: str | None = Field(default=None, pattern="^(unit|total)$")
+    cost_plan_value: float | None = Field(default=None, ge=0, le=99999999.99)
+    performer: str | None = Field(default=None, max_length=200)
+    basis_recommendation_id: uuid.UUID | None = None
+
+
+class UnifiedOperationPatchIn(BaseModel):
+    """PATCH /operations/{id} — правка ПЛАНА до закрытия фактом (§7.10).
+
+    После fact_date — 422 operation_already_done. Все поля опциональны.
+    """
+
+    planned_date: date | None = None
+    input_id: uuid.UUID | None = None
+    input_dose: float | None = Field(default=None, ge=0, le=999999.99)
+    input_amount_total: float | None = Field(default=None, ge=0, le=99999999.99)
+    cost_plan_mode: str | None = Field(default=None, pattern="^(unit|total)$")
+    cost_plan_value: float | None = Field(default=None, ge=0, le=99999999.99)
+    performer: str | None = Field(default=None, max_length=200)
+
+
+class UnifiedOperationCompleteIn(BaseModel):
+    """POST /operations/{id}/complete — закрытие фактом (§7.10).
+
+    Расход всего: input_amount_total, иначе доза × площадь поля;
+    стоимость факта: cost_fact (unit|total), иначе норматив ref_operation_cost.
+    """
+
+    fact_date: date
+    input_amount_total: float | None = Field(default=None, ge=0, le=99999999.99)
+    input_dose: float | None = Field(default=None, ge=0, le=999999.99)
+    cost_fact_mode: str | None = Field(default=None, pattern="^(unit|total)$")
+    cost_fact_value: float | None = Field(default=None, ge=0, le=99999999.99)
+    performer: str | None = Field(default=None, max_length=200)
+    deviation_flag: bool = False
+    deviation_rationale: str | None = Field(default=None, max_length=500)
+    machines: list[MachineLinkIn] = Field(default_factory=list)
+    yield_record: YieldRecordIn | None = None
