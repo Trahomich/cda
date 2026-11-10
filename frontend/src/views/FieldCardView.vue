@@ -2312,7 +2312,8 @@ function fmtNum(v: number, digits = 1): string {
             </ul>
           </div>
 
-          <!-- Закрытие плана фактом (§7.10) -->
+          <!-- Закрытие плана фактом (§7.10; #180: стоимость обязательна,
+               техника — несколько единиц) -->
           <form
             v-if="completingOp"
             class="card360__wform card360__wform--complete"
@@ -2338,7 +2339,7 @@ function fmtNum(v: number, digits = 1): string {
               >
             </label>
             <label>
-              Стоимость факта
+              Стоимость факта *
               <span class="card360__wform-cost">
                 <select v-model="completeForm.cost_fact_mode">
                   <option value="unit">
@@ -2351,11 +2352,13 @@ function fmtNum(v: number, digits = 1): string {
                 <input
                   v-model.number="completeForm.cost_fact_value"
                   type="number"
-                  min="0"
+                  min="1"
                   step="1"
-                  placeholder="норматив"
+                  required
+                  placeholder="например, 700"
                 >
               </span>
+              <span class="card360__muted">задайте явно — иначе возьмётся норматив</span>
             </label>
             <label>
               Исполнитель
@@ -2364,25 +2367,70 @@ function fmtNum(v: number, digits = 1): string {
                 type="text"
               >
             </label>
-            <label>
-              Техника
-              <select v-model="completeForm.machine_id">
-                <option value="">
-                  —
-                </option>
-                <option
-                  v-for="m in machinesRef"
-                  :key="m.machine_id"
-                  :value="m.machine_id"
+            <div class="card360__wmachines-form">
+              <span class="card360__wform-label">Техника</span>
+              <div
+                v-for="(m, i) in completeMachines"
+                :key="i"
+                class="card360__wmachine-row"
+              >
+                <select
+                  v-model="m.machine_id"
+                  aria-label="Агрегат"
                 >
-                  {{ m.model }}{{ m.gov_number ? ` (${m.gov_number})` : '' }}
-                </option>
-              </select>
-            </label>
+                  <option value="">
+                    агрегат —
+                  </option>
+                  <option
+                    v-for="mach in machinesRef"
+                    :key="mach.machine_id"
+                    :value="mach.machine_id"
+                  >
+                    {{ mach.model }}{{ mach.gov_number ? ` (${mach.gov_number})` : '' }}
+                  </option>
+                </select>
+                <select
+                  v-model="m.trailer_id"
+                  aria-label="Прицепное"
+                >
+                  <option value="">
+                    прицеп —
+                  </option>
+                  <option
+                    v-for="mach in machinesRef"
+                    :key="mach.machine_id"
+                    :value="mach.machine_id"
+                  >
+                    {{ mach.model }}
+                  </option>
+                </select>
+                <input
+                  v-model="m.operator"
+                  type="text"
+                  aria-label="Механизатор"
+                  placeholder="механизатор"
+                >
+                <input
+                  v-model.number="m.hours"
+                  type="number"
+                  min="0"
+                  step="0.1"
+                  aria-label="Часы"
+                  placeholder="ч"
+                >
+              </div>
+              <button
+                type="button"
+                class="card360__wadd-machine"
+                @click="addMachineRow"
+              >
+                + добавить технику
+              </button>
+            </div>
             <button
               type="submit"
               class="card360__wsubmit"
-              :disabled="crudBusy"
+              :disabled="crudBusy || !completeValid"
             >
               Закрыть фактом
             </button>
@@ -2390,6 +2438,81 @@ function fmtNum(v: number, digits = 1): string {
               type="button"
               class="card360__wcancel"
               @click="completingOp = null"
+            >
+              Отмена
+            </button>
+          </form>
+
+          <!-- Редактирование плана (#180): дата, расходник, стоимость -->
+          <form
+            v-if="editingOp"
+            class="card360__wform card360__wform--edit"
+            @submit.prevent="submitEdit"
+          >
+            <strong>Редактировать план: {{ OP_LABELS[editingOp.operation_type] }}</strong>
+            <label>
+              Дата плана
+              <input
+                v-model="editForm.planned_date"
+                type="date"
+                required
+              >
+            </label>
+            <label v-if="editingOp.input_id || editForm.input_id">
+              Препарат
+              <select v-model="editForm.input_id">
+                <option value="">
+                  —
+                </option>
+                <option
+                  v-for="i in inputsRef"
+                  :key="i.input_id"
+                  :value="i.input_id"
+                >
+                  {{ i.name }}
+                </option>
+              </select>
+            </label>
+            <label v-if="editForm.input_id">
+              Доза, кг/га (л/га)
+              <input
+                v-model.number="editForm.input_dose"
+                type="number"
+                min="0"
+                step="0.01"
+              >
+            </label>
+            <label>
+              Стоимость плана
+              <span class="card360__wform-cost">
+                <select v-model="editForm.cost_plan_mode">
+                  <option value="unit">
+                    руб/га
+                  </option>
+                  <option value="total">
+                    за поле
+                  </option>
+                </select>
+                <input
+                  v-model.number="editForm.cost_plan_value"
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="не задана"
+                >
+              </span>
+            </label>
+            <button
+              type="submit"
+              class="card360__wsubmit"
+              :disabled="crudBusy"
+            >
+              Сохранить
+            </button>
+            <button
+              type="button"
+              class="card360__wcancel"
+              @click="editingOp = null"
             >
               Отмена
             </button>
