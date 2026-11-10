@@ -739,6 +739,25 @@ function yieldOf(n: number, fieldId: string, cultureName: string, year = 2027): 
   }
 }
 
+/** Нормативы стоимости операций (ref_operation_cost, seed #162) — руб/га;
+ *  fallback факта без заданной стоимости (§7.9, API-18 cost_rub). */
+const OP_COST_RATES: Record<string, number> = {
+  tillage: 600,
+  cultivation: 520,
+  ploughing: 1150,
+  seeding: 1730,
+  fertilizing: 810,
+  spraying: 430,
+  harvesting: 2050,
+  other: 240,
+}
+
+/** Итоговая стоимость фактической операции: норматив типа × площадь. */
+function opCostRub(op: FieldOperation): number {
+  const rate = OP_COST_RATES[op.operation_type] ?? OP_COST_RATES.other!
+  return Math.round((rate * op.actual_area_ga) / 100) * 100
+}
+
 /** API-62 (§7.9, #161): экономика сезона — мок: типовые техработы цикла
  *  с расценками руб/га × площадь поля. Текущий сезон (2027) идёт: часть
  *  работ выполнена, опрыскивание — план без стоимости (норматив не задан),
