@@ -1546,7 +1546,7 @@ function fmtNum(v: number, digits = 1): string {
             </h3>
             <ul class="card360__plans">
               <li
-                v-for="op in operations"
+                v-for="op in operations.slice(0, 3)"
                 :key="op.operation_id"
               >
                 ✓ {{ fmtDate(op.date) }} · {{ OP_LABELS[op.operation_type] ?? op.operation_type }} ·
@@ -1560,6 +1560,13 @@ function fmtNum(v: number, digits = 1): string {
                 Операций в этом сезоне пока нет
               </li>
             </ul>
+            <button
+              type="button"
+              class="card360__allworks"
+              @click="activeTab = 'works'"
+            >
+              все работы (план и факт) →
+            </button>
           </template>
         </div>
         <div class="card360__block">
