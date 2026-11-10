@@ -8,8 +8,9 @@
 // итоги сезона сверху; при выбранном поле суммы те же, что в экономике
 // карточки (API-62).
 import { computed, onMounted, ref } from 'vue'
-import { getFieldEconomics, getFields, getOperations, getTreatmentPlans } from '@/api'
+import { getFieldEconomics, getEconomicsSummary, getFields, getOperations, getTreatmentPlans } from '@/api'
 import type {
+  EconomicsSummary,
   Field,
   FieldEconomics,
   FieldOperation,
