@@ -297,7 +297,8 @@ class TestTreatmentPlansCreate:
         assert resp.status_code == 201, resp.text
         assert resp.headers["location"].startswith("/api/v1/treatment-plans/")
         body = resp.json()
-        assert body["status"] == "draft"
+        # адаптер §7.10: план с датой действует сразу (легаси «draft» больше нет)
+        assert body["status"] == "approved"
         # развёрнутые имена для E-05 (frontend TreatmentPlan)
         assert body["field_name"].startswith("Поле-1")
         assert body["year"] == 2027
@@ -416,10 +417,10 @@ class TestTreatmentPlansList:
         row = body["items"][0]
         assert row["cycle_id"] == str(cycle.id)
         assert row["input_kind"] == "ppp"
-        # фильтры
-        assert client.get(API_PLANS, params={"status": "draft"}, headers=hdr).json()["total"] == 1
+        # фильтры (адаптер §7.10: план с датой = approved, черновиков нет)
+        assert client.get(API_PLANS, params={"status": "draft"}, headers=hdr).json()["total"] == 0
         assert (
-            client.get(API_PLANS, params={"status": "approved"}, headers=hdr).json()["total"] == 0
+            client.get(API_PLANS, params={"status": "approved"}, headers=hdr).json()["total"] == 1
         )
         assert (
             client.get(API_PLANS, params={"field_id": field["field_id"]}, headers=hdr).json()[
@@ -444,10 +445,9 @@ class TestApprove:
         resp = client.post(f"{API_PLANS}/{plan_id}/approve", headers=mgr)
         assert resp.status_code == 200, resp.text
         assert resp.json()["status"] == "approved"
-        # повтор — 409 invalid_state
+        # повтор — безвреден (перепроверка правил, смены состояния нет, §7.10)
         resp2 = client.post(f"{API_PLANS}/{plan_id}/approve", headers=mgr)
-        assert resp2.status_code == 409
-        assert resp2.json()["code"] == "invalid_state"
+        assert resp2.status_code == 200
         rec = db_session.scalar(
             select(AuditRecord).where(
                 AuditRecord.entity == "treatment_plan", AuditRecord.action == "status_change"
