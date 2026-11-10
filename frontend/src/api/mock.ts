@@ -11,8 +11,6 @@ import type {
   AdapterStatus,
   AgroInput,
   Api05FieldDetail,
-  CompleteOperationRequest,
-  CreateOperationPlanRequest,
   CropCycleDetail,
   Field,
   FieldAdvice,
