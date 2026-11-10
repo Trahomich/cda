@@ -1,25 +1,16 @@
 <script setup lang="ts">
-// «Календарь работ» (v2, docs/06 §7.2): месячная сетка по хозяйству, на дне —
-// плановые даты treatment-plans (API-15) и операции-факты (API-18), различимые
-// визуально: план — рамка, факт — заливка. Отдельного API нет — композит на
-// клиенте. Фильтр по типу операции, переключатель план/факт, клик по дню —
-// список работ с переходом в карточку поля (E-03).
+// «Календарь работ» — на ЕДИНОМ источнике операций §7.10 (#175): месячная
+// сетка из API-18: открытые планы — плановая дата (рамка), выполненные —
+// фактическая дата (заливка); детализация дня с расходниками, техникой и
+// стоимостями. Навигация по месяцам и фильтры — как раньше.
 import { computed, onMounted, ref, watch } from 'vue'
-import { getFields, getOperations, getTreatmentPlans } from '@/api'
-import type {
-  Field,
-  FieldOperation,
-  OperationType,
-  TreatmentPlan,
-  TreatmentPlanStatus,
-} from '@/api/types'
+import { getFields, getOperations } from '@/api'
+import type { Field, FieldOperation, OperationType } from '@/api/types'
 import Skeleton from '@/components/Skeleton.vue'
 
 const fields = ref<Field[]>([])
-/** Операции-факты показанного месяца (API-18, date_from/date_to). */
-const operations = ref<FieldOperation[]>([])
-/** Все планы внесения (API-15); месячный срез — на клиенте. */
-const plans = ref<TreatmentPlan[]>([])
+/** Единые операции показанного месяца (API-18 §7.10: план+факт в строке). */
+const ops = ref<FieldOperation[]>([])
 const loading = ref(true)
 const failed = ref(false)
 
@@ -40,21 +31,6 @@ const OP_LABELS: Record<OperationType, string> = {
   other: 'прочее',
 }
 
-/** Типы планов внесения (API-15): seed_treatment ≠ seeding факта. */
-const PLAN_OP_LABELS: Record<TreatmentPlan['operation_type'], string> = {
-  spraying: 'опрыскивание',
-  fertilizing: 'внесение удобрений',
-  seed_treatment: 'протравливание семян',
-}
-
-const STATUS_LABELS: Record<TreatmentPlanStatus, string> = {
-  draft: 'черновик',
-  approved: 'согласован',
-  in_progress: 'выполняется',
-  completed: 'выполнен',
-  cancelled: 'отменён',
-}
-
 const MONTH_TITLES = [
   'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
   'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
@@ -65,7 +41,7 @@ const monthTitle = computed(() => {
   return `${MONTH_TITLES[m - 1]} ${y}`
 })
 
-/** Границы месяца для запроса API-18 и клиентского среза планов. */
+/** Границы месяца: запрос API-18 по date (= факт или плановая дата). */
 const monthRange = computed(() => {
   const [y, m] = month.value.split('-').map(Number)
   const from = `${month.value}-01`
@@ -77,14 +53,12 @@ async function load() {
   loading.value = true
   failed.value = false
   try {
-    // Факты месяца — API-18 с фильтром дат; планы — весь список (их немного,
-    // месячный срез и фильтры делаются на клиенте).
-    const [ops, tps] = await Promise.all([
-      getOperations({ date_from: monthRange.value.from, date_to: monthRange.value.to, limit: 100 }),
-      getTreatmentPlans(),
-    ])
-    operations.value = ops.items
-    plans.value = tps.items
+    const page = await getOperations({
+      date_from: monthRange.value.from,
+      date_to: monthRange.value.to,
+      limit: 200,
+    })
+    ops.value = page.items
     selectedDay.value = null
   } catch {
     failed.value = true // тост уже показан
@@ -95,7 +69,7 @@ async function load() {
 
 onMounted(async () => {
   try {
-    const f = await getFields({ status: 'all' })
+    const f = await getFields({ status: 'all', limit: 100 })
     fields.value = f.items
   } catch {
     // имена полей — вторичны; сетка работает и по field_id
@@ -105,33 +79,35 @@ onMounted(async () => {
 
 watch(month, load)
 
-/** Планы месяца после фильтров (отменённые не показываем). */
+/** Открытые планы месяца после фильтров (рамка). */
 const monthPlans = computed(() =>
-  plans.value.filter(
-    (p) =>
-      p.planned_date.startsWith(month.value) &&
-      p.status !== 'cancelled' &&
-      (typeFilter.value === 'all' || p.operation_type === typeFilter.value),
+  ops.value.filter(
+    (o) =>
+      !o.fact_date &&
+      o.planned_date?.startsWith(month.value) &&
+      (typeFilter.value === 'all' || o.operation_type === typeFilter.value),
   ),
 )
 
-/** Факты месяца после фильтров. */
-const monthOperations = computed(() =>
-  operations.value.filter(
-    (o) => typeFilter.value === 'all' || o.operation_type === typeFilter.value,
+/** Выполненные операции месяца после фильтров (заливка по fact_date). */
+const monthFacts = computed(() =>
+  ops.value.filter(
+    (o) =>
+      o.fact_date?.startsWith(month.value) &&
+      (typeFilter.value === 'all' || o.operation_type === typeFilter.value),
   ),
 )
 
-/** Записи одного дня: план и факт в одной ленте, план сверху. */
-function entriesOf(dateIso: string): Array<{ kind: 'plan' | 'fact'; plan?: TreatmentPlan; op?: FieldOperation }> {
-  const out: Array<{ kind: 'plan' | 'fact'; plan?: TreatmentPlan; op?: FieldOperation }> = []
+/** Записи одного дня: план (открытый) и факт в одной ленте, план сверху. */
+function entriesOf(dateIso: string): Array<{ kind: 'plan' | 'fact'; op: FieldOperation }> {
+  const out: Array<{ kind: 'plan' | 'fact'; op: FieldOperation }> = []
   if (showMode.value !== 'fact') {
-    for (const p of monthPlans.value.filter((p) => p.planned_date === dateIso)) {
-      out.push({ kind: 'plan', plan: p })
+    for (const o of monthPlans.value.filter((o) => o.planned_date === dateIso)) {
+      out.push({ kind: 'plan', op: o })
     }
   }
   if (showMode.value !== 'plan') {
-    for (const o of monthOperations.value.filter((o) => o.date === dateIso)) {
+    for (const o of monthFacts.value.filter((o) => o.fact_date === dateIso)) {
       out.push({ kind: 'fact', op: o })
     }
   }
@@ -166,7 +142,31 @@ function shiftMonth(delta: number) {
   month.value = d.toISOString().slice(0, 7)
 }
 
-const factCount = computed(() => monthOperations.value.length)
+/** Расходник строки: имя + доза (+ расход всего у факта). */
+function inputText(op: FieldOperation): string {
+  if (!op.input_name) return ''
+  const dose = op.input_dose != null ? ` · ${op.input_dose.toLocaleString('ru-RU')} кг(л)/га` : ''
+  const amount =
+    op.fact_date && op.input_amount_total != null
+      ? ` · всего ${op.input_amount_total.toLocaleString('ru-RU')}`
+      : ''
+  return ` · ${op.input_name}${dose}${amount}`
+}
+
+/** Стоимость строки ленты дня. */
+function costText(op: FieldOperation, kind: 'plan' | 'fact'): string {
+  const v = kind === 'plan' ? op.cost_plan_rub : op.cost_fact_rub
+  return v != null ? ` · ${Math.round(v).toLocaleString('ru-RU')} ₽` : ''
+}
+
+/** Техника кратко. */
+function machinesText(op: FieldOperation): string {
+  const list = op.machines ?? []
+  if (!list.length) return ''
+  return ` · ${list.map((m) => m.machine_name).join(', ')}`
+}
+
+const factCount = computed(() => monthFacts.value.length)
 const planCount = computed(() => monthPlans.value.length)
 </script>
 
@@ -218,9 +218,6 @@ const planCount = computed(() => monthPlans.value.length)
         >
           {{ label }}
         </option>
-        <option value="seed_treatment">
-          протравливание семян
-        </option>
       </select>
       <select
         v-model="showMode"
@@ -240,8 +237,8 @@ const planCount = computed(() => monthPlans.value.length)
     </header>
 
     <p class="cal__legend">
-      <span class="cal__legend-item"><span class="cal__chip cal__chip--plan">план</span> плановая дата (API-15)</span>
-      <span class="cal__legend-item"><span class="cal__chip cal__chip--fact">факт</span> выполнено (API-18)</span>
+      <span class="cal__legend-item"><span class="cal__chip cal__chip--plan">план</span> плановая дата</span>
+      <span class="cal__legend-item"><span class="cal__chip cal__chip--fact">факт</span> выполнено</span>
       <span class="cal__muted">{{ monthTitle }}: планов {{ loading ? '…' : planCount }}, фактов {{ loading ? '…' : factCount }}</span>
     </p>
 
@@ -305,9 +302,7 @@ const planCount = computed(() => monthPlans.value.length)
                           class="cal__chip"
                           :class="e.kind === 'plan' ? 'cal__chip--plan' : 'cal__chip--fact'"
                           :data-kind="e.kind"
-                        >{{ e.kind === 'plan'
-                          ? PLAN_OP_LABELS[e.plan!.operation_type]
-                          : OP_LABELS[e.op!.operation_type] }}</span>
+                        >{{ OP_LABELS[e.op.operation_type] }}</span>
                         <span
                           v-if="entriesOf(date).length > 4"
                           class="cal__chip cal__chip--more"
@@ -344,20 +339,16 @@ const planCount = computed(() => monthPlans.value.length)
             >{{ e.kind === 'plan' ? 'план' : 'факт' }}</span>
             <RouterLink
               class="cal__field-link"
-              :to="{ name: 'field-card', params: { fieldId: e.kind === 'plan' ? e.plan!.field_id : e.op!.field_id } }"
+              :to="{ name: 'field-card', params: { fieldId: e.op.field_id } }"
             >
-              {{ e.kind === 'plan' ? e.plan!.field_name : fieldName(e.op!.field_id) }}
+              {{ fieldName(e.op.field_id) }}
             </RouterLink>
-            <span v-if="e.kind === 'plan'">
-              — {{ PLAN_OP_LABELS[e.plan!.operation_type] }} · {{ e.plan!.input_name }} ·
-              {{ e.plan!.dose.toLocaleString('ru-RU') }} {{ e.plan!.unit === 'l_ha' ? 'л/га' : e.plan!.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }} ·
-              {{ STATUS_LABELS[e.plan!.status] }}
-            </span>
-            <span v-else>
-              — {{ OP_LABELS[e.op!.operation_type] }} ·
-              {{ e.op!.actual_area_ga.toLocaleString('ru-RU') }} га<span v-if="e.op!.actual_dose != null"> ·
-                доза {{ e.op!.actual_dose.toLocaleString('ru-RU') }}</span><span v-if="e.op!.performer"> ·
-                {{ e.op!.performer }}</span>
+            <span>
+              — {{ OP_LABELS[e.op.operation_type] }}{{ inputText(e.op) }}{{
+                costText(e.op, e.kind)
+              }}<template v-if="e.kind === 'fact' && e.op.performer"> · {{ e.op.performer }}</template>{{
+                machinesText(e.op)
+              }}
             </span>
           </li>
           <li
