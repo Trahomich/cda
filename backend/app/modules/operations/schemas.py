@@ -80,6 +80,24 @@ class OperationItem(BaseModel):
         description="Стоимость операции, руб: unit×площадь | total | "
         "норматив для факта (§7.9); null — не задана",
     )
+    # -- Единая операция (§7.10, #173): план/факт, расходник, подтверждение --
+    planned_date: date | None = Field(default=None, description="null — внеплановый факт")
+    fact_date: date | None = Field(default=None, description="null — не выполнено")
+    input_name: str | None = Field(default=None, description="Название расходника")
+    input_dose: float | None = Field(default=None, description="Доза, кг/га (л/га)")
+    input_amount_total: float | None = Field(default=None, description="Расход всего, кг/л")
+    cost_plan_rub: float | None = Field(default=None, description="Стоимость ПО ПЛАНУ, руб")
+    cost_fact_rub: float | None = Field(
+        default=None, description="Стоимость ПО ФАКТУ, руб (норматив — при закрытии)"
+    )
+    confirmed_by: uuid.UUID | None = Field(default=None, description="Кто подтвердил (user)")
+    confirmed_at: datetime | None = Field(default=None, description="Когда подтверждено")
+    basis_recommendation_id: uuid.UUID | None = Field(
+        default=None, description="Основание — ИИ-рекомендация"
+    )
+    machines: list[MachineLinkItem] = Field(
+        default_factory=list, description="Техника операции (агрегат+прицеп), 1:N (§7.10)"
+    )
 
 
 class OperationListResponse(BaseModel):
