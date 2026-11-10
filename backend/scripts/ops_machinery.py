@@ -199,17 +199,6 @@ def main() -> int:
                 "hours": hours,
             }
         )
-            tools = [m for m in by_type.get("other", []) if any(t in m for t in TILLAGE_TOOLS)]
-            tool = pick(str(p["id"]) + "2", tools) if tools else None
-            links.append(
-                {
-                    "op": str(p["id"]),
-                    "machine": tractor,
-                    "trailer": tool,
-                    "operator": operator,
-                    "hours": hours,
-                }
-            )
 
     print(f"парк сейчас: {len(machines)}, к добавлению: {len(new_machines)}")
     print(f"планов 2023–2026: {len(plans)}; cost_plan к проставлению: {len(cost_updates)}")
