@@ -347,7 +347,7 @@ def cmd_advice_refresh_backfill(args: argparse.Namespace) -> int:
     from collections import Counter
     from datetime import date as Date
 
-    from sqlalchemy import delete
+    from sqlalchemy import delete, func as sa_func
     from sqlalchemy import select as sa_select
 
     from app.ai_assistant import advice_key_dates
