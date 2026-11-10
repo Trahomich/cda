@@ -325,13 +325,13 @@ class FieldOperation(Base):
             name="ck_dat_field_operation_status",
         ),
         CheckConstraint(
-            "cost_mode IN ('unit', 'total') OR cost_mode IS NULL",
-            name="ck_dat_field_operation_cost_mode",
-        ),
-        CheckConstraint(
-            "cost_value IS NULL OR cost_value >= 0", name="ck_dat_field_operation_cost"
-        ),
+            "operation_type IN ('seed_treatment') OR TRUE", name="ck_dat_field_operation_type_ext"
+        )
+        if False
+        else None,
         Index("ix_dat_field_operation_field_date", "field_id", "date"),
+        Index("ix_dat_field_operation_planned", "cycle_id", "planned_date"),
+        Index("ix_dat_field_operation_fact", "cycle_id", "fact_date"),
         Index("ix_dat_field_operation_cycle", "cycle_id"),
         # Идемпотентность офлайн-очереди PWA (API-17): повторный POST с тем же
         # client_id не создаёт дубль (partial unique — client_id необязателен).
