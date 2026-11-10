@@ -37,7 +37,11 @@ router = APIRouter(
 )
 
 
-def _item(db: Session, operation: FieldOperation) -> OperationItem:
+def _item(db: Session, operation: FieldOperation, rates: dict[str, float] | None = None) -> OperationItem:
+    from app.modules.economics.service import cost_rates, operation_cost_rub
+
+    if rates is None:
+        rates = cost_rates(db)
     yield_item: YieldRecordItem | None = None
     if operation.operation_type == "harvesting" and operation.cycle_id is not None:
         record = service.yield_of(db, operation)
@@ -66,6 +70,9 @@ def _item(db: Session, operation: FieldOperation) -> OperationItem:
         needs_review=operation.needs_review,
         status=operation.status,
         yield_record=yield_item,
+        cost_rub=operation_cost_rub(
+            operation, rates, is_fact=operation.status == "done"
+        ),
     )
 
 
@@ -119,5 +126,8 @@ def list_operations(
         offset=offset,
     )
     return OperationListResponse(
-        items=[_item(db, o) for o in operations], total=total, limit=limit, offset=offset
+        items=[_item(db, o, rates) for o in operations],
+        total=total,
+        limit=limit,
+        offset=offset,
     )

@@ -75,6 +75,11 @@ class OperationItem(BaseModel):
     needs_review: bool
     status: str
     yield_record: YieldRecordItem | None = None
+    cost_rub: float | None = Field(
+        default=None,
+        description="Стоимость операции, руб: unit×площадь | total | "
+        "норматив для факта (§7.9); null — не задана",
+    )
 
 
 class OperationListResponse(BaseModel):

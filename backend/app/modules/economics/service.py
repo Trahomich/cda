@@ -87,15 +87,16 @@ def farm_economics(db: Session, year: int) -> dict:
             .all()
         )
         for op in ops:
-            if op.status in PLAN_STATUSES:
-                cost = operation_cost_rub(op, rates, is_fact=False)
-            elif op.status == FACT_STATUS:
-                cost = operation_cost_rub(op, rates, is_fact=True)
-            else:
+            is_fact = op.status == FACT_STATUS
+            if not is_fact and op.status not in PLAN_STATUSES:
+                continue  # cancelled и пр. в экономики не входят
+            cost = operation_cost_rub(op, rates, is_fact=is_fact)
+            if cost is None:
                 continue
-            if cost is not None:
-                plan_total += cost if op.status in PLAN_STATUSES else 0.0
-                fact_total += cost if op.status == FACT_STATUS else 0.0
+            if is_fact:
+                fact_total += cost
+            else:
+                plan_total += cost
     return {
         "year": year,
         "plan_cost_rub": round(plan_total, 2),
