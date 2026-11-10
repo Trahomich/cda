@@ -74,8 +74,14 @@ HOURS_PER_GA = 0.06
 YEAR_FROM, YEAR_TO = 2023, 2026
 
 
+def _hash(key: str) -> int:
+    import hashlib
+
+    return int.from_bytes(hashlib.md5(key.encode()).digest()[:8], "big")
+
+
 def h01(key: str) -> float:
-    return (uuid.UUID(key).int % 10_000) / 9_999.0
+    return _hash(key) % 10_000 / 9_999.0
 
 
 def main() -> int:
