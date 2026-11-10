@@ -2453,27 +2453,132 @@ export class MockTransport implements Transport {
     }
 
     if (method === 'GET' && pathname === '/operations') {
-      // API-18: журнал операций, фильтры field_id, date_from, date_to;
-      // cost_rub — итог операции (§7.9 #169): норматив типа × площадь факта.
+      // API-18 (§7.10, #175): единые операции план+факт; фильтры field_id,
+      // year (сезон по дате), date_from/date_to (по date = fact ?? planned),
+      // type, plan/fact, confirmed. cost_rub — легаси-поле = cost_fact_rub.
       const fieldId = params.get('field_id')
       const dateFrom = params.get('date_from')
       const dateTo = params.get('date_to')
-      let items: FieldOperation[] = [...OPERATIONS]
+      const year = params.get('year')
+      const type = params.get('type')
+      const wantPlan = params.get('plan') === 'true'
+      const wantFact = params.get('fact') === 'true'
+      const confirmed = params.get('confirmed')
+      let items: OperationEntry[] = [...OPERATIONS]
       if (fieldId) items = items.filter((o) => o.field_id === fieldId)
-      if (dateFrom) items = items.filter((o) => o.date >= dateFrom)
-      if (dateTo) items = items.filter((o) => o.date <= dateTo)
+      if (type) items = items.filter((o) => o.operation_type === type)
+      if (year) {
+        items = items.filter((o) => {
+          const d = o.planned_date ?? o.date
+          // сезон цикла = год уборки: осенний сев (август+) — следующий год
+          const m = Number(d.slice(5, 7))
+          const y = Number(d.slice(0, 4)) + (m >= 8 && o.operation_type === 'seeding' ? 1 : 0)
+          return y === Number(year)
+        })
+      }
+      let filtered: FieldOperation[] = items.map(unifiedOp)
+      if (dateFrom) filtered = filtered.filter((o) => o.date >= dateFrom)
+      if (dateTo) filtered = filtered.filter((o) => o.date <= dateTo)
+      if (wantPlan) filtered = filtered.filter((o) => o.planned_date !== null && o.fact_date === null)
+      if (wantFact) filtered = filtered.filter((o) => o.fact_date !== null)
+      if (confirmed != null) {
+        filtered = filtered.filter((o) => (confirmed === 'true') === Boolean(o.confirmed_at))
+      }
       const limit = Number(params.get('limit') ?? 50) || 50
       const offset = Number(params.get('offset') ?? 0) || 0
-      const withCost = items.map((o) => ({
-        ...o,
-        cost_rub: opCostRub(o),
-      }))
       return ok({
-        items: withCost.slice(offset, offset + limit),
-        total: items.length,
+        items: filtered.slice(offset, offset + limit),
+        total: filtered.length,
         limit,
         offset,
       })
+    }
+
+    /* ── Единая операция §7.10 (#175): PATCH плана, complete, confirm ── */
+    const opIdMatch = /^\/operations\/([\w-]+)$/.exec(pathname)
+    if (opIdMatch && method === 'PATCH') {
+      const entry = OPERATIONS.find((o) => o.operation_id === opIdMatch[1])
+      if (!entry) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', 'Операция не найдена')
+      }
+      // Правка плана (до закрытия фактом); после факта — 422 (#529).
+      if (entry.status === 'done') {
+        return problem(
+          422,
+          'https://cda.example/errors/operation-already-done',
+          'Операция закрыта фактом',
+          'Правка плана невозможна: операция уже выполнена',
+        )
+      }
+      const req = (body ?? {}) as Partial<FieldOperation>
+      if (req.planned_date) {
+        entry.planned_date = req.planned_date
+        entry.date = req.planned_date
+      }
+      if (req.input_id !== undefined) entry.input_id = req.input_id
+      if (req.input_dose != null) entry.actual_dose = req.input_dose
+      if (req.cost_plan_mode || req.cost_plan_value !== undefined) {
+        entry.cost_plan_rub = planCostRub(
+          req.cost_plan_mode,
+          req.cost_plan_value,
+          entry.operation_type,
+          entry.actual_area_ga,
+        )
+      }
+      return ok(unifiedOp(entry))
+    }
+
+    const completeMatch = /^\/operations\/([\w-]+)\/complete$/.exec(pathname)
+    if (method === 'POST' && completeMatch) {
+      const entry = OPERATIONS.find((o) => o.operation_id === completeMatch[1])
+      if (!entry) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', 'Операция не найдена')
+      }
+      const req = (body ?? {}) as Partial<FieldOperation>
+      if (!req.fact_date) {
+        return problem(400, 'https://cda.example/errors/validation', 'Некорректный запрос', 'Не заполнено обязательное поле: fact_date')
+      }
+      if (entry.status === 'done') {
+        return problem(
+          422,
+          'https://cda.example/errors/operation-already-done',
+          'Операция закрыта фактом',
+          'Повторное закрытие фактом невозможно',
+        )
+      }
+      entry.fact_date = req.fact_date
+      entry.date = req.fact_date
+      entry.status = 'done'
+      if (req.performer) entry.performer = req.performer
+      if (req.input_amount_total != null) {
+        entry.input_amount_total = req.input_amount_total
+      } else if (entry.actual_dose != null) {
+        entry.input_amount_total = Math.round(entry.actual_dose * entry.actual_area_ga)
+      }
+      if (req.cost_fact_mode || req.cost_fact_value !== undefined) {
+        entry.cost_fact_rub = planCostRub(
+          req.cost_fact_mode,
+          req.cost_fact_value,
+          entry.operation_type,
+          entry.actual_area_ga,
+        )
+      }
+      if (req.machines) entry.machines = req.machines as OperationMachine[]
+      return ok(unifiedOp(entry))
+    }
+
+    const confirmMatch = /^\/operations\/([\w-]+)\/confirm$/.exec(pathname)
+    if (method === 'POST' && confirmMatch) {
+      const entry = OPERATIONS.find((o) => o.operation_id === confirmMatch[1])
+      if (!entry) {
+        return problem(404, 'https://cda.example/errors/not-found', 'Нет ресурса', 'Операция не найдена')
+      }
+      // Идемпотентно (#529): повторный вызов ничего не меняет.
+      if (!entry.confirmed_at) {
+        entry.confirmed_by = 'Руководитель (демо)'
+        entry.confirmed_at = new Date().toISOString()
+      }
+      return ok(unifiedOp(entry))
     }
 
     /* ── Сводка экономики сезона по всем полям (API-62b, §7.9 #169) ── */
