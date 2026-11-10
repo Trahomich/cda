@@ -490,7 +490,21 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // Журнал операций (API-17/18). Идемпотентность: повторный POST /operations
 // с тем же client_id не создаёт дубль — возвращает уже созданную операцию.
-const OPERATIONS: Array<FieldOperation & { created_at: string }> = [
+/** Запись единой операции (§7.10): план и факт — одна сущность. */
+type OperationEntry = FieldOperation & {
+  created_at: string
+  /** Плановая дата (null у внеплановых фактов). */
+  planned_date?: string | null
+  /** Явно заданные стоимости/подтверждение/техника (§7.10). */
+  input_name?: string | null
+  cost_plan_rub?: number | null
+  cost_fact_rub?: number | null
+  confirmed_by?: string | null
+  confirmed_at?: string | null
+  machines?: OperationMachine[]
+}
+
+const OPERATIONS: OperationEntry[] = [
   {
     client_id: 'seed-0001-0000-4000-8000-000000000001',
     field_id: FIELDS[2].field_id,
