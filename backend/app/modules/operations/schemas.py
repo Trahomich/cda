@@ -8,7 +8,7 @@ yield_requires_harvesting / yield_requires_cycle.
 """
 
 import uuid
-from datetime import date
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
