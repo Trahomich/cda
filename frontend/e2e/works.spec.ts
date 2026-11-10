@@ -18,6 +18,25 @@ async function login(page: import('@playwright/test').Page, loginName = 'agronom
   await page.waitForURL(/\/fields\/map/)
 }
 
+test('календарь работ: месяц с >100 операций — пагинация, ничего не теряется (#186)', async ({
+  page,
+}) => {
+  await login(page)
+  await page.goto('/calendar')
+
+  // Мок: март 2025 — 120 операций поля 1 (за пределами демо-сезонов).
+  await page.locator('.cal__month').fill('2025-03')
+  await expect(page.locator('.cal__grid')).toBeVisible({ timeout: 15_000 })
+
+  // Ошибка limit ≤ 100 не возникла: месяц загружен постранично, счётчики
+  // показывают все 120 (планы + факты), дни с работами видимы.
+  await expect(page.locator('.cal__state--error')).toHaveCount(0)
+  await expect(page.locator('.cal__legend .cal__muted')).toContainText('120', {
+    timeout: 15_000,
+  })
+  await expect(page.locator('.cal__day[data-date="2025-03-15"] .cal__chip').first()).toBeVisible()
+})
+
 test('календарь работ: май 2027 — план и факт в сетке, клик по дню ведёт в поле', async ({
   page,
 }) => {
