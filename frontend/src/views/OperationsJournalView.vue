@@ -606,6 +606,46 @@ onMounted(async () => {
   font-variant-numeric: tabular-nums;
 }
 
+/* #168: итоги сезона над списком */
+.jrn__totals {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.jrn__good {
+  color: #1b5e20;
+}
+
+.jrn__bad {
+  color: #b3261e;
+}
+
+/* #168/#650: явные чипы план/факт в строках */
+.jrn__chip {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.jrn__chip--fact {
+  background: #e2f2e4;
+  color: #1b5e20;
+  border: 1px solid #a5d6a7;
+}
+
+.jrn__chip--plan {
+  background: #f1f3f1;
+  color: #55685a;
+  border: 1px solid #c8d6c9;
+}
+
+.jrn__row--plan {
+  background: #fafcfa;
+}
+
 .jrn__deviation {
   color: #a15c00;
   font-weight: 600;
