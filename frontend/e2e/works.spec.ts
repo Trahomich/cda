@@ -73,6 +73,8 @@ test('планы внесения (§7.10): создание плана чере
   const tomorrowIso = tomorrow()
   await page.locator('.tp__field select').nth(0).selectOption({ index: 1 })
   await page.locator('.tp__field select').nth(1).selectOption({ index: 1 })
+  // Препарат из отфильтрованного списка (kind=ppp для опрыскивания).
+  await page.locator('.tp__field select').nth(2).selectOption({ index: 1 })
   await page.locator('.tp__form input[type="number"]').fill('0.5')
   await page.locator('.tp__form input[type="date"]').fill(tomorrowIso)
   await page.locator('.tp__submit').click()
