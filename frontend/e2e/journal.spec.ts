@@ -157,10 +157,11 @@ test('журнал: правка факта из журнала обновляе
   await expect(page.locator('.jrn__table')).toBeVisible({ timeout: 15_000 })
   const totalsBefore = await page.locator('.jrn__totals').textContent()
 
-  // Правка факта обработки почвы 02.07.2027 (первая строка сезона 2027).
+  // Правка факта обработки почвы 02.07.2027: дата + ЯВНАЯ стоимость.
   const row = page.locator('.jrn__table tbody tr', { hasText: '02.07.2027' })
   await row.locator('.jrn__edit').click()
   await page.locator('.jrn__editform input[type="date"]').fill('2027-07-03')
+  await page.locator('.jrn__editform input[type="number"][step="1"]').fill('800')
   await page.locator('.jrn__editform-submit').click()
   await expect(page.locator('.jrn__table tbody tr', { hasText: '03.07.2027' })).toBeVisible({
     timeout: 15_000,
