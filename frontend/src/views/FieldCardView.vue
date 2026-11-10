@@ -2740,6 +2740,52 @@ function fmtNum(v: number, digits = 1): string {
   min-height: 32px;
 }
 
+.card360__wedit {
+  border: 1px solid #9e9e9e;
+  background: #fff;
+  color: #555;
+  border-radius: 8px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-height: 32px;
+}
+
+/* #180: несколько единиц техники в форме закрытия */
+.card360__wmachines-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.card360__wform-label {
+  font-size: 0.85rem;
+  color: #444;
+}
+
+.card360__wmachine-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.card360__wmachine-row select,
+.card360__wmachine-row input {
+  min-height: 34px;
+  font-size: 0.9rem;
+}
+
+.card360__wadd-machine {
+  align-self: flex-start;
+  background: none;
+  border: 1px dashed #2e7d32;
+  color: #2e7d32;
+  border-radius: 8px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 .card360 {
   display: flex;
   flex-direction: column;
