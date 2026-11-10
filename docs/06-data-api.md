@@ -821,3 +821,7 @@ API-62 экономика — из тех же полей; календарь �
   `POST /operations/{id}/confirm` (confirmed_by из токена, идемпотентен).
 - Фильтры API-18: field_id, year (сезон), date_from/date_to (по date),
   type, plan|fact, confirmed.
+
+- POST /operations полиморфен: c fact_date (+performer/machines/source) —
+  внеплановый факт (planned_date null, идемпотентность по client_id
+  API-17 обязательна); без fact_date — план.
