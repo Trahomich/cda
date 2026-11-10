@@ -13,7 +13,7 @@ import pytest
 from app.ai_assistant import advice, advice_key_dates
 from app.models.agronomy import CropCycle, FieldOperation
 from app.models.ai import AIFieldAdvice
-from sqlalchemy import select
+from sqlalchemy import select, text as sa_select_unused
 from sqlalchemy.orm import Session, sessionmaker
 from tests.test_advice import _anthropic_settings
 from tests.test_inputs import make_culture, make_field
@@ -292,3 +292,103 @@ class TestPruneToday:
         rows = db_session.scalars(select(AIFieldAdvice).where(AIFieldAdvice.field_id == fid)).all()
         assert len(rows) == 1
         assert rows[0].answer == "вариант 2"
+
+
+class TestOperationsKeyDates182:
+    """#182: ключевые даты = даты техопераций (planned/fact, без сдвига)."""
+
+    def _field_with_ops(self, db_session, client, hdr):
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        culture = make_culture(db, name="Овёс")
+        cycle = CropCycle(field_id=fid, year=2026, culture_id=culture.id, kind="main")
+        db.add(cycle)
+        for op_type, day, status in [
+            ("seeding", date(2026, 5, 3), "done"),
+            ("spraying", date(2026, 6, 10), "done"),
+            ("harvesting", date(2026, 8, 20), "done"),
+            ("fertilizing", date(2026, 7, 1), "planned"),
+        ]:
+            db.add(
+                FieldOperation(
+                    field_id=fid,
+                    cycle_id=cycle.id,
+                    operation_type=op_type,
+                    date=day,
+                    planned_date=day,
+                    fact_date=day if status == "done" else None,
+                    actual_area_ga=10.0,
+                    source="manual",
+                    status=status,
+                )
+            )
+        db.commit()
+        return fid
+
+    def test_dates_are_operation_dates(self, world, db_session):
+        """Ключевые даты = уник даты планов/фактов сезона, ровно (−3 нет)."""
+        client, hdr = world
+        fid = self._field_with_ops(db_session, client, hdr)
+        kds = advice_key_dates.operations_key_dates(db_session, fid, 2026)
+        assert [kd.date for kd in kds] == [
+            date(2026, 5, 3),
+            date(2026, 6, 10),
+            date(2026, 7, 1),
+            date(2026, 8, 20),
+        ]
+
+    def test_many_dates_collapse_to_monthly(self, world, db_session):
+        """Больше 8 операций — по одной дате на месяц."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        culture = make_culture(db, name="Овёс2")
+        cycle = CropCycle(field_id=fid, year=2026, culture_id=culture.id, kind="main")
+        db.add(culture)
+        for i in range(12):  # 12 операций апрель–сентябрь
+            day = date(2026, 4 + i // 2, 1 + (i % 2) * 10)
+            db.add(
+                FieldOperation(
+                    field_id=fid,
+                    cycle_id=cycle.id,
+                    operation_type="tillage",
+                    date=day,
+                    planned_date=day,
+                    actual_area_ga=10.0,
+                    source="manual",
+                    status="planned",
+                )
+            )
+        db.commit()
+        kds = advice_key_dates.operations_key_dates(db_session, fid, 2026)
+        months = [kd.date.month for kd in kds]
+        assert len(months) == len(set(months))  # по одной на месяц
+
+    def test_wipe_all_clears_history(self, world, db_session, monkeypatch):
+        """--wipe-all удаляет все ai_field_advice перед прогоном."""
+        import argparse
+
+        from app import cli
+
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        db_session.add(
+            AIFieldAdvice(
+                field_id=fid,
+                model="glm-5.3-flash",
+                provider="anthropic",
+                advice_date=date(2026, 1, 1),
+                answer="старая",
+                context_hash="h",
+                status="ok",
+            )
+        )
+        db_session.commit()
+        monkeypatch.setattr(cli, "SessionLocal", sessionmaker(bind=db_session.get_bind()))
+
+        code = cli.cmd_advice_refresh_backfill(
+            argparse.Namespace(
+                years=1, prune_today=False, refresh_today=False, wipe_all=True,
+                key_dates="operations",
+            )
+        )
+        assert code == 0
+        assert db_session.scalars(sa_select(AIFieldAdvice)).all() == []
