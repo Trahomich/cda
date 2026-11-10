@@ -323,7 +323,7 @@ def seed_operations(db: Session) -> SeedOperationsReport:
                     operation_type=row["operation_type"],
                     date=row["date"],
                     input_id=input_id,
-                    actual_dose=row["actual_dose"],
+                    input_dose=row["input_dose"],
                     actual_area_ga=row["actual_area_ga"],
                     performer=row["performer"],
                     source="manual",
