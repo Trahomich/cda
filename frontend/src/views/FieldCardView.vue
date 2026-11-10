@@ -212,6 +212,67 @@ async function submitEdit(): Promise<void> {
     crudBusy.value = false
   }
 }
+
+/** Редактирование ФАКТА (#184): дата, расход, стоимость, исполнитель,
+ *  техника (список с «+ добавить») — PATCH факт-полей. */
+const editingFactOp = ref<FieldOperation | null>(null)
+const factForm = ref({
+  fact_date: '',
+  input_dose: null as number | null,
+  input_amount_total: null as number | null,
+  cost_fact_mode: 'unit' as 'unit' | 'total',
+  cost_fact_value: null as number | null,
+  performer: '',
+})
+const factMachines = ref<MachineRow[]>([])
+function startEditFact(op: FieldOperation): void {
+  editingFactOp.value = op
+  factForm.value = {
+    fact_date: op.fact_date ?? op.date,
+    input_dose: op.input_dose ?? null,
+    input_amount_total: op.input_amount_total ?? null,
+    cost_fact_mode: 'unit',
+    cost_fact_value:
+      op.cost_fact_rub != null ? Math.round(op.cost_fact_rub / (op.actual_area_ga || 1)) : null,
+    performer: op.performer ?? '',
+  }
+  factMachines.value = (op.machines ?? []).map((m) => ({
+    machine_id: m.machine_id,
+    trailer_id: m.trailer_id ?? '',
+    operator: m.operator ?? '',
+    hours: m.hours ?? null,
+  }))
+  if (!factMachines.value.length) {
+    factMachines.value = [{ machine_id: '', trailer_id: '', operator: '', hours: null }]
+  }
+}
+async function submitEditFact(): Promise<void> {
+  const op = editingFactOp.value
+  if (!op || !factForm.value.fact_date) return
+  crudBusy.value = true
+  try {
+    await patchOperation(op.operation_id, {
+      fact_date: factForm.value.fact_date,
+      input_dose: factForm.value.input_dose,
+      input_amount_total: factForm.value.input_amount_total,
+      cost_fact_mode: factForm.value.cost_fact_mode,
+      cost_fact_value: factForm.value.cost_fact_value,
+      performer: factForm.value.performer || null,
+      machines: factMachines.value
+        .filter((m) => m.machine_id)
+        .map((m) => ({
+          machine_id: m.machine_id,
+          trailer_id: m.trailer_id || null,
+          operator: m.operator || null,
+          hours: m.hours,
+        })),
+    })
+    editingFactOp.value = null
+    await reloadWorks()
+  } finally {
+    crudBusy.value = false
+  }
+}
 /** Справочники для форм: расходники и техника. */
 const inputsRef = ref<AgroInput[]>([])
 const machinesRef = ref<Machine[]>([])
