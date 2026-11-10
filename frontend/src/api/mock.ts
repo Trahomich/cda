@@ -650,6 +650,16 @@ const OPERATIONS: OperationEntry[] = [
     deviation_flag: false,
     needs_review: false,
     status: 'done',
+    // §7.10 (#174): техника факта поля 1 (без подтверждения — для e2e кнопки).
+    machines: [
+      {
+        machine_id: 'a11ce000-0000-4000-8000-000000000001',
+        machine_name: 'МТЗ-1221 (А321ВС40)',
+        trailer_name: 'БДМ-4×0,4',
+        operator: 'Ильин П.',
+        hours: 6.2,
+      },
+    ],
     created_at: '2027-07-02T17:45:00Z',
   },
   {
