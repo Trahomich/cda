@@ -3,16 +3,13 @@
 // статусы отклонений — строки с deviation_flag подсвечены, rationale
 // (REQ-F-013, RULE-AGRO-11) = сравнение факт. дозы с планом внесения.
 // Данные: GET /operations (API-18, пагинация limit/offset), планы — API-15.
-// #168 (фидбек #646): фильтр сезона (по умолчанию текущий — не весь архив),
-// явные чипы план/факт (пары ±5 дней рядом, план без факта — «ожидается»),
-// итоги сезона сверху; при выбранном поле суммы те же, что в экономике
-// карточки (API-62).
+// Примечание #665: сезонные итоги/чипы план-факт/стоимости живут в карточке
+// поля (блок «Планы и журнал», FieldCardView) — журнал остаётся простым
+// списком фактов с фильтрами.
 import { computed, onMounted, ref } from 'vue'
-import { getFieldEconomics, getEconomicsSummary, getFields, getOperations, getTreatmentPlans } from '@/api'
+import { getFields, getOperations, getTreatmentPlans } from '@/api'
 import type {
-  EconomicsSummary,
   Field,
-  FieldEconomics,
   FieldOperation,
   OperationType,
   TreatmentPlan,
@@ -32,17 +29,6 @@ const fieldId = ref('')
 const dateFrom = ref('')
 const dateTo = ref('')
 const opType = ref<OperationType | 'all'>('all')
-
-/* ── Сезон (#168): по умолчанию текущий (год самой свежей операции), ──
- *  выбор проставляет окно дат; «Все сезоны» — без окна. */
-const season = ref<number | 'all'>('all')
-const seasons = ref<number[]>([])
-let seasonsKnown = false
-
-/** Экономика сезона выбранного поля (API-62) — те же суммы, что в карточке. */
-const econ = ref<FieldEconomics | null>(null)
-/** Сводка сезона по всем полям (API-62b) — итоги, когда поле не выбрано. */
-const econSummary = ref<EconomicsSummary | null>(null)
 
 const OP_LABELS: Record<string, string> = {
   spraying: 'опрыскивание',
@@ -103,125 +89,9 @@ const filtered = computed(() =>
 
 const fieldName = (id: string) => fields.value.find((f) => f.field_id === id)?.name ?? id.slice(0, 8);
 
-/* ── План/факт (#168): план и факт одной строки, даты обе, если разошлись ── */
-
-const fmtD = (iso: string) => iso.split('-').reverse().join('.')
-
-function daysBetween(a: string, b: string): number {
-  return Math.round((Date.parse(a) - Date.parse(b)) / 86_400_000)
-}
-
-/** План, сопоставленный факту: то же поле и препарат, даты в ±5 дней. */
-function planOf(op: FieldOperation): TreatmentPlan | null {
-  if (op.input_id == null) return null
-  return (
-    plans.value.find(
-      (p) =>
-        p.field_id === op.field_id &&
-        p.input_id === op.input_id &&
-        Math.abs(daysBetween(op.date, p.planned_date)) <= 5,
-    ) ?? null
-  )
-}
-
-/** Планы сезона/поля без выполненного факта — отдельные строки «ожидается». */
-const unmatchedPlans = computed(() => {
-  if (typeof season.value !== 'number') return []
-  return plans.value.filter((p) => {
-    if (fieldId.value && p.field_id !== fieldId.value) return false
-    if (p.planned_date < `${season.value}-01-01` || p.planned_date > `${season.value}-12-31`) {
-      return false
-    }
-    return !items.value.some(
-      (o) =>
-        o.field_id === p.field_id &&
-        o.input_id === p.input_id &&
-        Math.abs(daysBetween(o.date, p.planned_date)) <= 5,
-    )
-  })
-})
-
-function fmtRub(v: number): string {
-  return `${Math.round(v).toLocaleString('ru-RU')} ₽`
-}
-
-/** Стоимость стороны (план/факт) типа операции из экономики поля (API-62);
- *  null — стоимости нет (не задана) или экономика не загружена. */
-function econSideCost(type: string, side: 'plan' | 'fact'): number | null {
-  const row = econ.value?.operations.find((o) => o.type === type)
-  return row?.[side]?.cost_rub ?? null
-}
-
-/** Стоимость факта строки: cost_rub API-18 (норматив), иначе — экономика
- *  выбранного поля по типу операции (API-62). */
-function opCost(op: FieldOperation): number | null {
-  return op.cost_rub ?? econSideCost(op.operation_type, 'fact')
-}
-
-/** Стоимость плановой стороны пары — из экономики поля (API-62), если поле
- *  выбрано; без поля плановых стоимостей в API-18 нет. */
-function opPlanCost(op: FieldOperation): number | null {
-  return econSideCost(op.operation_type, 'plan')
-}
-
-/* Итоги сезона (#168/#650): выбранное поле — API-62, все поля — API-62b. */
-const totalsPlan = computed(
-  () => econ.value?.plan_cost_rub ?? econSummary.value?.plan_cost_rub ?? null,
-)
-const totalsFact = computed(
-  () => econ.value?.fact_cost_rub ?? econSummary.value?.fact_cost_rub ?? null,
-)
-const totalsDiff = computed(() =>
-  totalsPlan.value != null && totalsFact.value != null
-    ? totalsFact.value - totalsPlan.value
-    : null,
-)
-const totalsNoFacts = computed(
-  () =>
-    econ.value != null &&
-    econ.value.fact_cost_rub === 0 &&
-    econ.value.operations.some((o) => o.plan != null),
-)
-
 const shownText = computed(
   () => `Показано ${filtered.value.length} из ${total.value}${filtered.value.length !== items.value.length ? ' (после фильтра по типу)' : ''}`,
 )
-
-/** Выбор сезона: проставить окно дат (календарный год) и перезагрузить. */
-function onSeasonChange(): void {
-  if (typeof season.value === 'number') {
-    dateFrom.value = `${season.value}-01-01`
-    dateTo.value = `${season.value}-12-31`
-  } else {
-    dateFrom.value = ''
-    dateTo.value = ''
-  }
-  void load(true)
-}
-
-/** Итоги сезона: N операций; суммы план/факт — API-62 (поле) или API-62b. */
-async function loadTotals(): Promise<void> {
-  if (typeof season.value !== 'number') {
-    econ.value = null
-    econSummary.value = null
-    return
-  }
-  if (fieldId.value) {
-    econSummary.value = null
-    try {
-      econ.value = await getFieldEconomics(fieldId.value, season.value)
-    } catch {
-      econ.value = null
-    }
-  } else {
-    econ.value = null
-    try {
-      econSummary.value = await getEconomicsSummary(season.value)
-    } catch {
-      econSummary.value = null
-    }
-  }
-}
 
 async function load(reset = true) {
   loading.value = true
@@ -241,29 +111,6 @@ async function load(reset = true) {
     items.value = reset ? page.items : [...items.value, ...page.items]
     total.value = page.total
     plans.value = tp.items
-    // Сезоны (#168): список лет архива — один раз, по первому ответу;
-    // по умолчанию текущий сезон (год самой свежей операции), не весь архив.
-    if (!seasonsKnown && reset) {
-      const years = new Set<number>([
-        ...page.items.map((o) => Number(o.date.slice(0, 4))),
-        ...plans.value.map((p) => p.year),
-      ])
-      years.delete(NaN)
-      seasons.value = [...years].sort((a, b) => b - a)
-      const latest = seasons.value[0]
-      if (latest != null && dateFrom.value === '' && dateTo.value === '') {
-        season.value = latest
-        dateFrom.value = `${latest}-01-01`
-        dateTo.value = `${latest}-12-31`
-        seasonsKnown = true
-        // Перезагрузка уже с окном текущего сезона.
-        loading.value = false
-        await load(true)
-        return
-      }
-      seasonsKnown = true
-    }
-    void loadTotals()
   } catch {
     failed.value = true // тост уже показан
   } finally {
@@ -342,25 +189,6 @@ onMounted(async () => {
         >
       </label>
       <label class="jrn__field">
-        <span>Сезон</span>
-        <select
-          v-model.number="season"
-          class="jrn__input"
-          @change="onSeasonChange"
-        >
-          <option value="all">
-            Все сезоны
-          </option>
-          <option
-            v-for="y in seasons"
-            :key="y"
-            :value="y"
-          >
-            {{ y }}
-          </option>
-        </select>
-      </label>
-      <label class="jrn__field">
         <span>Тип</span>
         <select
           v-model="opType"
@@ -397,30 +225,6 @@ onMounted(async () => {
     </p>
 
     <template v-else>
-      <!-- Итоги сезона (#168/#650): N операций; план Σ / факт Σ / отклонение —
-           API-62 при выбранном поле, API-62b по всем полям -->
-      <p class="jrn__totals">
-        <template v-if="typeof season === 'number'">
-          Сезон {{ season }} ·
-        </template>
-        операций: <strong>{{ total }}</strong>
-        <template v-if="totalsPlan != null && totalsFact != null">
-          · план Σ <strong>{{ fmtRub(totalsPlan) }}</strong>
-          · факт Σ <strong>{{ fmtRub(totalsFact) }}</strong>
-          · отклонение
-          <strong :class="(totalsDiff ?? 0) > 0 ? 'jrn__bad' : 'jrn__good'">{{
-            (totalsDiff ?? 0) > 0 ? '+' : ''
-          }}{{ fmtRub(Math.abs(totalsDiff ?? 0)) }}</strong>
-          <span
-            v-if="totalsNoFacts"
-            class="jrn__muted"
-          >(работы не начаты)</span>
-        </template>
-        <span
-          v-else-if="typeof season === 'number'"
-          class="jrn__muted"
-        >· суммы сезона загружаются…</span>
-      </p>
       <div class="jrn__table-wrap">
         <table class="jrn__table">
           <thead>
@@ -433,12 +237,6 @@ onMounted(async () => {
               </th>
               <th scope="col">
                 Операция
-              </th>
-              <th scope="col">
-                Статус
-              </th>
-              <th scope="col">
-                Стоимость
               </th>
               <th scope="col">
                 Доза (факт)
@@ -463,33 +261,9 @@ onMounted(async () => {
               :key="op.operation_id"
               :class="{ 'jrn__row--deviation': isDeviation(op) }"
             >
-              <td>{{ fmtD(op.date) }}</td>
+              <td>{{ op.date }}</td>
               <td>{{ fieldName(op.field_id) }}</td>
               <td>{{ OP_LABELS[op.operation_type] }}</td>
-              <td>
-                <!-- #168: факт — зелёный чип; рядом дата плана, если разошлись -->
-                <span class="jrn__chip jrn__chip--fact">факт</span>
-                <span
-                  v-if="planOf(op) && planOf(op)!.planned_date !== op.date"
-                  class="jrn__muted"
-                >план {{ fmtD(planOf(op)!.planned_date) }}</span>
-              </td>
-              <td class="jrn__num">
-                <!-- #650: стоимость строки; у пары — обе, если различаются -->
-                <template v-if="opCost(op) != null">
-                  <template v-if="opPlanCost(op) != null && opPlanCost(op) !== opCost(op)">
-                    план {{ fmtRub(opPlanCost(op)!) }} /
-                    факт {{ fmtRub(opCost(op)!) }}
-                  </template>
-                  <template v-else>
-                    {{ fmtRub(opCost(op)!) }}
-                  </template>
-                </template>
-                <span
-                  v-else
-                  class="jrn__muted"
-                >—</span>
-              </td>
               <td class="jrn__num">
                 {{ fmtDose(op) }}
               </td>
@@ -514,40 +288,9 @@ onMounted(async () => {
                 >—</span>
               </td>
             </tr>
-            <!-- #168: планы сезона без выполненного факта — «ожидается» -->
-            <tr
-              v-for="p in unmatchedPlans"
-              :key="`plan-${p.plan_id}`"
-              class="jrn__row--plan"
-            >
-              <td>{{ fmtD(p.planned_date) }}</td>
-              <td>{{ fieldName(p.field_id) }}</td>
-              <td>{{ OP_LABELS[p.operation_type] ?? p.operation_type }}</td>
-              <td>
-                <span class="jrn__chip jrn__chip--plan">план · ожидается</span>
-              </td>
-              <td class="jrn__num">
-                {{ econSideCost(p.operation_type, 'plan') != null ? fmtRub(econSideCost(p.operation_type, 'plan')!) : '—' }}
-              </td>
-              <td class="jrn__muted">
-                {{ p.input_name }} · {{ p.dose.toLocaleString('ru-RU') }} {{ p.unit === 'l_ha' ? 'л/га' : 'кг/га' }}
-              </td>
-              <td class="jrn__muted">
-                —
-              </td>
-              <td class="jrn__muted">
-                —
-              </td>
-              <td class="jrn__muted">
-                —
-              </td>
-              <td class="jrn__muted">
-                —
-              </td>
-            </tr>
-            <tr v-if="filtered.length === 0 && unmatchedPlans.length === 0">
+            <tr v-if="filtered.length === 0">
               <td
-                colspan="10"
+                colspan="8"
                 class="jrn__state"
               >
                 Операций не найдено
@@ -654,46 +397,6 @@ onMounted(async () => {
   font-variant-numeric: tabular-nums;
 }
 
-/* #168: итоги сезона над списком */
-.jrn__totals {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.jrn__good {
-  color: #1b5e20;
-}
-
-.jrn__bad {
-  color: #b3261e;
-}
-
-/* #168/#650: явные чипы план/факт в строках */
-.jrn__chip {
-  display: inline-block;
-  border-radius: 999px;
-  padding: 0.1rem 0.55rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.jrn__chip--fact {
-  background: #e2f2e4;
-  color: #1b5e20;
-  border: 1px solid #a5d6a7;
-}
-
-.jrn__chip--plan {
-  background: #f1f3f1;
-  color: #55685a;
-  border: 1px solid #c8d6c9;
-}
-
-.jrn__row--plan {
-  background: #fafcfa;
-}
-
 .jrn__deviation {
   color: #a15c00;
   font-weight: 600;
@@ -702,22 +405,25 @@ onMounted(async () => {
 
 .jrn__muted {
   color: #777;
+  font-size: 0.88rem;
 }
 
 .jrn__footer {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .jrn__more {
   min-height: 44px;
   background: #fff;
-  border: 1px solid #2e7d32;
   color: #2e7d32;
-  font-weight: 600;
+  border: 2px solid #2e7d32;
   border-radius: 6px;
   padding: 0 1rem;
+  font-weight: 600;
   cursor: pointer;
 }
 </style>
