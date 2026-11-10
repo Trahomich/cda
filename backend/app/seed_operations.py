@@ -163,7 +163,7 @@ def _history_rows(
             "operation_type": "tillage",
             "date": date(year, 4, rng.randint(3, 20)),
             "input_id": None,
-            "actual_dose": None,
+            "input_dose": None,
         },
     ]
     if fallow:
@@ -172,7 +172,7 @@ def _history_rows(
                 "operation_type": "tillage",
                 "date": date(year, 6, rng.randint(5, 25)),
                 "input_id": None,
-                "actual_dose": None,
+                "input_dose": None,
             }
         )
         rows.append(
@@ -180,7 +180,7 @@ def _history_rows(
                 "operation_type": "tillage",
                 "date": date(year, 8, rng.randint(5, 25)),
                 "input_id": None,
-                "actual_dose": None,
+                "input_dose": None,
             }
         )
         return rows
@@ -194,7 +194,7 @@ def _history_rows(
                 date(year, 9, rng.randint(5, 25)) if winter else date(year, 4, rng.randint(20, 30))
             ),
             "input_id": None,
-            "actual_dose": None,
+            "input_dose": None,
         }
     )
     # внесения: 1–3, апрель–июнь
@@ -206,7 +206,7 @@ def _history_rows(
                 "operation_type": "fertilizing",
                 "date": date(year, month, rng.randint(2, 27)),
                 "input_name": name,
-                "actual_dose": round(rng.uniform(lo, hi), 2),
+                "input_dose": round(rng.uniform(lo, hi), 2),
             }
         )
     # обработки: 0–2, май–июль
@@ -219,7 +219,7 @@ def _history_rows(
                 "operation_type": "spraying",
                 "date": date(year, month, rng.randint(2, 27)),
                 "input_name": name,
-                "actual_dose": round(rng.uniform(lo, hi), 2),
+                "input_dose": round(rng.uniform(lo, hi), 2),
             }
         )
     # уборка: июль–сентябрь (масличные/бобовые — август–октябрь)
@@ -230,7 +230,7 @@ def _history_rows(
             "operation_type": "harvesting",
             "date": date(year, month, rng.randint(5, 27)),
             "input_id": None,
-            "actual_dose": None,
+            "input_dose": None,
         }
     )
     # без дубля (field, date, operation_type): добиваем даты уникальностью типа

@@ -194,16 +194,16 @@ def create_operation(db: Session, *, data: OperationCreate) -> tuple[FieldOperat
     # «Факт важнее плана» (10-pwa §3): 422 не возвращаем — помечаем отклонение
     deviation_flag = False
     rationale: str | None = None
-    if data.actual_dose is not None:
+    if data.input_dose is not None:
         plan = _find_plan(db, data)
         if plan is not None and float(plan.dose) > 0:
             # Decimal: |факт − план| / план строго > 10 % без ошибок float
-            delta = abs(Decimal(str(data.actual_dose)) - Decimal(str(plan.dose))) / Decimal(
+            delta = abs(Decimal(str(data.input_dose)) - Decimal(str(plan.dose))) / Decimal(
                 str(plan.dose)
             )
             if delta > Decimal("0.10"):
                 deviation_flag = True
-                rationale = _deviation_rationale(data.actual_dose, float(plan.dose))
+                rationale = _deviation_rationale(data.input_dose, float(plan.dose))
 
     operation = FieldOperation(
         client_id=data.client_id,
@@ -212,7 +212,7 @@ def create_operation(db: Session, *, data: OperationCreate) -> tuple[FieldOperat
         operation_type=data.operation_type,
         date=data.date,
         input_id=data.input_id,
-        actual_dose=data.actual_dose,
+        input_dose=data.input_dose,
         actual_area_ga=data.actual_area_ga,
         performer=data.performer,
         machine_job_id=data.machine_job_id,

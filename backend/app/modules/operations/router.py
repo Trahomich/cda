@@ -61,7 +61,7 @@ def _item(
         operation_type=operation.operation_type,
         date=operation.date,
         input_id=operation.input_id,
-        actual_dose=float(operation.actual_dose) if operation.actual_dose is not None else None,
+        input_dose=float(operation.input_dose) if operation.input_dose is not None else None,
         actual_area_ga=float(operation.actual_area_ga),
         performer=operation.performer,
         machine_job_id=operation.machine_job_id,

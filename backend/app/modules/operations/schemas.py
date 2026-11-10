@@ -39,7 +39,7 @@ class OperationCreate(BaseModel):
     operation_type: str
     date: date
     input_id: uuid.UUID | None = None
-    actual_dose: float | None = Field(default=None, ge=0, le=999999.99)
+    input_dose: float | None = Field(default=None, ge=0, le=999999.99)
     actual_area_ga: float = Field(gt=0, le=999999.99)
     performer: str | None = Field(default=None, max_length=200)
     machine_job_id: uuid.UUID | None = None
@@ -81,7 +81,7 @@ class OperationItem(BaseModel):
     operation_type: str
     date: date
     input_id: uuid.UUID | None
-    actual_dose: float | None
+    input_dose: float | None
     actual_area_ga: float
     performer: str | None
     machine_job_id: uuid.UUID | None
