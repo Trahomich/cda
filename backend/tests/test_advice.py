@@ -86,7 +86,7 @@ def _season_world(db, client, hdr, *, culture_kwargs=None) -> tuple[uuid.UUID, C
             actual_area_ga=10.0,
             source="manual",
             status="done",
-        fact_date=date(2026,
+        fact_date=date(2026, 5, 2),
         )
     )
     db.add(
@@ -97,7 +97,7 @@ def _season_world(db, client, hdr, *, culture_kwargs=None) -> tuple[uuid.UUID, C
             actual_area_ga=10.0,
             source="manual",
             status="planned",
-        planned_date=date(2026,
+        planned_date=date(2026, 11, 10),
         )
     )
     db.add(
