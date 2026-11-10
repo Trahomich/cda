@@ -54,6 +54,14 @@ function fmtRub(v: number | null | undefined): string {
   return `${Math.round(v).toLocaleString('ru-RU')} ₽`
 }
 
+/** Сводки — в тыс ₽ (#707/#180): «1 234 тыс ₽»; до 10 тыс — один знак. */
+function fmtThousand(v: number | null | undefined): string {
+  if (v == null) return '—'
+  return `${(v / 1000).toLocaleString('ru-RU', {
+    maximumFractionDigits: v < 10_000 ? 1 : 0,
+  })} тыс ₽`
+}
+
 /** Статус строки: план (ожидается) / факт (выполнено). */
 function rowStatus(op: FieldOperation): { label: string; cls: string } {
   if (op.fact_date) return { label: 'факт', cls: 'jrn__chip--fact' }
