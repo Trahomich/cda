@@ -164,11 +164,6 @@ function opPlanCost(op: FieldOperation): number | null {
   return econSideCost(op.operation_type, 'plan')
 }
 
-/** Отклонение факт−план из экономики поля: для итогов журнала (#650). */
-const econDiff = computed(() =>
-  econ.value ? econ.value.fact_cost_rub - econ.value.plan_cost_rub : null,
-)
-
 /* Итоги сезона (#168/#650): выбранное поле — API-62, все поля — API-62b. */
 const totalsPlan = computed(
   () => econ.value?.plan_cost_rub ?? econSummary.value?.plan_cost_rub ?? null,
