@@ -2295,7 +2295,8 @@ export class MockTransport implements Transport {
     }
 
     if (method === 'GET' && pathname === '/operations') {
-      // API-18: журнал операций, фильтры field_id, date_from, date_to.
+      // API-18: журнал операций, фильтры field_id, date_from, date_to;
+      // cost_rub — итог операции (§7.9 #169): норматив типа × площадь факта.
       const fieldId = params.get('field_id')
       const dateFrom = params.get('date_from')
       const dateTo = params.get('date_to')
@@ -2305,7 +2306,37 @@ export class MockTransport implements Transport {
       if (dateTo) items = items.filter((o) => o.date <= dateTo)
       const limit = Number(params.get('limit') ?? 50) || 50
       const offset = Number(params.get('offset') ?? 0) || 0
-      return ok({ items: items.slice(offset, offset + limit), total: items.length, limit, offset })
+      const withCost = items.map((o) => ({
+        ...o,
+        cost_rub: opCostRub(o),
+      }))
+      return ok({
+        items: withCost.slice(offset, offset + limit),
+        total: items.length,
+        limit,
+        offset,
+      })
+    }
+
+    /* ── Сводка экономики сезона по всем полям (API-62b, §7.9 #169) ── */
+    if (method === 'GET' && pathname === '/economics/summary') {
+      const yearParam = Number(params.get('year') ?? 0)
+      const year = yearParam || 2027
+      if (!SEASON_YEARS.includes(year)) {
+        return ok({ year, plan_cost_rub: 0, fact_cost_rub: 0 })
+      }
+      const totals = FIELDS.reduce(
+        (acc, f) => {
+          const e = economicsOf(f, year)
+          return { plan: acc.plan + e.plan_cost_rub, fact: acc.fact + e.fact_cost_rub }
+        },
+        { plan: 0, fact: 0 },
+      )
+      return ok({
+        year,
+        plan_cost_rub: Math.round(totals.plan),
+        fact_cost_rub: Math.round(totals.fact),
+      })
     }
 
     /* ── Погода: прогноз (API-29) и окна по RULE-AGRO-09 (MVP-6) ── */
