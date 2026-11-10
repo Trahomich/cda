@@ -47,18 +47,40 @@ class CostedOperation:
 
 
 def operation_cost_rub(
-    op: FieldOperation, rates: dict[str, float], *, is_fact: bool
+    op: FieldOperation,
+    rates: dict[str, float] | None = None,
+    *,
+    is_fact: bool | None = None,
+    side: str | None = None,
 ) -> float | None:
-    """Стоимость операции: unit/total по операции, fallback норматива факта."""
-    if op.cost_mode == "total" and op.cost_value is not None:
-        return float(op.cost_value)
-    if op.cost_mode == "unit" and op.cost_value is not None:
-        return round(float(op.cost_value) * float(op.actual_area_ga), 2)
-    if is_fact:
+    """Стоимость одной операции (§7.10): план из cost_plan_*, факт из
+    cost_fact_*; unit — руб/га (× площадь операции), total — фикс;
+    не задана → для ФАКТА норматив ref_operation_cost (× га), для плана —
+    None (норматив только факт). side ('plan'|'fact') удобнее is_fact."""
+    if side is not None:
+        is_fact = side == "fact"
+    assert is_fact is not None
+    mode = op.cost_fact_mode if is_fact else op.cost_plan_mode
+    value = op.cost_fact_value if is_fact else op.cost_plan_value
+    if mode == "total" and value is not None:
+        return float(value)
+    if mode == "unit" and value is not None:
+        return round(float(value) * float(op.actual_area_ga), 2)
+    if is_fact and rates:
         rate = rates.get(op.operation_type)
         if rate is not None:
             return round(rate * float(op.actual_area_ga), 2)
     return None
+
+
+def is_plan_op(op: FieldOperation) -> bool:
+    """Плановая операция §7.10: факт не закрыт и не отменена."""
+    return op.status != "cancelled" and op.fact_date is None
+
+
+def is_fact_op(op: FieldOperation) -> bool:
+    """Выполненная операция §7.10: fact_date закрыт."""
+    return op.fact_date is not None
 
 
 def cost_rates(db: Session) -> dict[str, float]:
