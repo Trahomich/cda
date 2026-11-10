@@ -28,7 +28,6 @@ import type {
   CropCycleHistoryItem,
   FieldAdvice,
   FieldCard,
-  FieldCardPlan,
   FieldCycle,
   FieldEconomics,
   FieldOperation,
