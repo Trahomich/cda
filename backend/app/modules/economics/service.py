@@ -80,12 +80,7 @@ def farm_economics(db: Session, year: int) -> dict:
     plan_total = 0.0
     fact_total = 0.0
     if cycle_ids:
-        ops = (
-            db.scalars(
-                select(FieldOperation).where(FieldOperation.cycle_id.in_(cycle_ids))
-            )
-            .all()
-        )
+        ops = db.scalars(select(FieldOperation).where(FieldOperation.cycle_id.in_(cycle_ids))).all()
         for op in ops:
             is_fact = op.status == FACT_STATUS
             if not is_fact and op.status not in PLAN_STATUSES:
@@ -140,11 +135,15 @@ def field_economics(db: Session, field_id: uuid.UUID, year: int) -> dict:
         for op in ops:
             if op.status in PLAN_STATUSES:
                 plans.append(
-                    CostedOperation(op.operation_type, op.date, operation_cost_rub(op, rates, is_fact=False))
+                    CostedOperation(
+                        op.operation_type, op.date, operation_cost_rub(op, rates, is_fact=False)
+                    )
                 )
             elif op.status == FACT_STATUS:
                 facts.append(
-                    CostedOperation(op.operation_type, op.date, operation_cost_rub(op, rates, is_fact=True))
+                    CostedOperation(
+                        op.operation_type, op.date, operation_cost_rub(op, rates, is_fact=True)
+                    )
                 )
 
     plan_cost = round(sum(p.cost_rub for p in plans if p.cost_rub is not None), 2)

@@ -48,3 +48,14 @@ __all__ = [
     "EconomicsResponse",
     "OperationSide",
 ]
+
+
+class EconomicsSummaryResponse(BaseModel):
+    """API-62b: сводка стоимости техработ сезона хозяйства (§7.9)."""
+
+    year: int
+    plan_cost_rub: float = Field(description="Σ плановых операций сезона, руб")
+    fact_cost_rub: float = Field(description="Σ выполненных фактов сезона, руб")
+
+
+__all__.extend(["EconomicsSummaryResponse"])

@@ -37,7 +37,9 @@ router = APIRouter(
 )
 
 
-def _item(db: Session, operation: FieldOperation, rates: dict[str, float] | None = None) -> OperationItem:
+def _item(
+    db: Session, operation: FieldOperation, rates: dict[str, float] | None = None
+) -> OperationItem:
     from app.modules.economics.service import cost_rates, operation_cost_rub
 
     if rates is None:
@@ -70,9 +72,7 @@ def _item(db: Session, operation: FieldOperation, rates: dict[str, float] | None
         needs_review=operation.needs_review,
         status=operation.status,
         yield_record=yield_item,
-        cost_rub=operation_cost_rub(
-            operation, rates, is_fact=operation.status == "done"
-        ),
+        cost_rub=operation_cost_rub(operation, rates, is_fact=operation.status == "done"),
     )
 
 
