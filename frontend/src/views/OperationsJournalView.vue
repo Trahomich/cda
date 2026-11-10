@@ -290,6 +290,25 @@ onMounted(async () => {
         >
       </label>
       <label class="jrn__field">
+        <span>Сезон</span>
+        <select
+          v-model.number="season"
+          class="jrn__input"
+          @change="onSeasonChange"
+        >
+          <option value="all">
+            Все сезоны
+          </option>
+          <option
+            v-for="y in seasons"
+            :key="y"
+            :value="y"
+          >
+            {{ y }}
+          </option>
+        </select>
+      </label>
+      <label class="jrn__field">
         <span>Тип</span>
         <select
           v-model="opType"
