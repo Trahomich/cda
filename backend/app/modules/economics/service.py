@@ -158,16 +158,22 @@ def field_economics(db: Session, field_id: uuid.UUID, year: int) -> dict:
             .order_by(FieldOperation.date)
         ).all()
         for op in ops:
-            if op.status in PLAN_STATUSES:
-                plans.append(
-                    CostedOperation(
-                        op.operation_type, op.date, operation_cost_rub(op, rates, is_fact=False)
-                    )
-                )
-            elif op.status == FACT_STATUS:
+            if op.status == "cancelled":
+                continue
+            if op.fact_date is not None:  # факт §7.10
                 facts.append(
                     CostedOperation(
-                        op.operation_type, op.date, operation_cost_rub(op, rates, is_fact=True)
+                        op.operation_type,
+                        op.fact_date,
+                        operation_cost_rub(op, rates, side="fact"),
+                    )
+                )
+            elif op.planned_date is not None:  # план §7.10
+                plans.append(
+                    CostedOperation(
+                        op.operation_type,
+                        op.planned_date,
+                        operation_cost_rub(op, rates, side="plan"),
                     )
                 )
 
