@@ -619,7 +619,9 @@ const OPERATIONS: OperationEntry[] = [
   {
     // Отклонение в минус: план 0,5 л/га → факт 0,38 (−24 %, RULE-AGRO-11).
     client_id: 'seed-0004-0000-4000-8000-000000000004',
-    field_id: FIELDS[6].field_id,
+    // Поле 6 (нарочно не 7: у поля 7 только план протравливания —
+    // кейс «работы не начаты» в экономике, #165/#184).
+    field_id: FIELDS[5].field_id,
     operation_type: 'spraying',
     date: '2027-05-29',
     input_id: INPUTS[0].input_id,
