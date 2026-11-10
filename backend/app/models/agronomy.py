@@ -4,7 +4,7 @@
 """
 
 import uuid
-from datetime import date, datetime
+from datetime import date as __date, datetime
 
 from geoalchemy2 import Geography
 from sqlalchemy import (
@@ -378,8 +378,8 @@ class FieldOperation(Base):
     operation_type: Mapped[str] = mapped_column(String(15), nullable=False)
     # §7.10: legacy-колонка date остаётся (NOT NULL) = coalesce(fact, planned)
     date: Mapped[date] = mapped_column(Date, nullable=False)
-    planned_date: Mapped[date | None] = mapped_column(Date, nullable=True)
-    fact_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    planned_date: Mapped[__date | None] = mapped_column(Date, nullable=True)
+    fact_date: Mapped[__date | None] = mapped_column(Date, nullable=True)
     input_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid,
         ForeignKey("dat_agro_input.id", name="fk_dat_field_operation_input"),
