@@ -10,7 +10,7 @@ rules.py. Планы внесения проверяются при создан
 
 import uuid
 
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -323,7 +323,11 @@ def validate_treatment_plan(
         ):
             raise _rule_violation(v)
 
-    season = [p for p in _season_plans(db, cycle.field_id, cycle.year) if p.id != exclude_plan_id]
+    season = [
+        p
+        for p in _season_plans(db, cycle.field_id, cycle.year)
+        if p.id != exclude_plan_id and p.input_id is not None
+    ]
     inputs_by_id = {
         i.id: i
         for i in db.scalars(
@@ -434,7 +438,7 @@ def list_treatment_plans(
     Строки (операция, цикл, поле, культура, препарат); статус — легаси-мэппинг
     treatment_plan_status (done→completed, план с датой→approved и т.д.).
     """
-    filters = [
+    filters: list[ColumnElement[bool]] = [
         FieldOperation.input_id.isnot(None),
         FieldOperation.operation_type.in_(TREATMENT_OP_TYPES),
     ]
@@ -498,6 +502,7 @@ def approve_treatment_plan(db: Session, *, user: User, plan: FieldOperation) -> 
             status_code=409,
         )
     cycle = db.get_one(CropCycle, plan.cycle_id)
+    assert plan.input_id is not None  # план-внесение всегда с расходником
     item = get_input(db, plan.input_id)
     validate_treatment_plan(
         db,
