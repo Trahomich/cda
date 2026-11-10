@@ -49,10 +49,10 @@ test('журнал: выбранное поле — план без факта �
   page,
 }) => {
   await page.goto('/operations')
-  await page.locator('getByLabel('Сезон')').waitFor({ timeout: 15_000 })
+  await page.getByLabel('Сезон').waitFor({ timeout: 15_000 })
 
   // Поле 1: факт 02.07.2027 + план внесения 25.04.2027 без факта.
-  await page.locator('getByLabel('Поле')').selectOption(FIELD1)
+  await page.getByLabel('Поле').selectOption(FIELD1)
   await page.locator('.jrn__apply').click()
   await expect(page.locator('.jrn__totals')).toContainText('Сезон 2027', { timeout: 15_000 })
 
