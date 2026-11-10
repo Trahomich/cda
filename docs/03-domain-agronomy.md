@@ -385,6 +385,7 @@ actual_area_ga операции ≤ 1,05 × area_ga поля по версии �
 | RULE-AGRO-11 | REQ-F-013 | SC-03 |
 | RULE-AGRO-12 | REQ-F-013, REQ-F-016 | SC-03, SC-04 |
 | RULE-AGRO-13 | REQ-NF-006 | SC-02, SC-03 |
+| RULE-AGRO-14 | REQ-F-012 | SC-03 |
 
 ## 5. Открытые вопросы для реализации
 
