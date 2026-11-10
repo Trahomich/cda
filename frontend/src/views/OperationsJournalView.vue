@@ -360,7 +360,9 @@ onMounted(async () => {
       <!-- Итоги сезона (#168): N операций; при выбранном поле суммы те же,
            что в экономике карточки (API-62) -->
       <p class="jrn__totals">
-        <template v-if="typeof season === 'number'">Сезон {{ season }} · </template>
+        <template v-if="typeof season === 'number'">
+          Сезон {{ season }} ·
+        </template>
         операций: <strong>{{ total }}</strong>
         <template v-if="econ">
           · план Σ <strong>{{ fmtRub(econ.plan_cost_rub) }}</strong>
@@ -443,7 +445,9 @@ onMounted(async () => {
                     план {{ fmtRub(opPlanCost(op)!) }} /
                     факт {{ fmtRub(opCost(op)!) }}
                   </template>
-                  <template v-else>{{ fmtRub(opCost(op)!) }}</template>
+                  <template v-else>
+                    {{ fmtRub(opCost(op)!) }}
+                  </template>
                 </template>
                 <span
                   v-else
@@ -492,10 +496,18 @@ onMounted(async () => {
               <td class="jrn__muted">
                 {{ p.input_name }} · {{ p.dose.toLocaleString('ru-RU') }} {{ p.unit === 'l_ha' ? 'л/га' : 'кг/га' }}
               </td>
-              <td class="jrn__muted">—</td>
-              <td class="jrn__muted">—</td>
-              <td class="jrn__muted">—</td>
-              <td class="jrn__muted">—</td>
+              <td class="jrn__muted">
+                —
+              </td>
+              <td class="jrn__muted">
+                —
+              </td>
+              <td class="jrn__muted">
+                —
+              </td>
+              <td class="jrn__muted">
+                —
+              </td>
             </tr>
             <tr v-if="filtered.length === 0 && unmatchedPlans.length === 0">
               <td
