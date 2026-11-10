@@ -32,7 +32,16 @@ const dateFrom = ref('')
 const dateTo = ref('')
 const opType = ref<OperationType | 'all'>('all')
 
-const OP_LABELS: Record<OperationType, string> = {
+/* ── Сезон (#168): по умолчанию текущий (год самой свежей операции), ──
+ *  выбор проставляет окно дат; «Все сезоны» — без окна. */
+const season = ref<number | 'all'>('all')
+const seasons = ref<number[]>([])
+let seasonsKnown = false
+
+/** Экономика сезона выбранного поля (API-62) — те же суммы, что в карточке. */
+const econ = ref<FieldEconomics | null>(null)
+
+const OP_LABELS: Record<string, string> = {
   spraying: 'опрыскивание',
   fertilizing: 'внесение удобрений',
   seeding: 'посев',
