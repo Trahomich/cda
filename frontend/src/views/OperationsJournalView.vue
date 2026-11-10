@@ -823,6 +823,8 @@ watch([season, fieldId, opType, planFact], () => void load(true))
   color: #666;
   cursor: pointer;
 }
+
+.jrn__more {
   margin: 0.5rem 0 0;
 }
 
