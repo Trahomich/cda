@@ -126,15 +126,16 @@ function machinesTitle(op: FieldOperation): string {
     .join('; ')
 }
 
-/** Стоимость строки: план и факт, обе — при различии (§7.10). */
+/** Стоимость строки: план и факт, обе — при различии (§7.10);
+ *  суммы — в тыс ₽ (#180). */
 function worksCost(op: FieldOperation): string {
   const plan = op.cost_plan_rub ?? null
   const fact = op.cost_fact_rub ?? null
   if (plan != null && fact != null && plan !== fact) {
-    return `план ${fmtRub(plan)} / факт ${fmtRub(fact)}`
+    return `план ${fmtThousand(plan)} / факт ${fmtThousand(fact)}`
   }
   const v = fact ?? plan
-  return v != null ? fmtRub(v) : 'стоимость не задана'
+  return v != null ? fmtThousand(v) : 'стоимость не задана'
 }
 
 /** Подтверждать факты может руководитель (и админ). */
