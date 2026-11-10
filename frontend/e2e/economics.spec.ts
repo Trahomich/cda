@@ -93,17 +93,17 @@ test('карточка поля: журнал следует выбранном�
   const block = page.locator('.card360__block').filter({ hasText: 'Планы и журнал' })
   await expect(block).toBeVisible({ timeout: 15_000 })
 
-  // Текущий сезон 2027: только факт 02.07.2027 (год в дате, чип «факт»),
-  // уборки 20.07.2026 из прошлого сезона в списке нет.
+  // Текущий сезон 2027: только факт 02.07.2027 (год в дате), уборки
+  // 20.07.2026 из прошлого сезона в списке нет.
   await expect(block).toContainText('Планы и журнал 2027')
-  await expect(block.locator('li', { hasText: '02.07.2027' }).first()).toContainText('факт')
+  await expect(block.locator('li', { hasText: '✓' }).first()).toContainText('02.07.2027')
   await expect(block).not.toContainText('20.07.2026')
 
   // Прошлый сезон 2026 (озимая пшеница — окно с августа 2025): уборка
   // 20.07.2026 входит в сезон 2026, работ 2027-го нет.
   await page.locator('.strip__cell--season').filter({ hasText: '2026' }).click()
   await expect(block).toContainText('Планы и журнал 2026', { timeout: 15_000 })
-  await expect(block.locator('li', { hasText: '20.07.2026' }).first()).toContainText('факт')
+  await expect(block.locator('li', { hasText: '✓' }).first()).toContainText('20.07.2026')
   await expect(block).not.toContainText('02.07.2027')
 })
 
