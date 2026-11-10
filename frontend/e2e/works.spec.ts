@@ -122,9 +122,10 @@ test('карточка поля: вкладка «Работы» — план и
   await page.locator('.card360__tab--works').click()
   const works = page.locator('.card360__works-list')
   await expect(works).toBeVisible()
-  // Мок: у поля №1 — план внесения (25.04.2027) и факт обработки почвы
-  // (02.07.2027); хронология свежими сверху.
+  // Мок: у поля №1 — факт обработки почвы (02.07.2027, без подтверждения)
+  // и план опрыскивания 20.05.2027 («план · ожидается»); свежие сверху,
+  // работы сгруппированы по месяцам (#174).
   await expect(works.locator('.card360__works-chip--fact').first()).toContainText('факт')
   await expect(works.locator('.card360__works-chip--plan').first()).toContainText('план')
-  await expect(works.locator('.card360__works-item').first()).toContainText('2027-07-02')
+  await expect(works.locator('.card360__works-item').first()).toContainText('02.07.2027')
 })
