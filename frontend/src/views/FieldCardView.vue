@@ -9,6 +9,7 @@ import {
   completeOperation,
   confirmOperation,
   createOperationPlan,
+  patchOperation,
   getFieldCard,
   getFieldCropCycles,
   getFieldAdvice,
