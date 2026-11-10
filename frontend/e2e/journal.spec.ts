@@ -27,7 +27,7 @@ test('журнал: по умолчанию текущий сезон с ито�
   await page.goto('/operations')
 
   // Сезон по умолчанию — текущий (2027), не весь архив.
-  const seasonSelect = page.locator('select[aria-label="Сезон"]')
+  const seasonSelect = page.locator('getByLabel('Сезон')')
   await expect(seasonSelect).toBeVisible({ timeout: 15_000 })
   await expect(seasonSelect).toHaveValue('2027')
 
@@ -49,10 +49,10 @@ test('журнал: выбранное поле — план без факта �
   page,
 }) => {
   await page.goto('/operations')
-  await page.locator('select[aria-label="Сезон"]').waitFor({ timeout: 15_000 })
+  await page.locator('getByLabel('Сезон')').waitFor({ timeout: 15_000 })
 
   // Поле 1: факт 02.07.2027 + план внесения 25.04.2027 без факта.
-  await page.locator('select[aria-label="Поле"]').selectOption(FIELD1)
+  await page.locator('getByLabel('Поле')').selectOption(FIELD1)
   await page.locator('.jrn__apply').click()
   await expect(page.locator('.jrn__totals')).toContainText('Сезон 2027', { timeout: 15_000 })
 
@@ -61,7 +61,7 @@ test('журнал: выбранное поле — план без факта �
   await expect(page.locator('.jrn__table tbody tr').filter({ hasText: '02.07.2027' }).locator('.jrn__chip--fact')).toBeVisible()
 
   // Прошлый сезон 2026: только факт уборки 20.07.2026, планов 2027-го нет.
-  await page.locator('select[aria-label="Сезон"]').selectOption('2026')
+  await page.locator('getByLabel('Сезон')').selectOption('2026')
   await expect(page.locator('.jrn__table tbody tr').filter({ hasText: '20.07.2026' })).toBeVisible({
     timeout: 15_000,
   })
