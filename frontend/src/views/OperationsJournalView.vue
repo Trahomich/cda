@@ -255,6 +255,11 @@ onMounted(async () => {
   } catch {
     /* фильтр по полю необязателен */
   }
+  try {
+    machinesRef.value = (await getMachines()).items
+  } catch {
+    /* форма правки без справочника техники */
+  }
   await load(true)
 })
 
