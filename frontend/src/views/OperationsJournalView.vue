@@ -4,8 +4,15 @@
 // сезон/поле/тип/план-факт; итоги сезона сверху — API-62 по полю либо
 // API-62b по хозяйству (те же числа, что в экономике карточки поля).
 import { computed, onMounted, ref, watch } from 'vue'
-import { getFieldEconomics, getEconomicsSummary, getFields, getOperations } from '@/api'
-import type { Field, FieldOperation, OperationType } from '@/api/types'
+import {
+  getFieldEconomics,
+  getEconomicsSummary,
+  getFields,
+  getMachines,
+  getOperations,
+  patchOperation,
+} from '@/api'
+import type { Field, FieldOperation, Machine, OperationType } from '@/api/types'
 import Skeleton from '@/components/Skeleton.vue'
 
 const PAGE_SIZE = 50
