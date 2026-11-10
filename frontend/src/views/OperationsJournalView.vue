@@ -49,11 +49,6 @@ function fmtDate(iso: string | null | undefined): string {
   return iso ? iso.split('-').reverse().join('.') : '—'
 }
 
-function fmtRub(v: number | null | undefined): string {
-  if (v == null) return '—'
-  return `${Math.round(v).toLocaleString('ru-RU')} ₽`
-}
-
 /** Сводки — в тыс ₽ (#707/#180): «1 234 тыс ₽»; до 10 тыс — один знак. */
 function fmtThousand(v: number | null | undefined): string {
   if (v == null) return '—'
