@@ -175,37 +175,30 @@ def main() -> int:
         spec = BY_OP.get(p["operation_type"])
         if spec is None:
             continue
-        unit_type, trailer_word = spec
+        unit_type, _ = spec
         operator = pick(str(p["id"]) + "0", list(OPERATORS))
         hours = round(area * HOURS_PER_GA, 1)
-        if p["operation_type"] in ("seeding", "fertilizing", "spraying"):
-            tractor = pick(str(p["id"]) + "1", by_type["tractor"])
-            unit = pick(str(p["id"]) + "2", by_type[unit_type])
-            links.append(
-                {
-                    "op": str(p["id"]),
-                    "machine": unit,
-                    "trailer": None,
-                    "operator": operator,
-                    "hours": hours,
-                    "tractor": tractor,
-                }
-            )
-        elif p["operation_type"] == "harvesting":
-            combine = pick(str(p["id"]) + "1", by_type["combine"])
-            headers = [m for m in by_type.get("other", []) if "Жатка" in m]
-            header = pick(str(p["id"]) + "2", headers) if headers else None
-            links.append(
-                {
-                    "op": str(p["id"]),
-                    "machine": combine,
-                    "trailer": header,
-                    "operator": operator,
-                    "hours": hours,
-                }
-            )
+        # machine = энергосредство (трактор/комбайн), trailer = прицеп
+        if p["operation_type"] in ("seeding", "fertilizing", "spraying", "tillage"):
+            power = pick(str(p["id"]) + "1", by_type["tractor"])
+        else:  # harvesting
+            power = pick(str(p["id"]) + "1", by_type["combine"])
+        if p["operation_type"] == "harvesting":
+            candidates = [m for m in by_type.get("other", []) if "Жатка" in m]
         elif p["operation_type"] == "tillage":
-            tractor = pick(str(p["id"]) + "1", by_type["tractor"])
+            candidates = [m for m in by_type.get("other", []) if any(t in m for t in TILLAGE_TOOLS)]
+        else:
+            candidates = by_type[unit_type]
+        trailer = pick(str(p["id"]) + "2", candidates) if candidates else None
+        links.append(
+            {
+                "op": str(p["id"]),
+                "machine": power,
+                "trailer": trailer,
+                "operator": operator,
+                "hours": hours,
+            }
+        )
             tools = [m for m in by_type.get("other", []) if any(t in m for t in TILLAGE_TOOLS)]
             tool = pick(str(p["id"]) + "2", tools) if tools else None
             links.append(
