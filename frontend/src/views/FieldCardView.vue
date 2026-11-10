@@ -1168,6 +1168,7 @@ function load() {
   void loadWeather()
   void loadJournal()
   void loadWorks()
+  void loadRefs()
   void loadVra()
   void loadYield()
   void loadEconomics()
