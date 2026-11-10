@@ -48,14 +48,20 @@ test('карта погоды: балун показывает значение 
     if (b && (!bb || b.width * b.height > bb.width * bb.height)) bb = b
   }
   expect(bb).toBeTruthy()
+  // Флейк-фикс: пробуем до 5 точек контура (центроид выпуклых/вогнутых
+  // контуров не всегда внутри полигона) с ожиданием балуна 6 с.
+  const offsets: Array<[number, number]> = [
+    [0.5, 0.5],
+    [0.25, 0.6],
+    [0.75, 0.4],
+    [0.08, 0.08],
+    [0.92, 0.5],
+  ]
   let opened = false
-  for (const [px, py] of [
-    [bb!.x + bb!.width / 2, bb!.y + bb!.height / 2],
-    [bb!.x + 4, bb!.y + 4],
-  ]) {
-    await page.mouse.click(px, py)
+  for (const [fx, fy] of offsets) {
+    await page.mouse.click(bb!.x + bb!.width * fx, bb!.y + bb!.height * fy)
     try {
-      await page.locator('.field-popup__title').waitFor({ timeout: 4000 })
+      await page.locator('.field-popup__title').waitFor({ timeout: 6_000 })
       opened = true
       break
     } catch {
