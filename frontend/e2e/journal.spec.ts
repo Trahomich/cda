@@ -61,7 +61,7 @@ test('журнал: выбранное поле — план без факта �
   await expect(page.locator('.jrn__table tbody tr').filter({ hasText: '02.07.2027' }).locator('.jrn__chip--fact')).toBeVisible()
 
   // Прошлый сезон 2026: только факт уборки 20.07.2026, планов 2027-го нет.
-  await page.locator('getByLabel('Сезон')').selectOption('2026')
+  await page.getByLabel('Сезон').selectOption('2026')
   await expect(page.locator('.jrn__table tbody tr').filter({ hasText: '20.07.2026' })).toBeVisible({
     timeout: 15_000,
   })
