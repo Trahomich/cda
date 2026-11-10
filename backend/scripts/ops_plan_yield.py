@@ -133,7 +133,7 @@ def main() -> int:
                     "cc.planned_harvest_date, c.name as culture, f.area_ga "
                     "from dat_crop_cycle cc join ref_culture c on c.id = cc.culture_id "
                     "join dat_field f on f.id = cc.field_id "
-                    "where cc.kind = 'main' and cc.year between 2023 and 2026 "
+                    "where cc.kind = 'main' and cc.year between 2021 and 2026 "
                     "order by cc.field_id, cc.year"
                 )
             )
@@ -145,7 +145,7 @@ def main() -> int:
                 text(
                     "select id, cycle_id, date, operation_type, status, actual_area_ga "
                     "from dat_field_operation where cycle_id is not null "
-                    "and date >= '2023-01-01' and date <= '2026-12-31' "
+                    "and date >= '2021-01-01' and date <= '2026-12-31' "
                     "order by cycle_id, date"
                 )
             )
@@ -242,7 +242,10 @@ def main() -> int:
             )
 
     # урожайности: завершённые циклы = 2023–2025 + 2026 с фактом уборки
+    # (2021–2022 не трогаем — #167 только плановые пары)
     for cy in cycles:
+        if cy["year"] < 2023:
+            continue
         if str(cy["id"]) in has_yield:
             continue
         if cy["culture"].startswith("Пар"):
@@ -278,7 +281,7 @@ def main() -> int:
             }
         )
 
-    print(f"циклов 2023–2026: {len(cycles)}, операций журнала: {len(ops)}")
+    print(f"циклов 2021–2026: {len(cycles)}, операций журнала: {len(ops)}")
     print(
         f"планов к созданию: {len(new_plans)} (2026-незакрытых в них: "
         f"{sum(1 for p in new_plans if p['date'] >= '2026-01-01')})"
