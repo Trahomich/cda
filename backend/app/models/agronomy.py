@@ -403,11 +403,24 @@ class FieldOperation(Base):
     # «требует проверки» (422 не возвращаем: факт важнее плана, 03 §3.4).
     needs_review: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     status: Mapped[str] = mapped_column(String(15), nullable=False, server_default="draft")
-    # Стоимость техработы (§7.9, #161): 'unit' — руб/га (× площадь операции),
-    # 'total' — фикс за поле; NULL — стоимости нет (для факта — норматив
-    # ref_operation_cost по типу операции)
-    cost_mode: Mapped[str | None] = mapped_column(String(8), nullable=True)
-    cost_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    # Стоимость техработы (§7.10): план и факт — каждая из своих полей;
+    # 'unit' — руб/га (× площадь), 'total' — фикс; NULL — не задана
+    # (для факта — норматив ref_operation_cost по типу операции)
+    cost_plan_mode: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    cost_plan_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    cost_fact_mode: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    cost_fact_value: Mapped[float | None] = mapped_column(Numeric(12, 2), nullable=True)
+    # Подтверждение факта (§7.10): кто и когда закрыл операцию
+    confirmed_by: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("dat_user.id", name="fk_dat_field_operation_confirmed"), nullable=True
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Основание — ИИ-рекомендация (§7.10; у планов внесения было в плане)
+    basis_recommendation_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("dat_recommendation.id", name="fk_dat_field_operation_basis"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
