@@ -345,6 +345,28 @@ onMounted(async () => {
     </p>
 
     <template v-else>
+      <!-- Итоги сезона (#168): N операций; при выбранном поле суммы те же,
+           что в экономике карточки (API-62) -->
+      <p class="jrn__totals">
+        <template v-if="typeof season === 'number'">Сезон {{ season }} · </template>
+        операций: <strong>{{ total }}</strong>
+        <template v-if="econ">
+          · план Σ <strong>{{ fmtRub(econ.plan_cost_rub) }}</strong>
+          · факт Σ <strong>{{ fmtRub(econ.fact_cost_rub) }}</strong>
+          <span
+            v-if="econ.fact_cost_rub === 0 && econ.operations.some((o) => o.plan != null)"
+            class="jrn__muted"
+          >(работы не начаты)</span>
+        </template>
+        <span
+          v-else-if="fieldId && typeof season === 'number'"
+          class="jrn__muted"
+        >· суммы сезона загружаются…</span>
+        <span
+          v-else
+          class="jrn__muted"
+        >· выберите поле — покажу суммы план/факт сезона</span>
+      </p>
       <div class="jrn__table-wrap">
         <table class="jrn__table">
           <thead>
@@ -357,6 +379,9 @@ onMounted(async () => {
               </th>
               <th scope="col">
                 Операция
+              </th>
+              <th scope="col">
+                Статус
               </th>
               <th scope="col">
                 Доза (факт)
@@ -384,6 +409,14 @@ onMounted(async () => {
               <td>{{ op.date }}</td>
               <td>{{ fieldName(op.field_id) }}</td>
               <td>{{ OP_LABELS[op.operation_type] }}</td>
+              <td>
+                <!-- #168: факт — зелёный чип; рядом дата плана, если разошлись -->
+                <span class="jrn__chip jrn__chip--fact">факт</span>
+                <span
+                  v-if="planOf(op) && planOf(op)!.planned_date !== op.date"
+                  class="jrn__muted"
+                >план {{ fmtD(planOf(op)!.planned_date) }}</span>
+              </td>
               <td class="jrn__num">
                 {{ fmtDose(op) }}
               </td>
@@ -408,9 +441,29 @@ onMounted(async () => {
                 >—</span>
               </td>
             </tr>
-            <tr v-if="filtered.length === 0">
+            <!-- #168: планы сезона без выполненного факта — «ожидается» -->
+            <tr
+              v-for="p in unmatchedPlans"
+              :key="`plan-${p.plan_id}`"
+              class="jrn__row--plan"
+            >
+              <td>{{ p.planned_date }}</td>
+              <td>{{ fieldName(p.field_id) }}</td>
+              <td>{{ OP_LABELS[p.operation_type] ?? p.operation_type }}</td>
+              <td>
+                <span class="jrn__chip jrn__chip--plan">план · ожидается</span>
+              </td>
+              <td class="jrn__muted">
+                {{ p.input_name }} · {{ p.dose.toLocaleString('ru-RU') }} {{ p.unit === 'l_ha' ? 'л/га' : 'кг/га' }}
+              </td>
+              <td class="jrn__muted">—</td>
+              <td class="jrn__muted">—</td>
+              <td class="jrn__muted">—</td>
+              <td class="jrn__muted">—</td>
+            </tr>
+            <tr v-if="filtered.length === 0 && unmatchedPlans.length === 0">
               <td
-                colspan="8"
+                colspan="9"
                 class="jrn__state"
               >
                 Операций не найдено
