@@ -107,16 +107,16 @@ def farm_economics(db: Session, year: int) -> dict:
     if cycle_ids:
         ops = db.scalars(select(FieldOperation).where(FieldOperation.cycle_id.in_(cycle_ids))).all()
         for op in ops:
-            is_fact = op.status == FACT_STATUS
-            if not is_fact and op.status not in PLAN_STATUSES:
-                continue  # cancelled и пр. в экономики не входят
-            cost = operation_cost_rub(op, rates, is_fact=is_fact)
-            if cost is None:
+            if op.status == "cancelled":
                 continue
-            if is_fact:
-                fact_total += cost
-            else:
-                plan_total += cost
+            if op.fact_date is not None:
+                cost = operation_cost_rub(op, rates, side="fact")
+                if cost is not None:
+                    fact_total += cost
+            elif op.planned_date is not None:
+                cost = operation_cost_rub(op, rates, side="plan")
+                if cost is not None:
+                    plan_total += cost
     return {
         "year": year,
         "plan_cost_rub": round(plan_total, 2),
