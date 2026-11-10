@@ -189,6 +189,29 @@ async function load(reset = true) {
     items.value = reset ? page.items : [...items.value, ...page.items]
     total.value = page.total
     plans.value = tp.items
+    // Сезоны (#168): список лет архива — один раз, по первому ответу;
+    // по умолчанию текущий сезон (год самой свежей операции), не весь архив.
+    if (!seasonsKnown && reset) {
+      const years = new Set<number>([
+        ...page.items.map((o) => Number(o.date.slice(0, 4))),
+        ...plans.value.map((p) => p.year),
+      ])
+      years.delete(NaN)
+      seasons.value = [...years].sort((a, b) => b - a)
+      const latest = seasons.value[0]
+      if (latest != null && dateFrom.value === '' && dateTo.value === '') {
+        season.value = latest
+        dateFrom.value = `${latest}-01-01`
+        dateTo.value = `${latest}-12-31`
+        seasonsKnown = true
+        // Перезагрузка уже с окном текущего сезона.
+        loading.value = false
+        await load(true)
+        return
+      }
+      seasonsKnown = true
+    }
+    void loadEcon()
   } catch {
     failed.value = true // тост уже показан
   } finally {
