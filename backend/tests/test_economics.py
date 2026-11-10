@@ -257,3 +257,44 @@ class TestEconomicsSums:
         )
         assert resp.status_code == 404
         assert resp.json()["code"] == "field_not_found"
+
+
+class TestSummaryAndCostRub:
+    """#169: cost_rub в API-18 + /economics/summary сезона хозяйства."""
+
+    def test_operations_items_have_cost_rub(self, world) -> None:
+        client, hdr, db = world
+        fid = uuid.UUID(make_field(client, hdr, name="Эконом-7")["field_id"])
+        cycle = make_cycle(db, fid)
+        make_op(db, fid, cycle.id, "tillage", "2026-05-03", status="done",
+                cost_fact_mode="unit", cost_fact_value=750.0)
+        make_op(db, fid, cycle.id, "spraying", "2026-06-02", status="done")  # норматив
+        make_op(db, fid, cycle.id, "other", "2026-07-01", status="planned")  # null
+        db.commit()
+        resp = client.get(f"{API}/operations", params={"field_id": fid}, headers=hdr)
+        assert resp.status_code == 200
+        items = {i["operation_type"]: i for i in resp.json()["items"]}
+        assert items["tillage"]["cost_rub"] == 75000.0  # 750 × 100 га (факт)
+        assert items["spraying"]["cost_rub"] == 35000.0  # норматив 350 × 100
+        assert items["other"]["cost_rub"] is None  # план без стоимости и норматива
+
+    def test_farm_summary_sums_all_fields(self, world) -> None:
+        client, hdr, db = world
+        f1 = uuid.UUID(make_field(client, hdr, name="Эконом-8")["field_id"])
+        f2 = uuid.UUID(make_field(client, hdr, name="Эконом-9")["field_id"])
+        for fid in (f1, f2):
+            cycle = make_cycle(db, fid)
+            make_op(db, fid, cycle.id, "tillage", "2026-05-01", status="planned",
+                    cost_plan_mode="total", cost_plan_value=50000.0)
+            make_op(db, fid, cycle.id, "harvesting", "2026-08-01", status="done",
+                    cost_fact_mode="total", cost_fact_value=80000.0)
+        db.commit()
+        resp = client.get(f"{API}/economics/summary", params={"year": 2026}, headers=hdr)
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body == {"year": 2026, "plan_cost_rub": 100000.0, "fact_cost_rub": 160000.0}
+
+    def test_farm_summary_empty_year(self, world) -> None:
+        client, hdr, _ = world
+        resp = client.get(f"{API}/economics/summary", params={"year": 2031}, headers=hdr)
+        assert resp.json() == {"year": 2031, "plan_cost_rub": 0.0, "fact_cost_rub": 0.0}
