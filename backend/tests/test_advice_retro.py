@@ -302,6 +302,7 @@ class TestOperationsKeyDates182:
         culture = make_culture(db_session, name="Овёс")
         cycle = CropCycle(field_id=fid, year=2026, culture_id=culture.id, kind="main")
         db_session.add(cycle)
+        db_session.flush()  # cycle.id для операций (autoflush выключен)
         for op_type, day, status in [
             ("seeding", date(2026, 5, 3), "done"),
             ("spraying", date(2026, 6, 10), "done"),
@@ -343,6 +344,7 @@ class TestOperationsKeyDates182:
         culture = make_culture(db_session, name="Овёс2")
         cycle = CropCycle(field_id=fid, year=2026, culture_id=culture.id, kind="main")
         db_session.add(culture)
+        db_session.flush()  # cycle.id для операций
         for i in range(12):  # 12 операций апрель–сентябрь
             day = date(2026, 4 + i // 2, 1 + (i % 2) * 10)
             db_session.add(
