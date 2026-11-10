@@ -721,6 +721,28 @@ const econNoFacts = computed(
     econ.value.operations.some((o) => o.plan != null),
 )
 
+/* ── Блок «Планы и журнал»: чипы план/факт, цена каждой работы и итоги
+ *  сезона (= «Экономика сезона», API-62; #665/#168) ── */
+
+/** Стоимость стороны типа операции из экономики поля (API-62). */
+function econCost(type: string, side: 'plan' | 'fact'): number | null {
+  return econ.value?.operations.find((o) => o.type === type)?.[side]?.cost_rub ?? null
+}
+
+/** Цена фактической работы: API-18 cost_rub, иначе норматив экономики. */
+function opCost(op: FieldOperation): number | null {
+  return op.cost_rub ?? econCost(op.operation_type, 'fact')
+}
+
+/** Выполнен ли план внесения: факт того же препарата в ±5 дней. */
+function planHasFact(plan: FieldCardPlan): boolean {
+  return operations.value.some((o) => {
+    if (o.input_id == null || plan.input_id !== o.input_id) return false
+    const d = Math.round((Date.parse(o.date) - Date.parse(plan.planned_date)) / 86_400_000)
+    return Math.abs(d) <= 5
+  })
+}
+
 function fmtRub(v: number): string {
   return `${Math.round(v).toLocaleString('ru-RU')} ₽`
 }
