@@ -140,16 +140,28 @@ export function confirmOperation(operationId: string): Promise<FieldOperation> {
   })
 }
 
-/** §7.10 (#180): PATCH /operations/{id} — правка плана (дата, расходник,
- *  доза, стоимость плана) до закрытия фактом; после — 422. */
+/** §7.10 (#180/#184): PATCH /operations/{id} — правка плана (дата,
+ *  расходник, доза, стоимость плана) до закрытия фактом; правка ФАКТА
+ *  (дата, расход, факт-стоимость, исполнитель, техника) — для done. */
 export function patchOperation(
   operationId: string,
   payload: {
     planned_date?: string
     input_id?: string | null
     input_dose?: number | null
+    input_amount_total?: number | null
     cost_plan_mode?: 'unit' | 'total'
     cost_plan_value?: number | null
+    cost_fact_mode?: 'unit' | 'total'
+    cost_fact_value?: number | null
+    fact_date?: string
+    performer?: string | null
+    machines?: Array<{
+      machine_id: string
+      trailer_id?: string | null
+      operator?: string | null
+      hours?: number | null
+    }>
   },
 ): Promise<FieldOperation> {
   return apiClient.request<FieldOperation>(`/operations/${operationId}`, {
