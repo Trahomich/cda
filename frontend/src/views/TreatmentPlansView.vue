@@ -291,7 +291,9 @@ onMounted(async () => {
               <RouterLink
                 class="tp__field-link"
                 :to="{ name: 'field-card', params: { fieldId: op.field_id } }"
-              >{{ fmtDate(op.planned_date) }}</RouterLink>
+              >
+                {{ fmtDate(op.planned_date) }}
+              </RouterLink>
             </td>
             <td>{{ OP_LABELS[op.operation_type] }}</td>
             <td>{{ fieldName(op.field_id) }} · {{ currentCycle(op.field_id) }}</td>
