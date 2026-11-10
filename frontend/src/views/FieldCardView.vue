@@ -1404,8 +1404,8 @@ function fmtNum(v: number, digits = 1): string {
                 <span class="card360__jchip card360__jchip--plan">{{ planHasFact(plan) ? 'план' : 'план · ожидается' }}</span>
                 {{ plan.input_name }} — {{ fmtNum(plan.dose, 2) }}
                 {{ plan.unit === 'l_ha' ? 'л/га' : plan.unit === 'kg_ha' ? 'кг/га' : 'кг д.в./га' }},
-                {{ fmtDate(plan.planned_date) }} ·
-                {{ econCost(plan.operation_type, 'plan') != null ? fmtRub(econCost(plan.operation_type, 'plan')!) : 'стоимость не задана' }}
+                {{ plan.planned_date ? fmtDate(plan.planned_date) : '—' }} ·
+                {{ planCost(plan) != null ? fmtRub(planCost(plan)!) : 'стоимость не задана' }}
                 — {{ PLAN_STATUS_LABELS[plan.status] ?? plan.status }}
               </li>
               <li
