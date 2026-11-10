@@ -303,3 +303,123 @@ class TestEconomicsAfterComplete:
         data = field_economics(db_session, world["field"].id, 2026)
         assert data["fact_cost_rub"] > 0  # норматив spraying × площадь
         assert data["plan_cost_rub"] == 0  # план закрыт фактом — не дубль
+
+
+class TestFactEdit720:
+    """Правка ФАКТА done-операций (§7.10 + #720): PATCH фактических полей."""
+
+    @staticmethod
+    def _done_op(client, headers, world, **extra):
+        body = {
+            "field_id": str(world["field"].id),
+            "operation_type": "spraying",
+            "date": "2026-06-13",  # внеплановый факт (полиморфный POST)
+            "actual_area_ga": 100.0,
+            "performer": "Сидоров И.",
+        }
+        body.update(extra)
+        resp = client.post(API, json=body, headers=headers)
+        assert resp.status_code == 201, resp.text
+        return resp.json()["operation_id"]
+
+    def test_edit_fact_fields(self, client, db_session, ops_headers, world):
+        """Правка даты/расхода/факт-стоимости/исполнителя/техники."""
+        oid = self._done_op(client, ops_headers, world)
+        resp = client.patch(
+            f"{API}/{oid}",
+            json={
+                "fact_date": "2026-06-15",
+                "input_dose": 2.5,
+                "input_amount_total": 250.0,
+                "cost_fact_mode": "unit",
+                "cost_fact_value": 400.0,
+                "performer": "Иванов А. (исправлено)",
+                "machines": [
+                    {"machine_id": str(world["tractor"].id), "operator": "Петров П.", "hours": 7.0}
+                ],
+            },
+            headers=ops_headers,
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        assert body["fact_date"] == "2026-06-15" and body["date"] == "2026-06-15"
+        assert body["input_dose"] == 2.5 and body["input_amount_total"] == 250.0
+        assert body["performer"] == "Иванов А. (исправлено)"
+        assert body["cost_fact_rub"] == pytest.approx(400.0 * 100.0)
+        assert len(body["machines"]) == 1
+        assert body["machines"][0]["operator"] == "Петров П."
+
+    def test_edit_reflected_in_economics(self, client, db_session, ops_headers, world):
+        """Правка факт-стоимости меняет fact_cost_rub экономики (API-62)."""
+
+        oid = self._done_op(client, ops_headers, world)
+        eco_before = client.get(
+            f"/api/v1/fields/{world['field'].id}/economics",
+            params={"year": 2026},
+            headers=ops_headers,
+        ).json()
+        assert eco_before["fact_cost_rub"] == pytest.approx(350.0 * 100.0)  # норматив
+        resp = client.patch(
+            f"{API}/{oid}",
+            json={"cost_fact_mode": "total", "cost_fact_value": 55555.0},
+            headers=ops_headers,
+        )
+        assert resp.status_code == 200
+        eco_after = client.get(
+            f"/api/v1/fields/{world['field'].id}/economics",
+            params={"year": 2026},
+            headers=ops_headers,
+        ).json()
+        assert eco_after["fact_cost_rub"] == pytest.approx(55555.0)
+
+    def test_plan_fields_after_fact_422(self, client, db_session, ops_headers, world):
+        """Плановые поля после факта — 422 operation_already_done;
+        факт-поля при этом доступны."""
+        oid = self._done_op(client, ops_headers, world)
+        resp = client.patch(
+            f"{API}/{oid}",
+            json={"planned_date": "2026-06-01"},
+            headers=ops_headers,
+        )
+        assert resp.status_code == 422
+        assert resp.json()["code"] == "operation_already_done"
+        ok = client.patch(f"{API}/{oid}", json={"fact_date": "2026-06-16"}, headers=ops_headers)
+        assert ok.status_code == 200
+
+    def test_cancelled_422(self, client, db_session, ops_headers, world):
+
+        oid = self._done_op(client, ops_headers, world)
+        from app.core.db import SessionLocal  # noqa: F401 — отмена напрямую
+        from app.models.agronomy import FieldOperation
+        from sqlalchemy import update
+
+        db_session.execute(
+            update(FieldOperation).where(FieldOperation.id == oid).values(status="cancelled")
+        )
+        db_session.commit()
+        resp = client.patch(f"{API}/{oid}", json={"performer": "X"}, headers=ops_headers)
+        assert resp.status_code == 422
+        assert resp.json()["code"] == "operation_cancelled"
+
+    def test_plan_still_patchable(self, client, db_session, ops_headers, world):
+        """План правится как раньше (регресс #183)."""
+        resp = client.post(
+            API,
+            json={
+                "field_id": str(world["field"].id),
+                "operation_type": "fertilizing",
+                "planned_date": "2026-05-01",
+                "input_id": str(world["input"].id),
+                "input_dose": 1.0,
+            },
+            headers=ops_headers,
+        )
+        assert resp.status_code == 201
+        oid = resp.json()["operation_id"]
+        patch = client.patch(
+            f"{API}/{oid}",
+            json={"planned_date": "2026-05-03", "cost_plan_value": 300.0},
+            headers=ops_headers,
+        )
+        assert patch.status_code == 200
+        assert patch.json()["planned_date"] == "2026-05-03"
