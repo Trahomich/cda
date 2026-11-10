@@ -48,7 +48,7 @@ test('работы: добавить план → закрыть фактом �
   page,
 }) => {
   // Подтверждать может руководитель: логинимся менеджером.
-  await page.locator('#login').fill('manager')
+  await page.getByLabel('Логин').fill('manager')
   await page.locator('.login__submit').click()
   await page.waitForURL((url) => new URL(url).pathname.startsWith('/fields/map'), {
     timeout: 15_000,
