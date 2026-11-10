@@ -139,15 +139,33 @@ export function confirmOperation(operationId: string): Promise<FieldOperation> {
   })
 }
 
-/** API-18: GET /operations — журнал операций (фильтры field_id, date_from, date_to). */
+/** API-18 (§7.10, #175): GET /operations — единые операции план+факт.
+ *  Фильтры: field_id, year (сезон), date_from/date_to (по date =
+ *  fact ?? planned), type, plan/fact (наличие дат), confirmed. */
 export function getOperations(params: {
   field_id?: string
   date_from?: string
   date_to?: string
+  year?: number
+  type?: OperationType
+  plan?: boolean
+  fact?: boolean
+  confirmed?: boolean
   limit?: number
   offset?: number
 }): Promise<{ items: FieldOperation[]; total: number; limit: number; offset: number }> {
-  return apiClient.list<FieldOperation>('/operations', params)
+  return apiClient.list<FieldOperation>('/operations', {
+    field_id: params.field_id,
+    date_from: params.date_from,
+    date_to: params.date_to,
+    year: params.year,
+    type: params.type,
+    plan: params.plan === true ? 'true' : undefined,
+    fact: params.fact === true ? 'true' : undefined,
+    confirmed: params.confirmed === undefined ? undefined : params.confirmed ? 'true' : 'false',
+    limit: params.limit,
+    offset: params.offset,
+  })
 }
 
 /** API-46: POST /auth/login — аутентификация ({login, password} → токен и пользователь). */
