@@ -130,6 +130,12 @@ ID бизнес-правил имеют префикс `RULE-AGRO-NN`; он оп
 | source* | enum | manual, telemetry_import, plan_execution |
 | deviation_flag* | bool | true, если |факт − план| / план > 10 % (RULE-AGRO-11) |
 | status* | enum | по автомату §2.2 |
+| cost_mode | enum | 'unit' (₽/га) \| 'total' (за поле); null — стоимости нет (2026-11-09, экономика §7.9 06-data-api) |
+| cost_value | decimal | стоимость; при unit умножается на actual_area_ga; план = статусы draft/planned/in_progress, факт = done |
+
+Справочник **ref_operation_cost** (DAT, 2026-11-09): operation_type (PK) →
+rub_per_ga — нормативная расценка, ₽/га (fallback стоимости факта без cost;
+типовые расценки региона — docs/reports/operation-costs-2026.md).
 
 ### 1.7. ENT-YIELD-RECORD — запись об урожайности
 
