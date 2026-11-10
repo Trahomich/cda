@@ -410,18 +410,19 @@ def operations_key_dates(
     не генерить десятки близких рекомендаций.
     """
     rows = db.execute(
-        select(FieldOperation.operation_type, FieldOperation.planned_date, FieldOperation.fact_date)
+        select(FieldOperation.planned_date, FieldOperation.fact_date)
+        .join(CropCycle, FieldOperation.cycle_id == CropCycle.id)
         .where(
             FieldOperation.field_id == field_id,
-            FieldOperation.cycle_id.isnot(None),
+            CropCycle.year == season_year,
             FieldOperation.status != "cancelled",
         )
         .order_by(FieldOperation.planned_date, FieldOperation.fact_date)
     ).all()
     dates: set[date] = set()
-    for _op_type, planned, fact in rows:
+    for planned, fact in rows:
         for day in (planned, fact):
-            if day is not None and day.year == season_year:
+            if day is not None:
                 dates.add(day)
     unique = sorted(dates)
     if len(unique) <= max_dates:
