@@ -109,6 +109,34 @@ export function createOperation(payload: OperationRequest): Promise<FieldOperati
   return apiClient.request<FieldOperation>('/operations', { method: 'POST', body: payload })
 }
 
+/** §7.10 (#173/#174): POST /operations — создание ПЛАНОВОЙ операции
+ *  (planned_date, расходник и стоимость плана); факт = planned_date null. */
+export function createOperationPlan(
+  payload: CreateOperationPlanRequest,
+): Promise<FieldOperation> {
+  return apiClient.request<FieldOperation>('/operations', { method: 'POST', body: payload })
+}
+
+/** §7.10: POST /operations/{id}/complete — закрытие плана фактом
+ *  (дата, расход, факт-стоимость, исполнитель, техника). */
+export function completeOperation(
+  operationId: string,
+  payload: CompleteOperationRequest,
+): Promise<FieldOperation> {
+  return apiClient.request<FieldOperation>(`/operations/${operationId}/complete`, {
+    method: 'POST',
+    body: payload,
+  })
+}
+
+/** §7.10: POST /operations/{id}/confirm — подтверждение факта
+ *  (confirmed_by из токена); повторный вызов идемпотентен. */
+export function confirmOperation(operationId: string): Promise<FieldOperation> {
+  return apiClient.request<FieldOperation>(`/operations/${operationId}/confirm`, {
+    method: 'POST',
+  })
+}
+
 /** API-18: GET /operations — журнал операций (фильтры field_id, date_from, date_to). */
 export function getOperations(params: {
   field_id?: string
