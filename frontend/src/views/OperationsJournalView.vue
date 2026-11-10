@@ -3,10 +3,15 @@
 // статусы отклонений — строки с deviation_flag подсвечены, rationale
 // (REQ-F-013, RULE-AGRO-11) = сравнение факт. дозы с планом внесения.
 // Данные: GET /operations (API-18, пагинация limit/offset), планы — API-15.
+// #168 (фидбек #646): фильтр сезона (по умолчанию текущий — не весь архив),
+// явные чипы план/факт (пары ±5 дней рядом, план без факта — «ожидается»),
+// итоги сезона сверху; при выбранном поле суммы те же, что в экономике
+// карточки (API-62).
 import { computed, onMounted, ref } from 'vue'
-import { getFields, getOperations, getTreatmentPlans } from '@/api'
+import { getFieldEconomics, getFields, getOperations, getTreatmentPlans } from '@/api'
 import type {
   Field,
+  FieldEconomics,
   FieldOperation,
   OperationType,
   TreatmentPlan,
