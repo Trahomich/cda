@@ -55,6 +55,22 @@ class YieldRecordItem(BaseModel):
     date: date
 
 
+class MachineLinkIn(BaseModel):
+    """Машина операции (§7.10 dat_operation_machine): агрегат + прицеп опционально."""
+
+    machine_id: uuid.UUID
+    trailer_id: uuid.UUID | None = None
+    operator: str | None = Field(default=None, max_length=200)
+    hours: float | None = Field(default=None, ge=0, le=10000.0)
+
+
+class MachineLinkItem(MachineLinkIn):
+    """Машина операции в ответе: + имена для отображения."""
+
+    machine_name: str
+    trailer_name: str | None = None
+
+
 class OperationItem(BaseModel):
     model_config = ConfigDict(serialize_by_alias=True)
 
@@ -108,22 +124,6 @@ class OperationListResponse(BaseModel):
 
 
 # -- Единая операция (§7.10, #173): план → факт → подтверждение, техника 1:N --
-
-
-class MachineLinkIn(BaseModel):
-    """Машина операции (§7.10 dat_operation_machine): агрегат + прицеп опционально."""
-
-    machine_id: uuid.UUID
-    trailer_id: uuid.UUID | None = None
-    operator: str | None = Field(default=None, max_length=200)
-    hours: float | None = Field(default=None, ge=0, le=10000.0)
-
-
-class MachineLinkItem(MachineLinkIn):
-    """Машина операции в ответе: + имена для отображения."""
-
-    machine_name: str
-    trailer_name: str | None = None
 
 
 class UnifiedOperationPlanIn(BaseModel):
