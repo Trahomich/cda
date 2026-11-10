@@ -568,13 +568,14 @@ const OPERATIONS: OperationEntry[] = [
     confirmed_by: 'Руководитель',
     confirmed_at: '2027-04-14T20:00:00Z',
     created_at: '2027-04-14T18:02:00Z',
-    // §7.10: техника операции (1:N) — трактор + опрыскиватель.
+    // §7.10: техника операции (1:N) — трактор + опрыскиватель (литералы,
+    // т.к. MACHINES объявлен ниже и TDZ не даёт ссылаться на него).
     machines: [
       {
-        machine_id: MACHINES[0].machine_id,
-        machine_name: `${MACHINES[0].model} (${MACHINES[0].gov_number})`,
-        trailer_id: MACHINES[3].machine_id,
-        trailer_name: `${MACHINES[3].model}`,
+        machine_id: 'a11ce000-0000-4000-8000-000000000001',
+        machine_name: 'МТЗ-1221 (А321ВС40)',
+        trailer_id: 'a11ce000-0000-4000-8000-000000000004',
+        trailer_name: 'Kverneland Exact CD',
         operator: 'Сидоров В.',
         hours: 11.5,
       },
