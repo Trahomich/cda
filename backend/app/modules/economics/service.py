@@ -231,7 +231,6 @@ def field_economics(db: Session, field_id: uuid.UUID, year: int) -> dict:
 __all__ = [
     "FACT_STATUS",
     "OPERATION_TITLES",
-    "PLAN_STATUSES",
     "cost_rates",
     "is_fact_op",
     "is_plan_op",
