@@ -147,9 +147,12 @@ class UnifiedOperationPlanIn(BaseModel):
 
 
 class UnifiedOperationPatchIn(BaseModel):
-    """PATCH /operations/{id} — правка ПЛАНА до закрытия фактом (§7.10).
+    """PATCH /operations/{id} (§7.10 + правка пользователя 10.11 #720).
 
-    После fact_date — 422 operation_already_done. Все поля опциональны.
+    Плановые операции: правка плана (как раньше) — после fact_date плановые
+    поля дают 422 operation_already_done. Done-операции: правка ФАКТА —
+    fact_date, input_amount_total, input_dose, cost_fact_*, performer,
+    machines (полная замена). Все поля опциональны.
     """
 
     planned_date: date | None = None
@@ -159,6 +162,13 @@ class UnifiedOperationPatchIn(BaseModel):
     cost_plan_mode: str | None = Field(default=None, pattern="^(unit|total)$")
     cost_plan_value: float | None = Field(default=None, ge=0, le=99999999.99)
     performer: str | None = Field(default=None, max_length=200)
+    # -- фактические поля (для done-операций, #720) --
+    fact_date: date | None = None
+    cost_fact_mode: str | None = Field(default=None, pattern="^(unit|total)$")
+    cost_fact_value: float | None = Field(default=None, ge=0, le=99999999.99)
+    machines: list[MachineLinkIn] = Field(
+        default_factory=list, description="Полная замена техники (§7.10)"
+    )
 
 
 class UnifiedOperationCompleteIn(BaseModel):
