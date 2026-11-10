@@ -119,7 +119,7 @@ test('карточка поля: вкладка «Работы» — план и
   await expect(page.locator('.strip')).toBeVisible({ timeout: 15_000 })
 
   await page.locator('.card360__tab--works').click()
-  const works = page.locator('.card360__works-list')
+  const works = page.locator('.card360__works')
   await expect(works).toBeVisible()
   // Мок: у поля №1 — факт обработки почвы (02.07.2027, без подтверждения)
   // и план опрыскивания 20.05.2027 («план · ожидается»); свежие сверху,
