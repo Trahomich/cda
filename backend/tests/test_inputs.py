@@ -11,7 +11,7 @@ rule_violation с rule_id/severity/rationale/entity — RFC 7807 + доменн�
 import uuid
 from datetime import date
 
-from app.models.agronomy import AgroInput, CropCycle, TreatmentPlan
+from app.models.agronomy import AgroInput, CropCycle, FieldOperation
 from app.models.auth import AuditRecord, UserRole
 from app.models.references import Culture
 from app.modules.inputs import rules
