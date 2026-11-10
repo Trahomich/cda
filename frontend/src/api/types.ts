@@ -775,6 +775,14 @@ export interface FieldEconomics {
   operations: FieldEconomicsOperation[]
 }
 
+/** API-62b (§7.9, #169): GET /economics/summary?year=YYYY — сводка сезона
+ *  по всем полям хозяйства (план/факт Σ для итогов журнала работ). */
+export interface EconomicsSummary {
+  year: number
+  plan_cost_rub: number
+  fact_cost_rub: number
+}
+
 /** Сезон NDVI поля — элемент items[] ответа API-54 (§7.5): distinct-год
  *  чистых сцен поля; culture_name — культура основного цикла года | null. */
 export interface SeasonItem {
