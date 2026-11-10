@@ -94,8 +94,8 @@ class TestEconomicsSums:
             "tillage",
             "2026-05-02",
             status="planned",
-            cost_fact_mode="unit",
-            cost_fact_value=700.0,
+            cost_plan_mode="unit",
+            cost_plan_value=700.0,
         )
         make_op(
             db,
@@ -104,8 +104,8 @@ class TestEconomicsSums:
             "spraying",
             "2026-06-01",
             status="draft",
-            cost_fact_mode="total",
-            cost_fact_value=5000.0,
+            cost_plan_mode="total",
+            cost_plan_value=5000.0,
         )
         # факт: вспашка выполнена дороже (750 руб/га), опрыскивание — норматив 350×100
         make_op(
@@ -195,8 +195,8 @@ class TestEconomicsSums:
             "seeding",
             "2026-04-20",
             status="planned",
-            cost_fact_mode="total",
-            cost_fact_value=90000.0,
+            cost_plan_mode="total",
+            cost_plan_value=90000.0,
         )  # не выполнено
         make_op(db, fid, cycle.id, "spraying", "2026-06-11", status="done")  # без плана
         db.commit()
