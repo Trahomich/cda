@@ -117,7 +117,13 @@ def _item(
             else None
         ),
         cost_plan_rub=operation_cost_rub(operation, rates, side="plan"),
-        cost_fact_rub=operation_cost_rub(operation, rates, side="fact"),
+        # §7.10: cost_fact только у закрытого факта (норматив-fallback —
+        # для факта); у плана fact-стоимости нет → null (#173, нит #551)
+        cost_fact_rub=(
+            operation_cost_rub(operation, rates, side="fact")
+            if operation.fact_date is not None
+            else None
+        ),
         confirmed_by=operation.confirmed_by,
         confirmed_at=operation.confirmed_at,
         basis_recommendation_id=operation.basis_recommendation_id,
