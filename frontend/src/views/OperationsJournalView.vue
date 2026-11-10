@@ -365,6 +365,10 @@ onMounted(async () => {
         <template v-if="econ">
           · план Σ <strong>{{ fmtRub(econ.plan_cost_rub) }}</strong>
           · факт Σ <strong>{{ fmtRub(econ.fact_cost_rub) }}</strong>
+          · отклонение
+          <strong :class="econDiff != null && econDiff > 0 ? 'jrn__bad' : 'jrn__good'">{{
+            econDiff != null && econDiff > 0 ? '+' : ''
+          }}{{ fmtRub(Math.abs(econDiff ?? 0)) }}</strong>
           <span
             v-if="econ.fact_cost_rub === 0 && econ.operations.some((o) => o.plan != null)"
             class="jrn__muted"
