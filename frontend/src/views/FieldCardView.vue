@@ -2928,6 +2928,16 @@ polygon.card360__polygon {
   background: #e8f5e9;
 }
 
+.card360__allworks {
+  background: none;
+  border: none;
+  color: #2e7d32;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+}
+
 .card360__check--warn {
   background: #fff8e1;
 }
