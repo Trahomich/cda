@@ -106,6 +106,84 @@ const deviation = computed(() => {
 
 const seasonLabel = computed(() => (season.value ? `Сезон ${season.value}` : 'Все сезоны'))
 
+/* ── Редактирование операции из журнала (#184): план — план-поля,
+ *  факт — факт-поля (дата, расход, стоимость, исполнитель, техника). ── */
+
+const machinesRef = ref<Machine[]>([])
+const editing = ref<FieldOperation | null>(null)
+const editForm = ref({
+  date: '',
+  input_dose: null as number | null,
+  input_amount_total: null as number | null,
+  cost_mode: 'unit' as 'unit' | 'total',
+  cost_value: null as number | null,
+  performer: '',
+})
+const editMachines = ref<
+  Array<{ machine_id: string; trailer_id: string; operator: string; hours: number | null }>
+>([])
+
+function startEdit(op: FieldOperation): void {
+  editing.value = op
+  const isFact = !!op.fact_date
+  const cost = isFact ? op.cost_fact_rub : op.cost_plan_rub
+  editForm.value = {
+    date: (isFact ? op.fact_date : op.planned_date) ?? op.date,
+    input_dose: op.input_dose ?? null,
+    input_amount_total: op.input_amount_total ?? null,
+    cost_mode: 'unit',
+    cost_value: cost != null ? Math.round(cost / (op.actual_area_ga || 1)) : null,
+    performer: op.performer ?? '',
+  }
+  editMachines.value = (op.machines ?? []).map((m) => ({
+    machine_id: m.machine_id,
+    trailer_id: m.trailer_id ?? '',
+    operator: m.operator ?? '',
+    hours: m.hours ?? null,
+  }))
+  if (!editMachines.value.length) {
+    editMachines.value = [{ machine_id: '', trailer_id: '', operator: '', hours: null }]
+  }
+}
+
+async function submitEdit(): Promise<void> {
+  const op = editing.value
+  if (!op || !editForm.value.date) return
+  const machines = editMachines.value
+    .filter((m) => m.machine_id)
+    .map((m) => ({
+      machine_id: m.machine_id,
+      trailer_id: m.trailer_id || null,
+      operator: m.operator || null,
+      hours: m.hours,
+    }))
+  try {
+    if (op.fact_date) {
+      await patchOperation(op.operation_id, {
+        fact_date: editForm.value.date,
+        input_dose: editForm.value.input_dose,
+        input_amount_total: editForm.value.input_amount_total,
+        cost_fact_mode: editForm.value.cost_mode,
+        cost_fact_value: editForm.value.cost_value,
+        performer: editForm.value.performer || null,
+        machines,
+      })
+    } else {
+      await patchOperation(op.operation_id, {
+        planned_date: editForm.value.date,
+        input_dose: editForm.value.input_dose,
+        cost_plan_mode: editForm.value.cost_mode,
+        cost_plan_value: editForm.value.cost_value,
+        machines,
+      })
+    }
+    editing.value = null
+    await load(true)
+  } catch {
+    /* тост уже показан API-клиентом */
+  }
+}
+
 async function loadTotals(): Promise<void> {
   planTotal.value = null
   factTotal.value = null
