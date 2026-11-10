@@ -62,7 +62,7 @@ const activeTab = ref<'overview' | 'works'>('overview')
 const fieldPlans = ref<TreatmentPlan[]>([])
 const fieldOperations = ref<FieldOperation[]>([])
 
-/** Лента «Работы» (#674): единый источник — операции API-18 выбранного
+/** Лента «Работы» (#674/#174): единый источник — операции API-18 выбранного
  *  сезона (план = статусы draft/planned/in_progress, факт = done);
  *  планы внесений (API-15) — отдельная сущность, сюда не смешиваются. */
 const worksSeasonOps = computed(() => {
@@ -72,6 +72,181 @@ const worksSeasonOps = computed(() => {
     : fieldOperations.value
   return [...ops].sort((a, b) => b.date.localeCompare(a.date))
 })
+
+/* ── Вкладка «Работы» (§7.10, #174): группировка по месяцам, чипы план/факт,
+ *  стоимости, техника, подтверждение и минимальный CRUD ── */
+
+const MONTH_NAMES = [
+  'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+  'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
+]
+
+/** Группировка работ сезона по месяцам (свежие сверху). */
+const worksGroups = computed(() => {
+  const map = new Map<string, FieldOperation[]>()
+  for (const op of worksSeasonOps.value) {
+    const key = op.date.slice(0, 7)
+    const bucket = map.get(key)
+    if (bucket) bucket.push(op)
+    else map.set(key, [op])
+  }
+  return [...map.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([key, ops]) => ({
+      key,
+      label: `${MONTH_NAMES[Number(key.slice(5, 7)) - 1]} ${key.slice(0, 4)}`,
+      ops,
+    }))
+})
+
+/** Подсказка техники строки: агрегат(+прицеп) · оператор · часы. */
+function machinesTitle(op: FieldOperation): string {
+  return (op.machines ?? [])
+    .map((m) =>
+      [
+        m.machine_name + (m.trailer_name ? ` + ${m.trailer_name}` : ''),
+        m.operator,
+        m.hours != null ? `${m.hours} мото-ч` : null,
+      ]
+        .filter(Boolean)
+        .join(' · '),
+    )
+    .join('; ')
+}
+
+/** Стоимость строки: план и факт, обе — при различии (§7.10). */
+function worksCost(op: FieldOperation): string {
+  const plan = op.cost_plan_rub ?? null
+  const fact = op.cost_fact_rub ?? null
+  if (plan != null && fact != null && plan !== fact) {
+    return `план ${fmtRub(plan)} / факт ${fmtRub(fact)}`
+  }
+  const v = fact ?? plan
+  return v != null ? fmtRub(v) : 'стоимость не задана'
+}
+
+/** Подтверждать факты может руководитель (и админ). */
+const canConfirm = computed(() => ['manager', 'admin'].includes(auth.user?.role ?? ''))
+
+/** Расхождение дат план/факт (дни; null — нет плана или совпадают). */
+function planShift(op: FieldOperation): number | null {
+  if (op.planned_date == null || op.fact_date == null) return null
+  const d = Math.round((Date.parse(op.fact_date) - Date.parse(op.planned_date)) / 86_400_000)
+  return d === 0 ? null : d
+}
+
+/* ── CRUD (§7.10): добавить план / закрыть фактом / подтвердить ── */
+
+const planFormOpen = ref(false)
+const planForm = ref({
+  operation_type: 'tillage' as OperationType,
+  planned_date: todayIso,
+  input_id: '',
+  input_dose: null as number | null,
+  cost_plan_mode: 'unit' as 'unit' | 'total',
+  cost_plan_value: null as number | null,
+})
+const completingOp = ref<FieldOperation | null>(null)
+const completeForm = ref({
+  fact_date: todayIso,
+  input_amount_total: null as number | null,
+  cost_fact_mode: 'unit' as 'unit' | 'total',
+  cost_fact_value: null as number | null,
+  performer: '',
+  machine_id: '',
+})
+/** Справочники для форм: расходники и техника. */
+const inputsRef = ref<AgroInput[]>([])
+const machinesRef = ref<Machine[]>([])
+const crudBusy = ref(false)
+
+async function loadRefs(): Promise<void> {
+  if (inputsRef.value.length && machinesRef.value.length) return
+  try {
+    const [inp, mach] = await Promise.all([getAgroInputs(), getMachines()])
+    inputsRef.value = inp.items
+    machinesRef.value = mach.items
+  } catch {
+    /* формы без справочников — поля просто пустые */
+  }
+}
+
+async function reloadWorks(): Promise<void> {
+  await loadWorks()
+  void loadEconomics()
+}
+
+async function submitPlan(): Promise<void> {
+  if (!planForm.value.planned_date) return
+  crudBusy.value = true
+  try {
+    await createOperationPlan({
+      field_id: fieldId,
+      operation_type: planForm.value.operation_type,
+      planned_date: planForm.value.planned_date,
+      input_id: planForm.value.input_id || null,
+      input_dose: planForm.value.input_dose,
+      cost_plan_mode: planForm.value.cost_plan_mode,
+      cost_plan_value: planForm.value.cost_plan_value,
+    })
+    planFormOpen.value = false
+    planForm.value = {
+      operation_type: 'tillage',
+      planned_date: todayIso,
+      input_id: '',
+      input_dose: null,
+      cost_plan_mode: 'unit',
+      cost_plan_value: null,
+    }
+    await reloadWorks()
+  } finally {
+    crudBusy.value = false
+  }
+}
+
+function startComplete(op: FieldOperation): void {
+  completingOp.value = op
+  completeForm.value = {
+    fact_date: todayIso,
+    input_amount_total: null,
+    cost_fact_mode: 'unit',
+    cost_fact_value: null,
+    performer: op.performer ?? '',
+    machine_id: '',
+  }
+}
+
+async function submitComplete(): Promise<void> {
+  const op = completingOp.value
+  if (!op || !completeForm.value.fact_date) return
+  crudBusy.value = true
+  try {
+    await completeOperation(op.operation_id, {
+      fact_date: completeForm.value.fact_date,
+      input_amount_total: completeForm.value.input_amount_total,
+      cost_fact_mode: completeForm.value.cost_fact_mode,
+      cost_fact_value: completeForm.value.cost_fact_value,
+      performer: completeForm.value.performer || null,
+      machines: completeForm.value.machine_id
+        ? [{ machine_id: completeForm.value.machine_id }]
+        : undefined,
+    })
+    completingOp.value = null
+    await reloadWorks()
+  } finally {
+    crudBusy.value = false
+  }
+}
+
+async function confirmOp(op: FieldOperation): Promise<void> {
+  crudBusy.value = true
+  try {
+    await confirmOperation(op.operation_id)
+    await reloadWorks()
+  } finally {
+    crudBusy.value = false
+  }
+}
 
 const PLAN_STATUS_LABELS: Record<string, string> = {
   draft: 'черновик',
