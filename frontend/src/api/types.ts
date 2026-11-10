@@ -134,6 +134,9 @@ export interface FieldOperation extends Omit<OperationRequest, 'client_id'> {
   machine_job_id?: string | null
   /** Ключ идемпотентности офлайн-очереди; в ответе может отсутствовать. */
   client_id?: string | null
+  /** Итоговая стоимость операции, руб (API-18, §7.9 #650/#169):
+   *  unit×площадь | total | норматив-fallback для факта; null — не задана. */
+  cost_rub?: number | null
 }
 
 /** Ответ GET /auth/me (API-47). */
