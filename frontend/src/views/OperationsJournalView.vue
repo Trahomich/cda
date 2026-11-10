@@ -204,16 +204,27 @@ function onSeasonChange(): void {
   void load(true)
 }
 
-/** Итоги сезона: N операций; при выбранном поле — план Σ/факт Σ (API-62). */
-async function loadEcon(): Promise<void> {
-  if (!fieldId.value || typeof season.value !== 'number') {
+/** Итоги сезона: N операций; суммы план/факт — API-62 (поле) или API-62b. */
+async function loadTotals(): Promise<void> {
+  if (typeof season.value !== 'number') {
     econ.value = null
+    econSummary.value = null
     return
   }
-  try {
-    econ.value = await getFieldEconomics(fieldId.value, season.value)
-  } catch {
+  if (fieldId.value) {
+    econSummary.value = null
+    try {
+      econ.value = await getFieldEconomics(fieldId.value, season.value)
+    } catch {
+      econ.value = null
+    }
+  } else {
     econ.value = null
+    try {
+      econSummary.value = await getEconomicsSummary(season.value)
+    } catch {
+      econSummary.value = null
+    }
   }
 }
 
