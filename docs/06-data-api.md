@@ -141,7 +141,7 @@ erDiagram
 |---|---|---|---|
 | API-01 | GET /fields | список полей (фильтры status, q по имени); элементы содержат агрегат current_cycle {year, culture_name, kind} \| null; параметр with_geometry=true добавляет contour (по умолчанию опущен — экономия трафика; карта запрашивает с ним) | REQ-F-003 |
 | API-02 | POST /fields | создать поле с контуром | REQ-F-001 |
-| API-03 | PATCH /fields/{id} | правка (смена контура создаёт версию) | REQ-F-002 |
+| API-03 | PATCH /fields/{id}; GET/POST /fields/{id}/versions | правка (смена контура создаёт версию); история и создание версий контура (201) | REQ-F-002 |
 | API-04 | POST /fields/import | импорт GeoJSON/KML, отчёт ImportReport | REQ-F-001 |
 | API-05 | GET /fields/{id} | карточка «Поле 360°»: агрегат поля, NDVI, погода, журнал | REQ-F-003, SC-01 |
 | API-06 | GET /fields/{id}/ndvi | таймлайн индексов с датами и cloud_pct | REQ-F-028 |
