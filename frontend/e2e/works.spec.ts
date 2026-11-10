@@ -89,6 +89,9 @@ test('планы внесения (§7.10): создание плана чере
 
   // Новый план виден и в журнале операций (единый источник §7.10).
   await page.goto('/operations')
+  // План датирован реальным «завтра» (2026) — журнал по умолчанию открывает
+  // сезон самой свежей операции (2027): переключаем сезон.
+  await page.locator('select').first().selectOption('2026')
   const jrnRow = page.locator('.jrn__table tbody tr', { hasText: tomorrowIso.split('-').reverse().join('.') })
   await expect(jrnRow).toBeVisible({ timeout: 15_000 })
   await expect(jrnRow.locator('.jrn__chip--plan')).toContainText('план · ожидается')
