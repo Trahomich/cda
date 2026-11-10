@@ -277,17 +277,17 @@ def downgrade() -> None:
     op.drop_constraint("ck_dat_field_operation_cost_fact_mode", "dat_field_operation")
     op.drop_index("ix_dat_field_operation_fact", "dat_field_operation")
     op.drop_index("ix_dat_field_operation_planned", "dat_field_operation")
-    # тип операций обратно без seed_treatment (перенесённые планы удалены выше)
+    # операции, перенесённые из планов (источник plan_execution), удаляем —
+    # ДО возврата типа без seed_treatment (иначе констрейнт не встанет)
+    op.execute(
+        sa.text("DELETE FROM dat_field_operation WHERE source = 'plan_execution'")
+    )
     op.drop_constraint("ck_dat_field_operation_type", "dat_field_operation")
     op.create_check_constraint(
         "ck_dat_field_operation_type",
         "dat_field_operation",
         "operation_type IN ('spraying', 'fertilizing', 'seeding', "
         "'harvesting', 'tillage', 'other')",
-    )
-    # операции, перенесённые из планов (источник plan_execution), удаляем
-    op.execute(
-        sa.text("DELETE FROM dat_field_operation WHERE source = 'plan_execution'")
     )
     op.drop_constraint("fk_dat_field_operation_basis", "dat_field_operation")
     op.drop_constraint("fk_dat_field_operation_confirmed", "dat_field_operation")
