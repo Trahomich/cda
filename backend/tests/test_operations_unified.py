@@ -174,7 +174,7 @@ class TestPolymorphicPost:
         """Тело плана без planned_date — 422 валидации pydantic."""
         body = {"field_id": str(world["field"].id), "operation_type": "tillage"}
         resp = client.post(API, json=body, headers=ops_headers)
-        assert resp.status_code == 422
+        assert resp.status_code == 400  # не подходит ни под факт, ни под план
 
 
 class TestFilters:
@@ -228,9 +228,9 @@ class TestFilters:
         ).json()
         assert {i["operation_id"] for i in confirmed["items"]} == {p2["operation_id"]}
 
-    def test_invalid_mode_422(self, client, ops_headers):
+    def test_invalid_mode_rejected(self, client, ops_headers):
         resp = client.get(API, params={"mode": "nope"}, headers=ops_headers)
-        assert resp.status_code == 422
+        assert resp.status_code == 400  # pattern-валидация Query
 
 
 class TestCompleteErrors:
