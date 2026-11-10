@@ -93,7 +93,16 @@ export interface AuthResponse {
 }
 
 /** Тип операции на поле (ENT-FIELD-OPERATION, 03 §1.6). */
-export type OperationType = 'spraying' | 'fertilizing' | 'seeding' | 'harvesting' | 'tillage' | 'other'
+/** Тип операции (§7.10: единый enum — плановое внесение и протравливание
+ *  тоже операции; seed_treatment — из планов внесения API-15). */
+export type OperationType =
+  | 'spraying'
+  | 'fertilizing'
+  | 'seed_treatment'
+  | 'seeding'
+  | 'harvesting'
+  | 'tillage'
+  | 'other'
 
 /** Запись урожайности внутри операции уборки (ENT-YIELD-RECORD, 03 §1.7). */
 export interface YieldRecordRequest {
