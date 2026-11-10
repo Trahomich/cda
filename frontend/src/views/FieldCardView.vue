@@ -2073,6 +2073,20 @@ function fmtNum(v: number, digits = 1): string {
   font-size: 0.9rem;
 }
 
+/* #665/#171: цена работы в строке и итоги сезона вкладки «Работы» */
+.card360__works-cost {
+  font-variant-numeric: tabular-nums;
+  color: #37474f;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.card360__wtotals {
+  margin: 0.2rem 0 0.6rem;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .card360 {
   display: flex;
   flex-direction: column;
