@@ -42,7 +42,7 @@ def _operation_facts(db_session) -> list[tuple]:
             FieldOperation.date,
             FieldOperation.operation_type,
             FieldOperation.input_id,
-            FieldOperation.actual_dose,
+            FieldOperation.input_dose,
             FieldOperation.performer,
             FieldOperation.cycle_id,
         )

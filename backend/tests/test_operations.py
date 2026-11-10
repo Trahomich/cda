@@ -74,7 +74,7 @@ def op_body(demo, **kw) -> dict:
         "operation_type": "spraying",
         "date": "2027-06-10",
         "input_id": str(demo["input"].id),
-        "actual_dose": 2.0,
+        "input_dose": 2.0,
         "actual_area_ga": 100.0,
         "performer": "Петров И.",
         "source": "manual",
@@ -94,7 +94,7 @@ class TestCreate:
         assert body["status"] == "done"
 
     def test_deviation_over_10_percent(self, client, db_session, agro_headers, demo):
-        resp = client.post(API, json=op_body(demo, actual_dose=2.5), headers=agro_headers)
+        resp = client.post(API, json=op_body(demo, input_dose=2.5), headers=agro_headers)
         assert resp.status_code == 201  # 422 не возвращаем (факт важнее плана)
         body = resp.json()
         assert body["deviation_flag"] is True
@@ -104,7 +104,7 @@ class TestCreate:
     def test_deviation_exactly_10_percent_is_not_flagged(
         self, client, db_session, agro_headers, demo
     ):
-        resp = client.post(API, json=op_body(demo, actual_dose=2.2), headers=agro_headers)
+        resp = client.post(API, json=op_body(demo, input_dose=2.2), headers=agro_headers)
         body = resp.json()
         assert body["deviation_flag"] is False
 
@@ -166,7 +166,7 @@ class TestYield:
                 demo,
                 operation_type="harvesting",
                 input_id=None,
-                actual_dose=None,
+                input_dose=None,
                 yield_record={"yield_c_ha": 44.5, "gross_t": 210.4, "source": "scales"},
             ),
             headers=agro_headers,
@@ -182,7 +182,7 @@ class TestYield:
             demo,
             operation_type="harvesting",
             input_id=None,
-            actual_dose=None,
+            input_dose=None,
             yield_record={"yield_c_ha": 44.5, "source": "scales"},
         )
         assert client.post(API, json=body, headers=agro_headers).status_code == 201
@@ -205,7 +205,7 @@ class TestYield:
                 demo,
                 operation_type="harvesting",
                 input_id=None,
-                actual_dose=None,
+                input_dose=None,
                 cycle_id=None,
                 yield_record={"yield_c_ha": 40.0},
             ),
@@ -230,7 +230,7 @@ class TestJournal:
                 date=day,
                 operation_type=kind,
                 input_id=None if kind != "spraying" else str(demo["input"].id),
-                actual_dose=2.0 if kind == "spraying" else None,
+                input_dose=2.0 if kind == "spraying" else None,
             )
             resp = client.post(API, json=body, headers=agro_headers)
             assert resp.status_code == 201, resp.text
