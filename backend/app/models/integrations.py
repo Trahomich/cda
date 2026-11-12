@@ -52,6 +52,13 @@ class WeatherObservation(Base):
     snowfall_cm: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
     snow_depth_cm: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
     precipitation_hours: Mapped[float | None] = mapped_column(Numeric(3, 1), nullable=True)
+    # #193: почва (посевной слой), ET0, УФ, точка росы, давление (гПа)
+    soil_temperature_c: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
+    soil_moisture_pct: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
+    et0_mm: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
+    uv_index: Mapped[float | None] = mapped_column(Numeric(3, 1), nullable=True)
+    dew_point_c: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
+    pressure_hpa: Mapped[float | None] = mapped_column(Numeric(6, 1), nullable=True)
     source_id: Mapped[str] = mapped_column(
         String(100),
         ForeignKey("ref_source.source_id", name="fk_dat_weather_observation_source"),
