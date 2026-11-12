@@ -399,6 +399,11 @@ class WeatherIngest:
             if error is not None:
                 report.fail(name, error)
                 continue
+            if not items:
+                # архив ответил 200 без данных (деградация/лимиты провайдера,
+                # #188): пустой ответ НЕ «ok» — иначе поле выпадет из добора
+                report.fail(name, "архив вернул пустой ответ")
+                continue
             saved = self.save_observations(db, items)
             db.commit()
             logger.info("погода: бэкфилл %s — upsert %d фактов", name, saved)
