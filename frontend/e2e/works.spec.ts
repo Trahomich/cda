@@ -55,8 +55,18 @@ test('календарь работ: май 2027 — план и факт в с�
   await expect(planDay.locator('.cal__chip[data-kind="plan"]')).toContainText('опрыскивание')
   await expect(factDay.locator('.cal__chip[data-kind="fact"]')).toContainText('опрыскивание')
 
-  // Клик по дню с фактом — лента со ссылкой в карточку поля.
-  await factDay.click()
+  // #763/#192: в чипе — тип + короткий номер поля, при наведении — полное
+  // название с площадью; клик по чипу ведёт в карточку поля.
+  const factChip = factDay.locator('.cal__chip[data-kind="fact"]')
+  await expect(factChip).toContainText('опрыскивание · 1')
+  await expect(factChip).toHaveAttribute('title', /ВОСХОД.*га/)
+  await factChip.click()
+  await page.waitForURL(new RegExp(`/fields/${FIRST_FIELD}$`), { timeout: 10_000 })
+  await page.goto('/calendar')
+  await page.locator('.cal__month').fill('2027-05')
+
+  // Клик по номеру дня с фактом — лента со ссылкой в карточку поля.
+  await factDay.locator('.cal__day-num-btn').click()
   const panel = page.getByTestId('cal-day-panel')
   await expect(panel).toBeVisible()
   await expect(panel.locator('.cal__entry--fact')).toContainText('факт')
