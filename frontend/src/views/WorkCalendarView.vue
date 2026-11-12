@@ -152,6 +152,15 @@ const weeks = computed(() => {
 
 const fieldName = (id: string) => fields.value.find((f) => f.field_id === id)?.name ?? id.slice(0, 8)
 
+/** Подсказка работы в ячейке (#763/#192): поле + площадь (+ исполнитель
+ *  у факта) — полное название при наведении. */
+function chipTitle(op: FieldOperation): string {
+  const f = fields.value.find((x) => x.field_id === op.field_id)
+  const parts = [f ? `${f.name} · ${f.area_ga.toLocaleString('ru-RU')} га` : op.field_id]
+  if (op.fact_date && op.performer) parts.push(op.performer)
+  return parts.join(' · ')
+}
+
 /** Лента выбранного дня (клик по ячейке). */
 const selectedEntries = computed(() => (selectedDay.value ? entriesOf(selectedDay.value) : []))
 
