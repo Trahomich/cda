@@ -11,6 +11,7 @@ import type { Map as LeafletMap } from 'leaflet'
 import L from 'leaflet'
 import { getCultureReferences, getFields, getWeatherMap } from '@/api'
 import type { CultureReference, Field, WeatherMapMetric } from '@/api/types'
+import { shortFieldNumber } from '@/utils/field'
 import FieldsListPanel from '@/components/FieldsListPanel.vue'
 import Skeleton from '@/components/Skeleton.vue'
 
