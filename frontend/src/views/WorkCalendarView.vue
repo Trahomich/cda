@@ -317,13 +317,18 @@ const planCount = computed(() => monthPlans.value.length)
                 }"
               >
                 <template v-if="date !== null">
-                  <button
-                    type="button"
-                    class="cal__day"
-                    :data-date="date"
-                    @click="selectedDay = selectedDay === date ? null : date"
-                  >
-                    <span class="cal__day-num">{{ Number(date.slice(8)) }}</span>
+                  <!-- #763/#192: номер дня — выбор дня; работы — ссылки в
+                       карточку поля, в чипе тип + номер поля -->
+                  <div class="cal__day">
+                    <button
+                      type="button"
+                      class="cal__day-num-btn"
+                      :data-date="date"
+                      :aria-label="`Работы за ${date}`"
+                      @click="selectedDay = selectedDay === date ? null : date"
+                    >
+                      {{ Number(date.slice(8)) }}
+                    </button>
                     <span class="cal__chips">
                       <Skeleton
                         v-if="loading"
@@ -332,20 +337,26 @@ const planCount = computed(() => monthPlans.value.length)
                         pill
                       />
                       <template v-else>
-                        <span
+                        <RouterLink
                           v-for="(e, j) in entriesOf(date).slice(0, 4)"
                           :key="j"
                           class="cal__chip"
                           :class="e.kind === 'plan' ? 'cal__chip--plan' : 'cal__chip--fact'"
                           :data-kind="e.kind"
-                        >{{ OP_LABELS[e.op.operation_type] }}</span>
+                          :data-field="e.op.field_id"
+                          :title="chipTitle(e.op)"
+                          :to="{ name: 'field-card', params: { fieldId: e.op.field_id } }"
+                        >
+                          {{ OP_LABELS[e.op.operation_type] }} ·
+                          {{ shortFieldNumber(fieldName(e.op.field_id)) }}
+                        </RouterLink>
                         <span
                           v-if="entriesOf(date).length > 4"
                           class="cal__chip cal__chip--more"
                         >+{{ entriesOf(date).length - 4 }}</span>
                       </template>
                     </span>
-                  </button>
+                  </div>
                 </template>
               </td>
             </tr>
