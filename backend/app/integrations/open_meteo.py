@@ -151,7 +151,9 @@ class OpenMeteoAdapter:
         return response.json()
 
     @staticmethod
-    def _hourly_soil_means(payload: dict[str, Any]) -> dict[date, tuple[float | None, float | None]]:
+    def _hourly_soil_means(
+        payload: dict[str, Any],
+    ) -> dict[date, tuple[float | None, float | None]]:
         """Суточные средние почвы из hourly-ответа: (T °C, влажность %).
 
         Влажность провайдера — м³/м³ (доли) → % объёмной влажности ×100.
@@ -257,9 +259,7 @@ class OpenMeteoAdapter:
         if dew is not None and t_max is not None and dew > t_max + 0.5:
             # точка росы физически не выше температуры воздуха; +0.5 °C —
             # допуск округления суточных агрегатов
-            raise DataQualityError(
-                f"{day}: точка росы {dew} выше t_max {t_max} (допуск 0.5 °C)"
-            )
+            raise DataQualityError(f"{day}: точка росы {dew} выше t_max {t_max} (допуск 0.5 °C)")
 
     # -- публичные методы контракта IF-WEATHER (05 §2) -----------------------
 
