@@ -274,14 +274,19 @@ class OpenMeteoAdapter:
                 "latitude": lat,
                 "longitude": lon,
                 "daily": ",".join(_DAILY_METRICS + _FORECAST_ONLY_METRICS),
+                "hourly": ",".join(_HOURLY_SOIL_FORECAST),
                 "timezone": "auto",
                 "windspeed_unit": "ms",
                 "forecast_days": days,
             },
         )
+        soil = self._hourly_soil_means(payload)
         issued_at = _iso_now()
         items: list[ForecastItem] = []
         for day, metrics in self._daily_rows(payload):
+            metrics["soil_temperature_mean"], metrics["soil_moisture_pct_mean"] = soil.get(
+                day, (None, None)
+            )
             self._validate(day, metrics)
             items.append(self._to_forecast(field_id, day, issued_at, metrics))
         return items
@@ -295,16 +300,21 @@ class OpenMeteoAdapter:
                 "latitude": lat,
                 "longitude": lon,
                 "daily": ",".join(_DAILY_METRICS + _FORECAST_ONLY_METRICS),
+                "hourly": ",".join(_HOURLY_SOIL_FORECAST),
                 "timezone": "auto",
                 "windspeed_unit": "ms",
                 "forecast_days": 1,
             },
         )
+        soil = self._hourly_soil_means(payload)
         # только сегодняшние сутки
         rows = [row for row in self._daily_rows(payload) if row[0] == date.today()]
         if not rows:
             rows = self._daily_rows(payload)[:1]
         day, metrics = rows[0]
+        metrics["soil_temperature_mean"], metrics["soil_moisture_pct_mean"] = soil.get(
+            day, (None, None)
+        )
         self._validate(day, metrics)
         return self._to_observation(field_id, day, metrics)
 
@@ -319,14 +329,19 @@ class OpenMeteoAdapter:
                 "latitude": lat,
                 "longitude": lon,
                 "daily": ",".join(_DAILY_METRICS),
+                "hourly": ",".join(_HOURLY_SOIL_ARCHIVE),
                 "timezone": "auto",
                 "windspeed_unit": "ms",
                 "start_date": date_from.isoformat(),
                 "end_date": date_to.isoformat(),
             },
         )
+        soil = self._hourly_soil_means(payload)
         observations = []
         for day, metrics in self._daily_rows(payload):
+            metrics["soil_temperature_mean"], metrics["soil_moisture_pct_mean"] = soil.get(
+                day, (None, None)
+            )
             self._validate(day, metrics)
             observations.append(self._to_observation(field_id, day, metrics))
         return observations
