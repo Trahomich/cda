@@ -544,13 +544,22 @@ const planCount = computed(() => monthPlans.value.length)
   gap: 0.2rem;
   width: 100%;
   height: 100%;
-  border: none;
-  background: none;
   padding: 0.25rem;
   text-align: left;
   font: inherit;
-  cursor: pointer;
   box-sizing: border-box;
+}
+
+/* #192: номер дня — кнопка выбора дня (чипы-работы — ссылки в карточку) */
+.cal__day-num-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  align-self: flex-start;
 }
 
 .cal__day-num {
