@@ -149,3 +149,53 @@ test('погода: баннер опасных явлений и подсвет
   await expect(alertRow).toContainText('-3') // toLocaleString отдаёт дефис-минус
   await expect(page.locator('.wx__table tbody tr.wx__row--warn')).toHaveCount(0)
 })
+
+// #194 (фидбек #767/#769): в прогнозе — почва (T/%), ET0, УФ (≥6 подсвечен),
+// точка росы, давление; история — режим «Почва» (линии T и влажности).
+test('погода: прогноз с почвой, ET0, УФ, точкой росы и давлением (#194)', async ({
+  page,
+}) => {
+  await page.goto('/weather')
+  await expect(page.locator('.wx__field-card')).toBeVisible({ timeout: 15_000 })
+
+  // Узкие заголовки с title-расшифровками; числа по центру.
+  const head = page.locator('.wx__table thead tr')
+  await expect(head).toContainText('Почва °C')
+  await expect(head).toContainText('Почва %')
+  await expect(head).toContainText('ET0')
+  await expect(head).toContainText('УФ')
+  await expect(head).toContainText('Т.росы')
+  await expect(head).toContainText('Давл.')
+  await expect(page.locator('.wx__table th[title="Эвапотранспирация — испарение, мм/сут"]')).toHaveCount(1)
+
+  // Мок: у суток УФ 6 и 7 — подсветка «неудачное время обработок».
+  const uvHigh = page.locator('.wx__uv-high')
+  expect(await uvHigh.count()).toBeGreaterThanOrEqual(1)
+  await expect(uvHigh.first()).toHaveAttribute('title', /Высокий УФ/)
+
+  // Значения почвы присутствуют (мок: 8..16 °C, 40..55 %).
+  const body = page.locator('.wx__table tbody')
+  await expect(body).toContainText('мм')
+})
+
+test('погода: история — режим «Почва» с линией влажности (#194)', async ({ page }) => {
+  await page.goto('/weather')
+  const chart = page.locator('svg[aria-label*="История погоды"]')
+  await expect(chart).toBeVisible({ timeout: 15_000 })
+
+  // По умолчанию — воздух; переключаемся на почву.
+  const soilBtn = page.locator('.whist__mode', { hasText: 'Почва' })
+  await expect(soilBtn).toBeEnabled({ timeout: 15_000 })
+  await soilBtn.click()
+  const soilChart = page.locator('svg[aria-label*="температура и влажность почвы"]')
+  await expect(soilChart).toBeVisible()
+  await expect(soilChart.locator('path.whist__line--soil-t')).toBeVisible()
+  await expect(soilChart.locator('path.whist__line--soil-m')).toBeVisible()
+  // Правая ось — проценты влажности.
+  await expect(page.locator('.whist__legend')).toContainText('влажность почвы, %')
+
+  // Возврат в «Воздух» — прежний график с осадками.
+  await page.locator('.whist__mode', { hasText: 'Воздух' }).click()
+  await expect(chart).toBeVisible()
+  await expect(page.locator('.whist__legend')).toContainText('осадки')
+})
