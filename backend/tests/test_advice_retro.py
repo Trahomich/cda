@@ -397,3 +397,41 @@ class TestOperationsKeyDates182:
         )
         assert code == 0
         assert db_session.scalars(select(AIFieldAdvice)).all() == []
+
+    def test_plan_only_dates(self, world, db_session):
+        """#188: --key-dates=operations-plan — только плановые даты (без факт-)."""
+        client, hdr = world
+        fid = self._field_with_ops(db_session, client, hdr)
+        kds = advice_key_dates.operations_key_dates(db_session, fid, 2026, plan_only=True)
+        assert [kd.date for kd in kds] == [
+            date(2026, 5, 3),
+            date(2026, 6, 10),
+            date(2026, 7, 1),
+            date(2026, 8, 20),
+        ]  # факт-даты done-операций совпадают с плановыми — уник тот же
+
+    def test_plan_only_excludes_fact_only_dates(self, world, db_session):
+        """Внеплановый факт (planned_date=null) в plan_only не попадает."""
+        client, hdr = world
+        fid = uuid.UUID(make_field(client, hdr)["field_id"])
+        culture = make_culture(db_session, name="Овёс3")
+        cycle = CropCycle(field_id=fid, year=2026, culture_id=culture.id, kind="main")
+        db_session.add(cycle)
+        db_session.flush()
+        db_session.add(
+            FieldOperation(
+                field_id=fid,
+                cycle_id=cycle.id,
+                operation_type="tillage",
+                date=date(2026, 6, 1),
+                fact_date=date(2026, 6, 1),  # внеплановый факт: плана нет
+                actual_area_ga=10.0,
+                source="manual",
+                status="done",
+            )
+        )
+        db_session.commit()
+        assert advice_key_dates.operations_key_dates(db_session, fid, 2026, plan_only=True) == []
+        assert [kd.date for kd in advice_key_dates.operations_key_dates(db_session, fid, 2026)] == [
+            date(2026, 6, 1)
+        ]
