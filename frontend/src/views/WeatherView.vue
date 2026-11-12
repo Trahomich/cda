@@ -861,6 +861,13 @@ watch([range, rangeYear], () => void loadHistory())
   line-height: 1.2;
 }
 
+/* #767/#194: высокий УФ (≥6) — подсветка «неудачное время обработок» */
+.wx__uv-high {
+  background: #fff3e0;
+  color: #a15c00;
+  font-weight: 700;
+}
+
 .wx__windows {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
