@@ -55,6 +55,13 @@ class Observation:
     snowfall_cm: float | None = None
     snow_depth_cm: float | None = None
     precipitation_hours: float | None = None
+    # #193: почва (посевной слой), ET0, УФ, точка росы, давление (гПа)
+    soil_temperature_c: float | None = None
+    soil_moisture_pct: float | None = None
+    et0_mm: float | None = None
+    uv_index: float | None = None
+    dew_point_c: float | None = None
+    pressure_hpa: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +79,13 @@ class ForecastItem:
     precip_prob_pct: int | None = None  # вероятность осадков, % (может не отдаваться)
     hazard: str = "none"  # none | frost | heavy_rain | hail | wind
     source_id: str = ""
+    # #193: почва (посевной слой), ET0, УФ, точка росы, давление (гПа)
+    soil_temp_c: float | None = None
+    soil_moisture_pct: float | None = None
+    et0_mm: float | None = None
+    uv_index: float | None = None
+    dew_point_c: float | None = None
+    pressure_hpa: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
