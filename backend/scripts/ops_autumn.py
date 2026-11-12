@@ -215,10 +215,10 @@ def main() -> int:
         new_ops.append(op)
         n_tillage_other += 1
 
+    n_winter_ops = len(new_ops) - n_tillage_other
     print(
         f"озимых полей 2027: {len(winter_fields)}; к созданию операций: {len(new_ops)} "
-        f"(озимые tillage+seeding: {sum(1 for o in new_ops if o['cycle'] != str(fields26.get(uuid.UUID(o['field']))))}, "
-        f"осенний tillage прочих: {n_tillage_other})"
+        f"(озимые tillage+seeding: {n_winter_ops}, осенний tillage прочих: {n_tillage_other})"
     )
     assert all(date.fromisoformat(o["date"]) <= TODAY for o in new_ops), "будущие даты!"
 
