@@ -28,8 +28,14 @@ from sqlalchemy import create_engine, text
 
 WINTER_MARKERS = ("озим", "рожь", "тритикале")
 OPERATORS = (
-    "Иванов С. П.", "Петренко А. В.", "Сагинов Е. Н.", "Ковалёв Д. Ю.",
-    "Абдрахманов Т. К.", "Мельник О. И.", "Дюсекенов Б. Е.", "Шмидт В. Р.",
+    "Иванов С. П.",
+    "Петренко А. В.",
+    "Сагинов Е. Н.",
+    "Ковалёв Д. Ю.",
+    "Абдрахманов Т. К.",
+    "Мельник О. И.",
+    "Дюсекенов Б. Е.",
+    "Шмидт В. Р.",
 )
 TILLAGE_TOOLS = ("Культиватор", "Борона", "Плуг")
 SEEDERS = ("Посевной комплекс", "Сеялка")
@@ -70,35 +76,52 @@ def main() -> int:
                 db.execute(text("delete from dat_operation_machine where id = :i"), {"i": om})
             for op in data.get("ops", []):
                 db.execute(text("delete from dat_field_operation where id = :i"), {"i": op})
-        print(f"restore: операций удалено {len(data.get('ops', []))}, привязок "
-              f"{len(data.get('links', []))}")
+        print(
+            f"restore: операций удалено {len(data.get('ops', []))}, привязок "
+            f"{len(data.get('links', []))}"
+        )
         return 0
 
     with engine.connect() as db:
-        cycles27 = db.execute(text(
-            "select cc.field_id, cc.id as cycle_id, c.name as culture, f.area_ga, f.name "
-            "from dat_crop_cycle cc join ref_culture c on c.id = cc.culture_id "
-            "join dat_field f on f.id = cc.field_id "
-            "where cc.year = 2027 and cc.kind = 'main'"
-        )).mappings().all()
+        cycles27 = (
+            db.execute(
+                text(
+                    "select cc.field_id, cc.id as cycle_id, c.name as culture, f.area_ga, f.name "
+                    "from dat_crop_cycle cc join ref_culture c on c.id = cc.culture_id "
+                    "join dat_field f on f.id = cc.field_id "
+                    "where cc.year = 2027 and cc.kind = 'main'"
+                )
+            )
+            .mappings()
+            .all()
+        )
         fields26 = dict(
             (r["field_id"], r["cycle_id"])
-            for r in db.execute(text(
-                "select cc.field_id, cc.id as cycle_id from dat_crop_cycle cc "
-                "where cc.year = 2026 and cc.kind = 'main'"
-            )).mappings().all()
+            for r in db.execute(
+                text(
+                    "select cc.field_id, cc.id as cycle_id from dat_crop_cycle cc "
+                    "where cc.year = 2026 and cc.kind = 'main'"
+                )
+            )
+            .mappings()
+            .all()
         )
-        rates = dict(db.execute(text(
-            "select operation_type, rub_per_ga from ref_operation_cost")).all())
-        machines = db.execute(text(
-            "select id, machine_type, model from dat_machine"
-        )).mappings().all()
+        rates = dict(
+            db.execute(text("select operation_type, rub_per_ga from ref_operation_cost")).all()
+        )
+        machines = (
+            db.execute(text("select id, machine_type, model from dat_machine")).mappings().all()
+        )
         autumn = {
             (r["field_id"], r["operation_type"])
-            for r in db.execute(text(
-                "select field_id, operation_type from dat_field_operation "
-                "where date between '2026-09-01' and '2026-10-31'"
-            )).mappings().all()
+            for r in db.execute(
+                text(
+                    "select field_id, operation_type from dat_field_operation "
+                    "where date between '2026-09-01' and '2026-10-31'"
+                )
+            )
+            .mappings()
+            .all()
         }
 
     by_model = {m["model"]: m["id"] for m in machines}
@@ -116,9 +139,13 @@ def main() -> int:
 
     def mk(field_id, cycle_id, op_type, day, key, machine_models):
         return {
-            "field": str(field_id), "cycle": str(cycle_id), "op": op_type,
-            "date": day.isoformat(), "cost": fact_cost(op_type, key),
-            "machine": machine_models[0], "trailer": machine_models[1],
+            "field": str(field_id),
+            "cycle": str(cycle_id),
+            "op": op_type,
+            "date": day.isoformat(),
+            "cost": fact_cost(op_type, key),
+            "machine": machine_models[0],
+            "trailer": machine_models[1],
             "operator": OPERATORS[_h(key, 3) % len(OPERATORS)],
             "hours": None,  # заполним площадью ниже
         }
@@ -132,16 +159,32 @@ def main() -> int:
             key = str(cy["cycle_id"])
             if (fid, "tillage") not in autumn:
                 day = _date_in(date(2026, 9, 5), date(2026, 9, 20), key, 1)
-                op = mk(fid, cy["cycle_id"], "tillage", day, key + "t",
-                        (tractors[_h(key, 11) % len(tractors)],
-                         tools[_h(key, 12) % len(tools)] if tools else None))
+                op = mk(
+                    fid,
+                    cy["cycle_id"],
+                    "tillage",
+                    day,
+                    key + "t",
+                    (
+                        tractors[_h(key, 11) % len(tractors)],
+                        tools[_h(key, 12) % len(tools)] if tools else None,
+                    ),
+                )
                 op["hours"] = round(area * HOURS_PER_GA, 1)
                 new_ops.append(op)
             if (fid, "seeding") not in autumn:
                 day = _date_in(date(2026, 9, 20), date(2026, 10, 5), key, 2)
-                op = mk(fid, cy["cycle_id"], "seeding", day, key + "s",
-                        (tractors[_h(key, 21) % len(tractors)],
-                         seeders[_h(key, 22) % len(seeders)] if seeders else None))
+                op = mk(
+                    fid,
+                    cy["cycle_id"],
+                    "seeding",
+                    day,
+                    key + "s",
+                    (
+                        tractors[_h(key, 21) % len(tractors)],
+                        seeders[_h(key, 22) % len(seeders)] if seeders else None,
+                    ),
+                )
                 op["hours"] = round(area * HOURS_PER_GA, 1)
                 new_ops.append(op)
 
@@ -157,16 +200,26 @@ def main() -> int:
         area = float(area_rows[0]["area_ga"]) if area_rows else 0.0
         key = str(cycle26)
         day = _date_in(date(2026, 10, 5), date(2026, 10, 25), key, 5)
-        op = mk(fid, cycle26, "tillage", day, key + "a",
-                (tractors[_h(key, 31) % len(tractors)],
-                 tools[_h(key, 32) % len(tools)] if tools else None))
+        op = mk(
+            fid,
+            cycle26,
+            "tillage",
+            day,
+            key + "a",
+            (
+                tractors[_h(key, 31) % len(tractors)],
+                tools[_h(key, 32) % len(tools)] if tools else None,
+            ),
+        )
         op["hours"] = round(area * HOURS_PER_GA, 1)
         new_ops.append(op)
         n_tillage_other += 1
 
-    print(f"озимых полей 2027: {len(winter_fields)}; к созданию операций: {len(new_ops)} "
-          f"(озимые tillage+seeding: {sum(1 for o in new_ops if o['cycle'] != str(fields26.get(uuid.UUID(o['field']))) )}, "
-          f"осенний tillage прочих: {n_tillage_other})")
+    print(
+        f"озимых полей 2027: {len(winter_fields)}; к созданию операций: {len(new_ops)} "
+        f"(озимые tillage+seeding: {sum(1 for o in new_ops if o['cycle'] != str(fields26.get(uuid.UUID(o['field']))))}, "
+        f"осенний tillage прочих: {n_tillage_other})"
+    )
     assert all(date.fromisoformat(o["date"]) <= TODAY for o in new_ops), "будущие даты!"
 
     if args.fix:
@@ -184,8 +237,14 @@ def main() -> int:
                         "(select area_ga from dat_field where id = :f), 'manual', "
                         "'unit', :v)"
                     ),
-                    {"i": oid, "f": o["field"], "c": o["cycle"], "d": o["date"],
-                     "t": o["op"], "v": o["cost"]},
+                    {
+                        "i": oid,
+                        "f": o["field"],
+                        "c": o["cycle"],
+                        "d": o["date"],
+                        "t": o["op"],
+                        "v": o["cost"],
+                    },
                 )
                 created["ops"].append(str(oid))
                 if o["machine"]:
@@ -196,17 +255,24 @@ def main() -> int:
                             "(id, operation_id, machine_id, trailer_id, operator, hours) "
                             "values (:i, :o, :m, :t, :op, :h)"
                         ),
-                        {"i": lid, "o": oid, "m": by_model[o["machine"]],
-                         "t": by_model.get(o["trailer"]) if o["trailer"] else None,
-                         "op": o["operator"], "h": o["hours"]},
+                        {
+                            "i": lid,
+                            "o": oid,
+                            "m": by_model[o["machine"]],
+                            "t": by_model.get(o["trailer"]) if o["trailer"] else None,
+                            "op": o["operator"],
+                            "h": o["hours"],
+                        },
                     )
                     created["links"].append(str(lid))
         path = Path(args.backup or "autumn_backup_20261112.json")
         path.write_text(
             json.dumps(created, default=str, ensure_ascii=False, indent=1), encoding="utf-8"
         )
-        print(f"--fix: создано операций {len(created['ops'])}, привязок "
-              f"{len(created['links'])}; бэкап: {path}")
+        print(
+            f"--fix: создано операций {len(created['ops'])}, привязок "
+            f"{len(created['links'])}; бэкап: {path}"
+        )
     return 0
 
 
