@@ -1384,15 +1384,15 @@ const SOURCES: AdapterStatus[] = [
 function forecastDays(n: number): WeatherForecastDay[] {
   const iso = (offset: number) => new Date(NOW + offset * DAY).toISOString().slice(0, 10)
   const pattern = [
-    { min: 8 + (n % 3), max: 19, precip: 0, prob: 10, wind: 3.2, hum: 62 },
-    { min: 9 + (n % 3), max: 21, precip: 0, prob: 15, wind: 2.8, hum: 58 },
-    { min: 10, max: 23, precip: 2.5, prob: 60, wind: 4.6, hum: 72 },
+    { min: 8 + (n % 3), max: 19, precip: 0, prob: 10, wind: 3.2, hum: 62, soilT: 14, soilM: 42, et0: 3.1, uv: 4, dew: 6 },
+    { min: 9 + (n % 3), max: 21, precip: 0, prob: 15, wind: 2.8, hum: 58, soilT: 15, soilM: 40, et0: 3.6, uv: 5, dew: 7 },
+    { min: 10, max: 23, precip: 2.5, prob: 60, wind: 4.6, hum: 72, soilT: 16, soilM: 48, et0: 2.4, uv: 3, dew: 11 },
     // день 4 — все окна уже закрыты (осадки/вероятность/влажность), поэтому
     // «опасный» сценарий #139 (заморозок + ветер) не меняет окна планов
-    { min: -3, max: 20, precip: 7.8, prob: 90, wind: 17.4, hum: 88 },
-    { min: 10, max: 17, precip: 4.1, prob: 70, wind: 5.1, hum: 76 },
-    { min: 7, max: 15, precip: 0.5, prob: 30, wind: 3.0, hum: 60 },
-    { min: 6, max: 16, precip: 0, prob: 5, wind: 2.2 + (n % 2) * 0.4, hum: 54 },
+    { min: -3, max: 20, precip: 7.8, prob: 90, wind: 17.4, hum: 88, soilT: 8, soilM: 55, et0: 1.2, uv: 2, dew: 4 },
+    { min: 10, max: 17, precip: 4.1, prob: 70, wind: 5.1, hum: 76, soilT: 14, soilM: 52, et0: 1.9, uv: 3, dew: 10 },
+    { min: 7, max: 15, precip: 0.5, prob: 30, wind: 3.0, hum: 60, soilT: 13, soilM: 46, et0: 2.6, uv: 7, dew: 8 },
+    { min: 6, max: 16, precip: 0, prob: 5, wind: 2.2 + (n % 2) * 0.4, hum: 54, soilT: 13, soilM: 44, et0: 3.0, uv: 6, dew: 7 },
   ]
   return pattern.map((d, i) => ({
     date: iso(i + 1),
@@ -1402,6 +1402,12 @@ function forecastDays(n: number): WeatherForecastDay[] {
     precip_prob_pct: d.prob,
     wind_ms: d.wind,
     humidity_pct: d.hum,
+    // #767/#193: почва и доп. показатели (посевной слой, ET0 мм/сут, УФ, роса)
+    soil_temp_c: d.soilT,
+    soil_moisture_pct: d.soilM,
+    et0_mm: d.et0,
+    uv_index: d.uv,
+    dew_point_c: d.dew,
     hazards: i === 3
       ? [
           { code: 'frost', severity: 'alert', text: 'Заморозки: ночью до −3 °C.' },
