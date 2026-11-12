@@ -474,6 +474,18 @@ watch([range, rangeYear], () => void loadHistory())
               </th>
               <th
                 scope="col"
+                title="Температура почвы (посевной слой), °C"
+              >
+                Почва °C
+              </th>
+              <th
+                scope="col"
+                title="Влажность почвы (посевной слой), %"
+              >
+                Почва %
+              </th>
+              <th
+                scope="col"
                 title="Осадки, мм"
               >
                 мм
@@ -486,13 +498,31 @@ watch([range, rangeYear], () => void loadHistory())
               </th>
               <th
                 scope="col"
+                title="Эвапотранспирация — испарение, мм/сут"
+              >
+                ET0
+              </th>
+              <th
+                scope="col"
+                title="УФ-индекс (≥6 — неудачное время обработок)"
+              >
+                УФ
+              </th>
+              <th
+                scope="col"
+                title="Точка росы, °C"
+              >
+                Т.росы
+              </th>
+              <th
+                scope="col"
                 title="Ветер, м/с"
               >
                 м/с
               </th>
               <th
                 scope="col"
-                title="Влажность, %"
+                title="Влажность воздуха, %"
               >
                 влаж., %
               </th>
@@ -516,10 +546,29 @@ watch([range, rangeYear], () => void loadHistory())
                 {{ d.temp_min_c.toLocaleString('ru-RU') }} … {{ d.temp_max_c.toLocaleString('ru-RU') }}
               </td>
               <td class="wx__num">
+                {{ d.soil_temp_c != null ? d.soil_temp_c.toLocaleString('ru-RU') : '—' }}
+              </td>
+              <td class="wx__num">
+                {{ d.soil_moisture_pct != null ? d.soil_moisture_pct.toLocaleString('ru-RU') : '—' }}
+              </td>
+              <td class="wx__num">
                 {{ d.precip_mm.toLocaleString('ru-RU') }}
               </td>
               <td class="wx__num">
                 {{ d.precip_prob_pct != null ? d.precip_prob_pct.toLocaleString('ru-RU') : '—' }}
+              </td>
+              <td class="wx__num">
+                {{ d.et0_mm != null ? d.et0_mm.toLocaleString('ru-RU') : '—' }}
+              </td>
+              <td
+                class="wx__num"
+                :class="{ 'wx__uv-high': (d.uv_index ?? 0) >= 6 }"
+                :title="(d.uv_index ?? 0) >= 6 ? 'Высокий УФ — неудачное время обработок' : undefined"
+              >
+                {{ d.uv_index != null ? d.uv_index.toLocaleString('ru-RU') : '—' }}
+              </td>
+              <td class="wx__num">
+                {{ d.dew_point_c != null ? d.dew_point_c.toLocaleString('ru-RU') : '—' }}
               </td>
               <td class="wx__num">
                 {{ d.wind_ms.toLocaleString('ru-RU') }}
