@@ -392,10 +392,11 @@ def main() -> int:
                     text(
                         "select o.id, o.field_id, o.date, o.operation_type "
                         "from dat_field_operation o join ("
-                        "  select field_id, date, operation_type from dat_field_operation "
-                        "  group by 1,2,3 having count(*) > 1) d "
+                        "  select field_id, date, operation_type, status "
+                        "  from dat_field_operation group by 1,2,3,4 "
+                        "  having count(*) > 1) d "
                         "on d.field_id = o.field_id and d.date = o.date "
-                        "and d.operation_type = o.operation_type "
+                        "and d.operation_type = o.operation_type and d.status = o.status "
                         "order by o.field_id, o.date, o.created_at"
                     )
                 )
