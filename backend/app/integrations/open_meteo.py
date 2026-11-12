@@ -120,11 +120,23 @@ class OpenMeteoAdapter:
         return lon, lat
 
     def _get(self, base_url: str, params: dict[str, Any]) -> dict[str, Any]:
-        """GET с переводом сетевых/5xx ошибок в SourceUnavailableError (05 §6)."""
+        """GET с переводом сетевых/5xx ошибок в SourceUnavailableError (05 §6).
+
+        400 с почвенными hourly-метриками (провайдер изменил имена) — повтор
+        без них: деградация без почвы лучше недоступности источника (#193).
+        """
         try:
             response = self._http().get(base_url, params=params)
         except httpx.HTTPError as exc:
             raise SourceUnavailableError(f"{self.source_id}: сеть недоступна: {exc}") from exc
+        if response.status_code == 400 and "hourly" in params:
+            logger.warning(
+                "%s: HTTP 400 с почвенными hourly (%s) — повтор без почвы",
+                self.source_id,
+                response.text[:120],
+            )
+            params = {k: v for k, v in params.items() if k != "hourly"}
+            return self._get(base_url, params)
         if response.status_code >= 500:
             raise SourceUnavailableError(
                 f"{self.source_id}: HTTP {response.status_code} от {base_url}"
@@ -137,6 +149,37 @@ class OpenMeteoAdapter:
                 f"{self.source_id}: нет данных (HTTP {response.status_code} от {base_url})"
             )
         return response.json()
+
+    @staticmethod
+    def _hourly_soil_means(payload: dict[str, Any]) -> dict[date, tuple[float | None, float | None]]:
+        """Суточные средние почвы из hourly-ответа: (T °C, влажность %).
+
+        Влажность провайдера — м³/м³ (доли) → % объёмной влажности ×100.
+        Нет hourly (деградация/нет данных) — пустой словарь.
+        """
+        hourly = payload.get("hourly") or {}
+        times = hourly.get("time") or []
+        keys = [k for k in hourly if k != "time"]
+        if not times or not keys:
+            return {}
+        acc: dict[date, list[list[float | None]]] = {}
+        for i, ts in enumerate(times):
+            day = date.fromisoformat(str(ts)[:10])
+            bucket = acc.setdefault(day, [[] for _ in keys])
+            for j, key in enumerate(keys):
+                series = hourly.get(key) or []
+                if i < len(series) and series[i] is not None:
+                    bucket[j].append(float(series[i]))
+        out: dict[date, tuple[float | None, float | None]] = {}
+        for day, bucket in acc.items():
+            means = [round(sum(v) / len(v), 2) if v else None for v in bucket]
+            temp = means[0] if len(means) > 0 else None
+            moist = means[1] if len(means) > 1 else None
+            out[day] = (
+                temp,
+                None if moist is None else round(moist * 100.0, 1),
+            )
+        return out
 
     @staticmethod
     def _daily_rows(payload: dict[str, Any]) -> list[tuple[date, dict[str, float | None]]]:
