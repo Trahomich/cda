@@ -214,11 +214,17 @@ function dayHazardClass(iso: string): string | null {
 /* ─── Пиктограммы суток прогноза (#429 п.4, стиль согласован с Д. Соколовым:
        эмодзи + title-подсказка) ─── */
 
-/** Пиктограмма погоды суток: приоритет — мороз, осадки, сильный ветер. */
+/** Пиктограмма погоды суток: снег = осадки при минусе; мороз без осадков —
+ *  солнце с пометкой о заморозке в title (#752: неделя без осадков не
+ *  должна выглядеть «снежной»). */
 function dayIcon(d: WeatherForecastDay): { glyph: string; label: string } {
-  if (d.temp_min_c <= 0) return { glyph: '❄️', label: 'Мороз/заморозки' }
-  if (d.precip_mm >= 0.5) return { glyph: '🌧️', label: 'Осадки' }
+  const hasPrecip = d.precip_mm >= 0.5
+  if (hasPrecip && d.temp_max_c <= 1) return { glyph: '❄️', label: 'Снег' }
+  if (hasPrecip) return { glyph: '🌧️', label: 'Осадки' }
   if (d.wind_ms >= 10) return { glyph: '💨', label: 'Сильный ветер' }
+  if (d.temp_min_c <= 0) {
+    return { glyph: '☀️', label: `Без осадков, заморозки ночью до ${d.temp_min_c.toFixed(0)} °C` }
+  }
   return { glyph: '☀️', label: 'Без осадков' }
 }
 
