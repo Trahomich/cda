@@ -6,6 +6,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { getFields, getOperations } from '@/api'
 import type { Field, FieldOperation, OperationType } from '@/api/types'
+import { shortFieldNumber } from '@/utils/field'
 import Skeleton from '@/components/Skeleton.vue'
 
 const fields = ref<Field[]>([])
