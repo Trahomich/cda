@@ -348,6 +348,47 @@ const monthTicks = computed(() => {
   stroke: #1e88e5;
 }
 
+/* #194: линии почвы — T (коричневая) и влажность (бирюзовая) */
+.whist__line--soil-t {
+  stroke: #8d6e63;
+}
+
+.whist__line--soil-m {
+  stroke: #00897b;
+}
+
+.whist__tick--sm {
+  fill: #00897b;
+}
+
+.whist__modes {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.whist__mode {
+  border: 1px solid #9db59e;
+  border-radius: 999px;
+  background: #fff;
+  padding: 0.25rem 0.85rem;
+  min-height: 34px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.whist__mode--active {
+  background: #2e7d32;
+  border-color: #2e7d32;
+  color: #fff;
+  font-weight: 600;
+}
+
+.whist__mode:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .whist__legend {
   display: flex;
   flex-wrap: wrap;
