@@ -319,11 +319,13 @@ const planCount = computed(() => monthPlans.value.length)
                 <template v-if="date !== null">
                   <!-- #763/#192: номер дня — выбор дня; работы — ссылки в
                        карточку поля, в чипе тип + номер поля -->
-                  <div class="cal__day">
+                  <div
+                    class="cal__day"
+                    :data-date="date"
+                  >
                     <button
                       type="button"
                       class="cal__day-num-btn"
-                      :data-date="date"
                       :aria-label="`Работы за ${date}`"
                       @click="selectedDay = selectedDay === date ? null : date"
                     >
