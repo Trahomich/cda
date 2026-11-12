@@ -57,11 +57,16 @@ test('календарь работ: май 2027 — план и факт в с�
 
   // #763/#192: в чипе — тип + короткий номер поля, при наведении — полное
   // название с площадью; клик по чипу ведёт в карточку поля.
+  // Мок: план 20.05 — поле 1, факт 21.05 — поле 2.
+  const planChip = planDay.locator('.cal__chip[data-kind="plan"]')
+  await expect(planChip).toContainText('опрыскивание · 1')
+  await expect(planChip).toHaveAttribute('title', /ВОСХОД.*га/)
   const factChip = factDay.locator('.cal__chip[data-kind="fact"]')
-  await expect(factChip).toContainText('опрыскивание · 1')
-  await expect(factChip).toHaveAttribute('title', /ВОСХОД.*га/)
+  await expect(factChip).toContainText('опрыскивание · 2')
   await factChip.click()
-  await page.waitForURL(new RegExp(`/fields/${FIRST_FIELD}$`), { timeout: 10_000 })
+  await page.waitForURL(/\/fields\/0000000a-0000-4000-8000-000000000002$/, {
+    timeout: 10_000,
+  })
   await page.goto('/calendar')
   await page.locator('.cal__month').fill('2027-05')
 
