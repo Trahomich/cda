@@ -507,6 +507,18 @@ export interface WeatherForecastDay {
   humidity_pct: number
   /** Опасные явления суток (#139); пусто/undefined — явлений нет. */
   hazards?: WeatherHazard[]
+  /* ── Почва и доп. показатели (#767/#193/#194; nullable — провайдер
+   *  может не отдавать) ── */
+  /** Температура почвы (посевной слой), °C. */
+  soil_temp_c?: number | null
+  /** Влажность почвы (посевной слой), %. */
+  soil_moisture_pct?: number | null
+  /** Эвапотранспирация ET0, мм/сут. */
+  et0_mm?: number | null
+  /** УФ-индекс (≥6 — неудачное время обработок). */
+  uv_index?: number | null
+  /** Точка росы, °C. */
+  dew_point_c?: number | null
 }
 
 /** Прогноз на горизонт days суток; stale — данные из кэша при недоступности
