@@ -40,7 +40,7 @@ HAZARD_FROST_T = 0.0
 HAZARD_HEAVY_RAIN_MM = 15.0
 HAZARD_WIND_MS = 15.0
 
-# Метрики суточные, общие для forecast- и archive-API (05 §2, #126).
+# Метрики суточные, общие для forecast- и archive-API (05 §2, #126, #193).
 _DAILY_METRICS = (
     "temperature_2m_max",
     "temperature_2m_min",
@@ -51,7 +51,18 @@ _DAILY_METRICS = (
     "snowfall_sum",
     "snow_depth_max",
     "precipitation_hours",
+    # #193: ET0 (мм/сут), УФ (максимум), точка росы (средняя), давление
+    # на уровне моря (среднее, гПа) — daily есть в обоих API
+    "et0_fao_evapotranspiration",
+    "uv_index_max",
+    "dew_point_2m_mean",
+    "pressure_msl_mean",
 )
+
+# Почва — ТОЛЬКО hourly (daily-агрегатов нет): прогноз 6 см, архив ERA5 0–7 см;
+# агрегируем в суточные средние сами (#193). Влажность — м³/м³ → % ×100.
+_HOURLY_SOIL_FORECAST = ("soil_temperature_6cm", "soil_moisture_1_to_3cm")
+_HOURLY_SOIL_ARCHIVE = ("soil_temperature_0_to_7cm", "soil_moisture_1_to_3cm")
 
 # Вероятность осадков отдаёт только forecast-API (в архиве её нет).
 _FORECAST_ONLY_METRICS = ("precipitation_probability_max",)
@@ -183,6 +194,29 @@ class OpenMeteoAdapter:
         hours = metrics.get("precipitation_hours")
         if hours is not None and not 0 <= hours <= 24:
             raise DataQualityError(f"{day}: часы осадков {hours} вне 0–24")
+        # #193: почва/ET0/УФ/роса/давление (05 §5)
+        soil_t = metrics.get("soil_temperature_mean")
+        if soil_t is not None and not -40.0 <= soil_t <= 50.0:
+            raise DataQualityError(f"{day}: температура почвы {soil_t} вне [-40; +50] °C")
+        soil_m = metrics.get("soil_moisture_pct_mean")
+        if soil_m is not None and not 0.0 <= soil_m <= 100.0:
+            raise DataQualityError(f"{day}: влажность почвы {soil_m} вне 0–100 %")
+        et0 = metrics.get("et0_fao_evapotranspiration")
+        if et0 is not None and et0 < 0:
+            raise DataQualityError(f"{day}: ET0 {et0} < 0 мм")
+        uv = metrics.get("uv_index_max")
+        if uv is not None and not 0.0 <= uv <= 20.0:
+            raise DataQualityError(f"{day}: УФ-индекс {uv} вне 0–20")
+        pressure = metrics.get("pressure_msl_mean")
+        if pressure is not None and not 800.0 <= pressure <= 1150.0:
+            raise DataQualityError(f"{day}: давление {pressure} вне 800–1150 гПа")
+        dew = metrics.get("dew_point_2m_mean")
+        if dew is not None and t_max is not None and dew > t_max + 0.5:
+            # точка росы физически не выше температуры воздуха; +0.5 °C —
+            # допуск округления суточных агрегатов
+            raise DataQualityError(
+                f"{day}: точка росы {dew} выше t_max {t_max} (допуск 0.5 °C)"
+            )
 
     # -- публичные методы контракта IF-WEATHER (05 §2) -----------------------
 
