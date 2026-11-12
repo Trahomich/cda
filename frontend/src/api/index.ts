@@ -760,6 +760,8 @@ export async function getWeatherHistory(
       precip_mm: d.precipitation_mm,
       cloud_pct: d.cloud_cover_mean_pct ?? null,
       snow_cm: d.snowfall_cm ?? null,
+      soil_temp_c: d.soil_temperature_c ?? null,
+      soil_moisture_pct: d.soil_moisture_pct ?? null,
     })),
     total: page.total,
   }
