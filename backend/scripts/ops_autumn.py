@@ -134,7 +134,7 @@ def main() -> int:
         return any(marker in low for marker in WINTER_MARKERS)
 
     def fact_cost(op_type: str, key: str) -> float:
-        base = rates[op_type]
+        base = float(rates[op_type])
         return round(base * (0.85 + 0.30 * (_h(key, 9) % 1000) / 999), 2)
 
     def mk(field_id, cycle_id, op_type, day, key, machine_models):
