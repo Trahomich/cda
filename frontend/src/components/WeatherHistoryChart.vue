@@ -1,10 +1,9 @@
 <script setup lang="ts">
-// График истории погоды (фидбек #391 п.2, #134; полировка #149 п.1–3):
-// осадки — столбцами, tmax/tmin — плавными кривыми (Catmull-Rom без
-// искажения данных). Стиль приведён к эталону NdviTimeline.vue: тонкая сетка,
-// серые подписи осей, HTML-легенда под графиком (легенда внутри SVG
-// обрезалась по верхнему краю и наезжала на кривые — фидбек #429 п.1).
-import { computed } from 'vue'
+// График истории погоды (фидбек #391 п.2, #134; полировка #149; #194):
+// режим «Воздух» — осадки столбцами, tmax/tmin плавными кривыми;
+// режим «Почва» (#767) — температура почвы (левая ось, °C) и влажность
+// почвы (правая ось, 0–100 %). Подход как NdviTimeline (чистый SVG).
+import { computed, ref } from 'vue'
 import type { WeatherHistoryDay } from '@/api/types'
 import { continuousSegments, smoothPath } from './chartCurve'
 
@@ -12,9 +11,12 @@ const props = defineProps<{ days: WeatherHistoryDay[] }>()
 
 const W = 720
 const H = 220
-const PAD = { top: 12, right: 12, bottom: 24, left: 30 }
+const PAD = { top: 12, right: 44, bottom: 24, left: 30 }
 const plotW = W - PAD.left - PAD.right
 const plotH = H - PAD.top - PAD.bottom
+
+/** Режим графика (#194): воздух (осадки+температуры) или почва (T+%). */
+const mode = ref<'air' | 'soil'>('air')
 
 const temps = computed(() =>
   props.days.flatMap((d) => [d.temp_max_c, d.temp_min_c]).filter((t): t is number => t != null),
