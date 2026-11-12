@@ -1008,6 +1008,9 @@ export interface WeatherHistoryItem {
   cloud_cover_mean_pct?: number | null
   snowfall_cm?: number | null
   snow_depth_cm?: number | null
+  /* ── Почва (посевной слой; #767/#193/#194) ── */
+  soil_temperature_c?: number | null
+  soil_moisture_pct?: number | null
 }
 
 /** Ответ GET /weather/gdd (#132, сырая форма). */
