@@ -397,6 +397,12 @@ class OpenMeteoAdapter:
             precip_prob_pct=None if prob is None else int(prob),
             hazard=hazard,
             source_id=OpenMeteoAdapter.source_id,
+            soil_temp_c=m.get("soil_temperature_mean"),
+            soil_moisture_pct=m.get("soil_moisture_pct_mean"),
+            et0_mm=m.get("et0_fao_evapotranspiration"),
+            uv_index=m.get("uv_index_max"),
+            dew_point_c=m.get("dew_point_2m_mean"),
+            pressure_hpa=m.get("pressure_msl_mean"),
         )
 
 
