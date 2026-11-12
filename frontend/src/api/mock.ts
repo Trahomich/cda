@@ -1539,6 +1539,9 @@ function historyDay(n: number, date: string): WeatherHistoryItem {
     cloud_cover_mean_pct: Math.round(r * 100),
     snowfall_cm: seasonal < -0.55 && precip > 0 ? Number((precip * 0.08).toFixed(1)) : 0,
     snow_depth_cm: 0,
+    // #767/#193: почва посевного слоя — теплее воздуха летом, суше в вегетацию
+    soil_temperature_c: Number((tMean + 1.8 + (n % 3) * 0.3).toFixed(1)),
+    soil_moisture_pct: Math.round(38 + r * 18 - (seasonal > 0 ? 6 : 0)),
   }
 }
 
