@@ -97,6 +97,13 @@ class Forecast(Base):
     wind_max_ms: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
     humidity_avg_pct: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
     precip_prob_pct: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    # #193: почва (посевной слой), ET0, УФ, точка росы, давление (гПа)
+    soil_temp_c: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
+    soil_moisture_pct: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
+    et0_mm: Mapped[float | None] = mapped_column(Numeric(5, 1), nullable=True)
+    uv_index: Mapped[float | None] = mapped_column(Numeric(3, 1), nullable=True)
+    dew_point_c: Mapped[float | None] = mapped_column(Numeric(4, 1), nullable=True)
+    pressure_hpa: Mapped[float | None] = mapped_column(Numeric(6, 1), nullable=True)
     hazard: Mapped[str] = mapped_column(String(15), nullable=False, server_default="none")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
