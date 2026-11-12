@@ -60,6 +60,47 @@ const tminPaths = computed(() =>
   continuousSegments(props.days, (d) => d.temp_min_c, x, yT).map((seg) => smoothPath(seg)),
 )
 
+/* ── Режим «Почва» (#767/#194): T почвы — левая ось (°C), влажность —
+ *  правая ось (0–100 %); null-значения разрывают линии. ── */
+
+const soilVals = computed(() =>
+  props.days.flatMap((d) => [d.soil_temp_c ?? null]).filter((v): v is number => v != null),
+)
+const soilTMin = computed(() => (soilVals.value.length ? Math.min(...soilVals.value, 0) : 0))
+const soilTMax = computed(() => (soilVals.value.length ? Math.max(...soilVals.value, 1) : 1))
+
+const soilTTicks = computed(() => {
+  const lo = Math.ceil(soilTMin.value / 5) * 5
+  const hi = Math.floor(soilTMax.value / 5) * 5
+  const out: number[] = []
+  for (let t = lo; t <= hi; t += 5) out.push(t)
+  return out
+})
+
+function yST(v: number): number {
+  const span = soilTMax.value - soilTMin.value || 1
+  return PAD.top + (1 - (v - soilTMin.value) / span) * plotH
+}
+
+/** Влажность почвы: правая ось 0–100 %. */
+const soilMTicks = [0, 25, 50, 75, 100]
+
+function ySM(v: number): number {
+  return PAD.top + (1 - v / 100) * plotH
+}
+
+const soilTPaths = computed(() =>
+  continuousSegments(props.days, (d) => d.soil_temp_c, x, yST).map((seg) => smoothPath(seg)),
+)
+const soilMPaths = computed(() =>
+  continuousSegments(props.days, (d) => d.soil_moisture_pct, x, ySM).map((seg) => smoothPath(seg)),
+)
+
+/** Есть ли почвенные данные за период (иначе режим «Почва» недоступен). */
+const soilHasData = computed(() =>
+  props.days.some((d) => d.soil_temp_c != null || d.soil_moisture_pct != null),
+)
+
 /** Столбец осадков: ширина по числу дней, не больше 8 px. */
 const barW = computed(() =>
   Math.min(8, Math.max(1.5, plotW / Math.max(props.days.length, 1) - 1)),
