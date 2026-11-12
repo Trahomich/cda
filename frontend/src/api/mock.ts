@@ -1402,12 +1402,14 @@ function forecastDays(n: number): WeatherForecastDay[] {
     precip_prob_pct: d.prob,
     wind_ms: d.wind,
     humidity_pct: d.hum,
-    // #767/#193: почва и доп. показатели (посевной слой, ET0 мм/сут, УФ, роса)
+    // #767/#193: почва и доп. показатели (посевной слой, ET0 мм/сут, УФ, роса,
+    // давление гПа — #769)
     soil_temp_c: d.soilT,
     soil_moisture_pct: d.soilM,
     et0_mm: d.et0,
     uv_index: d.uv,
     dew_point_c: d.dew,
+    pressure_msl_hpa: 1002 + (i % 4) * 3 - (n % 2),
     hazards: i === 3
       ? [
           { code: 'frost', severity: 'alert', text: 'Заморозки: ночью до −3 °C.' },
