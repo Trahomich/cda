@@ -130,7 +130,39 @@ const monthTicks = computed(() => {
     v-if="days.length"
     class="whist"
   >
+    <!-- #194: режим графика — воздух (осадки+температуры) или почва (T+%) -->
+    <div
+      class="whist__modes"
+      role="tablist"
+      aria-label="Показатели истории"
+    >
+      <button
+        type="button"
+        class="whist__mode"
+        :class="{ 'whist__mode--active': mode === 'air' }"
+        role="tab"
+        :aria-selected="mode === 'air'"
+        @click="mode = 'air'"
+      >
+        Воздух
+      </button>
+      <button
+        type="button"
+        class="whist__mode"
+        :class="{ 'whist__mode--active': mode === 'soil' }"
+        role="tab"
+        :aria-selected="mode === 'soil'"
+        :disabled="!soilHasData"
+        :title="soilHasData ? 'Температура и влажность почвы' : 'нет данных о почве за период'"
+        @click="mode = 'soil'"
+      >
+        Почва
+      </button>
+    </div>
+
+    <!-- Режим «Воздух»: осадки столбцами, tmax/tmin кривыми -->
     <svg
+      v-if="mode === 'air'"
       class="whist__svg"
       :viewBox="`0 0 ${W} ${H}`"
       role="img"
@@ -194,11 +226,80 @@ const monthTicks = computed(() => {
       >{{ m.label }}</text>
     </svg>
 
+    <!-- Режим «Почва» (#767): T почвы — левая ось, влажность — правая -->
+    <svg
+      v-else
+      class="whist__svg"
+      :viewBox="`0 0 ${W} ${H}`"
+      role="img"
+      aria-label="История погоды: температура и влажность почвы"
+    >
+      <g
+        v-for="t in soilTTicks"
+        :key="`st${t}`"
+      >
+        <line
+          :x1="PAD.left"
+          :x2="W - PAD.right"
+          :y1="yST(t)"
+          :y2="yST(t)"
+          class="whist__grid"
+        />
+        <text
+          :x="PAD.left - 4"
+          :y="yST(t) + 2.5"
+          class="whist__tick"
+          text-anchor="end"
+        >{{ t }}°</text>
+      </g>
+      <!-- правая ось: влажность почвы, % -->
+      <text
+        v-for="t in soilMTicks"
+        :key="`sm${t}`"
+        :x="W - PAD.right + 4"
+        :y="ySM(t) + 2.5"
+        class="whist__tick whist__tick--sm"
+        text-anchor="start"
+      >{{ t }}%</text>
+
+      <path
+        v-for="(p, i) in soilTPaths"
+        :key="`st${i}`"
+        class="whist__line whist__line--soil-t"
+        :d="p"
+      />
+      <path
+        v-for="(p, i) in soilMPaths"
+        :key="`sm${i}`"
+        class="whist__line whist__line--soil-m"
+        :d="p"
+      />
+
+      <text
+        v-for="m in monthTicks"
+        :key="`m${m.i}`"
+        :x="x(m.i)"
+        :y="H - 8"
+        class="whist__tick"
+        text-anchor="middle"
+      >{{ m.label }}</text>
+    </svg>
+
     <!-- легенда под графиком (HTML, как у NdviTimeline) -->
-    <div class="whist__legend">
+    <div
+      v-if="mode === 'air'"
+      class="whist__legend"
+    >
       <span><i class="whist__lg-bar" /> осадки, мм (макс {{ Math.round(pMax) }})</span>
       <span><i class="whist__lg-line whist__lg-line--max" /> t дн., °C</span>
       <span><i class="whist__lg-line whist__lg-line--min" /> t ночи, °C</span>
+    </div>
+    <div
+      v-else
+      class="whist__legend"
+    >
+      <span><i class="whist__lg-line whist__lg-line--soil-t" /> T почвы, °C</span>
+      <span><i class="whist__lg-line whist__lg-line--soil-m" /> влажность почвы, %</span>
     </div>
   </div>
 </template>
