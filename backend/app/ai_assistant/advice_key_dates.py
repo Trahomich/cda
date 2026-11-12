@@ -401,27 +401,36 @@ __all__ = [
 
 
 def operations_key_dates(
-    db: Session, field_id: uuid.UUID, season_year: int, *, max_dates: int = 8
+    db: Session,
+    field_id: uuid.UUID,
+    season_year: int,
+    *,
+    max_dates: int = 8,
+    plan_only: bool = False,
 ) -> list[KeyDate]:
     """Ключевые даты = даты техопераций сезона (#182, приказ #716).
 
-    Плановые и фактические даты единой операции (уник, без сдвига −3).
-    Операций в сезоне больше max_dates — по одной на (тип, месяц), чтобы
-    не генерить десятки близких рекомендаций.
+    Плановые и фактические даты единой операции (уник, без сдвига −3);
+    plan_only (#188, ТЗ #738) — только planned_date. Операций в сезоне
+    больше max_dates — по одной на (тип, месяц), чтобы не генерить десятки
+    близких рекомендаций.
     """
+    filters = [
+        FieldOperation.field_id == field_id,
+        CropCycle.year == season_year,
+        FieldOperation.status != "cancelled",
+    ]
+    if plan_only:
+        filters.append(FieldOperation.planned_date.isnot(None))
     rows = db.execute(
         select(FieldOperation.planned_date, FieldOperation.fact_date)
         .join(CropCycle, FieldOperation.cycle_id == CropCycle.id)
-        .where(
-            FieldOperation.field_id == field_id,
-            CropCycle.year == season_year,
-            FieldOperation.status != "cancelled",
-        )
+        .where(*filters)
         .order_by(FieldOperation.planned_date, FieldOperation.fact_date)
     ).all()
     dates: set[date] = set()
     for planned, fact in rows:
-        for day in (planned, fact):
+        for day in (planned,) if plan_only else (planned, fact):
             if day is not None:
                 dates.add(day)
     unique = sorted(dates)

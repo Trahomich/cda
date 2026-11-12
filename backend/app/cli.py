@@ -591,9 +591,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_retro.add_argument(
         "--key-dates",
-        choices=["techmap", "operations"],
+        choices=["techmap", "operations", "operations-plan"],
         default="techmap",
-        help="источник ключевых дат: техкарты/дефолты или даты техопераций (#182)",
+        help="ключевые даты: техкарты/дефолты, даты техопераций (план+факт) "
+        "или только плановые даты (#188)",
     )
     p_retro.set_defaults(func=cmd_advice_refresh_backfill)
 
