@@ -174,7 +174,10 @@ class OpenMeteoAdapter:
                     bucket[j].append(float(series[i]))
         out: dict[date, tuple[float | None, float | None]] = {}
         for day, bucket in acc.items():
-            means = [round(sum(v) / len(v), 2) if v else None for v in bucket]
+            means = [
+                round(sum(v for v in values if v is not None) / len(values), 2) if values else None
+                for values in bucket
+            ]
             temp = means[0] if len(means) > 0 else None
             moist = means[1] if len(means) > 1 else None
             out[day] = (
