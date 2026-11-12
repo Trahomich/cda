@@ -566,6 +566,9 @@ export interface WeatherHistoryDay {
   precip_mm: number
   cloud_pct?: number | null
   snow_cm?: number | null
+  /* ── Почва посевного слоя (#767/#193/#194) ── */
+  soil_temp_c?: number | null
+  soil_moisture_pct?: number | null
 }
 
 /** История за период (по возрастанию даты; 422 invalid_period, 404 field_not_found). */
