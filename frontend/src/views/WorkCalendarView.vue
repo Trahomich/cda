@@ -483,6 +483,8 @@ const planCount = computed(() => monthPlans.value.length)
   padding: 0.05rem 0.35rem;
   font-size: 0.78rem;
   white-space: nowrap;
+  /* #192: чипы — ссылки в карточку поля */
+  text-decoration: none;
 }
 
 .cal__chip--plan {
