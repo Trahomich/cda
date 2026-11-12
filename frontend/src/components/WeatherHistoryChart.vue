@@ -90,10 +90,10 @@ function ySM(v: number): number {
 }
 
 const soilTPaths = computed(() =>
-  continuousSegments(props.days, (d) => d.soil_temp_c, x, yST).map((seg) => smoothPath(seg)),
+  continuousSegments(props.days, (d) => d.soil_temp_c ?? null, x, yST).map((seg) => smoothPath(seg)),
 )
 const soilMPaths = computed(() =>
-  continuousSegments(props.days, (d) => d.soil_moisture_pct, x, ySM).map((seg) => smoothPath(seg)),
+  continuousSegments(props.days, (d) => d.soil_moisture_pct ?? null, x, ySM).map((seg) => smoothPath(seg)),
 )
 
 /** Есть ли почвенные данные за период (иначе режим «Почва» недоступен). */
