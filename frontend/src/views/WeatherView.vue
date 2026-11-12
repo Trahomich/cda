@@ -516,6 +516,12 @@ watch([range, rangeYear], () => void loadHistory())
               </th>
               <th
                 scope="col"
+                title="Атмосферное давление (уровень моря), гПа"
+              >
+                Давл.
+              </th>
+              <th
+                scope="col"
                 title="Ветер, м/с"
               >
                 м/с
