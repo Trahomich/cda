@@ -37,6 +37,9 @@ from app.models.references import Source
 logger = logging.getLogger(__name__)
 
 STALE_FORECAST_HOURS = 12
+
+#: полей на один батч-запрос архив-API (#196; лимит IP 10 000/день)
+WEATHER_BACKFILL_BATCH = 25
 """Прогноз старше 12 ч помечается stale (docs/05 §5)."""
 
 FORECAST_INGESTED_EVENT = "forecast.ingested"
@@ -121,6 +124,11 @@ class WeatherIngest:
                 return fetch(), None
             except SourceUnavailableError as exc:
                 last_error = exc
+                if "429" in str(exc):
+                    # дневной лимит IP (10 000/день, #196): ретраи в течение
+                    # прогона бессмысленны (Retry-After — часы) и жгут лимит
+                    logger.warning("погода: %s — без ретраев до сброса лимита", exc)
+                    return None, f"источник недоступен: {exc}"
                 logger.warning(
                     "погода: ретрай %d/%d после %s", attempt + 1, self._retry_attempts, exc
                 )
@@ -395,41 +403,66 @@ class WeatherIngest:
         )
         return report_result
 
-    def backfill_history(self, db: Session, date_from: date, date_to: date) -> IngestReport:
+    def backfill_history(
+        self, db: Session, date_from: date, date_to: date
+    ) -> IngestReport:
         """Полный бэкфилл истории по всем активным полям (#126, docs/06 §7.5).
 
-        Одно обращение к архиву на поле за весь период (start_date/end_date),
-        затем upsert по UQ — идемпотентно, повторный запуск ничего не портит.
-        Пропуски за последние сутки закрывает джоба ingest_history_gaps.
+        Батчи координат по WEATHER_BACKFILL_BATCH полей на запрос архив-API
+        (#196): 90 полей = 4 запроса вместо 90 — дневной лимит IP провайдера
+        (10 000/день) не выбрасывается. 429 — стоп прогона без ретраев
+        (лимит вернётся после Retry-After; повторный запуск доберёт).
         """
         report = IngestReportBuilder()
-        for field_id, name in self.active_fields(db):
+        fields = self.active_fields(db)
+        lookup = centroid_lookup_factory(db)
+        locations: list[tuple[str, float, float]] = []
+        for field_id, name in fields:
+            point = lookup(str(field_id))
+            if point is None:
+                report.skip(name, f"нет контура/центроида у поля {field_id}")
+                continue
+            lon, lat = point
+            locations.append((str(field_id), lon, lat))
+
+        rate_limited = False
+        for chunk_start in range(0, len(locations), WEATHER_BACKFILL_BATCH):
+            chunk = locations[chunk_start : chunk_start + WEATHER_BACKFILL_BATCH]
             try:
-                items, error = self._fetch_with_retries(
-                    lambda fid=field_id: self._adapter.fetch_history(fid, date_from, date_to)
+                batches, error = self._fetch_with_retries(
+                    lambda c=chunk: self._adapter.fetch_history_batch(c, date_from, date_to)
                 )
             except DataGapError as exc:
-                report.skip(name, str(exc))
-                continue
-            except DataQualityError as exc:
-                report.fail(name, f"качество данных: {exc}")
+                for field_id, _lon, _lat in chunk:
+                    report.skip(field_id, str(exc))
                 continue
             if error is not None:
-                report.fail(name, error)
+                if "429" in error:
+                    rate_limited = True
+                    logger.warning("погода: бэкфилл остановлен — дневной лимит IP (429)")
+                    for field_id, _lon, _lat in chunk:
+                        report.fail(field_id, error)
+                    # остальные чанки не запрашиваем — лимит общий на IP
+                    for field_id, _lon, _lat in locations[chunk_start + WEATHER_BACKFILL_BATCH :]:
+                        report.skip(field_id, "лимит IP исчерпан — повторный запуск доберёт")
+                    break
+                for field_id, _lon, _lat in chunk:
+                    report.fail(field_id, error)
                 continue
-            saved = self.save_observations(db, items)
-            db.commit()
-            logger.info("погода: бэкфилл %s — upsert %d фактов", name, saved)
-            report.ok()
+            for field_id, items in (batches or {}).items():
+                saved = self.save_observations(db, items)
+                db.commit()
+                logger.info("погода: бэкфилл (батч) %s — upsert %d фактов", field_id, saved)
+                report.ok()
+
         report_result = report.build()
         self.log_source(
             db,
             self._adapter.source_id,
             report_result.status,
-            "; ".join(report_result.failed) or None,
+            "; ".join(report_result.failed)[:500] or None,
         )
         return report_result
-
 
 class IngestReportBuilder:
     """Накопитель итога прогона (внутренний для WeatherIngest)."""
