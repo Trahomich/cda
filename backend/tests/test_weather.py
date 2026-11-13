@@ -75,12 +75,25 @@ def make_weather_source(db: Session, *, last_status=None) -> None:
 
 
 def load_fixture(name: str, *, day_offsets: list[int] | None = None) -> dict:
-    """Реальная структура ответа Open-Meteo; даты при необходимости — от сегодня."""
+    """Реальная структура ответа Open-Meteo; даты при необходимости — от сегодня.
+
+    day_offsets сдвигает daily И hourly на одну дельту (почва #193 должна
+    совпадать по датам с daily).
+    """
     payload = json.loads((FIXTURES / name).read_text(encoding="utf-8"))
     if day_offsets is not None:
+        base = date.fromisoformat(payload["daily"]["time"][0])
+        new_first = date.today() + timedelta(days=day_offsets[0])
         payload["daily"]["time"] = [
             (date.today() + timedelta(days=off)).isoformat() for off in day_offsets
         ]
+        delta = new_first - base
+        hourly_times = (payload.get("hourly") or {}).get("time") or []
+        if hourly_times:
+            payload["hourly"]["time"] = [
+                (date.fromisoformat(t[:10]) + delta).isoformat() + t[10:]
+                for t in hourly_times
+            ]
     return payload
 
 
