@@ -946,6 +946,13 @@ export interface WeatherForecastItem {
   hazard?: string | null
   /** Опасные явления суток (#139, docs/06 §7.8); [] — явлений нет. */
   hazards?: WeatherHazard[]
+  /* ── Почва и доп. показатели прогноза (#767/#769, #193/#194) ── */
+  soil_temp_c?: number | null
+  soil_moisture_pct?: number | null
+  et0_mm?: number | null
+  uv_index?: number | null
+  dew_point_c?: number | null
+  pressure_msl_hpa?: number | null
 }
 
 /** Ответ API-07: факты + прогноз + мета источника. */
