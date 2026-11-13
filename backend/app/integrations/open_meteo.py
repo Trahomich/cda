@@ -369,6 +369,12 @@ class OpenMeteoAdapter:
             snowfall_cm=m.get("snowfall_sum"),
             snow_depth_cm=m.get("snow_depth_max"),
             precipitation_hours=m.get("precipitation_hours"),
+            soil_temperature_c=m.get("soil_temperature_mean"),
+            soil_moisture_pct=m.get("soil_moisture_pct_mean"),
+            et0_mm=m.get("et0_fao_evapotranspiration"),
+            uv_index=m.get("uv_index_max"),
+            dew_point_c=m.get("dew_point_2m_mean"),
+            pressure_hpa=m.get("pressure_msl_mean"),
         )
 
     @staticmethod
