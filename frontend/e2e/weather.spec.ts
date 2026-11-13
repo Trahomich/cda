@@ -200,3 +200,22 @@ test('погода: история — режим «Почва» с линией
   await expect(chart).toBeVisible()
   await expect(page.locator('.whist__legend')).toContainText('осадки')
 })
+
+// #201 (фидбек #782): на графике осадков — пунктирная линия многолетней
+// нормы (norm_mm, как norm_cum у СЭТ); при null (мало истории) — линии нет.
+test('погода: история — линия нормы осадков пунктиром (#201)', async ({ page }) => {
+  await page.goto('/weather')
+  const chart = page.locator('svg[aria-label*="История погоды"]')
+  await expect(chart).toBeVisible({ timeout: 15_000 })
+
+  // Текущий диапазон (90 дней, 2026) — норма есть: пунктирная линия и легенда.
+  await expect(chart.locator('path.whist__line--norm').first()).toBeVisible({ timeout: 15_000 })
+  await expect(page.locator('.whist__legend')).toContainText('норма осадков, мм')
+
+  // Сезон 2023 — первый год истории: нормы нет (null) — ни линии, ни легенды.
+  await page.locator('.wx__range', { hasText: 'Год' }).click()
+  await page.locator('.wx__year').selectOption('2023')
+  await expect(chart).toBeVisible({ timeout: 15_000 })
+  await expect(chart.locator('path.whist__line--norm')).toHaveCount(0)
+  await expect(page.locator('.whist__legend')).not.toContainText('норма осадков')
+})
