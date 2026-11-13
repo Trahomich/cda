@@ -901,5 +901,6 @@ class TestSoilEt0Weather193:
 
         row = db_session.scalars(select(ForecastModel)).first()
         assert row is not None
-        assert row.soil_temp_c is not None and row.et0_mm == pytest.approx(2.1)
-        assert row.uv_index == pytest.approx(4.2) and row.pressure_hpa == pytest.approx(1013.6)
+        assert row.soil_temp_c is not None and float(row.et0_mm) == pytest.approx(2.1)
+        assert float(row.uv_index) == pytest.approx(4.2)
+        assert float(row.pressure_hpa) == pytest.approx(1013.6)
