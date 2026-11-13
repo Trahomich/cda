@@ -1058,7 +1058,6 @@ class TestHistoryNormMm200:
         )
 
     def test_norm_with_two_past_years(self, client, db_session):
-        client_hdr = None
         from tests.test_weather import api_headers, make_field
 
         field_id = make_field(db_session, name="Норма-1")
