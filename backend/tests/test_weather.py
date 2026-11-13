@@ -897,7 +897,6 @@ class TestSoilEt0Weather193:
         )
         ingest.ingest_forecast(db_session)
         from app.models.integrations import Forecast as ForecastModel
-
         from sqlalchemy import select
 
         row = db_session.scalars(select(ForecastModel)).first()
