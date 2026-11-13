@@ -1409,7 +1409,7 @@ function forecastDays(n: number): WeatherForecastDay[] {
     et0_mm: d.et0,
     uv_index: d.uv,
     dew_point_c: d.dew,
-    pressure_msl_hpa: 1002 + (i % 4) * 3 - (n % 2),
+    pressure_hpa: 1002 + (i % 4) * 3 - (n % 2),
     hazards: i === 3
       ? [
           { code: 'frost', severity: 'alert', text: 'Заморозки: ночью до −3 °C.' },
@@ -2818,7 +2818,7 @@ export class MockTransport implements Transport {
           et0_mm: d.et0_mm ?? null,
           uv_index: d.uv_index ?? null,
           dew_point_c: d.dew_point_c ?? null,
-          pressure_msl_hpa: d.pressure_msl_hpa ?? null,
+          pressure_hpa: d.pressure_hpa ?? null,
         }))
       return ok({
         items,

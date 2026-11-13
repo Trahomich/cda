@@ -577,7 +577,7 @@ watch([range, rangeYear], () => void loadHistory())
                 {{ d.dew_point_c != null ? d.dew_point_c.toLocaleString('ru-RU') : '—' }}
               </td>
               <td class="wx__num">
-                {{ d.pressure_msl_hpa != null ? d.pressure_msl_hpa.toLocaleString('ru-RU') : '—' }}
+                {{ d.pressure_hpa != null ? d.pressure_hpa.toLocaleString('ru-RU') : '—' }}
               </td>
               <td class="wx__num">
                 {{ d.wind_ms.toLocaleString('ru-RU') }}

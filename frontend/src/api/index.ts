@@ -701,7 +701,7 @@ export async function getWeatherForecast(fieldId: string, days = 7): Promise<Wea
     et0_mm: d.et0_mm ?? null,
     uv_index: d.uv_index ?? null,
     dew_point_c: d.dew_point_c ?? null,
-    pressure_msl_hpa: d.pressure_msl_hpa ?? null,
+    pressure_hpa: d.pressure_hpa ?? null,
   }))
   return { field_id: fieldId, days: dayList, stale: page.meta?.stale ?? false }
 }

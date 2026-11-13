@@ -520,7 +520,7 @@ export interface WeatherForecastDay {
   /** Точка росы, °C. */
   dew_point_c?: number | null
   /** Атмосферное давление (приведённое к уровню моря), гПа (#769). */
-  pressure_msl_hpa?: number | null
+  pressure_hpa?: number | null
 }
 
 /** Прогноз на горизонт days суток; stale — данные из кэша при недоступности
@@ -952,7 +952,7 @@ export interface WeatherForecastItem {
   et0_mm?: number | null
   uv_index?: number | null
   dew_point_c?: number | null
-  pressure_msl_hpa?: number | null
+  pressure_hpa?: number | null
 }
 
 /** Ответ API-07: факты + прогноз + мета источника. */
