@@ -308,6 +308,7 @@ const monthTicks = computed(() => {
       <span><i class="whist__lg-bar" /> осадки, мм (макс {{ Math.round(pMax) }})</span>
       <span><i class="whist__lg-line whist__lg-line--max" /> t дн., °C</span>
       <span><i class="whist__lg-line whist__lg-line--min" /> t ночи, °C</span>
+      <span v-if="hasNorm"><i class="whist__lg-line whist__lg-line--norm" /> норма осадков, мм</span>
     </div>
     <div
       v-else
