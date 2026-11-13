@@ -173,9 +173,10 @@ test('погода: прогноз с почвой, ET0, УФ, точкой ро
   expect(await uvHigh.count()).toBeGreaterThanOrEqual(1)
   await expect(uvHigh.first()).toHaveAttribute('title', /Высокий УФ/)
 
-  // Значения почвы присутствуют (мок: 8..16 °C, 40..55 %).
-  const body = page.locator('.wx__table tbody')
-  await expect(body).toContainText('мм')
+  // Значения почвы/давления присутствуют в строках (мок: почва 8..16 °C,
+  // влажность 40..55 %, давление ~1002 гПа — не прочерки).
+  const firstRow = page.locator('.wx__table tbody tr').first()
+  await expect(firstRow).not.toContainText('—')
 })
 
 test('погода: история — режим «Почва» с линией влажности (#194)', async ({ page }) => {
