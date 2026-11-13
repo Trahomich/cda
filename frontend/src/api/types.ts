@@ -571,6 +571,8 @@ export interface WeatherHistoryDay {
   /* ── Почва посевного слоя (#767/#193/#194) ── */
   soil_temp_c?: number | null
   soil_moisture_pct?: number | null
+  /** Многолетняя норма осадков за дату, мм/сут (#782/#201); null — мало истории. */
+  norm_mm?: number | null
 }
 
 /** История за период (по возрастанию даты; 422 invalid_period, 404 field_not_found). */
