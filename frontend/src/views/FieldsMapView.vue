@@ -151,7 +151,7 @@ const WEATHER_METRICS: Array<{
   { value: 'precip_7d', label: 'Осадки 7 сут', unit: 'мм', from: '#e3f2fd', to: '#1565c0', digits: 1 },
   { value: 'precip_14d', label: 'Осадки 14 сут', unit: 'мм', from: '#e3f2fd', to: '#0d47a1', digits: 1 },
   { value: 't_now', label: 'Температура', unit: '°C', from: '#90caf9', to: '#e53935', digits: 1 },
-  { value: 'gdd_ytd', label: 'GDD с 1 января', unit: '°C·сут', from: '#f0f4c3', to: '#2e7d32', digits: 0 },
+  { value: 'gdd_ytd', label: 'СЭТ с 1 января', unit: '°C·сут', from: '#f0f4c3', to: '#2e7d32', digits: 0 },
 ]
 
 const weatherMode = ref(false)

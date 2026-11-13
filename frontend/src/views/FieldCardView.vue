@@ -1601,7 +1601,7 @@ function fmtNum(v: number, digits = 1): string {
             ветер {{ fmtNum(weather.now.wind_ms) }} м/с,
             влажность {{ weather.now.humidity_pct }} %<br>
             Осадки за 7 сут: {{ fmtNum(weather.summary.precip_7d_mm) }} мм ·
-            GDD: {{ weather.summary.gdd }} °C·сут
+            СЭТ: {{ weather.summary.gdd }} °C·сут
           </p>
           <table
             v-if="weather"

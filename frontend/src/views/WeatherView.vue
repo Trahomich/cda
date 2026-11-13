@@ -363,7 +363,7 @@ watch([range, rangeYear], () => void loadHistory())
               <dd>{{ weather.summary.gdd.toLocaleString('ru-RU') }} °C·сут</dd>
             </div>
             <div>
-              <dt>GDD с 1 января</dt>
+              <dt>СЭТ с 1 января</dt>
               <dd>{{ gddState === 'ok' && gdd ? `${gdd.total.toLocaleString('ru-RU')} °C·сут` : '—' }}</dd>
             </div>
           </dl>
@@ -425,19 +425,19 @@ watch([range, rangeYear], () => void loadHistory())
       </div>
 
       <h2 class="wx__subtitle">
-        Эффективные температуры (GDD) с 1 января {{ CURRENT_YEAR }}
+        Сумма эффективных температур (СЭТ) с 1 января {{ CURRENT_YEAR }}
       </h2>
       <p
         v-if="gddState === 'loading'"
         class="wx__state"
       >
-        Загрузка GDD…
+        Загрузка СЭТ…
       </p>
       <p
         v-else-if="gddState === 'soon'"
         class="wx__state wx__state--soon"
       >
-        Накопительная кривая GDD скоро появится — сервис погоды обновляется
+        Накопительная кривая СЭТ скоро появится — сервис погоды обновляется
       </p>
       <template v-else-if="gdd">
         <p class="wx__gdd-total">
