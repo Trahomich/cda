@@ -1025,6 +1025,9 @@ export interface WeatherHistoryItem {
   /* ── Почва (посевной слой; #767/#193/#194) ── */
   soil_temperature_c?: number | null
   soil_moisture_pct?: number | null
+  /** Многолетняя норма осадков за дату, мм/сут (#782/#200/#201);
+   *  null — истории меньше двух лет (как norm_cum у СЭТ). */
+  norm_mm?: number | null
 }
 
 /** Ответ GET /weather/gdd (#132, сырая форма). */
