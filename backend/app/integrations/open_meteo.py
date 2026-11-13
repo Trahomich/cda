@@ -179,11 +179,11 @@ class OpenMeteoAdapter:
             bucket = acc.setdefault(day, [[] for _ in keys])
             for j, key in enumerate(keys):
                 series = hourly.get(key) or []
-                if location_index is None:
-                    value_ = series[i] if i < len(series) else None
-                else:
+                if series and isinstance(series[0], list) and location_index is not None:
                     loc_row = series[location_index] if location_index < len(series) else None
                     value_ = loc_row[i] if loc_row is not None and i < len(loc_row) else None
+                else:
+                    value_ = series[i] if i < len(series) else None
                 if value_ is not None:
                     bucket[j].append(float(value_))
         out: dict[date, tuple[float | None, float | None]] = {}
@@ -218,16 +218,17 @@ class OpenMeteoAdapter:
 
             def value(metric: str, _i: int = i) -> float | None:
                 series = daily.get(metric) or []
-                if location_index is None:
-                    if _i >= len(series) or series[_i] is None:
+                if series and isinstance(series[0], list) and location_index is not None:
+                    # батч-формат: списки по локациям (#196)
+                    if location_index >= len(series) or series[location_index] is None:
                         return None
-                    return float(series[_i])
-                if location_index >= len(series) or series[location_index] is None:
+                    row = series[location_index]
+                    if _i >= len(row) or row[_i] is None:
+                        return None
+                    return float(row[_i])
+                if _i >= len(series) or series[_i] is None:
                     return None
-                row = series[location_index]
-                if _i >= len(row) or row[_i] is None:
-                    return None
-                return float(row[_i])
+                return float(series[_i])
 
             rows.append(
                 (
