@@ -172,6 +172,12 @@ class WeatherIngest:
                     "snowfall_cm": item.snowfall_cm,
                     "snow_depth_cm": item.snow_depth_cm,
                     "precipitation_hours": item.precipitation_hours,
+                    "soil_temperature_c": item.soil_temperature_c,
+                    "soil_moisture_pct": item.soil_moisture_pct,
+                    "et0_mm": item.et0_mm,
+                    "uv_index": item.uv_index,
+                    "dew_point_c": item.dew_point_c,
+                    "pressure_hpa": item.pressure_hpa,
                     "source_id": item.source_id,
                     "trust": item.trust,
                 }
@@ -192,6 +198,12 @@ class WeatherIngest:
                 "snowfall_cm": excluded.snowfall_cm,
                 "snow_depth_cm": excluded.snow_depth_cm,
                 "precipitation_hours": excluded.precipitation_hours,
+                "soil_temperature_c": excluded.soil_temperature_c,
+                "soil_moisture_pct": excluded.soil_moisture_pct,
+                "et0_mm": excluded.et0_mm,
+                "uv_index": excluded.uv_index,
+                "dew_point_c": excluded.dew_point_c,
+                "pressure_hpa": excluded.pressure_hpa,
                 "updated_at": datetime.now(tz=UTC),
             },
         )
@@ -216,6 +228,12 @@ class WeatherIngest:
                     wind_max_ms=item.wind_max_ms,
                     humidity_avg_pct=item.humidity_avg_pct,
                     precip_prob_pct=item.precip_prob_pct,
+                    soil_temp_c=item.soil_temp_c,
+                    soil_moisture_pct=item.soil_moisture_pct,
+                    et0_mm=item.et0_mm,
+                    uv_index=item.uv_index,
+                    dew_point_c=item.dew_point_c,
+                    pressure_hpa=item.pressure_hpa,
                     hazard=item.hazard,
                 )
                 for item in items
