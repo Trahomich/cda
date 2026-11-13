@@ -769,6 +769,7 @@ export async function getWeatherHistory(
       snow_cm: d.snowfall_cm ?? null,
       soil_temp_c: d.soil_temperature_c ?? null,
       soil_moisture_pct: d.soil_moisture_pct ?? null,
+      norm_mm: d.norm_mm ?? null,
     })),
     total: page.total,
   }
