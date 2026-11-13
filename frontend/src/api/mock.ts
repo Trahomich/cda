@@ -1544,6 +1544,12 @@ function historyDay(n: number, date: string): WeatherHistoryItem {
     // #767/#193: почва посевного слоя — теплее воздуха летом, суше в вегетацию
     soil_temperature_c: Number((tMean + 1.8 + (n % 3) * 0.3).toFixed(1)),
     soil_moisture_pct: Math.round(38 + r * 18 - (seasonal > 0 ? 6 : 0)),
+    // #782/#201: многолетняя норма осадков за дату (мм/сут); 2023 — первый
+    // год истории, нормы нет (null — фронт линию не рисует).
+    norm_mm:
+      Number(date.slice(0, 4)) <= 2023
+        ? null
+        : Number((seasonal > -0.2 ? 1.4 + (n % 3) * 0.1 : 0.5).toFixed(1)),
   }
 }
 
