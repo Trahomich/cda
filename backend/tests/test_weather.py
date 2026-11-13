@@ -769,3 +769,123 @@ class TestWeatherCloudSnow:
         )
         assert resp.status_code == 404
         assert resp.json()["code"] == "field_not_found"
+
+
+class TestSoilEt0Weather193:
+    """#193: почва (hourly→суточные средние, влажность м³/м³→%), ET0, УФ,
+    точка росы, давление — в факте, прогнозе и API."""
+
+    def test_history_normalizes_new_metrics(self, db_session):
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        adapter = adapter_for(db_session, {"/archive": load_fixture("openmeteo_archive.json")})
+        obs = adapter.fetch_history(str(field_id), date(2026, 5, 8), date(2026, 5, 10))
+        first = obs[0]
+        assert first.soil_temperature_c == pytest.approx(
+            15.0 + sum(i * 0.1 for i in range(24)) / 24, abs=0.01
+        )
+        # влажность: (0.22 + средний прирост) × 100
+        assert 22.0 < first.soil_moisture_pct < 25.0
+        assert first.et0_mm == pytest.approx(2.1)
+        assert first.uv_index == pytest.approx(4.2)
+        assert first.dew_point_c == pytest.approx(7.3)
+        assert first.pressure_hpa == pytest.approx(1013.6)
+
+    def test_forecast_new_metrics(self, db_session):
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        adapter = adapter_for(db_session, {"/forecast": load_fixture("openmeteo_forecast.json")})
+        items = adapter.fetch_forecast(str(field_id), days=7)
+        first = items[0]
+        assert first.soil_temp_c is not None and 14.0 < first.soil_temp_c < 18.0
+        assert 22.0 < first.soil_moisture_pct < 25.0
+        assert first.et0_mm == pytest.approx(2.1) and first.uv_index == pytest.approx(4.2)
+        assert first.dew_point_c == pytest.approx(7.3)
+        assert first.pressure_hpa == pytest.approx(1013.6)
+
+    @pytest.mark.parametrize(
+        ("metric", "value", "match"),
+        [
+            ("et0_fao_evapotranspiration", -0.5, "ET0"),
+            ("uv_index_max", 25.0, "УФ"),
+            ("pressure_msl_mean", 700.0, "давление"),
+            ("dew_point_2m_mean", 99.0, "точка росы"),
+        ],
+    )
+    def test_data_quality_new_metrics(self, db_session, metric, value, match):
+        payload = load_fixture("openmeteo_archive.json")
+        payload["daily"][metric] = [value] * 3
+        payload["hourly"] = {}  # почву не проверяем
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        adapter = adapter_for(db_session, {"/archive": payload})
+        with pytest.raises(DataQualityError, match=match):
+            adapter.fetch_history(str(field_id), date(2026, 5, 8), date(2026, 5, 10))
+
+    def test_soil_quality_bounds(self, db_session):
+        """Почва вне диапазона (T/влажность) — DataQualityError."""
+        payload = load_fixture("openmeteo_archive.json")
+        key = "soil_temperature_0_to_7cm"
+        payload["hourly"][key] = [60.0] * 24  # > 50 °C
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        adapter = adapter_for(db_session, {"/archive": payload})
+        with pytest.raises(DataQualityError, match="почвы"):
+            adapter.fetch_history(str(field_id), date(2026, 5, 8), date(2026, 5, 10))
+
+    def test_api_history_and_forecast_return_new_fields(self, client, db_session):
+
+        field_id = make_field(db_session)
+        make_weather_source(db_session, last_status="ok")
+        db_session.add(
+            WeatherObservation(
+                field_id=field_id,
+                observed_at=date.today() - timedelta(days=1),
+                precipitation_mm=1.0,
+                soil_temperature_c=17.2,
+                soil_moisture_pct=23.4,
+                et0_mm=2.8,
+                uv_index=5.1,
+                dew_point_c=8.9,
+                pressure_hpa=1012.3,
+                source_id=OpenMeteoAdapter.source_id,
+            )
+        )
+        db_session.commit()
+        headers = api_headers(client, db_session)
+        resp = client.get(f"{API}/fields/{field_id}/weather", headers=headers)
+        assert resp.status_code == 200
+        fact = resp.json()["facts"][0]
+        assert fact["soil_temperature_c"] == pytest.approx(17.2)
+        assert fact["soil_moisture_pct"] == pytest.approx(23.4)
+        assert fact["et0_mm"] == pytest.approx(2.8)
+        assert fact["uv_index"] == pytest.approx(5.1)
+        assert fact["dew_point_c"] == pytest.approx(8.9)
+        assert fact["pressure_hpa"] == pytest.approx(1012.3)
+        hist = client.get(
+            f"{API}/weather/history",
+            params={
+                "field_id": field_id,
+                "date_from": (date.today() - timedelta(days=2)).isoformat(),
+                "date_to": date.today().isoformat(),
+            },
+            headers=headers,
+        )
+        assert hist.json()["items"][0]["soil_temperature_c"] == pytest.approx(17.2)
+
+    def test_forecast_stored_with_new_fields(self, client, db_session):
+        from tests.test_weather import make_ingest
+
+        make_field(db_session)
+        make_weather_source(db_session)
+        ingest = make_ingest(
+            db_session,
+            {"/forecast": load_fixture("openmeteo_forecast.json", day_offsets=list(range(7)))},
+        )
+        ingest.ingest_forecast(db_session)
+        from app.models.integrations import Forecast as ForecastModel
+
+        row = db_session.scalars(select(ForecastModel)).first()
+        assert row is not None
+        assert row.soil_temp_c is not None and row.et0_mm == pytest.approx(2.1)
+        assert row.uv_index == pytest.approx(4.2) and row.pressure_hpa == pytest.approx(1013.6)
