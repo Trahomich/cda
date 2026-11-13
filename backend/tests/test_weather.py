@@ -885,6 +885,8 @@ class TestSoilEt0Weather193:
         ingest.ingest_forecast(db_session)
         from app.models.integrations import Forecast as ForecastModel
 
+        from sqlalchemy import select
+
         row = db_session.scalars(select(ForecastModel)).first()
         assert row is not None
         assert row.soil_temp_c is not None and row.et0_mm == pytest.approx(2.1)
