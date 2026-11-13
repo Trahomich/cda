@@ -161,7 +161,7 @@ class OpenMeteoAdapter:
 
     @staticmethod
     def _hourly_soil_means(
-        payload: dict[str, Any],
+        payload: dict[str, Any], location_index: int | None = None
     ) -> dict[date, tuple[float | None, float | None]]:
         """Суточные средние почвы из hourly-ответа: (T °C, влажность %).
 
@@ -179,8 +179,13 @@ class OpenMeteoAdapter:
             bucket = acc.setdefault(day, [[] for _ in keys])
             for j, key in enumerate(keys):
                 series = hourly.get(key) or []
-                if i < len(series) and series[i] is not None:
-                    bucket[j].append(float(series[i]))
+                if location_index is None:
+                    value_ = series[i] if i < len(series) else None
+                else:
+                    loc_row = series[location_index] if location_index < len(series) else None
+                    value_ = loc_row[i] if loc_row is not None and i < len(loc_row) else None
+                if value_ is not None:
+                    bucket[j].append(float(value_))
         out: dict[date, tuple[float | None, float | None]] = {}
         for day, bucket in acc.items():
             means = [
@@ -196,8 +201,14 @@ class OpenMeteoAdapter:
         return out
 
     @staticmethod
-    def _daily_rows(payload: dict[str, Any]) -> list[tuple[date, dict[str, float | None]]]:
-        """Разложить ответ daily в список (дата, метрики)."""
+    def _daily_rows(
+        payload: dict[str, Any], location_index: int | None = None
+    ) -> list[tuple[date, dict[str, float | None]]]:
+        """Разложить ответ daily в список (дата, метрики).
+
+        location_index — для батч-запросов (несколько координат в одном):
+        каждая метрика приходит списком списков по локациям (#196).
+        """
         daily = payload.get("daily") or {}
         times = daily.get("time") or []
         if not times:
@@ -207,9 +218,16 @@ class OpenMeteoAdapter:
 
             def value(metric: str, _i: int = i) -> float | None:
                 series = daily.get(metric) or []
-                if _i >= len(series) or series[_i] is None:
+                if location_index is None:
+                    if _i >= len(series) or series[_i] is None:
+                        return None
+                    return float(series[_i])
+                if location_index >= len(series) or series[location_index] is None:
                     return None
-                return float(series[_i])
+                row = series[location_index]
+                if _i >= len(row) or row[_i] is None:
+                    return None
+                return float(row[_i])
 
             rows.append(
                 (
