@@ -423,4 +423,12 @@ const monthTicks = computed(() => {
 .whist__lg-line--min {
   border-color: #1e88e5;
 }
+
+.whist__lg-line--soil-t {
+  border-color: #8d6e63;
+}
+
+.whist__lg-line--soil-m {
+  border-color: #00897b;
+}
 </style>
