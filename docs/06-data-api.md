@@ -613,7 +613,8 @@ dat_satellite_scene.index, как ndvi/ndwi):
 
 ### 7.8. Вкладка Погода: история, GDD, окна по планам (2026-11-08, задачи #132–#134; фидбек #391)
 
-**API-57 `GET /weather/history`** — реализован (#126). Параметры:
+**API-57 `GET /weather/history`** — реализован (#126); norm_mm — норма
+осадков (#200). Параметры:
 `field_id, date_from, date_to, limit (1..1500, default 366), offset`.
 Ответ постраничный, по возрастанию даты:
 
@@ -623,7 +624,8 @@ dat_satellite_scene.index, как ndvi/ndwi):
   "wind_max_ms": 4.0, "humidity_avg_pct": 65,
   "cloud_cover_mean_pct": 40, "snowfall_cm": 0.0, "snow_depth_cm": 0.0,
   "soil_temperature_c": 15.8, "soil_moisture_pct": 23.4, "et0_mm": 2.7,
-  "uv_index": 4.9, "dew_point_c": 7.3, "pressure_hpa": 1013.6}],
+  "uv_index": 4.9, "dew_point_c": 7.3, "pressure_hpa": 1013.6,
+  "norm_mm": 1.8}],
  "total": 366, "limit": 1500, "offset": 0, "meta": {…}}
 ```
 
@@ -634,6 +636,9 @@ et0_mm (мм/сут), uv_index (максимум суток), dew_point_c, press
 почва — суточные средние hourly-данных провайдера (прогноз 6 см, архив
 ERA5 0–7 см); провайдер может не отдавать — null. Бэкфилл истории
 weather-backfill идемпотентно докачивает новые метрики (upsert обновляет).
+`norm_mm` — многолетняя норма осадков на календарную дату (среднее
+precipitation_mm по день+месяц полных прошлых лет; null при < 2 годах,
+как norm_cum у API-58, #200).
 Имена полей факта — как в API-07 (полные); сокращённые синонимы
 (`temp_max_c`, `precip_mm` и т.п.) НЕ вводятся. Период НЕ ограничивается
 400 сутками: 3–4 сезона закрываются одним запросом limit=1500. Ошибки:

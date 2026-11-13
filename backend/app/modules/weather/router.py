@@ -240,10 +240,12 @@ def _fact_items_with_norm(
         {
             int(y)
             for (y,) in db.execute(
-                select(func.extract("year", WeatherObservation.observed_at)).where(
+                select(func.extract("year", WeatherObservation.observed_at))
+                .where(
                     WeatherObservation.field_id == field_id,
                     WeatherObservation.observed_at < date(date_from.year, 1, 1),
-                ).distinct()
+                )
+                .distinct()
             )
         }
     )

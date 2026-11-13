@@ -403,9 +403,7 @@ class WeatherIngest:
         )
         return report_result
 
-    def backfill_history(
-        self, db: Session, date_from: date, date_to: date
-    ) -> IngestReport:
+    def backfill_history(self, db: Session, date_from: date, date_to: date) -> IngestReport:
         """Полный бэкфилл истории по всем активным полям (#126, docs/06 §7.5).
 
         Батчи координат по WEATHER_BACKFILL_BATCH полей на запрос архив-API
@@ -461,6 +459,7 @@ class WeatherIngest:
             "; ".join(report_result.failed)[:500] or None,
         )
         return report_result
+
 
 class IngestReportBuilder:
     """Накопитель итога прогона (внутренний для WeatherIngest)."""

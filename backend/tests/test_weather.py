@@ -91,8 +91,7 @@ def load_fixture(name: str, *, day_offsets: list[int] | None = None) -> dict:
         hourly_times = (payload.get("hourly") or {}).get("time") or []
         if hourly_times:
             payload["hourly"]["time"] = [
-                (date.fromisoformat(t[:10]) + delta).isoformat() + t[10:]
-                for t in hourly_times
+                (date.fromisoformat(t[:10]) + delta).isoformat() + t[10:] for t in hourly_times
             ]
     return payload
 
@@ -956,9 +955,7 @@ class TestHistoryBatch196:
             },
             "hourly": {
                 "time": [f"{times[0]}T{h:02d}:00" for h in range(24)],
-                "soil_temperature_0_to_7cm": [
-                    [15.0 + loc] * 24 for loc in range(coords)
-                ],
+                "soil_temperature_0_to_7cm": [[15.0 + loc] * 24 for loc in range(coords)],
                 "soil_moisture_1_to_3cm": [[0.2 + loc * 0.01] * 24 for loc in range(coords)],
             },
         }
