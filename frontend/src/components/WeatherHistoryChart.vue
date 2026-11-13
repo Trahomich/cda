@@ -364,6 +364,17 @@ const monthTicks = computed(() => {
   stroke: #1e88e5;
 }
 
+/* #201: норма осадков — пунктир, стиль как norm_cum у СЭТ (GddChart) */
+.whist__line--norm {
+  stroke: #888;
+  stroke-dasharray: 5 4;
+  stroke-width: 1.8;
+}
+
+.whist__lg-line--norm {
+  border-top: 2px dashed #888;
+}
+
 /* #194: линии почвы — T (коричневая) и влажность (бирюзовая) */
 .whist__line--soil-t {
   stroke: #8d6e63;
