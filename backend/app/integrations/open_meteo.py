@@ -376,6 +376,58 @@ class OpenMeteoAdapter:
             observations.append(self._to_observation(field_id, day, metrics))
         return observations
 
+    def fetch_history_batch(
+        self,
+        locations: list[tuple[str, float, float]],
+        date_from: date,
+        date_to: date,
+    ) -> dict[str, list[Observation]]:
+        """История для нескольких полей ОДНИМ запросом архив-API (#196).
+
+        locations — (field_id, lon, lat); archive-API принимает списки
+        координат (latitude=a,b,c&longitude=...) и возвращает метрики
+        списками по локациям. Расход дневного лимита IP (10 000/день) ниже
+        в N раз. Поля без контура отфильтровывает вызывающая сторона.
+        """
+        if date_from > date_to:
+            raise ValueError("date_from позже date_to")
+        if not locations:
+            return {}
+        payload = self._get(
+            f"{self._archive_url}/archive",
+            {
+                "latitude": ",".join(str(lat) for _, _, lat in locations),
+                "longitude": ",".join(str(lon) for _, lon, _ in locations),
+                "daily": ",".join(_DAILY_METRICS),
+                "hourly": ",".join(_HOURLY_SOIL_ARCHIVE),
+                "timezone": "auto",
+                "windspeed_unit": "ms",
+                "start_date": date_from.isoformat(),
+                "end_date": date_to.isoformat(),
+            },
+        )
+        out: dict[str, list[Observation]] = {}
+        for index, (field_id, _lon, _lat) in enumerate(locations):
+            soil = self._hourly_soil_means(payload, location_index=index)
+            observations: list[Observation] = []
+            for day, metrics in self._daily_rows(payload, location_index=index):
+                metrics["soil_temperature_mean"], metrics["soil_moisture_pct_mean"] = soil.get(
+                    day, (None, None)
+                )
+                try:
+                    self._validate(day, metrics)
+                except DataQualityError:
+                    logger.warning(
+                        "open-meteo: батч %s — сутки %s отброшены (качество)",
+                        field_id,
+                        day,
+                        exc_info=True,
+                    )
+                    continue
+                observations.append(self._to_observation(field_id, day, metrics))
+            out[field_id] = observations
+        return out
+
     # -- нормализация --------------------------------------------------------
 
     @staticmethod
