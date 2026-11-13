@@ -60,6 +60,13 @@ const tminPaths = computed(() =>
   continuousSegments(props.days, (d) => d.temp_min_c, x, yT).map((seg) => smoothPath(seg)),
 )
 
+/* ── Линия многолетней нормы осадков (#782/#201): пунктир как у СЭТ
+ *  (GddChart norm_cum); null (мало истории) — не рисуем и не показываем. ── */
+const normPaths = computed(() =>
+  continuousSegments(props.days, (d) => d.norm_mm ?? null, x, yP).map((seg) => smoothPath(seg)),
+)
+const hasNorm = computed(() => props.days.some((d) => d.norm_mm != null))
+
 /* ── Режим «Почва» (#767/#194): T почвы — левая ось (°C), влажность —
  *  правая ось (0–100 %); null-значения разрывают линии. ── */
 
