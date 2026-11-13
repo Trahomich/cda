@@ -222,6 +222,14 @@ const monthTicks = computed(() => {
         :d="p"
       />
 
+      <!-- #201: многолетняя норма осадков — пунктир, как у СЭТ -->
+      <path
+        v-for="(p, i) in normPaths"
+        :key="`norm${i}`"
+        class="whist__line whist__line--norm"
+        :d="p"
+      />
+
       <!-- месяцы по X -->
       <text
         v-for="m in monthTicks"
