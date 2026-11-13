@@ -214,12 +214,59 @@ def weather_history(
     )
     window = rows[offset : offset + limit]
     return HistoryListResponse(
-        items=[FactItem.model_validate(o) for o in window],
+        items=_fact_items_with_norm(db, field.id, date_from, date_to, window),
         total=len(rows),
         limit=limit,
         offset=offset,
         meta=_source_meta(db, forecasts=[]),
     )
+
+
+def _fact_items_with_norm(
+    db: Session,
+    field_id: uuid.UUID,
+    date_from: date,
+    date_to: date,
+    window: list[WeatherObservation],
+) -> list[FactItem]:
+    """FactItem с norm_mm — многолетняя норма осадков по календарной дате.
+
+    Норма — среднее precipitation_mm по тем же день+месяц прошлых лет
+    (полные прошлые годы, т.е. < date_from года; как norm_cum у API-58,
+    §7.8). Меньше двух полных прошлых лет — norm_mm=null у всех.
+    """
+    items = [FactItem.model_validate(o) for o in window]
+    past_years = sorted(
+        {
+            int(y)
+            for (y,) in db.execute(
+                select(func.extract("year", WeatherObservation.observed_at)).where(
+                    WeatherObservation.field_id == field_id,
+                    WeatherObservation.observed_at < date(date_from.year, 1, 1),
+                ).distinct()
+            )
+        }
+    )
+    if len(past_years) < 2:
+        return items
+    by_monthday: dict[tuple[int, int], list[float]] = {}
+    for obs in db.scalars(
+        select(WeatherObservation).where(
+            WeatherObservation.field_id == field_id,
+            WeatherObservation.observed_at >= date(past_years[0], 1, 1),
+            WeatherObservation.observed_at < date(date_from.year, 1, 1),
+        )
+    ):
+        if obs.precipitation_mm is not None:
+            by_monthday.setdefault((obs.observed_at.month, obs.observed_at.day), []).append(
+                float(obs.precipitation_mm)
+            )
+    for item in items:
+        day = item.observed_at
+        values = by_monthday.get((day.month, day.day))
+        if values:
+            item.norm_mm = round(sum(values) / len(values), 1)
+    return items
 
 
 def _gdd_curve(
