@@ -30,6 +30,17 @@ class FactItem(BaseModel):
     precipitation_hours: float | None = Field(
         default=None, description="Часы с осадками за сутки, ч (#126)"
     )
+    # #193: почва, ET0, УФ, точка росы, давление
+    soil_temperature_c: float | None = Field(
+        default=None, description="Температура почвы (посевной слой), °C"
+    )
+    soil_moisture_pct: float | None = Field(
+        default=None, description="Объёмная влажность почвы посевного слоя, %"
+    )
+    et0_mm: float | None = Field(default=None, description="Эвапотранспирация ET0, мм/сут")
+    uv_index: float | None = Field(default=None, description="УФ-индекс (максимум суток)")
+    dew_point_c: float | None = Field(default=None, description="Точка росы, °C")
+    pressure_hpa: float | None = Field(default=None, description="Давление (уровень моря), гПа")
     source_id: str
 
 
@@ -61,6 +72,17 @@ class ForecastDayItem(BaseModel):
     precip_prob_pct: int | None = Field(
         default=None, description="Вероятность осадков, %; null — провайдер не отдаёт (§7.2)"
     )
+    # #193: почва, ET0, УФ, точка росы, давление (имена согласованы с фронт #577)
+    soil_temp_c: float | None = Field(
+        default=None, description="Температура почвы (посевной слой), °C"
+    )
+    soil_moisture_pct: float | None = Field(
+        default=None, description="Объёмная влажность почвы посевного слоя, %"
+    )
+    et0_mm: float | None = Field(default=None, description="Эвапотранспирация ET0, мм/сут")
+    uv_index: float | None = Field(default=None, description="УФ-индекс (максимум суток)")
+    dew_point_c: float | None = Field(default=None, description="Точка росы, °C")
+    pressure_hpa: float | None = Field(default=None, description="Давление (уровень моря), гПа")
     hazard: str
     hazards: list[HazardItem] = Field(
         default_factory=list,
