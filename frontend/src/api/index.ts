@@ -695,6 +695,13 @@ export async function getWeatherForecast(fieldId: string, days = 7): Promise<Wea
     wind_ms: d.wind_max_ms,
     humidity_pct: d.humidity_avg_pct,
     hazards: d.hazards ?? [], // ОЯ суток (#139, docs/06 §7.8)
+    // #767/#769 (#194): почва и доп. показатели
+    soil_temp_c: d.soil_temp_c ?? null,
+    soil_moisture_pct: d.soil_moisture_pct ?? null,
+    et0_mm: d.et0_mm ?? null,
+    uv_index: d.uv_index ?? null,
+    dew_point_c: d.dew_point_c ?? null,
+    pressure_msl_hpa: d.pressure_msl_hpa ?? null,
   }))
   return { field_id: fieldId, days: dayList, stale: page.meta?.stale ?? false }
 }
