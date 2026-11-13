@@ -2812,6 +2812,13 @@ export class MockTransport implements Transport {
           humidity_avg_pct: d.humidity_pct,
           hazard: 'none',
           hazards: d.hazards ?? [], // ОЯ суток (#139, docs/06 §7.8)
+          // #767/#769 (#193/#194): почва и доп. показатели прогноза
+          soil_temp_c: d.soil_temp_c ?? null,
+          soil_moisture_pct: d.soil_moisture_pct ?? null,
+          et0_mm: d.et0_mm ?? null,
+          uv_index: d.uv_index ?? null,
+          dew_point_c: d.dew_point_c ?? null,
+          pressure_msl_hpa: d.pressure_msl_hpa ?? null,
         }))
       return ok({
         items,
