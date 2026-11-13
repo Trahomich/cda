@@ -621,10 +621,19 @@ dat_satellite_scene.index, как ndvi/ndwi):
 {"items": [{"observed_at": "2026-05-01", "temperature_avg_c": 14.2,
   "temperature_min_c": 8.1, "temperature_max_c": 21.4, "precipitation_mm": 2.3,
   "wind_max_ms": 4.0, "humidity_avg_pct": 65,
-  "cloud_cover_mean_pct": 40, "snowfall_cm": 0.0, "snow_depth_cm": 0.0}],
+  "cloud_cover_mean_pct": 40, "snowfall_cm": 0.0, "snow_depth_cm": 0.0,
+  "soil_temperature_c": 15.8, "soil_moisture_pct": 23.4, "et0_mm": 2.7,
+  "uv_index": 4.9, "dew_point_c": 7.3, "pressure_hpa": 1013.6}],
  "total": 366, "limit": 1500, "offset": 0, "meta": {…}}
 ```
 
+Почва/ET0/УФ/роса/давление (#193, фидбек #767–#769): факт и прогноз
+содержат soil_temperature_c (API-29/07 — soil_temp_c, согласовано с
+фронтом #577), soil_moisture_pct (объёмная, %; провайдер м³/м³ → ×100),
+et0_mm (мм/сут), uv_index (максимум суток), dew_point_c, pressure_hpa;
+почва — суточные средние hourly-данных провайдера (прогноз 6 см, архив
+ERA5 0–7 см); провайдер может не отдавать — null. Бэкфилл истории
+weather-backfill идемпотентно докачивает новые метрики (upsert обновляет).
 Имена полей факта — как в API-07 (полные); сокращённые синонимы
 (`temp_max_c`, `precip_mm` и т.п.) НЕ вводятся. Период НЕ ограничивается
 400 сутками: 3–4 сезона закрываются одним запросом limit=1500. Ошибки:
