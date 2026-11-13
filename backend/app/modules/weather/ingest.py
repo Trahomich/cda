@@ -425,7 +425,6 @@ class WeatherIngest:
             lon, lat = point
             locations.append((str(field_id), lon, lat))
 
-        rate_limited = False
         for chunk_start in range(0, len(locations), WEATHER_BACKFILL_BATCH):
             chunk = locations[chunk_start : chunk_start + WEATHER_BACKFILL_BATCH]
             try:
@@ -438,7 +437,6 @@ class WeatherIngest:
                 continue
             if error is not None:
                 if "429" in error:
-                    rate_limited = True
                     logger.warning("погода: бэкфилл остановлен — дневной лимит IP (429)")
                     for field_id, _lon, _lat in chunk:
                         report.fail(field_id, error)
