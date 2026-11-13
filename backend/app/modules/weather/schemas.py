@@ -41,6 +41,11 @@ class FactItem(BaseModel):
     uv_index: float | None = Field(default=None, description="УФ-индекс (максимум суток)")
     dew_point_c: float | None = Field(default=None, description="Точка росы, °C")
     pressure_hpa: float | None = Field(default=None, description="Давление (уровень моря), гПа")
+    norm_mm: float | None = Field(
+        default=None,
+        description="Многолетняя норма осадков на эту календарную дату (среднее "
+        "по полным прошлым годам, §7.8); null — истории < 2 лет",
+    )
     source_id: str
 
 
