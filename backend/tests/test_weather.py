@@ -925,3 +925,117 @@ class TestRateLimit429:
         )
         with pytest.raises(SourceUnavailableError, match="429"):
             adapter.fetch_history(str(field_id), date(2026, 5, 8), date(2026, 5, 10))
+
+
+class TestHistoryBatch196:
+    """#196: батч координат архив-API (25 полей/запрос) и 429 без ретраев."""
+
+    @staticmethod
+    def _batch_payload(coords: int, days: int = 3) -> dict:
+        """Ответ архив-API на батч: метрики — списки списков по локациям."""
+        base_day = date(2026, 5, 8)
+        times = [(base_day + timedelta(days=i)).isoformat() for i in range(days)]
+        return {
+            "daily": {
+                "time": times,
+                "temperature_2m_max": [[16.0 + i + loc for i in range(days)] for loc in range(coords)],
+                "temperature_2m_min": [[5.0 + loc for _ in range(days)] for loc in range(coords)],
+                "precipitation_sum": [[1.0] * days for _ in range(coords)],
+                "wind_speed_10m_max": [[3.0] * days for _ in range(coords)],
+                "relative_humidity_2m_mean": [[60] * days for _ in range(coords)],
+                "cloud_cover_mean": [[40] * days for _ in range(coords)],
+                "snowfall_sum": [[0.0] * days for _ in range(coords)],
+                "snow_depth_max": [[0.0] * days for _ in range(coords)],
+                "precipitation_hours": [[1.0] * days for _ in range(coords)],
+                "et0_fao_evapotranspiration": [[2.0] * days for _ in range(coords)],
+                "uv_index_max": [[4.0] * days for _ in range(coords)],
+                "dew_point_2m_mean": [[6.0] * days for _ in range(coords)],
+                "pressure_msl_mean": [[1013.0] * days for _ in range(coords)],
+            },
+            "hourly": {
+                "time": [f"{times[0]}T{h:02d}:00" for h in range(24)],
+                "soil_temperature_0_to_7cm": [
+                    [15.0 + loc] * 24 for loc in range(coords)
+                ],
+                "soil_moisture_1_to_3cm": [[0.2 + loc * 0.01] * 24 for loc in range(coords)],
+            },
+        }
+
+    def test_batch_request_and_split(self, db_session):
+        """Один запрос на N координат; ответ раскладывается по полям."""
+        make_field(db_session, name="Батч-1")
+        make_field(db_session, name="Батч-2")
+        field_ids = [
+            str(r[0])
+            for r in db_session.execute(text("SELECT id FROM dat_field ORDER BY name")).all()
+        ]
+        seen: dict[str, str] = {}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            seen["url"] = str(request.url)
+            return httpx.Response(200, json=self._batch_payload(2))
+
+        adapter = OpenMeteoAdapter(
+            http=httpx.Client(transport=httpx.MockTransport(handler)),
+            centroid_lookup=lambda fid: (40.5, 51.5),
+        )
+        result = adapter.fetch_history_batch(
+            [(fid, 40.5, 51.5) for fid in field_ids], date(2026, 5, 8), date(2026, 5, 10)
+        )
+        # один запрос с двумя координатами
+        assert "51.5,51.5" in seen["url"] and "40.5,40.5" in seen["url"]
+        assert set(result) == set(field_ids)
+        first, second = (result[fid] for fid in field_ids)
+        assert len(first) == 3 and len(second) == 3
+        # локация различима: t_max первой 16.0, второй 17.0
+        assert first[0].temperature_max_c == pytest.approx(16.0)
+        assert second[0].temperature_max_c == pytest.approx(17.0)
+        assert first[0].soil_temperature_c == pytest.approx(15.0)
+        assert second[0].soil_temperature_c == pytest.approx(16.0)
+        assert first[0].et0_mm == pytest.approx(2.0)
+
+    def test_backfill_batches_fields(self, db_session):
+        """backfill_history: 2 поля → ОДИН запрос архив-API (батч)."""
+        make_field(db_session, name="Батч-3")
+        make_field(db_session, name="Батч-4")
+        make_weather_source(db_session)
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return httpx.Response(200, json=self._batch_payload(2))
+
+        adapter = OpenMeteoAdapter(
+            http=httpx.Client(transport=httpx.MockTransport(handler)),
+            centroid_lookup=lambda fid: (40.5, 51.5),
+        )
+        ingest = WeatherIngest(adapter, retry_attempts=2, retry_base_seconds=0)
+        report = ingest.backfill_history(db_session, date(2026, 5, 8), date(2026, 5, 10))
+        assert calls["n"] == 1  # один батч на все поля ≤ WEATHER_BACKFILL_BATCH
+        assert report.ok == 2 and not report.failed
+        count = db_session.scalar(text("SELECT count(*) FROM dat_weather_observation"))
+        assert count == 6  # 2 поля × 3 суток
+
+    def test_429_stops_without_retries(self, db_session):
+        """429 — стоп прогона, поля не ретраятся, лимит не жжётся."""
+        for i in range(3):
+            make_field(db_session, name=f"Батч-лимит-{i}")
+        make_weather_source(db_session)
+        calls = {"n": 0}
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls["n"] += 1
+            return httpx.Response(
+                429,
+                json={"error": True, "reason": "Daily API request limit exceeded"},
+                headers={"Retry-After": "71600"},
+            )
+
+        adapter = OpenMeteoAdapter(
+            http=httpx.Client(transport=httpx.MockTransport(handler)),
+            centroid_lookup=lambda fid: (40.5, 51.5),
+        )
+        ingest = WeatherIngest(adapter, retry_attempts=5, retry_base_seconds=0)
+        report = ingest.backfill_history(db_session, date(2026, 5, 8), date(2026, 5, 10))
+        assert calls["n"] == 1  # ни одного повторного запроса
+        assert report.ok == 0 and report.failed  # первый батч failed, стоп
