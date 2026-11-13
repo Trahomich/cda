@@ -904,3 +904,24 @@ class TestSoilEt0Weather193:
         assert row.soil_temp_c is not None and float(row.et0_mm) == pytest.approx(2.1)
         assert float(row.uv_index) == pytest.approx(4.2)
         assert float(row.pressure_hpa) == pytest.approx(1013.6)
+
+
+class TestRateLimit429:
+    """#193: 429 (дневной лимит IP) — недоступность источника, не DataGap."""
+
+    def test_429_is_source_unavailable(self, db_session):
+        def handler(request: httpx.Request) -> httpx.Response:
+            return httpx.Response(
+                429,
+                json={"error": True, "reason": "Daily API request limit exceeded"},
+                headers={"Retry-After": "71600"},
+            )
+
+        make_field(db_session)
+        field_id = db_session.scalar(text("SELECT id FROM dat_field"))
+        adapter = OpenMeteoAdapter(
+            http=httpx.Client(transport=httpx.MockTransport(handler)),
+            centroid_lookup=centroid_lookup_factory(db_session),
+        )
+        with pytest.raises(SourceUnavailableError, match="429"):
+            adapter.fetch_history(str(field_id), date(2026, 5, 8), date(2026, 5, 10))

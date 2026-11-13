@@ -144,6 +144,15 @@ class OpenMeteoAdapter:
         if response.status_code == 400:
             # 400 у Open-Meteo — как правило, параметры; это недоступность сервиса
             raise SourceUnavailableError(f"{self.source_id}: HTTP 400 ({response.text[:200]})")
+        if response.status_code == 429:
+            # дневной лимит IP провайдера (10 000/день, #193): retry имеет
+            # смысл только после Retry-After — это недоступность источника,
+            # а не отсутствие данных
+            retry_after = response.headers.get("Retry-After", "?")
+            raise SourceUnavailableError(
+                f"{self.source_id}: HTTP 429 — дневной лимит запросов IP "
+                f"исчерпан (Retry-After {retry_after} с)"
+            )
         if response.status_code != 200:
             raise DataGapError(
                 f"{self.source_id}: нет данных (HTTP {response.status_code} от {base_url})"
