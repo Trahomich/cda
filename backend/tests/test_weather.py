@@ -1041,3 +1041,57 @@ class TestHistoryBatch196:
         report = ingest.backfill_history(db_session, date(2026, 5, 8), date(2026, 5, 10))
         assert calls["n"] == 1  # ни одного повторного запроса
         assert report.ok == 0 and report.failed  # первый батч failed, стоп
+
+
+class TestHistoryNormMm200:
+    """#200: API-57 отдаёт norm_mm — многолетнюю норму осадков по дате."""
+
+    @staticmethod
+    def _obs(db, field_id, day, mm):
+        db.add(
+            WeatherObservation(
+                field_id=field_id,
+                observed_at=day,
+                precipitation_mm=mm,
+                source_id=OpenMeteoAdapter.source_id,
+            )
+        )
+
+    def test_norm_with_two_past_years(self, client, db_session):
+        client_hdr = None
+        from tests.test_weather import api_headers, make_field
+
+        field_id = make_field(db_session, name="Норма-1")
+        make_weather_source(db_session)
+        # два прошлых полных года на 5 мая: 2024 — 2.0, 2025 — 6.0 → норма 4.0
+        self._obs(db_session, field_id, date(2024, 5, 5), 2.0)
+        self._obs(db_session, field_id, date(2025, 5, 5), 6.0)
+        self._obs(db_session, field_id, date(2026, 5, 5), 9.0)  # текущий год
+        db_session.commit()
+        headers = api_headers(client, db_session)
+        resp = client.get(
+            f"{API}/weather/history",
+            params={"field_id": field_id, "date_from": "2026-05-01", "date_to": "2026-05-10"},
+            headers=headers,
+        )
+        assert resp.status_code == 200, resp.text
+        items = {i["observed_at"]: i for i in resp.json()["items"]}
+        assert items["2026-05-05"]["norm_mm"] == pytest.approx(4.0)
+        # дата без истории в прошлых годах — null
+        assert items["2026-05-05"].get("precipitation_mm") == pytest.approx(9.0)
+
+    def test_norm_null_with_one_past_year(self, client, db_session):
+        from tests.test_weather import api_headers, make_field
+
+        field_id = make_field(db_session, name="Норма-2")
+        make_weather_source(db_session)
+        self._obs(db_session, field_id, date(2025, 5, 5), 6.0)
+        self._obs(db_session, field_id, date(2026, 5, 5), 9.0)
+        db_session.commit()
+        headers = api_headers(client, db_session)
+        resp = client.get(
+            f"{API}/weather/history",
+            params={"field_id": field_id, "date_from": "2026-05-01", "date_to": "2026-05-10"},
+            headers=headers,
+        )
+        assert resp.json()["items"][0]["norm_mm"] is None
