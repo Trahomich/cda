@@ -938,7 +938,9 @@ class TestHistoryBatch196:
         return {
             "daily": {
                 "time": times,
-                "temperature_2m_max": [[16.0 + i + loc for i in range(days)] for loc in range(coords)],
+                "temperature_2m_max": [
+                    [16.0 + i + loc for i in range(days)] for loc in range(coords)
+                ],
                 "temperature_2m_min": [[5.0 + loc for _ in range(days)] for loc in range(coords)],
                 "precipitation_sum": [[1.0] * days for _ in range(coords)],
                 "wind_speed_10m_max": [[3.0] * days for _ in range(coords)],
@@ -983,7 +985,7 @@ class TestHistoryBatch196:
             [(fid, 40.5, 51.5) for fid in field_ids], date(2026, 5, 8), date(2026, 5, 10)
         )
         # один запрос с двумя координатами
-        assert "51.5,51.5" in seen["url"] and "40.5,40.5" in seen["url"]
+        assert "51.5%2C51.5" in seen["url"] and "40.5%2C40.5" in seen["url"]
         assert set(result) == set(field_ids)
         first, second = (result[fid] for fid in field_ids)
         assert len(first) == 3 and len(second) == 3
