@@ -539,19 +539,6 @@ const planCount = computed(() => monthPlans.value.length)
 
 /* #790/#203: цвета типов — инлайн через chipStyle (utils/field);
    базовые рамки план/факт остаются, класс типа — для e2e/селекторов */
-.cal__types-legend summary {
-  cursor: pointer;
-  font-size: 0.9rem;
-  color: #2e7d32;
-  font-weight: 600;
-}
-
-.cal__types-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.9rem;
-  margin: 0.3rem 0 0;
-}
 
 .cal__grid-wrap {
   overflow-x: auto;
