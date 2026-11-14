@@ -47,39 +47,49 @@ def waterlogged(
     )
 
 
-def precip_sums_7d(db: Session, field_id, dates: Iterable[date]) -> dict[date, float | None]:
-    """Сумма осадков за 7 суток до каждой даты (мм) по фактам погоды поля.
+def precip_sum_completed(
+    db: Session, field_id, day: date, *, days: int = PRECIP_WINDOW_DAYS
+) -> float | None:
+    """Единая сумма осадков за ЗАВЕРШЁННЫЕ сутки (мм), #204: окно
+    [day − days, day − 1] — 7/14 завершённых суток, без самих суток day.
 
-    None — наблюдений в окне нет (данных нет → waterlogged=null). NULL
-    precipitation_mm у имеющихся наблюдений считается нулём (день без
-    осадков у провайдера); дедупликация — UQ(field_id, observed_at, source_id).
+    Единая точка расчёта «осадков за N суток» (карта API-61, сводка
+    API-07, детекторы/ИИ-контекст): NULL precipitation_mm считается нулём
+    (день без осадков); дубль (поле, дата) — большая trust; None —
+    наблюдений в окне нет.
     """
-    unique = sorted(set(dates))
-    if not unique:
-        return {}
     rows = db.execute(
         select(
             WeatherObservation.observed_at,
             WeatherObservation.precipitation_mm,
+            WeatherObservation.trust,
         ).where(
             WeatherObservation.field_id == field_id,
-            WeatherObservation.observed_at >= unique[0] - timedelta(days=PRECIP_WINDOW_DAYS),
-            WeatherObservation.observed_at <= unique[-1],
+            WeatherObservation.observed_at >= day - timedelta(days=days),
+            WeatherObservation.observed_at <= day - timedelta(days=1),
         )
     ).all()
-    by_date: dict[date, list[float]] = {}
-    for observed_at, mm in rows:
-        by_date.setdefault(observed_at, []).append(float(mm) if mm is not None else 0.0)
+    by_date: dict[date, float] = {}
+    trust_by_date: dict[date, float] = {}
+    for observed_at, mm, trust in rows:
+        value = float(mm) if mm is not None else 0.0
+        if observed_at not in by_date or float(trust) > trust_by_date[observed_at]:
+            by_date[observed_at] = value
+            trust_by_date[observed_at] = float(trust)
+    if not by_date:
+        return None
+    return round(sum(by_date.values()), 1)
 
-    result: dict[date, float | None] = {}
-    for day in unique:
-        values = [
-            v
-            for back in range(PRECIP_WINDOW_DAYS + 1)
-            for v in by_date.get(day - timedelta(days=back), [])
-        ]
-        result[day] = round(sum(values), 1) if values else None
-    return result
+
+def precip_sums_7d(db: Session, field_id, dates: Iterable[date]) -> dict[date, float | None]:
+    """Сумма осадков за 7 завершённых суток ДО каждой даты (мм), #204.
+
+    Окно [day−7, day−1] — та же precip_sum_completed: единое число с
+    картой API-61 и сводкой API-07. None — наблюдений в окне нет
+    (данных нет → waterlogged=null).
+    """
+    unique = sorted(set(dates))
+    return {day: precip_sum_completed(db, field_id, day) for day in unique}
 
 
 __all__ = [
@@ -87,6 +97,7 @@ __all__ = [
     "WATERLOG_NDWI_P90",
     "WATERLOG_NDVI_MEAN",
     "WATERLOG_PRECIP_MM_7D",
+    "precip_sum_completed",
     "precip_sums_7d",
     "waterlogged",
 ]
