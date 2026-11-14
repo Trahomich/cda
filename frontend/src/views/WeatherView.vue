@@ -555,7 +555,12 @@ watch([range, rangeYear], () => void loadHistory())
                 {{ d.soil_temp_c != null ? d.soil_temp_c.toLocaleString('ru-RU') : '—' }}
               </td>
               <td class="wx__num">
-                {{ d.soil_moisture_pct != null ? d.soil_moisture_pct.toLocaleString('ru-RU') : '—' }}
+                <span
+                  :class="{ 'wx__soil-frozen': d.soil_temp_c != null && d.soil_temp_c <= 0 }"
+                  :title="d.soil_temp_c != null && d.soil_temp_c <= 0
+                    ? 'почва промёрзла — влажность стабильна до оттаивания'
+                    : undefined"
+                >{{ d.soil_moisture_pct != null ? d.soil_moisture_pct.toLocaleString('ru-RU') : '—' }}<template v-if="d.soil_temp_c != null && d.soil_temp_c <= 0"> ❄</template></span>
               </td>
               <td class="wx__num">
                 {{ d.precip_mm.toLocaleString('ru-RU') }}
