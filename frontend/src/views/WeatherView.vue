@@ -644,6 +644,29 @@ watch([range, rangeYear], () => void loadHistory())
               Ни одни сутки не подходят — в системе создаётся предупреждение (ENT-ALERT)
             </template>
           </p>
+          <!-- #786/#202: пороги правила — мелким текстом; при закрытом окне —
+               разворачиваемая лента дней с причинами «не выполнено» -->
+          <p class="wx__window-rule">
+            Правило: {{ t.rule_text }}
+          </p>
+          <details
+            v-if="!t.nearest_window_date"
+            class="wx__window-why"
+          >
+            <summary>Почему окна нет — по дням</summary>
+            <ul class="wx__wdays">
+              <li
+                v-for="d in t.days"
+                :key="d.date"
+                class="wx__wday"
+                :class="d.is_window ? 'wx__wday--ok' : 'wx__wday--bad'"
+              >
+                {{ fmtDate(d.date) }} —
+                <template v-if="d.is_window">✓ все условия выполнены</template>
+                <template v-else>✗ {{ d.summary }}</template>
+              </li>
+            </ul>
+          </details>
         </div>
       </div>
     </template>
