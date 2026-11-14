@@ -86,7 +86,7 @@ test('погода: GDD с 1 января — накопительная кри�
   await page.goto('/weather')
   const year = new Date().getFullYear()
   await expect(
-    page.getByRole('heading', { name: `Эффективные температуры (GDD) с 1 января ${year}` }),
+    page.getByRole('heading', { name: `Сумма эффективных температур (СЭТ) с 1 января ${year}` }),
   ).toBeVisible({ timeout: 15_000 })
 
   // Итог на сегодня и линия многолетней нормы.
