@@ -28,7 +28,7 @@ WATERLOG_NDVI_MEAN = 0.45
 WATERLOG_PRECIP_MM_7D = 20.0
 
 #: окно осадков: дата сцены − 6 суток … дата сцены (7 суток включительно)
-PRECIP_WINDOW_DAYS = 6
+PRECIP_WINDOW_DAYS = 7  # #204: 7 завершённых суток [day−7, day−1]
 
 
 def waterlogged(
