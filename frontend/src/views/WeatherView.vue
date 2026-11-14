@@ -909,6 +909,12 @@ watch([range, rangeYear], () => void loadHistory())
   font-weight: 700;
 }
 
+/* #795: промёрзшая почва — индикатор у влажности */
+.wx__soil-frozen {
+  color: #1565c0;
+  cursor: help;
+}
+
 .wx__windows {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
