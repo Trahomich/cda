@@ -181,14 +181,18 @@ test('календарь работ: цвета плашек по типу + л�
   await page.locator('.cal__month').fill('2027-05')
   await expect(page.locator('.cal__grid')).toBeVisible({ timeout: 15_000 })
 
-  // Плашки несут класс типа и цвет типа (рамка у плана, заливка у факта).
+  // Плашки несут класс типа; #206: и план, и факт — ЗАЛИВКА цветом типа
+  // (одинаковый фон), различие — рамкой (план пунктиром, факт сплошной).
   const planChip = page.locator('.cal__chip--type-spraying[data-kind="plan"]').first()
   const factChip = page.locator('.cal__chip--type-spraying[data-kind="fact"]').first()
   await expect(planChip).toBeVisible()
   await expect(factChip).toBeVisible()
-  // сиреневая рамка опрыскивания у плана (#7b1fa2) и сиреневая заливка у факта
-  expect(await planChip.getAttribute('style')).toContain('rgb(123, 31, 162)')
-  expect(await factChip.getAttribute('style')).toContain('rgb(225, 190, 231)')
+  const planBg = await planChip.getAttribute('style')
+  const factBg = await factChip.getAttribute('style')
+  expect(planBg).toContain('rgb(225, 190, 231)') // сиреневая заливка опрыскивания
+  expect(factBg).toContain('rgb(225, 190, 231)') // тот же цвет у факта (#206)
+  expect(planBg).toContain('dashed') // план — пунктирная рамка
+  expect(factBg).toContain('solid') // факт — сплошная
 
   // Разные типы — разные цвета: март 2025 (spraying + tillage факты).
   await page.locator('.cal__month').fill('2025-03')
