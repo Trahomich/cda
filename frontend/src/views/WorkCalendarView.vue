@@ -344,7 +344,11 @@ const planCount = computed(() => monthPlans.value.length)
                           v-for="(e, j) in entriesOf(date).slice(0, 4)"
                           :key="j"
                           class="cal__chip"
-                          :class="e.kind === 'plan' ? 'cal__chip--plan' : 'cal__chip--fact'"
+                          :class="[
+                            e.kind === 'plan' ? 'cal__chip--plan' : 'cal__chip--fact',
+                            `cal__chip--type-${e.op.operation_type}`,
+                          ]"
+                          :style="chipStyle(e.op.operation_type, e.kind === 'plan')"
                           :data-kind="e.kind"
                           :data-field="e.op.field_id"
                           :title="chipTitle(e.op)"
