@@ -404,6 +404,11 @@ const monthTicks = computed(() => {
   fill: #00897b;
 }
 
+/* #788: правая ось осадков — в цвет столбцов */
+.whist__tick--precip {
+  fill: #4d9fd6;
+}
+
 .whist__modes {
   display: flex;
   gap: 0.4rem;
