@@ -811,6 +811,39 @@ onUnmounted(() => {
   gap: 0.4rem;
 }
 
+/* #205: ступени фиксированных порогов */
+.map-legend__steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.6rem;
+}
+
+.map-legend__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.map-legend__step-color {
+  width: 1rem;
+  height: 0.75rem;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.map-legend__step-label {
+  font-size: 0.72rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: #424242;
+}
+
+.map-legend__scale-note {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #777;
+}
+
 .map-legend__bar {
   flex: 1;
   height: 0.8rem;
