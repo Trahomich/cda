@@ -1403,7 +1403,7 @@ function forecastDays(n: number): WeatherForecastDay[] {
     temp_max_c: d.max,
     precip_mm: d.precip,
     precip_prob_pct: d.prob,
-    wind_ms: d.wind,
+    wind_ms: d.wind + (gale ? 4 : 0),
     humidity_pct: d.hum,
     // #767/#193: почва и доп. показатели (посевной слой, ET0 мм/сут, УФ, роса,
     // давление гПа — #769)
