@@ -10,24 +10,35 @@ test.beforeEach(async ({ page }) => {
   await page.waitForURL(/\/fields\/map/, { timeout: 15_000 })
 })
 
-test('карта погоды: включение режима и легенда-градиент', async ({ page }) => {
+test('карта погоды: включение режима и легенда ступеней (#205)', async ({ page }) => {
   await page.locator('path.leaflet-interactive').first().waitFor({ timeout: 15_000 })
 
-  // Режим погоды: заливка полей по осадкам за 7 суток, легенда min/max.
+  // Режим погоды: заливка полей по осадкам за 7 суток, легенда — ступени
+  // фиксированных порогов (#205): <2 / 2–5 / 5–10 / 10–15 / 15–25 / ≥25.
   await page.locator('.map-screen__wbtn', { hasText: 'Погода' }).click()
   const legend = page.locator('.map-legend__weather')
   await expect(legend).toBeVisible({ timeout: 10_000 })
   await expect(page.locator('.map-legend__toggle')).toContainText('Легенда: Осадки 7 сут')
-  await expect(legend.locator('.map-legend__scale-val').first()).toContainText('мм')
-  await expect(legend.locator('.map-legend__bar')).toBeVisible()
+  await expect(legend.locator('.map-legend__step')).toHaveCount(6)
+  await expect(legend.locator('.map-legend__step-label').first()).toContainText('< 2')
+  await expect(legend.locator('.map-legend__step-label').last()).toContainText('≥ 25')
   await expect(legend.locator('.map-legend__nodata')).toContainText('нет данных')
 
-  // Выбор метрики GDD — легенда и заголовок меняются.
+  // Узкий диапазон мока — все поля в одной ступени: заливки одного тона
+  // (ложного контраста нет).
+  const fills = await page.locator('path.leaflet-interactive').evaluateAll((paths) =>
+    paths.slice(0, 5).map((p) => p.getAttribute('fill')),
+  )
+  const unique = new Set(fills)
+  expect(unique.size).toBe(1)
+
+  // Выбор метрики СЭТ — легенда и заголовок меняются (ступени СЭТ).
   await page.locator('.map-screen__wmetric').selectOption('gdd_ytd')
   await expect(page.locator('.map-legend__toggle')).toContainText('СЭТ с 1 января', {
     timeout: 10_000,
   })
-  await expect(legend.locator('.map-legend__scale-val').first()).toContainText('°C·сут')
+  await expect(legend.locator('.map-legend__step')).toHaveCount(7)
+  await expect(legend.locator('.map-legend__scale-note')).toContainText('°C·сут')
 
   // Возврат к культурам — легенда прежняя.
   await page.locator('.map-screen__wbtn', { hasText: 'Культуры' }).click()
