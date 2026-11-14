@@ -280,28 +280,21 @@ const planCount = computed(() => monthPlans.value.length)
       </select>
     </header>
 
+    <!-- #806/#206: легенда типов — сверху, рядом с план/факт (один ряд,
+         сворачиваемость на узких экранах) -->
     <p class="cal__legend">
       <span class="cal__legend-item"><span class="cal__chip cal__chip--plan">план</span> плановая дата</span>
       <span class="cal__legend-item"><span class="cal__chip cal__chip--fact">факт</span> выполнено</span>
-      <span class="cal__muted">{{ monthTitle }}: планов {{ loading ? '…' : planCount }}, фактов {{ loading ? '…' : factCount }}</span>
-    </p>
-
-    <!-- #790/#203: легенда типов работ (цвет плашки = тип), сворачиваемая -->
-    <details class="cal__types-legend">
-      <summary>Типы работ — цвета</summary>
-      <p class="cal__types-row">
-        <span
-          v-for="(c, type) in OP_TYPE_COLORS"
-          :key="type"
-          class="cal__legend-item"
-        >
+      <template v-for="(c, type) in OP_TYPE_COLORS" :key="type">
+        <span class="cal__legend-item cal__legend-item--type">
           <span
             class="cal__chip"
             :style="{ background: c.bg, borderColor: c.border, color: '#263238' }"
           >{{ c.label }}</span>
         </span>
-      </p>
-    </details>
+      </template>
+      <span class="cal__muted">{{ monthTitle }}: планов {{ loading ? '…' : planCount }}, фактов {{ loading ? '…' : factCount }}</span>
+    </p>
 
     <p
       v-if="failed"
