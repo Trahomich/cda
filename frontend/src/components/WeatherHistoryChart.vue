@@ -113,6 +113,12 @@ const barW = computed(() =>
   Math.min(8, Math.max(1.5, plotW / Math.max(props.days.length, 1) - 1)),
 )
 
+/** Правая ось осадков (#788/#201): мм, шкала 0…макс с делениями. */
+const precipTicks = computed(() => {
+  const max = Math.max(5, Math.round(pMax.value))
+  return [0, Math.round(max / 2), max]
+})
+
 /** Метки месяцев: первая дата каждого месяца. */
 const monthTicks = computed(() => {
   const out: Array<{ i: number; label: string }> = []
