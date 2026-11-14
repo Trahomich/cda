@@ -285,7 +285,10 @@ const planCount = computed(() => monthPlans.value.length)
     <p class="cal__legend">
       <span class="cal__legend-item"><span class="cal__chip cal__chip--plan">план</span> плановая дата</span>
       <span class="cal__legend-item"><span class="cal__chip cal__chip--fact">факт</span> выполнено</span>
-      <template v-for="(c, type) in OP_TYPE_COLORS" :key="type">
+      <template
+        v-for="(c, type) in OP_TYPE_COLORS"
+        :key="type"
+      >
         <span class="cal__legend-item cal__legend-item--type">
           <span
             class="cal__chip"
