@@ -662,8 +662,12 @@ watch([range, rangeYear], () => void loadHistory())
                 :class="d.is_window ? 'wx__wday--ok' : 'wx__wday--bad'"
               >
                 {{ fmtDate(d.date) }} —
-                <template v-if="d.is_window">✓ все условия выполнены</template>
-                <template v-else>✗ {{ d.summary }}</template>
+                <template v-if="d.is_window">
+                  ✓ все условия выполнены
+                </template>
+                <template v-else>
+                  ✗ {{ d.summary }}
+                </template>
               </li>
             </ul>
           </details>
