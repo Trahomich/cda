@@ -1383,6 +1383,9 @@ const SOURCES: AdapterStatus[] = [
 /** Прогноз 7 суток с деталями для оценки окон (детерминированный паттерн). */
 function forecastDays(n: number): WeatherForecastDay[] {
   const iso = (offset: number) => new Date(NOW + offset * DAY).toISOString().slice(0, 10)
+  // Поле 5 — ветреная неделя (все дни ветер > 4 м/с): окно опрыскивания
+  // закрыто весь горизонт — кейс «пороги и причины по дням» (#786/#202).
+  const gale = n === 5
   const pattern = [
     { min: 8 + (n % 3), max: 19, precip: 0, prob: 10, wind: 3.2, hum: 62, soilT: 14, soilM: 42, et0: 3.1, uv: 4, dew: 6 },
     { min: 9 + (n % 3), max: 21, precip: 0, prob: 15, wind: 2.8, hum: 58, soilT: 15, soilM: 40, et0: 3.6, uv: 5, dew: 7 },
