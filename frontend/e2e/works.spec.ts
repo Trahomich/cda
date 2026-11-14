@@ -169,3 +169,42 @@ test('карточка поля: вкладка «Работы» — план и
   await expect(works.locator('.card360__works-chip--plan').first()).toContainText('план')
   await expect(works.locator('.card360__works-item').first()).toContainText('02.07.2027')
 })
+
+// #203 (фидбек #790): плашки календаря различимы по цвету типа работ
+// (план — рамка цветом типа, факт — заливка), сворачиваемая легенда типов.
+test('календарь работ: цвета плашек по типу + легенда типов (#203)', async ({ page }) => {
+  await login(page)
+  await page.goto('/calendar')
+
+  // Мок: май 2027 — план опрыскивания 20.05 (поле 1) и факт 21.05 (поле 2),
+  // оба типа spraying; март 2025 — spraying/tillage микс. Проверяем май.
+  await page.locator('.cal__month').fill('2027-05')
+  await expect(page.locator('.cal__grid')).toBeVisible({ timeout: 15_000 })
+
+  // Плашки несут класс типа и цвет типа (рамка у плана, заливка у факта).
+  const planChip = page.locator('.cal__chip--type-spraying[data-kind="plan"]').first()
+  const factChip = page.locator('.cal__chip--type-spraying[data-kind="fact"]').first()
+  await expect(planChip).toBeVisible()
+  await expect(factChip).toBeVisible()
+  // сиреневая рамка опрыскивания у плана (#7b1fa2) и сиреневая заливка у факта
+  expect(await planChip.getAttribute('style')).toContain('rgb(123, 31, 162)')
+  expect(await factChip.getAttribute('style')).toContain('rgb(225, 190, 231)')
+
+  // Разные типы — разные цвета: март 2025 (spraying + tillage факты).
+  await page.locator('.cal__month').fill('2025-03')
+  await expect(page.locator('.cal__chip--type-tillage[data-kind="fact"]').first()).toBeVisible({
+    timeout: 15_000,
+  })
+  const tillageStyle = await page
+    .locator('.cal__chip--type-tillage[data-kind="fact"]')
+    .first()
+    .getAttribute('style')
+  expect(tillageStyle).toContain('rgb(215, 204, 200)') // коричневая заливка
+
+  // Легенда типов — сворачиваемая, со всеми типами.
+  await page.locator('.cal__types-legend summary').click()
+  const legend = page.locator('.cal__types-legend')
+  await expect(legend).toContainText('опрыскивание')
+  await expect(legend).toContainText('обработка почвы')
+  await expect(legend).toContainText('уборка')
+})
