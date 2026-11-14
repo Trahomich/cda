@@ -1486,6 +1486,13 @@ function windowForPlan(plannedDate: string): PlanWeatherWindow | null {
 }
 
 /** GET /weather/windows: сырая форма backend (сутки с причинами, rule_text). */
+const OP_WINDOW_RULES: Record<WindowOperationType, string> = {
+  spraying: 'Опрыскивание: t 5–25 °C · ветер ≤ 4 м/с · вероятность осадков < 50 % · влажность 40–80 %',
+  fertilizing: 'Внесение удобрений: t ≥ 5 °C · ветер ≤ 6 м/с · без осадков (< 50 % вероятности, 0 мм)',
+  seeding: 'Посев: t почвы ≥ 4 °C · осадки предшествующих суток < 10 мм',
+  harvesting: 'Уборка: осадки < 2 мм · влажность < 90 %',
+}
+
 function windowsOf(n: number, type: WindowOperationType, fieldId: string) {
   const days = forecastDays(n)
   const raw = days.map((d, i) => {
@@ -1496,7 +1503,8 @@ function windowsOf(n: number, type: WindowOperationType, fieldId: string) {
   return {
     operation_type: type,
     field_id: fieldId,
-    rule_text: `Условия ${OP_WINDOW_LABELS[type]} (RULE-AGRO-09, docs/03 §3.3)`,
+    // #786/#202: пороги правила — в тексте (RULE-AGRO-09, docs/03 §3.3)
+    rule_text: `${OP_WINDOW_RULES[type]} (RULE-AGRO-09, docs/03 §3.3)`,
     window_open: Boolean(nearest),
     nearest_window_date: nearest ? nearest.day : null,
     days: raw,
