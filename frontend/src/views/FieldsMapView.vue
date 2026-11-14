@@ -172,6 +172,28 @@ const weatherStats = computed(() => {
   return { min: Math.min(...vals), max: Math.max(...vals) }
 })
 
+/** Фиксированные пороги метрик (#792/#205): окраска по агрономическим
+ *  ступеням, без автостягивания min–max (при узком диапазоне все поля
+ *  одного тона — что правда). Пороги — нижние границы ступеней. */
+const WEATHER_THRESHOLDS: Record<string, number[]> = {
+  // осадки 7 сут, мм: <2 / 2–5 / 5–10 / 10–15 / 15–25 / 25+
+  precip_7d: [2, 5, 10, 15, 25],
+  // осадки 14 сут, мм — вдвое шире
+  precip_14d: [5, 10, 20, 30, 50],
+  // температура, °C: от −30 до +35 с шагом 5 (13 ступеней)
+  t_now: [-25, -20, -15, -10, -5, 0, 5, 10, 15, 20, 25, 30],
+  // СЭТ с начала года, °C·сут
+  gdd_ytd: [250, 500, 750, 1000, 1500, 2000],
+}
+
+/** Индекс ступени значения по фиксированным порогам. */
+function thresholdIndex(metric: string, v: number): number {
+  const thresholds = WEATHER_THRESHOLDS[metric] ?? []
+  let i = 0
+  while (i < thresholds.length && v >= thresholds[i]!) i++
+  return i
+}
+
 function metricLabel(): string {
   return weatherMetricMeta.value.label
 }
