@@ -1091,3 +1091,88 @@ class TestHistoryNormMm200:
             headers=headers,
         )
         assert resp.json()["items"][0]["norm_mm"] is None
+
+
+class TestPrecipWindowUnified204:
+    """#204: «осадки за 7 суток» — одно число (окно завершённых суток
+    T−7..T−1) в карте API-61, сводке API-07 и детекторах вымокания."""
+
+    def test_map_and_summary_same_number(self, client, db_session):
+        from app.modules.weather.router import WEATHER_MAP_CACHE_TTL  # noqa: F401
+
+        field_id = make_field(db_session, name="Окно-7")
+        make_weather_source(db_session)
+        today = date.today()
+        # 8 суток осадков: T-8..T-1 по 1.5 мм, сегодня (T) — 9.9 мм,
+        # которые НЕ должны попасть в 7-суточное окно
+        for back in range(1, 9):
+            db_session.add(
+                WeatherObservation(
+                    field_id=field_id,
+                    observed_at=today - timedelta(days=back),
+                    precipitation_mm=1.5,
+                    source_id=OpenMeteoAdapter.source_id,
+                )
+            )
+        db_session.add(
+            WeatherObservation(
+                field_id=field_id,
+                observed_at=today,
+                precipitation_mm=9.9,
+                source_id=OpenMeteoAdapter.source_id,
+            )
+        )
+        db_session.commit()
+        headers = api_headers(client, db_session)
+
+        summary = client.get(f"{API}/fields/{field_id}/weather", headers=headers).json()
+        assert summary["precip_7d"] == pytest.approx(7 * 1.5)  # 10.5, без 9.9
+        assert summary["precip_14d"] == pytest.approx(8 * 1.5)  # 12.0
+
+        import app.core.cache as cache_mod
+        from tests.test_vra import FakeRedis
+
+        fake = FakeRedis()
+        orig = cache_mod._redis
+        cache_mod._redis = fake
+        try:
+            from app.modules.weather.router import _weather_map_cache_key
+
+            cache_mod.client().flushall() if hasattr(cache_mod.client(), "flushall") else None
+
+            cache_key = _weather_map_cache_key("precip_7d")
+            # сбрасываем возможный кэш карты
+            fake.store.pop(cache_key, None)
+            m = client.get(f"{API}/weather/map", params={"metric": "precip_7d"}, headers=headers)
+            assert m.status_code == 200, m.text
+            item = next(i for i in m.json()["items"] if i["field_id"] == str(field_id))
+            assert item["value"] == pytest.approx(7 * 1.5)  # то же число, что в сводке
+        finally:
+            cache_mod._redis = orig
+
+    def test_waterlog_window_excludes_scene_day(self, db_session):
+        """Детектор вымокания: осадки ДНЯ СЦЕНЫ не входят в окно 7 суток."""
+        from app.modules.satellite.waterlog import precip_sums_7d
+
+        field_id = make_field(db_session)
+        make_weather_source(db_session)
+        scene_day = date(2026, 6, 10)
+        for back in range(1, 8):  # 03..09.06
+            db_session.add(
+                WeatherObservation(
+                    field_id=field_id,
+                    observed_at=scene_day - timedelta(days=back),
+                    precipitation_mm=4.0,
+                    source_id=OpenMeteoAdapter.source_id,
+                )
+            )
+        db_session.add(
+            WeatherObservation(
+                field_id=field_id,
+                observed_at=scene_day,  # сам день сцены — вне окна
+                precipitation_mm=50.0,
+                source_id=OpenMeteoAdapter.source_id,
+            )
+        )
+        db_session.commit()
+        assert precip_sums_7d(db_session, field_id, [scene_day])[scene_day] == pytest.approx(28.0)
