@@ -162,13 +162,19 @@ function chipTitle(op: FieldOperation): string {
   return parts.join(' · ')
 }
 
-/** Стиль плашки по типу работы (#790/#203): факт — заливка цветом типа,
- *  план — рамка цветом типа без заливки (различие план/факт как раньше). */
+/** Стиль плашки по типу работы (#805/#206): и план, и факт — ЗАЛИВКА цветом
+ *  типа (один тип = один цвет в любом месяце); план/факт различаются
+ *  рамкой: план — пунктирная бордера типа, факт — сплошная тонкая. */
 function chipStyle(type: string, isPlan: boolean): Record<string, string> {
   const c = opTypeColor(type)
-  return isPlan
-    ? { background: '#fff', borderColor: c.border, color: c.border }
-    : { background: c.bg, borderColor: c.border, color: '#263238' }
+  return {
+    background: c.bg,
+    color: '#263238',
+    borderColor: c.border,
+    ...(isPlan
+      ? { borderStyle: 'dashed', borderWidth: '1.5px' }
+      : { borderStyle: 'solid', borderWidth: '1px' }),
+  }
 }
 
 /** Лента выбранного дня (клик по ячейке). */
