@@ -280,6 +280,23 @@ const planCount = computed(() => monthPlans.value.length)
       <span class="cal__muted">{{ monthTitle }}: планов {{ loading ? '…' : planCount }}, фактов {{ loading ? '…' : factCount }}</span>
     </p>
 
+    <!-- #790/#203: легенда типов работ (цвет плашки = тип), сворачиваемая -->
+    <details class="cal__types-legend">
+      <summary>Типы работ — цвета</summary>
+      <p class="cal__types-row">
+        <span
+          v-for="(c, type) in OP_TYPE_COLORS"
+          :key="type"
+          class="cal__legend-item"
+        >
+          <span
+            class="cal__chip"
+            :style="{ background: c.bg, borderColor: c.border, color: '#263238' }"
+          >{{ c.label }}</span>
+        </span>
+      </p>
+    </details>
+
     <p
       v-if="failed"
       class="cal__state cal__state--error"
