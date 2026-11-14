@@ -497,7 +497,7 @@ const planCount = computed(() => monthPlans.value.length)
 
 .cal__legend {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem 0.9rem;
   align-items: center;
   flex-wrap: wrap;
   margin: 0;
