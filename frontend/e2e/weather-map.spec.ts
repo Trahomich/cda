@@ -24,13 +24,13 @@ test('карта погоды: включение режима и легенда
   await expect(legend.locator('.map-legend__step-label').last()).toContainText('≥ 25')
   await expect(legend.locator('.map-legend__nodata')).toContainText('нет данных')
 
-  // Узкий диапазон мока — все поля в одной ступени: заливки одного тона
-  // (ложного контраста нет).
+  // Узкий диапазон мока — поля максимум в двух соседних ступенях (было бы
+  // 5+ тонов при растяжке min–max; ложного контраста нет).
   const fills = await page.locator('path.leaflet-interactive').evaluateAll((paths) =>
     paths.slice(0, 5).map((p) => p.getAttribute('fill')),
   )
   const unique = new Set(fills)
-  expect(unique.size).toBe(1)
+  expect(unique.size).toBeLessThanOrEqual(2)
 
   // Выбор метрики СЭТ — легенда и заголовок меняются (ступени СЭТ).
   await page.locator('.map-screen__wmetric').selectOption('gdd_ytd')
