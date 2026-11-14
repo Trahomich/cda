@@ -205,11 +205,13 @@ function weatherValueText(field: Field): string {
   return `${v.toLocaleString('ru-RU', { maximumFractionDigits: weatherMetricMeta.value.digits })} ${weatherMetricMeta.value.unit}`
 }
 
-/** Интерполяция цвета from→to по позиции значения в [min, max]. */
+/** Цвет по фиксированной ступени (#205): позиция i из N ступеней
+ *  интерполируется в гамме метрики — ступени стабильны при любом разбросе. */
 function weatherColor(v: number): string {
   const { from, to } = weatherMetricMeta.value
-  const { min, max } = weatherStats.value
-  const t = max > min ? (v - min) / (max - min) : 0.5
+  const thresholds = WEATHER_THRESHOLDS[weatherMetric.value] ?? []
+  const idx = thresholdIndex(weatherMetric.value, v)
+  const t = thresholds.length ? idx / thresholds.length : 0.5
   const hx = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
   const [r1, g1, b1] = hx(from)
   const [r2, g2, b2] = hx(to)
@@ -218,6 +220,37 @@ function weatherColor(v: number): string {
     .map((c) => c.toString(16).padStart(2, '0'))
     .join('')}`
 }
+
+/** Ступени легенды (#205): цвет + подпись диапазона. */
+const legendSteps = computed(() => {
+  const { from, to } = weatherMetricMeta.value
+  const thresholds = WEATHER_THRESHOLDS[weatherMetric.value] ?? []
+  const hx = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+  const [r1, g1, b1] = hx(from)
+  const [r2, g2, b2] = hx(to)
+  const n = thresholds.length
+  const colorAt = (i: number) => {
+    const t = n ? i / n : 0.5
+    const mix = (a: number, b: number) => Math.round(a + (b - a) * t)
+    return `#${[mix(r1, r2), mix(g1, g2), mix(b1, b2)]
+      .map((c) => c.toString(16).padStart(2, '0'))
+      .join('')}`
+  }
+  const fmt = (v: number) => v.toLocaleString('ru-RU', { maximumFractionDigits: 1 })
+  const steps: Array<{ color: string; label: string }> = []
+  for (let i = 0; i <= n; i++) {
+    const lo = i === 0 ? null : thresholds[i - 1]!
+    const hi = i === n ? null : thresholds[i]!
+    const label =
+      lo === null
+        ? `< ${fmt(hi!)}`
+        : hi === null
+          ? `≥ ${fmt(lo)}`
+          : `${fmt(lo)}–${fmt(hi)}`
+    steps.push({ color: colorAt(i), label })
+  }
+  return steps
+})
 
 /** Стиль контура: культуры (обычный) или метрика погоды (#143). */
 function styleFor(field: Field | undefined): L.PathOptions {
