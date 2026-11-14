@@ -201,6 +201,16 @@ const monthTicks = computed(() => {
         >{{ t }}°</text>
       </g>
 
+      <!-- правая ось осадков, мм (#788/#201) -->
+      <text
+        v-for="t in precipTicks"
+        :key="`pr${t}`"
+        :x="W - PAD.right + 4"
+        :y="yP(t) + 2.5"
+        class="whist__tick whist__tick--precip"
+        text-anchor="start"
+      >{{ t }}</text>
+
       <!-- осадки (столбцы) -->
       <rect
         v-for="(d, i) in days"
