@@ -110,6 +110,14 @@ class FieldWeatherResponse(BaseModel):
     field_id: uuid.UUID
     facts: list[FactItem]
     forecast: list[ForecastDayItem]
+    #: #204: единое окно завершённых суток [T−N, T−1] — то же число,
+    #: что на карте API-61 и в детекторах; null — наблюдений в окне нет
+    precip_7d: float | None = Field(
+        default=None, description="Осадки за 7 завершённых суток, мм (как API-61)"
+    )
+    precip_14d: float | None = Field(
+        default=None, description="Осадки за 14 завершённых суток, мм (как API-61)"
+    )
     meta: SourceMeta
 
 

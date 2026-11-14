@@ -29,13 +29,13 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.core.cache import cache_get, cache_set
-from app.modules.satellite.waterlog import precip_sum_completed
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
 from app.models.agronomy import CropCycle, Field, TreatmentPlan
 from app.models.integrations import Forecast, WeatherObservation
 from app.models.references import Source, WeatherRule
+from app.modules.satellite.waterlog import precip_sum_completed
 from app.modules.weather import hazards
 from app.modules.weather import ingest as ingest_module
 from app.modules.weather.rules import (
