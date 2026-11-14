@@ -205,9 +205,9 @@ test('календарь работ: цвета плашек по типу + л�
     .getAttribute('style')
   expect(tillageStyle).toContain('rgb(215, 204, 200)') // коричневая заливка
 
-  // Легенда типов — сворачиваемая, со всеми типами.
-  await page.locator('.cal__types-legend summary').click()
-  const legend = page.locator('.cal__types-legend')
+  // Легенда типов — сверху, в одном ряду с «план/факт» (#806/#206).
+  const legend = page.locator('.cal__legend')
+  await expect(legend).toContainText('план')
   await expect(legend).toContainText('опрыскивание')
   await expect(legend).toContainText('обработка почвы')
   await expect(legend).toContainText('уборка')
