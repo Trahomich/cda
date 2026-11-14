@@ -29,6 +29,7 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from app.core.cache import cache_get, cache_set
+from app.modules.satellite.waterlog import precip_sum_completed
 from app.core.db import get_db
 from app.core.errors import AppError
 from app.core.rbac import group_checker
@@ -563,10 +564,12 @@ def weather_map(
     # trust), как API-58; для осадков — окно метрики, для t_now/gdd — весь год
     if metric in ("precip_7d", "precip_14d"):
         window = 7 if metric == "precip_7d" else 14
-        date_from = today - timedelta(days=window - 1)
+        # #204: завершённые сутки [T−N, T−1] — единое окно со сводкой API-07
+        date_from = today - timedelta(days=window)
     else:
         window = 0
         date_from = date(today.year, 1, 1)
+    date_to = today if window == 0 else today - timedelta(days=1)
     per_field: dict[uuid.UUID, dict[date, WeatherObservation]] = {}
     if field_ids:
         for obs in db.scalars(
@@ -574,7 +577,7 @@ def weather_map(
             .where(
                 WeatherObservation.field_id.in_(field_ids),
                 WeatherObservation.observed_at >= date_from,
-                WeatherObservation.observed_at <= today,
+                WeatherObservation.observed_at <= date_to,
             )
             .order_by(WeatherObservation.observed_at)
         ):
@@ -591,14 +594,8 @@ def weather_map(
         if not observations:
             value = None  # наблюдений нет — метрика не определена (§7.8)
         elif metric in ("precip_7d", "precip_14d"):
-            value = round(
-                sum(
-                    float(o.precipitation_mm or 0.0)
-                    for o in observations.values()
-                    if o.observed_at >= today - timedelta(days=window - 1)
-                ),
-                1,
-            )
+            # #204: единая функция со сводкой API-07 и детекторами
+            value = precip_sum_completed(db, field_id, today, days=window)
         else:
             latest = observations[max(observations)]
             if metric == "t_now":
