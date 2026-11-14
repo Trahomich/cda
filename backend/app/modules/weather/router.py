@@ -140,10 +140,13 @@ def field_weather(field_id: uuid.UUID, db: DbSession) -> FieldWeatherResponse:
         )
     )
     forecasts = _forecast_days(db, field.id, days=7)
+    today = date.today()
     return FieldWeatherResponse(
         field_id=field.id,
         facts=[FactItem.model_validate(f) for f in facts],
         forecast=_forecast_items(db, field.id, forecasts),
+        precip_7d=precip_sum_completed(db, field.id, today, days=7),
+        precip_14d=precip_sum_completed(db, field.id, today, days=14),
         meta=_source_meta(db, forecasts),
     )
 
