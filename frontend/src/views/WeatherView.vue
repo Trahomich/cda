@@ -973,4 +973,37 @@ watch([range, rangeYear], () => void loadHistory())
   font-size: 0.9rem;
   color: #555;
 }
+
+/* #786/#202: пороги правила и причины по дням */
+.wx__window-rule {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  color: #66756a;
+}
+
+.wx__window-why summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #2e7d32;
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.wx__wdays {
+  list-style: none;
+  margin: 0.3rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.85rem;
+}
+
+.wx__wday--ok {
+  color: #1b5e20;
+}
+
+.wx__wday--bad {
+  color: #b3261e;
+}
 </style>
