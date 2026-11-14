@@ -222,3 +222,29 @@ test('погода: история — линия нормы осадков пу
   await expect(chart.locator('path.whist__line--norm')).toHaveCount(0)
   await expect(page.locator('.whist__legend')).not.toContainText('норма осадков')
 })
+
+// #202 (фидбек #786): при закрытом окне видны пороги правила (rule_text) и
+// причины «не выполнено» по каждому дню горизонта. Мок: поле 5 — ветреная
+// неделя, окно опрыскивания закрыто все 7 суток.
+test('погода: закрытое окно — пороги правила и причины по дням (#202)', async ({ page }) => {
+  await page.goto('/weather')
+  await expect(page.locator('.wx__field-card')).toBeVisible({ timeout: 15_000 })
+
+  // Поле 5: план опрыскивания, окна нет весь горизонт.
+  await page.locator('.fcombo__btn').click()
+  await page.locator('.fcombo__search').fill('5')
+  await page.locator('.fcombo__option', { hasText: '5/ВОСХОД' }).click()
+  const win = page.locator('.wx__window', { hasText: 'Опрыскивание' })
+  await expect(win).toBeVisible({ timeout: 15_000 })
+  await expect(win.locator('.wx__badge--bad')).toContainText('окна нет')
+
+  // Пороги правила — рядом с вердиктом (ветер ≤ 4 м/с и др.).
+  const rule = win.locator('.wx__window-rule')
+  await expect(rule).toContainText('ветер ≤ 4 м/с')
+
+  // Разворачиваемая лента дней: каждый день ✗ с причиной «ветер … > 4 м/с».
+  await win.locator('.wx__window-why summary').click()
+  const badDays = win.locator('.wx__wday--bad')
+  expect(await badDays.count()).toBe(7)
+  await expect(badDays.first()).toContainText(/ветер .* > 4 м\/с/)
+})
