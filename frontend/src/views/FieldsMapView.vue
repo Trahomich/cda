@@ -575,17 +575,19 @@ onUnmounted(() => {
           v-if="legendOpen && weatherMode"
           class="map-legend__weather"
         >
-          <div class="map-legend__scale">
-            <span class="map-legend__scale-val">{{
-              weatherStats.min.toLocaleString('ru-RU', { maximumFractionDigits: 1 })
-            }} {{ weatherMetricMeta.unit }}</span>
+          <!-- #205: ступени фиксированных порогов (без растяжки min–max) -->
+          <div class="map-legend__steps">
             <span
-              class="map-legend__bar"
-              :style="{ background: `linear-gradient(90deg, ${weatherMetricMeta.from}, ${weatherMetricMeta.to})` }"
-            />
-            <span class="map-legend__scale-val">{{
-              weatherStats.max.toLocaleString('ru-RU', { maximumFractionDigits: 1 })
-            }} {{ weatherMetricMeta.unit }}</span>
+              v-for="(s, i) in legendSteps"
+              :key="i"
+              class="map-legend__step"
+            >
+              <span
+                class="map-legend__step-color"
+                :style="{ background: s.color }"
+              />
+              <span class="map-legend__step-label">{{ s.label }}</span>
+            </span>
           </div>
           <p class="map-legend__nodata">
             <span class="map-legend__swatch map-legend__swatch--nodata" />
@@ -593,6 +595,10 @@ onUnmounted(() => {
             <template v-if="weatherUpdated">
               · по наблюдениям на {{ weatherUpdated.split('-').reverse().join('.') }}
             </template>
+          </p>
+          <p class="map-legend__scale-note">
+            {{ weatherMetricMeta.unit }} · ступени фиксированы — поля в одном
+            диапазоне одного тона
           </p>
         </div>
         <ul
