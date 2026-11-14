@@ -166,12 +166,6 @@ const weatherMetricMeta = computed(
   () => WEATHER_METRICS.find((m) => m.value === weatherMetric.value)!,
 )
 
-const weatherStats = computed(() => {
-  const vals = [...weatherValues.value.values()].filter((v): v is number => v != null)
-  if (!vals.length) return { min: 0, max: 0 }
-  return { min: Math.min(...vals), max: Math.max(...vals) }
-})
-
 /** Фиксированные пороги метрик (#792/#205): окраска по агрономическим
  *  ступеням, без автостягивания min–max (при узком диапазоне все поля
  *  одного тона — что правда). Пороги — нижние границы ступеней. */
