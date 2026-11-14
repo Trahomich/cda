@@ -24,7 +24,7 @@ test('карта погоды: включение режима и легенда
 
   // Выбор метрики GDD — легенда и заголовок меняются.
   await page.locator('.map-screen__wmetric').selectOption('gdd_ytd')
-  await expect(page.locator('.map-legend__toggle')).toContainText('GDD с 1 января', {
+  await expect(page.locator('.map-legend__toggle')).toContainText('СЭТ с 1 января', {
     timeout: 10_000,
   })
   await expect(legend.locator('.map-legend__scale-val').first()).toContainText('°C·сут')
