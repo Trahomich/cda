@@ -212,6 +212,9 @@ test('погода: история — линия нормы осадков пу
   await expect(chart.locator('path.whist__line--norm').first()).toBeVisible({ timeout: 15_000 })
   await expect(page.locator('.whist__legend')).toContainText('норма осадков, мм')
 
+  // #788: правая ось осадков в мм — подписи справа (0/половина/максимум).
+  await expect(chart.locator('.whist__tick--precip')).toHaveCount(3)
+
   // Сезон 2023 — первый год истории: нормы нет (null) — ни линии, ни легенды.
   await page.locator('.wx__range', { hasText: 'Год' }).click()
   await page.locator('.wx__year').selectOption('2023')
