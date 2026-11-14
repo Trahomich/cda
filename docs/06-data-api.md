@@ -145,7 +145,7 @@ erDiagram
 | API-04 | POST /fields/import | импорт GeoJSON/KML, отчёт ImportReport | REQ-F-001 |
 | API-05 | GET /fields/{id} | карточка «Поле 360°»: агрегат поля, NDVI, погода, журнал | REQ-F-003, SC-01 |
 | API-06 | GET /fields/{id}/ndvi | таймлайн индексов с датами и cloud_pct | REQ-F-028 |
-| API-07 | GET /fields/{id}/weather | факты + прогноз 7 сут; каждый день прогноза содержит hazards — опасные явления (§7.8, #139) | REQ-F-023, 024 | Осадки за 7/14 завершённых суток: агрегаты precip_7d/precip_14d (окно T−N..T−1, #204) |
+| API-07 | GET /fields/{id}/weather | факты + прогноз 7 сут; каждый день прогноза содержит hazards — опасные явления (§7.8, #139); агрегаты precip_7d/precip_14d — осадки за 7/14 ЗАВЕРШЁННЫХ суток (окно T−N..T−1, единое с API-61, #204) | REQ-F-023, 024 |
 | API-08 | GET /rotation-plans; GET /rotation-plans/{id}/violations | планы севооборота; пересчёт нарушений RULE-AGRO-01/03/04 по требованию без записи (формат — §7.2) | REQ-F-005 |
 | API-09 | POST /rotation-plans | создать план; ответ содержит список нарушений | REQ-F-005, SC-01 |
 | API-10 | POST /rotation-plans/{id}/approve | согласование руководителем | REQ-F-005, SC-01 |
