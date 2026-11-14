@@ -332,6 +332,11 @@ const monthTicks = computed(() => {
     >
       <span><i class="whist__lg-line whist__lg-line--soil-t" /> T почвы, °C</span>
       <span><i class="whist__lg-line whist__lg-line--soil-m" /> влажность почвы, %</span>
+      <!-- #795: при T почвы ≤ 0 влажность стабильна до оттаивания -->
+      <span
+        v-if="days.some((d) => d.soil_temp_c != null && d.soil_temp_c <= 0)"
+        title="почва промёрзла — влажность стабильна до оттаивания"
+      >❄</span>
     </div>
   </div>
 </template>
