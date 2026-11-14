@@ -389,7 +389,11 @@ const planCount = computed(() => monthPlans.value.length)
           >
             <span
               class="cal__chip"
-              :class="e.kind === 'plan' ? 'cal__chip--plan' : 'cal__chip--fact'"
+              :class="[
+                e.kind === 'plan' ? 'cal__chip--plan' : 'cal__chip--fact',
+                `cal__chip--type-${e.op.operation_type}`,
+              ]"
+              :style="chipStyle(e.op.operation_type, e.kind === 'plan')"
             >{{ e.kind === 'plan' ? 'план' : 'факт' }}</span>
             <RouterLink
               class="cal__field-link"
